@@ -1,15 +1,81 @@
 "use client";
 
 /**
- * Account section for the Profile page: register / sign in / sign out.
- * Guests lose nothing by staying guests — an account makes the identity
- * server-verified (no impersonation) and portable across devices, and the
- * server-side social graph (connections, chats, stands) follows it.
+ * Account section for the Profile page: create / sign in / sign out, plus
+ * the forgot-password flow and (for accounts made before email sign-in
+ * existed) an add-your-email nudge. Guests lose nothing by staying guests —
+ * an account makes the identity server-verified and portable across devices.
  */
 
 import { useEffect, useState } from "react";
-import { getAuth, login, logout, register } from "@/lib/auth";
+import {
+  emailLive,
+  forgotPassword,
+  getAuth,
+  login,
+  logout,
+  register,
+  setAccountEmail,
+} from "@/lib/auth";
 import { makeGuestId } from "@/lib/store";
+
+function Field({
+  id,
+  label,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex w-full max-w-xs flex-col">
+      <label htmlFor={id} className="micro mb-1.5 block text-muted">
+        {label}
+      </label>
+      {children}
+      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+    </div>
+  );
+}
+
+function PasswordInput({
+  id,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative w-full">
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        minLength={6}
+        maxLength={72}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete={autoComplete}
+        className="w-full rounded-md border border-line px-3 py-2 pr-14 text-sm"
+      />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        aria-label={show ? "Hide password" : "Show password"}
+        className="micro absolute inset-y-0 right-2 my-auto h-fit text-muted hover:text-ink"
+      >
+        {show ? "HIDE" : "SHOW"}
+      </button>
+    </div>
+  );
+}
 
 export default function AccountCard({
   onIdentity,
@@ -20,16 +86,22 @@ export default function AccountCard({
   currentName: string;
 }) {
   const [mounted, setMounted] = useState(false);
-  const [mode, setMode] = useState<"register" | "login">("register");
+  const [mode, setMode] = useState<"register" | "login" | "forgot">("register");
+  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [addEmail, setAddEmail] = useState("");
+  const [addEmailState, setAddEmailState] = useState<"idle" | "busy" | "done">("idle");
+  const [mailWorks, setMailWorks] = useState(true); // assume yes until told otherwise
   const [tick, setTick] = useState(0); // re-render after auth changes
 
   useEffect(() => {
     setMounted(true);
     setName(currentName);
+    void emailLive().then(setMailWorks);
   }, [currentName]);
 
   const auth = mounted ? getAuth() : null;
@@ -39,8 +111,22 @@ export default function AccountCard({
     if (busy) return;
     setBusy(true);
     setError(null);
-    const fn = mode === "register" ? register : login;
-    const result = await fn(name.trim(), password);
+
+    if (mode === "forgot") {
+      const err = await forgotPassword(email.trim());
+      setBusy(false);
+      if (err) {
+        setError(err);
+        return;
+      }
+      setForgotSent(true);
+      return;
+    }
+
+    const result =
+      mode === "register"
+        ? await register(email.trim(), name.trim(), password)
+        : await login(email.trim(), password);
     setBusy(false);
     if (typeof result === "string") {
       setError(result);
@@ -55,6 +141,22 @@ export default function AccountCard({
     await logout();
     // fresh guest id — the account's social graph stays on the server
     onIdentity(makeGuestId(), currentName);
+    setError(null); // don't carry a signed-in error into the signed-out form
+    setAddEmailState("idle");
+    setTick((t) => t + 1);
+  };
+
+  const saveAddedEmail = async () => {
+    if (addEmailState === "busy") return;
+    setAddEmailState("busy");
+    setError(null);
+    const err = await setAccountEmail(addEmail.trim());
+    if (err) {
+      setError(err);
+      setAddEmailState("idle");
+      return;
+    }
+    setAddEmailState("done");
     setTick((t) => t + 1);
   };
 
@@ -67,15 +169,55 @@ export default function AccountCard({
       <div className="flex flex-col gap-3">
         <p className="text-sm">
           Signed in as <span className="font-medium">{auth.name}</span>
+          {auth.email && <span className="ml-2 text-muted">({auth.email})</span>}
           <span className="micro ml-2 rounded-sm border border-verify/40 px-1.5 py-0.5 text-verify">
             verified identity
           </span>
         </p>
         <p className="text-sm leading-relaxed text-muted">
-          Nobody can impersonate you on the floors, and your connections and
-          chats follow this account on any device. Quests, badges and your
-          booth design still live in each browser.
+          Your booth, connections, streaks and badges follow this account on
+          any device — sign in there and everything comes with you.
+          {auth.email &&
+            mailWorks &&
+            ` If your account is ever signed in from a new browser, we'll email ${auth.email} so you know.`}
         </p>
+        {addEmailState === "done" && (
+          <p className="text-sm text-verify" role="status">
+            Email saved{mailWorks ? " — a confirmation is on its way to your inbox." : "."}
+          </p>
+        )}
+        {!auth.email && addEmailState !== "done" && (
+          <div className="rounded-md border border-gold/50 bg-gold/5 p-3">
+            <p className="text-sm text-gold-deep">
+              This account has no email yet. Add one so you can reset a
+              forgotten password and get an alert if someone else signs in.
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <input
+                type="email"
+                value={addEmail}
+                onChange={(e) => setAddEmail(e.target.value)}
+                placeholder="you@example.com"
+                aria-label="Email for this account"
+                autoComplete="email"
+                className="w-56 rounded-md border border-line px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => void saveAddedEmail()}
+                disabled={addEmailState === "busy" || !addEmail.includes("@")}
+                className="btn-press rounded-md bg-ink px-3 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {addEmailState === "busy" ? "…" : "Add email"}
+              </button>
+            </div>
+          </div>
+        )}
+        {error && (
+          <p className="text-sm text-accent" role="alert">
+            {error}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => void signOut()}
@@ -87,75 +229,184 @@ export default function AccountCard({
     );
   }
 
+  if (mode === "forgot") {
+    return (
+      <div className="flex flex-col gap-3">
+        {mailWorks ? (
+          <p className="text-sm leading-relaxed text-muted">
+            Type the email on your account and we&rsquo;ll send a link that
+            lets you choose a new password. The link works once and expires in
+            30 minutes.
+          </p>
+        ) : (
+          <p className="text-sm leading-relaxed text-gold-deep">
+            Heads up: this server hasn&rsquo;t got email switched on yet, so a
+            reset link can&rsquo;t be sent automatically. Reach the operator
+            through the About page to get your password reset by hand.
+          </p>
+        )}
+        {forgotSent ? (
+          <p className="text-sm text-verify" role="status">
+            Done — if that email has an account, a reset link is on its way.
+            Check your inbox (and spam, once).
+          </p>
+        ) : (
+          <form onSubmit={submit} className="flex flex-col items-start gap-3">
+            <Field id="forgot-email" label="Email">
+              <input
+                id="forgot-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                placeholder="you@example.com"
+                className="w-full rounded-md border border-line px-3 py-2 text-sm"
+              />
+            </Field>
+            <button
+              type="submit"
+              disabled={busy || !email.includes("@")}
+              className="btn-press rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busy ? "…" : "Email me a reset link"}
+            </button>
+          </form>
+        )}
+        {error && (
+          <p className="text-sm text-accent" role="alert">
+            {error}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            setMode("login");
+            setForgotSent(false);
+            setError(null);
+          }}
+          className="micro w-fit text-muted underline hover:text-ink"
+        >
+          Back to sign in
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm leading-relaxed text-muted">
-        You&rsquo;re a guest — everything works, but your identity lives in
-        this browser and anyone could use your name. An account pins it down
-        and carries your connections across devices.
+        A free account saves your progress — booth, connections, streaks —
+        and lets you sign in from any device to pick it up. It also locks
+        your name so nobody can pretend to be you on the floor.
       </p>
+      {/* Plain toggle buttons, not an ARIA tablist — a real tablist owes screen
+          readers arrow-key navigation and an associated tabpanel we don't
+          provide, so aria-pressed is the honest contract here. */}
       <div className="flex gap-1.5">
         {(["register", "login"] as const).map((m) => (
           <button
             key={m}
             type="button"
+            aria-pressed={mode === m}
             onClick={() => {
               setMode(m);
               setError(null);
             }}
-            aria-pressed={mode === m}
-            className={`micro rounded-sm border px-2 py-1 ${
+            className={`micro rounded-sm border px-2.5 py-1.5 ${
               mode === m
                 ? "border-accent text-accent"
                 : "border-line text-muted hover:border-muted"
             }`}
           >
-            {m === "register" ? "Create account" : "Sign in"}
+            {m === "register" ? "Create account" : "I have an account"}
           </button>
         ))}
       </div>
-      <form onSubmit={submit} className="flex flex-wrap items-end gap-3">
-        <div>
-          <label htmlFor="acct-name" className="micro mb-1.5 block text-muted">
-            Name
-          </label>
-          <input
-            id="acct-name"
-            type="text"
-            value={name}
-            minLength={3}
-            maxLength={24}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="username"
-            className="w-44 rounded-md border border-line px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label htmlFor="acct-pass" className="micro mb-1.5 block text-muted">
-            Password
-          </label>
-          <input
-            id="acct-pass"
-            type="password"
-            value={password}
-            minLength={6}
-            maxLength={72}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={mode === "register" ? "new-password" : "current-password"}
-            className="w-44 rounded-md border border-line px-3 py-2 text-sm"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={busy || name.trim().length < 3 || password.length < 6}
-          className="btn-press rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+      <form onSubmit={submit} className="flex flex-col items-start gap-3">
+        <Field
+          id="acct-email"
+          label={mode === "register" ? "Email" : "Email (or account name, for older accounts)"}
+          hint={
+            mode === "register"
+              ? "Only for password resets and sign-in alerts. Never shown to anyone, never a newsletter."
+              : undefined
+          }
         >
-          {busy ? "…" : mode === "register" ? "Create account" : "Sign in"}
-        </button>
+          <input
+            id="acct-email"
+            type={mode === "register" ? "email" : "text"}
+            value={email}
+            maxLength={254}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete={mode === "register" ? "email" : "username"}
+            placeholder="you@example.com"
+            className="w-full rounded-md border border-line px-3 py-2 text-sm"
+          />
+        </Field>
+        {mode === "register" && (
+          <Field
+            id="acct-name"
+            label="Display name"
+            hint="What other founders see on the floor. 3–24 characters."
+          >
+            <input
+              id="acct-name"
+              type="text"
+              value={name}
+              minLength={3}
+              maxLength={24}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="nickname"
+              className="w-full rounded-md border border-line px-3 py-2 text-sm"
+            />
+          </Field>
+        )}
+        <Field
+          id="acct-pass"
+          label="Password"
+          hint={mode === "register" ? "At least 6 characters." : undefined}
+        >
+          <PasswordInput
+            id="acct-pass"
+            value={password}
+            onChange={setPassword}
+            autoComplete={mode === "register" ? "new-password" : "current-password"}
+          />
+        </Field>
+        <div className="flex items-center gap-4">
+          <button
+            type="submit"
+            disabled={
+              busy ||
+              password.length < 6 ||
+              (mode === "register" ? !email.includes("@") || name.trim().length < 3 : !email.trim())
+            }
+            className="btn-press rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busy ? "…" : mode === "register" ? "Create free account" : "Sign in"}
+          </button>
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => {
+                setMode("forgot");
+                setError(null);
+              }}
+              className="micro text-muted underline hover:text-ink"
+            >
+              Forgot password?
+            </button>
+          )}
+        </div>
       </form>
-      {error && <p className="text-sm text-accent">{error}</p>}
+      {error && (
+        <p className="text-sm text-accent" role="alert">
+          {error}
+        </p>
+      )}
       <p className="text-xs text-muted">
-        No email needed. Passwords are salted and hashed on the floor server.
+        Passwords are salted and hashed on the floor server — nobody can read
+        them, including us.
       </p>
     </div>
   );

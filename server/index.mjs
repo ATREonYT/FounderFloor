@@ -46,7 +46,7 @@
  * Run with: node server/index.mjs   (PORT_WS overrides the port, default 3001)
  */
 
-import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { closeSync, copyFileSync, fsyncSync, openSync, readFileSync, renameSync, writeSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
@@ -143,7 +143,12 @@ let feedback = [];
 const MAX_FEEDBACK = 500;
 
 /**
- * accounts: nameLower -> { id: "acct_<uuid>", name, salt, hash } (scrypt).
+ * accounts: nameLower -> { id: "acct_<uuid>", name, email, salt, hash, kdf,
+ * devices, created } (scrypt). Email is the login identifier for new accounts
+ * (legacy accounts may have email "" and still sign in by name — the profile
+ * page nags them to add one). devices holds sha256(guest-secret) prefixes of
+ * browsers that have signed in, so a sign-in from an unseen browser can
+ * trigger an alert email.
  * tokens: token -> account id (bearer sessions, persisted; logout deletes).
  * Account ids are server-issued and enforced: a ws join or social POST that
  * claims an "acct_" id must present a matching token, or it's treated as a
@@ -151,9 +156,271 @@ const MAX_FEEDBACK = 500;
  * accounts are opt-in security, not a wall.
  */
 const accounts = new Map();
+const accountsByEmail = new Map(); // email -> account record (same object)
+const accountsById = new Map(); // acct id -> account record (same object)
 const tokens = new Map();
 const MAX_ACCOUNTS = 5000;
 const ACCT_PREFIX = "acct_";
+const MAX_EMAIL_LEN = 254;
+const MAX_DEVICES_PER_ACCOUNT = 10;
+// Deliberately loose: RFC-shaped enough to catch typos, no more. The real
+// proof of an address is that its owner clicks the links we mail to it.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function normalizeEmail(v) {
+  if (typeof v !== "string") return "";
+  const e = v.trim().toLowerCase();
+  return e.length <= MAX_EMAIL_LEN && EMAIL_RE.test(e) ? e : "";
+}
+
+function indexAccount(acct) {
+  accountsById.set(acct.id, acct);
+  if (acct.email) {
+    // Guard against a data file that carries the same email on two accounts
+    // (hand-edit, bad merge): the first indexed keeps it, later collisions
+    // lose their email rather than silently hijacking the lookup. Clearing the
+    // field keeps the record self-consistent (login-by-name + set-email still
+    // work for that user).
+    if (accountsByEmail.has(acct.email)) {
+      acct.email = "";
+    } else {
+      accountsByEmail.set(acct.email, acct);
+    }
+  }
+}
+
+/** Stable per-browser device fingerprint from the guest secret (never stored raw). */
+function deviceIdFor(gs) {
+  if (typeof gs !== "string" || gs.length < 16 || gs.length > 64) return "";
+  return createHash("sha256").update(gs).digest("hex").slice(0, 16);
+}
+
+/** resetTokens: token -> { id, ts } — single-use password-reset links, 30 min. */
+const resetTokens = new Map();
+const RESET_TTL_MS = 30 * 60 * 1000;
+const MAX_RESET_TOKENS = 500;
+
+/*
+ * Outbound email (Resend HTTP API — one fetch, no SMTP). Without
+ * RESEND_API_KEY every send is a silent no-op, so the server runs fine in
+ * dev and on floors that never configure email; the account UI still works,
+ * only the letters don't go out. EMAIL_ECHO=1 is a test seam: sends are
+ * captured in memory and served at GET /debug/emails instead of leaving the
+ * machine. Never set it in production.
+ */
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const EMAIL_FROM = process.env.EMAIL_FROM || "FounderFloor <noreply@founderfloor.net>";
+// The From can be a no-reply address (no mailbox needed on the domain); set
+// EMAIL_REPLY_TO to a real inbox you read so a user who hits "reply" reaches
+// a human instead of the void.
+const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || "";
+const SITE_URL = (process.env.SITE_URL || "https://founderfloor.net").replace(/\/+$/, "");
+const EMAIL_ECHO = process.env.EMAIL_ECHO === "1";
+const echoedEmails = [];
+
+/*
+ * Abuse caps. A stranger can trigger mail to any address (register a throwaway
+ * account -> welcome mail; POST /auth/forgot -> reset mail), so two things must
+ * hold: no single inbox gets bombed, and junk mail can never starve the
+ * security mail that locks an intruder out. We therefore split the daily quota
+ * into two independent buckets:
+ *   - "courtesy" (welcome mail): its own daily ceiling. Flooding registrations
+ *     drains only this bucket.
+ *   - "critical" (reset links, sign-in alerts, password-changed, email-changed):
+ *     a separate, reserved daily ceiling that courtesy mail can never touch.
+ * Per-recipient hourly caps still apply per bucket so one inbox can't be bombed,
+ * but critical mail gets a roomier per-recipient allowance so an attacker
+ * spamming /auth/forgot at a victim can't use up the victim's own reset budget.
+ */
+const emailRecipientLog = new Map(); // `${bucket}|${email}` -> ts[] within the last hour
+const RECIPIENT_HOURLY = { courtesy: 4, critical: 10 };
+const DAILY_CEILING = { courtesy: 300, critical: 300 };
+const emailDay = { day: "", courtesy: 0, critical: 0 };
+
+function rollEmailDay() {
+  const day = new Date().toISOString().slice(0, 10);
+  if (emailDay.day !== day) {
+    emailDay.day = day;
+    emailDay.courtesy = 0;
+    emailDay.critical = 0;
+  }
+}
+
+/** Would a send be allowed right now, without consuming quota? */
+function emailQuotaAvailable(to, bucket) {
+  rollEmailDay();
+  if (emailDay[bucket] >= DAILY_CEILING[bucket]) return false;
+  const now = Date.now();
+  const recent = (emailRecipientLog.get(`${bucket}|${to}`) ?? []).filter((ts) => now - ts < 3600_000);
+  return recent.length < RECIPIENT_HOURLY[bucket];
+}
+
+function emailAllowed(to, bucket) {
+  if (!emailQuotaAvailable(to, bucket)) return false;
+  const now = Date.now();
+  const key = `${bucket}|${to}`;
+  const log = (emailRecipientLog.get(key) ?? []).filter((ts) => now - ts < 3600_000);
+  log.push(now);
+  emailRecipientLog.set(key, log);
+  if (emailRecipientLog.size > 4000) {
+    for (const [k, v] of emailRecipientLog) {
+      if (!v.some((ts) => now - ts < 3600_000)) emailRecipientLog.delete(k);
+    }
+  }
+  emailDay[bucket]++;
+  return true;
+}
+
+/**
+ * Fire-and-forget: callers never await delivery, a mail failure never fails a
+ * request. `bucket` is "courtesy" (welcome) or "critical" (everything an
+ * account owner must not miss); it decides which quota the send draws from.
+ */
+function sendEmail(to, subject, html, text, bucket = "critical") {
+  if (!emailAllowed(to, bucket)) return;
+  if (EMAIL_ECHO) {
+    echoedEmails.push({ to, subject, html, text, ts: Date.now() });
+    if (echoedEmails.length > 50) echoedEmails.shift();
+    return;
+  }
+  if (!RESEND_API_KEY || typeof fetch !== "function") return;
+  fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: EMAIL_FROM,
+      to: [to],
+      subject,
+      html,
+      text,
+      ...(EMAIL_REPLY_TO ? { reply_to: EMAIL_REPLY_TO } : {}),
+    }),
+  })
+    .then(async (res) => {
+      if (!res.ok) console.warn(`[email] resend ${res.status} for "${subject}"`);
+    })
+    .catch((err) => console.warn(`[email] send failed: ${err.message}`));
+}
+
+/** Shared shell: same paper/ink palette as the site, table-free, inline styles only. */
+function emailShell(heading, bodyHtml) {
+  return (
+    `<div style="background:#F2EFE7;padding:32px 16px;font-family:Georgia,'Times New Roman',serif;color:#23201A">` +
+    `<div style="max-width:520px;margin:0 auto;background:#FFFFFF;border:1px solid #E4DFD3;border-radius:8px;padding:28px">` +
+    `<p style="margin:0 0 4px;font-family:Courier,monospace;font-size:11px;letter-spacing:2px;color:#6F6A5E">FOUNDERFLOOR</p>` +
+    `<h1 style="margin:0 0 16px;font-size:22px">${heading}</h1>` +
+    bodyHtml +
+    `</div>` +
+    `<p style="max-width:520px;margin:12px auto 0;font-size:12px;color:#6F6A5E">` +
+    `We only email you about your account — no newsletters. ` +
+    `<a href="${SITE_URL}/about" style="color:#6F6A5E">Privacy</a></p>` +
+    `</div>`
+  );
+}
+
+const emailBtn = (href, label) =>
+  `<p style="margin:20px 0"><a href="${href}" style="background:#23201A;color:#F2EFE7;` +
+  `padding:10px 18px;border-radius:6px;text-decoration:none;font-size:14px">${label}</a></p>`;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+function sendWelcomeEmail(acct) {
+  if (!acct.email) return;
+  const name = esc(acct.name);
+  sendEmail(
+    acct.email,
+    "Welcome to FounderFloor",
+    emailShell(
+      `Welcome to the floor, ${name}`,
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Your account is live. ` +
+        `Your booth, connections, streaks and badges now follow you — sign in with this ` +
+        `email on any device and everything comes with you.</p>` +
+        `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">If a sign-in ever happens ` +
+        `from a browser we haven&#39;t seen before, we&#39;ll drop you a note here.</p>` +
+        emailBtn(SITE_URL + "/lobby", "Walk the floor"),
+      ),
+    `Welcome to FounderFloor, ${acct.name}!\n\nYour account is live: sign in with this email on any device and your booth, connections and progress come with you.\n\nWalk the floor: ${SITE_URL}/lobby`,
+    "courtesy",
+  );
+}
+
+function sendSigninAlertEmail(acct) {
+  if (!acct.email) return;
+  const when = new Date().toUTCString();
+  sendEmail(
+    acct.email,
+    "New sign-in to your FounderFloor account",
+    emailShell(
+      "New sign-in to your account",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Your account ` +
+        `<strong>${esc(acct.name)}</strong> was just signed in from a browser we ` +
+        `haven&#39;t seen before, on ${when}.</p>` +
+        `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">If this was you (new ` +
+        `phone, new laptop, cleared cookies), there&#39;s nothing to do.</p>` +
+        `<p style="margin:0;font-size:14px;line-height:1.6">If it wasn&#39;t you, reset ` +
+        `your password now — that signs every browser out:</p>` +
+        emailBtn(SITE_URL + "/profile", "Secure my account"),
+    ),
+    `Your FounderFloor account "${acct.name}" was signed in from a new browser on ${when}.\n\nIf this was you, ignore this. If not, reset your password at ${SITE_URL}/profile — that signs every browser out.`,
+  );
+}
+
+function sendResetEmail(acct, link) {
+  sendEmail(
+    acct.email,
+    "Reset your FounderFloor password",
+    emailShell(
+      "Reset your password",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Someone (hopefully you) ` +
+        `asked to reset the password for <strong>${esc(acct.name)}</strong>. The link below ` +
+        `works once and expires in 30 minutes.</p>` +
+        emailBtn(link, "Choose a new password") +
+        `<p style="margin:0;font-size:13px;color:#6F6A5E;line-height:1.6">Didn&#39;t ask? ` +
+        `Ignore this email — your password is unchanged and the link dies on its own.</p>`,
+    ),
+    `Reset your FounderFloor password (account "${acct.name}"):\n\n${link}\n\nThe link works once and expires in 30 minutes. If you didn't ask for this, ignore it — your password is unchanged.`,
+  );
+}
+
+function sendEmailChangedNotice(oldEmail, acct, newEmail) {
+  sendEmail(
+    oldEmail,
+    "The email on your FounderFloor account was changed",
+    emailShell(
+      "Your account's email was changed",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">The recovery email for ` +
+        `<strong>${esc(acct.name)}</strong> was just changed away from this address to ` +
+        `<strong>${esc(newEmail)}</strong>.</p>` +
+        `<p style="margin:0;font-size:14px;line-height:1.6">If that was you, no action is ` +
+        `needed. If it wasn&#39;t, reply to this email right away — your account may have been ` +
+        `taken over, and a human needs to hear from you.</p>`,
+    ),
+    `The recovery email for your FounderFloor account "${acct.name}" was just changed from this address to ${newEmail}.\n\nIf this wasn't you, reply to this email immediately — your account may have been taken over.`,
+  );
+}
+
+function sendPasswordChangedEmail(acct) {
+  if (!acct.email) return;
+  sendEmail(
+    acct.email,
+    "Your FounderFloor password was changed",
+    emailShell(
+      "Password changed",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">The password for ` +
+        `<strong>${esc(acct.name)}</strong> was just changed, and every signed-in browser ` +
+        `was signed out.</p>` +
+        `<p style="margin:0;font-size:14px;line-height:1.6">If this wasn&#39;t you, use ` +
+        `&ldquo;Forgot password&rdquo; on the profile page to take the account back, and ` +
+        `reply to this email so a human hears about it.</p>`,
+    ),
+    `The password for your FounderFloor account "${acct.name}" was just changed, and all sessions were signed out.\n\nIf this wasn't you, use "Forgot password" at ${SITE_URL}/profile to take the account back.`,
+  );
+}
 
 // Cost params are stored per account so they can be raised later without
 // breaking existing logins (older accounts keep the params they were hashed with).
@@ -356,7 +623,29 @@ function loadData() {
         a.kdf && Number.isInteger(a.kdf.N) && Number.isInteger(a.kdf.r) && Number.isInteger(a.kdf.p)
           ? { N: a.kdf.N, r: a.kdf.r, p: a.kdf.p }
           : { ...SCRYPT };
-      accounts.set(nameLower.slice(0, MAX_NAME_LEN), { id: a.id, name: a.name, salt: a.salt, hash: a.hash, kdf });
+      const acct = {
+        id: a.id,
+        name: a.name,
+        email: normalizeEmail(a.email),
+        salt: a.salt,
+        hash: a.hash,
+        kdf,
+        devices: Array.isArray(a.devices)
+          ? a.devices.filter((d) => typeof d === "string" && d.length === 16).slice(-MAX_DEVICES_PER_ACCOUNT)
+          : [],
+        created: typeof a.created === "number" ? a.created : 0,
+      };
+      accounts.set(nameLower.slice(0, MAX_NAME_LEN), acct);
+      indexAccount(acct);
+    }
+  }
+  if (parsed.resetTokens && typeof parsed.resetTokens === "object") {
+    const cutoff = Date.now() - RESET_TTL_MS;
+    for (const [tok, v] of Object.entries(parsed.resetTokens)) {
+      if (tok.length !== 64 || resetTokens.size >= MAX_RESET_TOKENS) continue;
+      if (v && typeof v === "object" && typeof v.id === "string" && typeof v.ts === "number" && v.ts > cutoff) {
+        resetTokens.set(tok, { id: v.id, ts: v.ts });
+      }
     }
   }
   if (parsed.tokens && typeof parsed.tokens === "object") {
@@ -480,6 +769,7 @@ function saveNow() {
     dms: Object.fromEntries(dms),
     accounts: Object.fromEntries(accounts),
     tokens: Object.fromEntries(tokens),
+    resetTokens: Object.fromEntries(resetTokens),
     guestSecrets: Object.fromEntries(guestSecrets),
     registry: Object.fromEntries(registry),
     profileStates: Object.fromEntries(profileStates),
@@ -765,6 +1055,19 @@ function pruneCredentials() {
       changed = true;
     }
   }
+  // Expired reset tokens: without this sweep they linger until redeemed or
+  // reissued, and 500 abandoned links would wedge the MAX_RESET_TOKENS gate,
+  // silently disabling password reset for everyone.
+  for (const [tok, v] of resetTokens) {
+    if (now - v.ts > RESET_TTL_MS) {
+      resetTokens.delete(tok);
+      changed = true;
+    }
+  }
+  // Hourly email logs age out entirely; drop empties so the map can't grow.
+  for (const [k, v] of emailRecipientLog) {
+    if (!v.some((ts) => now - ts < 3600_000)) emailRecipientLog.delete(k);
+  }
   if (changed) scheduleSave();
 }
 
@@ -922,9 +1225,14 @@ async function handleAuthPost(req, res, pathname) {
 
   if (pathname === "/auth/register") {
     const name = sanitizeStr(body.name, MAX_NAME_LEN);
+    const email = normalizeEmail(body.email);
     const password = typeof body.password === "string" ? body.password : "";
+    if (!email) {
+      sendJson(res, { error: "that email doesn't look right — check for typos" });
+      return;
+    }
     if (name.length < 3) {
-      sendJson(res, { error: "name needs at least 3 characters" });
+      sendJson(res, { error: "display name needs at least 3 characters" });
       return;
     }
     if (password.length < 6) {
@@ -932,8 +1240,15 @@ async function handleAuthPost(req, res, pathname) {
       return;
     }
     const key = name.toLowerCase();
-    if (accounts.has(key)) {
-      sendJson(res, { error: "that name is taken" });
+    // One generic message for both collisions. A distinct "that email is
+    // taken" would let a stranger probe which addresses have accounts (the
+    // leak /auth/forgot deliberately avoids); the same wording for a name or
+    // email clash closes that oracle. (Names are public on the floor, so a
+    // legit name clash costs the user only a second guess.) A fully
+    // enumeration-proof signup — verify the address before creating anything —
+    // is a post-beta item.
+    if (accounts.has(key) || accountsByEmail.has(email)) {
+      sendJson(res, { error: "that email or display name is already in use — try signing in instead" });
       return;
     }
     if (accounts.size >= MAX_ACCOUNTS) {
@@ -941,38 +1256,63 @@ async function handleAuthPost(req, res, pathname) {
       return;
     }
     const salt = randomBytes(16).toString("hex");
+    const device = deviceIdFor(body.gs);
     const acct = {
       id: `${ACCT_PREFIX}${randomUUID()}`,
       name,
+      email,
       salt,
       hash: hashPassword(password, salt).toString("hex"),
       kdf: { ...SCRYPT },
+      devices: device ? [device] : [],
+      created: Date.now(),
     };
     accounts.set(key, acct);
+    indexAccount(acct);
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
     scheduleSave();
     console.log(`[auth] register name="${name}" id=${acct.id}`);
-    sendJson(res, { id: acct.id, name: acct.name, token });
+    sendWelcomeEmail(acct);
+    sendJson(res, { id: acct.id, name: acct.name, email: acct.email, token });
     return;
   }
 
   if (pathname === "/auth/login") {
+    const email = normalizeEmail(body.email);
     const name = sanitizeStr(body.name, MAX_NAME_LEN);
+    // Try email first, then fall back to a display-name match. The client
+    // sends both fields, so a legacy account whose *name* happens to contain
+    // "@" (names only strip control chars) still resolves by name instead of
+    // being misrouted to a doomed email lookup and locked out.
+    const acct =
+      (email ? accountsByEmail.get(email) : undefined) ??
+      (name ? accounts.get(name.toLowerCase()) : undefined);
     const password = typeof body.password === "string" ? body.password : "";
-    const acct = accounts.get(name.toLowerCase());
-    // Constant-shape compare either way, so login can't probe for names.
+    // Constant-shape compare either way, so login can't probe for accounts.
     const salt = acct?.salt ?? "0".repeat(32);
     const expected = Buffer.from(acct?.hash ?? "0".repeat(64), "hex");
     const got = hashPassword(password, salt, acct?.kdf ?? SCRYPT);
     if (!acct || expected.length !== got.length || !timingSafeEqual(expected, got)) {
-      sendJson(res, { error: "wrong name or password" });
+      sendJson(res, { error: "wrong email or password" });
       return;
     }
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
+    // Unrecognized browser? Tell the owner. The very first sign-in of a
+    // legacy account (no devices recorded yet) also lands here — that's a
+    // feature, it announces the alerts are on.
+    const device = deviceIdFor(body.gs);
+    if (!Array.isArray(acct.devices)) acct.devices = [];
+    if (!device || !acct.devices.includes(device)) {
+      sendSigninAlertEmail(acct);
+      if (device) {
+        acct.devices.push(device);
+        if (acct.devices.length > MAX_DEVICES_PER_ACCOUNT) acct.devices.shift();
+      }
+    }
     scheduleSave();
-    sendJson(res, { id: acct.id, name: acct.name, token });
+    sendJson(res, { id: acct.id, name: acct.name, email: acct.email ?? "", token });
     return;
   }
 
@@ -980,6 +1320,123 @@ async function handleAuthPost(req, res, pathname) {
     const token = typeof body.token === "string" ? body.token : "";
     if (tokens.delete(token)) scheduleSave();
     sendJson(res, { ok: true });
+    return;
+  }
+
+  if (pathname === "/auth/forgot") {
+    const email = normalizeEmail(body.email);
+    // Always the same answer — this route must not reveal which emails exist.
+    sendJson(res, { ok: true });
+    const acct = email ? accountsByEmail.get(email) : undefined;
+    if (!acct || !acct.email) return;
+    // If we can't actually deliver a reset email this moment (an attacker has
+    // spammed /auth/forgot at this address and used up its hourly critical
+    // budget, or the daily ceiling is hit), leave the existing token untouched
+    // and send nothing. Rotating it here would mint a fresh token, invalidate
+    // the last one the owner actually received, and then drop the new email —
+    // stranding the victim with only dead links.
+    if (!emailQuotaAvailable(acct.email, "critical")) return;
+    // One outstanding link per account: a new request invalidates the old.
+    for (const [tok, v] of resetTokens) {
+      if (v.id === acct.id) resetTokens.delete(tok);
+    }
+    if (resetTokens.size >= MAX_RESET_TOKENS) return;
+    const token = randomBytes(32).toString("hex");
+    resetTokens.set(token, { id: acct.id, ts: Date.now() });
+    scheduleSave();
+    sendResetEmail(acct, `${SITE_URL}/reset?token=${token}`);
+    return;
+  }
+
+  if (pathname === "/auth/reset") {
+    const token = typeof body.token === "string" ? body.token : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const entry = resetTokens.get(token);
+    if (entry) resetTokens.delete(token); // single-use, even on a weak password
+    if (!entry || Date.now() - entry.ts > RESET_TTL_MS) {
+      sendJson(res, { error: "that reset link has expired or was already used — request a fresh one" });
+      return;
+    }
+    if (password.length < 6) {
+      sendJson(res, { error: "password needs at least 6 characters" });
+      return;
+    }
+    const acct = accountsById.get(entry.id);
+    if (!acct) {
+      sendJson(res, { error: "that account no longer exists" });
+      return;
+    }
+    const salt = randomBytes(16).toString("hex");
+    acct.salt = salt;
+    acct.hash = hashPassword(password, salt).toString("hex");
+    acct.kdf = { ...SCRYPT };
+    // The point of a reset is locking intruders out: kill every session.
+    for (const [tok, v] of tokens) {
+      if (v.id === acct.id) tokens.delete(tok);
+    }
+    const fresh = randomBytes(32).toString("hex");
+    tokens.set(fresh, { id: acct.id, ts: Date.now() });
+    const device = deviceIdFor(body.gs);
+    if (!Array.isArray(acct.devices)) acct.devices = [];
+    if (device && !acct.devices.includes(device)) acct.devices.push(device);
+    // Flush now, not on the 2s debounce: a crash in that window would resurrect
+    // the just-used reset token and the sessions we just killed, undoing both
+    // the single-use and the lock-out-intruders guarantees.
+    saveNow();
+    sendPasswordChangedEmail(acct);
+    sendJson(res, { id: acct.id, name: acct.name, email: acct.email ?? "", token: fresh });
+    return;
+  }
+
+  // Pre-email accounts attach an address here (also allows correcting one).
+  if (pathname === "/auth/set-email") {
+    const id = typeof body.id === "string" ? body.id : "";
+    const token = typeof body.token === "string" ? body.token : "";
+    if (!verifyToken(token, id)) {
+      sendJson(res, { error: "sign in again to change your email" });
+      return;
+    }
+    const email = normalizeEmail(body.email);
+    if (!email) {
+      sendJson(res, { error: "that email doesn't look right — check for typos" });
+      return;
+    }
+    const existing = accountsByEmail.get(email);
+    const acct = accountsById.get(id);
+    if (!acct) {
+      sendJson(res, { error: "that account no longer exists" });
+      return;
+    }
+    if (existing && existing.id !== id) {
+      sendJson(res, { error: "that email is already on another account" });
+      return;
+    }
+    if (acct.email === email) {
+      sendJson(res, { ok: true, email }); // no-op: already this address
+      return;
+    }
+    // Changing (not just adding) the recovery address is a takeover lever if a
+    // session token leaks, so re-prove the password before rebinding it. Adding
+    // a first email needs no password — there's nothing to protect yet.
+    const oldEmail = acct.email;
+    if (oldEmail) {
+      const password = typeof body.password === "string" ? body.password : "";
+      const got = hashPassword(password, acct.salt, acct.kdf);
+      const expected = Buffer.from(acct.hash, "hex");
+      if (expected.length !== got.length || !timingSafeEqual(expected, got)) {
+        sendJson(res, { error: "enter your current password to change your email", needPassword: true });
+        return;
+      }
+      accountsByEmail.delete(oldEmail);
+    }
+    acct.email = email;
+    accountsByEmail.set(email, acct);
+    scheduleSave();
+    // Tell the OLD address it lost the account (its owner's tripwire), and the
+    // new one that it's now linked.
+    if (oldEmail) sendEmailChangedNotice(oldEmail, acct, email);
+    sendWelcomeEmail(acct);
+    sendJson(res, { ok: true, email });
     return;
   }
 
@@ -1187,11 +1644,26 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Test seam only: exists solely when EMAIL_ECHO=1 (never in production),
+  // so E2E tests can read the mail that would have been sent.
+  if (EMAIL_ECHO && req.method === "GET" && url.pathname === "/debug/emails") {
+    sendJson(res, { emails: echoedEmails });
+    return;
+  }
+
   // Uptime monitoring target: cheap, no auth, no data.
   if (req.method === "GET" && url.pathname === "/health") {
     let online = 0;
     for (const room of rooms.values()) online += room.size;
-    sendJson(res, { ok: true, online, uptimeSec: Math.floor(process.uptime()) });
+    // emailLive lets the account UI tell the truth about whether reset/alert
+    // mail can actually be sent, instead of promising letters a server with no
+    // RESEND_API_KEY will silently drop.
+    sendJson(res, {
+      ok: true,
+      online,
+      uptimeSec: Math.floor(process.uptime()),
+      emailLive: EMAIL_ECHO || !!RESEND_API_KEY,
+    });
     return;
   }
 

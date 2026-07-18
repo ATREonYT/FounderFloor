@@ -74,11 +74,15 @@ export default function AboutPage() {
         </p>
         <p>
           <strong>Accounts are optional.</strong> If you make one, the server
-          stores your account name and a salted scrypt hash of your password —
-          never the password itself. Sessions expire after 30 days of disuse.
-          Guests get a browser-held secret that stops anyone else from
-          claiming their identity; no email, no tracking pixels, no analytics,
-          no third-party anything.
+          stores your email address, display name, and a salted scrypt hash
+          of your password — never the password itself. Sessions expire after
+          30 days of disuse. Your email is used for exactly three things:
+          password-reset links, a heads-up when your account signs in from a
+          new browser, and a welcome note — no newsletters, and it is never
+          shown to other visitors. Guests get a browser-held secret that
+          stops anyone else from claiming their identity; no tracking pixels,
+          no analytics, no third-party anything beyond the service that
+          delivers those emails.
         </p>
       </Section>
 

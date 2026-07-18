@@ -448,6 +448,11 @@ export default function LandingPage() {
                   <span className="text-ink">Smooth on any machine</span> —
                   the floor now tunes its render resolution to your hardware.
                 </li>
+                <li>
+                  <span className="text-ink">Real email accounts</span> —
+                  sign in with your email, reset a forgotten password, and
+                  get an alert if your account signs in somewhere new.
+                </li>
               </ul>
             </div>
             <div className="panel p-6">
