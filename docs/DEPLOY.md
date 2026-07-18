@@ -2,8 +2,8 @@
 
 Two pieces run in production:
 
-1. **The web app** (Next.js, `expo/`) — deploy to Vercel (or any Node host).
-2. **The floor server** (`expo/server/index.mjs`) — one Node process on a
+1. **The web app** (Next.js, the repo root) — deploy to Vercel (or any Node host).
+2. **The floor server** (`server/index.mjs`) — one Node process on a
    small VPS. It owns the WebSocket rooms, the social graph, accounts,
    cross-device state, and `floor-data.json`.
 
@@ -23,8 +23,8 @@ sudo useradd -r -m -s /usr/sbin/nologin founderfloor
 # copy the server (only two files matter: server/index.mjs and package.json
 # for the "ws" dependency)
 sudo -u founderfloor mkdir -p /home/founderfloor/app/server
-# scp expo/server/index.mjs -> /home/founderfloor/app/server/
-# scp expo/package.json     -> /home/founderfloor/app/
+# scp server/index.mjs -> /home/founderfloor/app/server/
+# scp package.json     -> /home/founderfloor/app/
 cd /home/founderfloor/app && sudo -u founderfloor npm install ws
 ```
 
@@ -83,7 +83,7 @@ proxied out of the box.
 
 ## 2. The web app (Vercel)
 
-- Import the repo in Vercel, set the project root to `expo/`.
+- Import the repo in Vercel; the project root is the repo root (the default).
 - Environment variables:
 
 | Variable | Value |
