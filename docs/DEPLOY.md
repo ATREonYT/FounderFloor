@@ -44,7 +44,9 @@ Environment=PORT_WS=3001
 # "Email" section below. Without these the server runs fine; it just
 # sends nothing.
 Environment=RESEND_API_KEY=re_xxxxxxxxx
-Environment=EMAIL_FROM=FounderFloor <noreply@founderfloor.net>
+# NB the quotes: systemd splits unquoted Environment= lines on spaces, which
+# would silently truncate EMAIL_FROM to just "FounderFloor".
+Environment="EMAIL_FROM=FounderFloor <noreply@founderfloor.net>"
 Environment=EMAIL_REPLY_TO=you@yourworkmail.com
 Environment=SITE_URL=https://founderfloor.net
 Restart=always
