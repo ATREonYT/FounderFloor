@@ -1231,8 +1231,8 @@ async function handleAuthPost(req, res, pathname) {
       sendJson(res, { error: "that email doesn't look right — check for typos" });
       return;
     }
-    if (name.length < 3) {
-      sendJson(res, { error: "display name needs at least 3 characters" });
+    if (name.length < 2) {
+      sendJson(res, { error: "display name needs at least 2 characters" });
       return;
     }
     if (password.length < 6) {

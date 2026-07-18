@@ -266,7 +266,7 @@ export default function AccountCard({
             <button
               type="submit"
               disabled={busy || !email.includes("@")}
-              className="btn-press rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? "…" : "Email me a reset link"}
             </button>
@@ -291,6 +291,16 @@ export default function AccountCard({
       </div>
     );
   }
+
+  // What still blocks the submit button, in the user's words.
+  const missing: string[] = [];
+  if (mode === "register") {
+    if (!email.includes("@")) missing.push("your email");
+    if (name.trim().length < 2) missing.push("a display name (2+ characters)");
+  } else if (!email.trim()) {
+    missing.push("your email");
+  }
+  if (password.length < 6) missing.push("a password of 6+ characters");
 
   return (
     <div className="flex flex-col gap-3">
@@ -347,13 +357,13 @@ export default function AccountCard({
           <Field
             id="acct-name"
             label="Display name"
-            hint="What other founders see on the floor. 3–24 characters."
+            hint="What other founders see on the floor. 2–24 characters."
           >
             <input
               id="acct-name"
               type="text"
               value={name}
-              minLength={3}
+              minLength={2}
               maxLength={24}
               onChange={(e) => setName(e.target.value)}
               autoComplete="nickname"
@@ -373,15 +383,11 @@ export default function AccountCard({
             autoComplete={mode === "register" ? "new-password" : "current-password"}
           />
         </Field>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
-            disabled={
-              busy ||
-              password.length < 6 ||
-              (mode === "register" ? !email.includes("@") || name.trim().length < 3 : !email.trim())
-            }
-            className="btn-press rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={busy || missing.length > 0}
+            className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "…" : mode === "register" ? "Create free account" : "Sign in"}
           </button>
@@ -392,12 +398,16 @@ export default function AccountCard({
                 setMode("forgot");
                 setError(null);
               }}
-              className="micro text-muted underline hover:text-ink"
+              className="btn-press rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-ink hover:text-ink"
             >
-              Forgot password?
+              Reset password
             </button>
           )}
         </div>
+        {/* A grey button with no reason is a dead end — say what's missing. */}
+        {missing.length > 0 && !busy && (
+          <p className="text-xs text-muted">Still needed: {missing.join(", ")}.</p>
+        )}
       </form>
       {error && (
         <p className="text-sm text-accent" role="alert">

@@ -134,7 +134,7 @@ export default function ResetPage() {
           <button
             type="submit"
             disabled={busy || password.length < 6 || confirm.length < 6}
-            className="btn-press w-fit rounded-md bg-ink px-4 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-press w-fit rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "…" : "Set new password"}
           </button>
