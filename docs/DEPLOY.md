@@ -49,6 +49,9 @@ Environment=RESEND_API_KEY=re_xxxxxxxxx
 Environment="EMAIL_FROM=FounderFloor <noreply@founderfloor.net>"
 Environment=EMAIL_REPLY_TO=you@yourworkmail.com
 Environment=SITE_URL=https://founderfloor.net
+# Optional: beta feedback + abuse reports also land in this inbox
+# (they're always stored in floor-data.json either way).
+Environment=OPERATOR_EMAIL=you@yourworkmail.com
 Restart=always
 RestartSec=3
 

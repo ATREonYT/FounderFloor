@@ -233,8 +233,31 @@ const echoedEmails = [];
  * spamming /auth/forgot at a victim can't use up the victim's own reset budget.
  */
 const emailRecipientLog = new Map(); // `${bucket}|${email}` -> ts[] within the last hour
-const RECIPIENT_HOURLY = { courtesy: 4, critical: 10 };
-const DAILY_CEILING = { courtesy: 300, critical: 300 };
+const RECIPIENT_HOURLY = { courtesy: 4, critical: 10, operator: 20 };
+const DAILY_CEILING = { courtesy: 300, critical: 300, operator: 100 };
+
+/**
+ * Where beta feedback and abuse reports get mailed (they're stored in
+ * floor-data.json regardless — the email is the notification, the file is
+ * the record). Unset = no operator mail. Uses its own "operator" quota
+ * bucket so a feedback flood can't starve users' reset/alert mail.
+ */
+const OPERATOR_EMAIL = normalizeEmail(process.env.OPERATOR_EMAIL || "");
+
+function sendOperatorEmail(subject, title, rows, footer) {
+  if (!OPERATOR_EMAIL) return;
+  const bodyHtml =
+    rows
+      .map(
+        ([k, v]) =>
+          `<p style="margin:0 0 8px;font-size:14px;line-height:1.6"><strong>${esc(k)}:</strong> ${esc(v)}</p>`,
+      )
+      .join("") +
+    `<p style="margin:12px 0 0;font-size:13px;color:#6F6A5E;line-height:1.6">${esc(footer)}</p>`;
+  const text =
+    rows.map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\n${footer}`;
+  sendEmail(OPERATOR_EMAIL, subject, emailShell(title, bodyHtml), text, "operator");
+}
 const emailDay = { day: "", courtesy: 0, critical: 0 };
 
 function rollEmailDay() {
@@ -1680,14 +1703,25 @@ const server = createServer((req, res) => {
         notFound(res);
         return;
       }
-      feedback.push({
+      const entry = {
         ts: Date.now(),
         from: sanitizeStr(body.from, MAX_NAME_LEN) || "anonymous",
         page: sanitizeStr(body.page, 100),
         text,
-      });
+      };
+      feedback.push(entry);
       if (feedback.length > MAX_FEEDBACK) feedback = feedback.slice(-MAX_FEEDBACK);
       scheduleSave();
+      sendOperatorEmail(
+        `Floor feedback from ${entry.from}`,
+        "New beta feedback",
+        [
+          ["From", entry.from],
+          ["Page", entry.page || "(unknown)"],
+          ["Feedback", entry.text],
+        ],
+        "Also stored in floor-data.json (the `feedback` array).",
+      );
       sendJson(res, { ok: true });
     })();
     return;
@@ -2215,17 +2249,29 @@ wss.on("connection", (ws, req) => {
     lastReportAt = now;
     const targetId = sanitizeStr(msg.targetId, MAX_ID_LEN);
     if (!targetId) return;
-    reports.push({
+    const report = {
       ts: now,
       floor: floorId,
       fromId: client.rawId,
       fromName: client.name,
       targetId,
       reason: sanitizeStr(msg.reason, 200) || "unspecified",
-    });
+    };
+    reports.push(report);
     if (reports.length > MAX_REPORTS) reports = reports.slice(-MAX_REPORTS);
     scheduleSave();
     console.log(`[report] floor=${floorId} from="${client.name}" target=${targetId}`);
+    sendOperatorEmail(
+      `Abuse report on floor ${floorId}`,
+      "New abuse report",
+      [
+        ["Floor", floorId],
+        ["Reported by", `${report.fromName} (${report.fromId})`],
+        ["Reported player", targetId],
+        ["Reason", report.reason],
+      ],
+      "Also stored in floor-data.json (the `reports` array). Review by hand.",
+    );
   }
 
   ws.on("close", () => {
