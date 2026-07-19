@@ -44,9 +44,11 @@ export default function AboutPage() {
         <p>
           <strong>Everyone here is real.</strong> Every stand on every floor
           was set up by an actual person, and every avatar walking around is a
-          live visitor. There are no bots, no fake booths, no seeded
-          &ldquo;example&rdquo; startups. If a floor looks empty, it&rsquo;s
-          because it is — claim a spot and change that.
+          live visitor. There are no fake booths and no seeded
+          &ldquo;example&rdquo; startups. The one exception is Pixel, the
+          guide robot in the Tutorial Hall — clearly labeled as a bot, and it
+          never leaves that room. If a floor looks empty, it&rsquo;s because
+          it is — claim a spot and change that.
         </p>
         <p>
           <strong>What startups say about themselves is theirs.</strong>{" "}

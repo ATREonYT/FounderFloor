@@ -210,7 +210,7 @@ export default function LandingPage() {
             booths; the miniatures below are to scale.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {FLOORS.map((floor) => {
+            {FLOORS.filter((f) => !f.hidden).map((floor) => {
               const locked = TIER_ORDER[floor.tier] > TIER_ORDER.free;
               return (
                 <article
@@ -351,7 +351,7 @@ export default function LandingPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {PRICING.map(({ tier, blurb }) => {
               const unlocked = FLOORS.filter(
-                (f) => TIER_ORDER[f.tier] <= TIER_ORDER[tier],
+                (f) => !f.hidden && TIER_ORDER[f.tier] <= TIER_ORDER[tier],
               );
               const [amount, per] = TIER_PRICE[tier].split("/");
               return (

@@ -12,6 +12,103 @@ import type { Startup } from "@/lib/types";
 
 export const STARTUPS: Record<string, Startup> = {
   // ======================================================================
+  // TUTORIAL HALL — the one and only non-human on the site, and it says so.
+  // Pixel staffs the practice booth and answers questions about how
+  // FounderFloor works. Its dialogue is the tutorial's voice.
+  // ======================================================================
+
+  "tutorial-guide": {
+    id: "tutorial-guide",
+    name: "The Front Desk",
+    oneLiner: "The tutorial booth. Staffed by Pixel, a robot who loves questions.",
+    pitch:
+      "This is the practice booth — the only stand on the whole site not run by a real person. I'm Pixel, the guide robot. Talk to me exactly like you'd talk to a founder: type a question, I answer. When you're done practicing, everything out there is real people.",
+    founder: "Pixel (guide bot)",
+    founderLook: { skin: 5, outfit: 4, hair: 0 },
+    category: "Tutorial",
+    goal: "Teach every newcomer the ropes",
+    goalProgress: 1,
+    verifiedRevenue: 0,
+    seekingCofounder: false,
+    booth: {
+      carpet: "#57829B",
+      banner: "#3B5B92",
+      sign: "FRONT DESK",
+      glyph: "star",
+      trim: "dots",
+    },
+    dialogue: {
+      greeting:
+        "Beep — hi! I'm Pixel, the guide robot, and this is the practice booth. Ask me anything about how this place works: try \"booth\", \"connect\", \"badges\", \"floors\", or \"chat\". Asking questions at booths is the whole game — you're already doing it.",
+      topics: [
+        {
+          keywords: ["booth", "stand", "claim", "spot", "set up", "setup"],
+          reply:
+            "Your own stand! Go to Profile, fill in your startup's name and pitch, pick your colors, banner trim and sign — then walk up to any OPEN SPOT on a real floor and claim it. It stays up for 7 days even while you're away, collecting guestbook notes and connection requests.",
+        },
+        {
+          keywords: ["connect", "connection", "network", "friend", "request"],
+          reply:
+            "Walk up to any booth or person and hit Connect. If they accept, you're mutuals: you can message each other from anywhere on the site — even from the menus — and they land in your Connections tab. Try it on me! There's a Connect button on my booth card right now.",
+        },
+        {
+          keywords: ["badge", "quest", "reward", "title"],
+          reply:
+            "Badges are earned, never bought: finish this tutorial, chat with founders, sign guestbooks, claim a stand, keep a visit streak. Your Profile has a Badge book showing every badge and how to get it. Finishing this tutorial earns your first one.",
+        },
+        {
+          keywords: ["floor", "hall", "server", "room", "lobby", "where"],
+          reply:
+            "Floors are the halls of the expo — Main Hall is the big free one, Indie Alley is cozier, and more open as they fill. Every stand out there was set up by a real person; there are no fake booths. Pick floors from the Floors tab up top.",
+        },
+        {
+          keywords: ["chat", "talk", "message", "dm", "say"],
+          reply:
+            "Three ways to talk: floor chat (everyone in the hall sees it), booth chats like this one, and direct messages with your connections — those work site-wide, with a little pixel-mail ping when something arrives. Press Enter on a floor to start typing.",
+        },
+        {
+          keywords: ["emote", "react", "reaction", "wave", "1"],
+          reply:
+            "Press 1–5 (or the buttons at the bottom) to react — wave, laugh, clap, heart, question mark. It pops over your head for everyone to see. Keys 6–8 are bonus reactions you unlock through quests. Go on, wave at me. I'll wait.",
+        },
+        {
+          keywords: ["guestbook", "sign", "note"],
+          reply:
+            "Every stand has a guestbook. If the founder's away, it's how you leave your mark — they read it when they're back, with your name attached. Signing a couple of guestbooks also earns a badge.",
+        },
+        {
+          keywords: ["account", "email", "password", "sign in", "login", "register"],
+          reply:
+            "An account (free, on your Profile) saves everything — booth, connections, streaks — and follows you to any device. You get emails only for the essentials: welcome, password reset, and a heads-up if your account signs in from a new browser. No newsletters, promise.",
+        },
+        {
+          keywords: ["price", "pay", "cost", "pro", "member", "premium", "money"],
+          reply:
+            "Walking, talking, connecting, and having a stand are free forever. Pro and Founder+ memberships buy visibility — priority in the directory, member tags, gold trim on your stand — never access. The Profile page has the details.",
+        },
+        {
+          keywords: ["directory", "search", "find", "category"],
+          reply:
+            "The Directory lists every real startup on the floors, searchable and filterable by whatever categories founders typed. Set up your own stand and you appear there automatically. It's how people find you when they're not walking the halls.",
+        },
+        {
+          keywords: ["robot", "bot", "real", "human", "fake", "ai"],
+          reply:
+            "Fair question! I'm the only robot here — clearly labeled, and I never leave this hall. Everyone else you'll ever meet on the floors is a real person. That's the whole point of the place.",
+        },
+        {
+          keywords: ["bye", "done", "thanks", "thank"],
+          reply:
+            "Beep! Go claim a spot before the good ones are gone. And come back any time — I literally cannot leave this booth.",
+        },
+      ],
+      fallback:
+        "Hmm, that one's outside my script — I'm a simple robot. Try asking about: booth, connect, badges, floors, chat, reactions, guestbook, account, or pricing.",
+      connectReply:
+        "Connection accepted — beep! That's exactly how it works with real founders too, except they get to say no. You're ready for the real floors.",
+    },
+  },
+  // ======================================================================
   // MAIN HALL — the free floor, mixed $0-$3k
   // ======================================================================
 

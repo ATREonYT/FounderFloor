@@ -135,8 +135,44 @@ export default function LobbyPage() {
         claims={state.claims}
       />
 
+      {/* Tutorial entry: loud for newcomers, a quiet replay link for grads */}
+      {!state.badges.includes("tutorial-grad") ? (
+        <section
+          aria-label="Tutorial"
+          className="panel mt-6 flex flex-wrap items-center justify-between gap-4 border-accent/30 bg-accent-soft/30 p-5"
+        >
+          <div>
+            <h2 className="font-display text-lg">New here? Take the tutorial round.</h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              Three minutes in a quiet practice hall with Pixel, our guide
+              robot — walk, talk, react, connect. You leave knowing
+              everything, with a badge to prove it.
+            </p>
+          </div>
+          <Link
+            href="/floor/tutorial-hall"
+            onClick={() => actions.resetTutorial()}
+            className="btn-press rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent/90"
+          >
+            Start tutorial
+          </Link>
+        </section>
+      ) : (
+        <p className="micro mt-6 text-muted">
+          Badge earned.{" "}
+          <Link
+            href="/floor/tutorial-hall"
+            onClick={() => actions.resetTutorial()}
+            className="underline hover:text-ink"
+          >
+            Replay the tutorial
+          </Link>{" "}
+          any time.
+        </p>
+      )}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {FLOORS.map((floor) => {
+        {FLOORS.filter((f) => !f.hidden).map((floor) => {
           const locked = TIER_ORDER[state.sub] < TIER_ORDER[floor.tier];
           return (
             <article

@@ -5,8 +5,10 @@
  * 4x3 zone that faces DOWN — banner wall (row 0), founder lane (row 1),
  * counter (row 2) — plus a 1-tile carpet apron rendered below the zone.
  *
- * Every spot on every floor is claimable by a real founder — there are no
- * seeded demo booths (startupIds stays as a mechanism but ships empty).
+ * Every spot on every public floor is claimable by a real founder — there
+ * are no seeded demo booths (startupIds stays as a mechanism but ships
+ * empty). The one exception is the hidden Tutorial Hall, staffed by a
+ * clearly-labeled guide bot.
  *
  * Layout rules kept throughout:
  *   - >= 2 clear tiles between zones horizontally (gaps here are 4-5 tiles)
@@ -137,3 +139,28 @@ export const FLOORS: FloorDef[] = [
 export function floorById(id: string): FloorDef | undefined {
   return FLOORS.find((f) => f.id === id);
 }
+
+// The practice hall: hidden from the lobby list, reached via "Start the
+// tutorial". One booth staffed by the guide bot, one open spot to look at.
+// 22x14: zones at x=4 (4-7) and x=13 (13-16), rows 3-5, apron 6, walls at
+// 0/21 and 0/13 — same spacing rules as the public halls.
+FLOORS.push({
+  id: "tutorial-hall",
+  name: "Tutorial Hall",
+  tagline: "A quiet practice hall with a patient robot. Learn the ropes, leave with a badge.",
+  tier: "free",
+  width: 22,
+  height: 14,
+  theme: {
+    floorA: "#D9D6CB",
+    floorB: "#D1CEC1",
+    wall: "#7E8578",
+    trim: "#5E665E",
+  },
+  boothSpots: [
+    { x: 4, y: 3 },
+    { x: 13, y: 3 },
+  ],
+  startupIds: ["tutorial-guide"],
+  hidden: true,
+});

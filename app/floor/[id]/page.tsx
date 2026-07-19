@@ -120,6 +120,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [mailToast, setMailToast] = useState<MailToastData | null>(null);
   /** Incremented on each quest completion — triggers the confetti burst. */
   const [burst, setBurst] = useState(0);
+  const [gradPanel, setGradPanel] = useState(false);
 
   // ---- refs (stable across the game's lifetime) ----
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -583,14 +584,21 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     showToast("Demo Night, live, and you're in the room. Badge earned.");
   }, [actions, showToast]);
 
-  // Tour finishes itself when the last step lands.
+  // Tour finishes itself when the last step lands. Completing it earns the
+  // graduate badge; in the Tutorial Hall that gets the full ceremony.
   useEffect(() => {
     if (!ready || state.tutorialDone) return;
     if (state.onboarding.length >= ONBOARDING_STEPS.length) {
       actions.setTutorialDone(true);
-      showToast("Tour done. You look like a regular already.");
+      actions.grantBadge("tutorial-grad");
+      setBurst((b) => b + 1);
+      if (floor?.id === "tutorial-hall") {
+        setGradPanel(true);
+      } else {
+        showToast("Tour done — Tutorial graduate badge earned.");
+      }
     }
-  }, [ready, state.onboarding, state.tutorialDone, actions, showToast]);
+  }, [ready, state.onboarding, state.tutorialDone, actions, showToast, floor?.id]);
 
   // Quest deed: floors visited.
   useEffect(() => {
@@ -1267,6 +1275,46 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* hover card — desktop pointer only by nature */}
       <HoverCard target={hover} startups={startups} />
+
+      {/* tutorial graduation: the ceremony at the end of the practice round */}
+      {gradPanel && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-ink/40 p-4">
+          <div
+            role="dialog"
+            aria-label="Tutorial complete"
+            className="panel anim-in flex w-[380px] max-w-full flex-col gap-3 p-6 text-center shadow-card"
+          >
+            <p className="micro text-verify">BADGE EARNED</p>
+            <h2 className="font-display text-2xl">Tutorial graduate</h2>
+            <p className="text-sm leading-relaxed text-muted">
+              That&rsquo;s everything: walking, talking, reacting, connecting.
+              The real floors work exactly the same — except everyone out
+              there is a real founder. Two good next moves:
+            </p>
+            <div className="mt-1 flex flex-col gap-2">
+              <Link
+                href="/profile"
+                className="btn-press rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90"
+              >
+                Set up your own booth
+              </Link>
+              <Link
+                href="/lobby"
+                className="btn-press rounded-md border border-line px-4 py-2.5 text-sm text-muted hover:border-ink hover:text-ink"
+              >
+                Walk the real floors
+              </Link>
+            </div>
+            <button
+              type="button"
+              onClick={() => setGradPanel(false)}
+              className="micro text-muted underline hover:text-ink"
+            >
+              Stay and practice a bit more
+            </button>
+          </div>
+        </div>
+      )}
 
       <ConfettiBurst burstId={burst} />
       <Toast toast={toast} />

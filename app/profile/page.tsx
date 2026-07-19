@@ -68,55 +68,76 @@ const TIER_BLURB: Record<SubTier, string> = {
   founder: "Every floor, velvet rope included.",
 };
 
-const BADGE_META: Record<string, { name: string; blurb: string; glyph: GlyphId }> = {
+/**
+ * The full badge catalog — every badge that exists, with how to earn it.
+ * The Badge book renders all of them (earned bright, locked gray), so this
+ * doubles as the game's public promise of what's earnable.
+ */
+const BADGE_META: Record<string, { name: string; blurb: string; howTo: string; glyph: GlyphId }> = {
+  "tutorial-grad": {
+    name: "Tutorial Graduate",
+    blurb: "Learned the ropes from Pixel, start to finish.",
+    howTo: "Finish the tutorial round — Start tutorial in the lobby.",
+    glyph: "star",
+  },
   "first-steps": {
     name: "First Steps",
     blurb: "Took the tour — or knew the way already.",
+    howTo: "Finish (or skip) the floor tour.",
     glyph: "star",
   },
   "demo-night": {
     name: "Demo Night",
     blurb: "In the hall while it was live.",
+    howTo: "Be on a floor during a live Demo Night event.",
     glyph: "bolt",
   },
   rounds: {
     name: "Making Rounds",
     blurb: "Chatted with three different founders.",
+    howTo: "Say something to three different founders. Also unlocks the Rocket reaction.",
     glyph: "rocket",
   },
   connector: {
     name: "Connector",
     blurb: "Three connections and counting.",
+    howTo: "Make three connections. Comes with the Connector title.",
     glyph: "heart",
   },
   mark: {
     name: "Left a Mark",
     blurb: "Signed two guestbooks.",
+    howTo: "Sign two stands' guestbooks. Also unlocks the Fire reaction.",
     glyph: "flask",
   },
   exhibitor: {
     name: "Exhibitor",
     blurb: "Put a stand on the floor.",
+    howTo: "Claim a stand on any floor. Comes with the Exhibitor title.",
     glyph: "cube",
   },
   tourist: {
     name: "Tourist",
     blurb: "Two floors, one pair of shoes.",
+    howTo: "Visit two different floors.",
     glyph: "wave",
   },
   "crowd-pleaser": {
     name: "Crowd Pleaser",
     blurb: "Ten reactions deep.",
+    howTo: "Send ten reactions on the floors. Also unlocks the Handshake reaction.",
     glyph: "coin",
   },
   habit: {
     name: "Regular",
     blurb: "Three days running. The floor notices.",
+    howTo: "Visit three days in a row.",
     glyph: "leaf",
   },
   founding: {
     name: "Founding Member",
     blurb: "Here before it was anything. The number stays.",
+    howTo: "One of the first 100 Founding Members.",
     glyph: "chip",
   },
 };
@@ -410,6 +431,7 @@ export default function ProfilePage() {
           ["verification", "Verification"],
           ["membership", "Membership"],
           ["quests", "Quests"],
+          ["badges", "Badge book"],
           ["connections", "Connections"],
         ].map(([id, label]) => (
           <a
@@ -970,7 +992,7 @@ export default function ProfilePage() {
           {(["free", "pro", "founder"] as SubTier[]).map((tier) => {
             const current = state.sub === tier;
             const unlocked = FLOORS.filter(
-              (f) => TIER_ORDER[f.tier] <= TIER_ORDER[tier],
+              (f) => !f.hidden && TIER_ORDER[f.tier] <= TIER_ORDER[tier],
             );
             const price =
               tier === "free"
@@ -1047,36 +1069,53 @@ export default function ProfilePage() {
         </div>
       </SectionCard>
 
-      {/* ---- Badges ---- */}
-      <SectionCard title="Badges">
-        {state.badges.length === 0 ? (
-          <p className="text-sm text-muted">
-            No badges yet. They&rsquo;re earned on the floor, not requested.
-          </p>
-        ) : (
-          <ul className="flex flex-wrap gap-3">
-            {state.badges.map((id) => {
-              const meta = BADGE_META[id];
-              return (
-                <li
-                  key={id}
-                  className="flex w-36 flex-col items-center gap-2 rounded-md border border-line p-3 text-center"
+      {/* ---- Badge book: the full catalog, earned bright and locked gray ---- */}
+      <SectionCard title="Badge book" id="badges">
+        <p className="text-sm leading-relaxed text-muted">
+          Every badge that exists, and how to earn it —{" "}
+          {state.badges.filter((id) => BADGE_META[id]).length} of{" "}
+          {Object.keys(BADGE_META).length} collected. Earned on the floor, not
+          requested.
+        </p>
+        <ul className="mt-4 flex flex-wrap gap-3">
+          {Object.entries(BADGE_META).map(([id, meta]) => {
+            const earned = state.badges.includes(id);
+            return (
+              <li
+                key={id}
+                className={`flex w-36 flex-col items-center gap-2 rounded-md border p-3 text-center ${
+                  earned ? "border-line" : "border-dashed border-line/80 opacity-70"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`flex h-10 w-10 items-center justify-center rounded-sm border-2 bg-paper ${
+                    earned ? "border-gold/60" : "border-line"
+                  }`}
                 >
-                  <span
-                    aria-hidden="true"
-                    className="flex h-10 w-10 items-center justify-center rounded-sm border-2 border-gold/60 bg-paper"
-                  >
-                    <PixelGlyph glyph={meta?.glyph ?? "star"} color="#B08D2E" size={18} />
-                  </span>
-                  <span className="micro text-ink">{meta?.name ?? id}</span>
-                  <span className="text-xs leading-snug text-muted">
-                    {meta?.blurb ?? "Earned somewhere on the floor."}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                  <PixelGlyph
+                    glyph={meta.glyph}
+                    color={earned ? "#B08D2E" : "#B4AE9F"}
+                    size={18}
+                  />
+                </span>
+                <span className={`micro ${earned ? "text-ink" : "text-muted"}`}>
+                  {meta.name}
+                </span>
+                <span className="text-xs leading-snug text-muted">
+                  {earned ? meta.blurb : meta.howTo}
+                </span>
+                <span
+                  className={`micro rounded-sm px-1.5 py-0.5 ${
+                    earned ? "text-verify" : "text-muted"
+                  }`}
+                >
+                  {earned ? "EARNED" : "LOCKED"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
       </SectionCard>
 
       {/* ---- Connections ---- */}

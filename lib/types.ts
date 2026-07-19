@@ -176,6 +176,8 @@ export interface FloorDef {
   };
   /** Top-left tiles of 4x3 booth zones. Booths face down (entrance at the bottom). */
   boothSpots: { x: number; y: number }[];
+  /** Hidden floors (the tutorial hall) are reachable by URL but not listed in the lobby. */
+  hidden?: boolean;
   /** Assigned to boothSpots in order; may be shorter than boothSpots. */
   startupIds: string[];
   /** Index into boothSpots reserved for the local user's own booth, if any. */

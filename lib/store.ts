@@ -50,6 +50,8 @@ export interface StoreActions {
   grantBadge(id: string): void;
   /** Finish (or skip) the guided tour. */
   setTutorialDone(done: boolean): void;
+  /** Rearm the guided tour: clears tutorialDone and the onboarding steps. */
+  resetTutorial(): void;
   /** Quest deeds — each appends once / increments and is otherwise a no-op. */
   recordTalkedTo(id: string): void;
   recordSigned(key: string): void;
@@ -616,6 +618,13 @@ const ACTIONS: StoreActions = {
     ensureClientInit();
     if (state.tutorialDone === done) return;
     setState({ ...state, tutorialDone: done });
+  },
+
+  /** Rearm the guided tour (the lobby's Start/Replay tutorial buttons). */
+  resetTutorial(): void {
+    ensureClientInit();
+    if (!state.tutorialDone && state.onboarding.length === 0) return;
+    setState({ ...state, tutorialDone: false, onboarding: [] });
   },
 
   recordTalkedTo(id: string): void {
