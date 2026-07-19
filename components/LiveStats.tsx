@@ -31,24 +31,34 @@ function CountUp({ value, duration = 1100 }: { value: number | null; duration?: 
       setShown(value);
       return;
     }
+    const run = () => {
+      if (started.current) return;
+      started.current = true;
+      const t0 = performance.now();
+      const tick = (t: number) => {
+        const p = Math.min(1, (t - t0) / duration);
+        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+        setShown(Math.round(value * eased));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
     const io = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((e) => e.isIntersecting) || started.current) return;
-        started.current = true;
+        if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
-        const t0 = performance.now();
-        const tick = (t: number) => {
-          const p = Math.min(1, (t - t0) / duration);
-          const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-          setShown(Math.round(value * eased));
-          if (p < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+        run();
       },
       { threshold: 0.4 },
     );
     io.observe(el);
-    return () => io.disconnect();
+    // fail open: never leave a stat sitting at 0 because a viewer/browser
+    // didn't fire the observer
+    const failOpen = window.setTimeout(run, 2500);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(failOpen);
+    };
   }, [value, duration]);
 
   return (

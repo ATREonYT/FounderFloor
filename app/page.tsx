@@ -76,6 +76,15 @@ const PRICING: { tier: SubTier; blurb: string }[] = [
   },
 ];
 
+function Eyebrow({ n, children, dark = false }: { n: string; children: React.ReactNode; dark?: boolean }) {
+  return (
+    <p className={`micro flex items-center gap-2 ${dark ? "text-gold" : "text-accent"}`}>
+      <span className={`inline-block h-px w-6 ${dark ? "bg-gold/60" : "bg-accent/50"}`} />
+      {n} · {children}
+    </p>
+  );
+}
+
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
     <kbd className="rounded-sm border border-line bg-panel px-1.5 py-0.5 font-mono text-xs text-ink">
@@ -160,20 +169,27 @@ export default function LandingPage() {
 
       {/* how it works */}
       <section aria-labelledby="how-heading" className="border-b border-line bg-panel">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
-          <h2 id="how-heading" className="font-display text-2xl sm:text-3xl">
+        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+          <Eyebrow n="01">The whole idea</Eyebrow>
+          <h2 id="how-heading" className="mt-2 font-display text-3xl sm:text-4xl">
             How it works
           </h2>
-          <ol className="stagger-children mt-8 grid gap-4 sm:grid-cols-3 sm:gap-6">
+          <ol className="stagger-children mt-10 grid gap-4 sm:grid-cols-3 sm:gap-6">
             {STEPS.map((step, i) => (
-              <li key={step.title} className="rounded-md border border-line bg-paper p-5">
-                <div className="flex items-center justify-between">
-                  <span className="font-display text-2xl text-accent">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <PixelGlyph glyph={step.glyph} size={20} color="#6F6A5E" />
-                </div>
-                <h3 className="mt-4 font-display text-lg">{step.title}</h3>
+              <li
+                key={step.title}
+                className="card-lift relative overflow-hidden rounded-md border border-line bg-paper p-6"
+              >
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-2 -top-6 select-none font-display text-[88px] leading-none text-ink/[0.05]"
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-md border border-accent/25 bg-accent-soft">
+                  <PixelGlyph glyph={step.glyph} size={18} color="#D9480F" />
+                </span>
+                <h3 className="mt-5 font-display text-xl">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
               </li>
             ))}
@@ -183,11 +199,12 @@ export default function LandingPage() {
 
       {/* the map of the site — four surfaces, one sentence each */}
       <section aria-labelledby="around-heading" className="border-b border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
-          <h2 id="around-heading" className="font-display text-2xl sm:text-3xl">
+        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+          <Eyebrow n="02">The map</Eyebrow>
+          <h2 id="around-heading" className="mt-2 font-display text-3xl sm:text-4xl">
             Find your way around
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
             Four places, each with one job. Everything you do in one shows up
             in the others.
           </p>
@@ -228,7 +245,9 @@ export default function LandingPage() {
                 className="panel card-lift group flex flex-col p-5"
               >
                 <div className="flex items-center justify-between">
-                  <PixelGlyph glyph={s.glyph} size={18} color="#6F6A5E" />
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper">
+                    <PixelGlyph glyph={s.glyph} size={16} color="#D9480F" />
+                  </span>
                   <span className="micro text-muted">{s.name}</span>
                 </div>
                 <p className="mt-4 flex-1 text-sm leading-relaxed text-muted">
@@ -245,9 +264,10 @@ export default function LandingPage() {
 
       {/* floors */}
       <section aria-labelledby="floors-heading" className="border-b border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
-          <div className="flex items-baseline justify-between gap-4">
-            <h2 id="floors-heading" className="font-display text-2xl sm:text-3xl">
+        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+          <Eyebrow n="03">The halls</Eyebrow>
+          <div className="mt-2 flex items-baseline justify-between gap-4">
+            <h2 id="floors-heading" className="font-display text-3xl sm:text-4xl">
               The floors
             </h2>
             <Link href="/lobby" className="text-sm text-accent hover:underline">
@@ -303,74 +323,63 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* rank ladder */}
-      <section aria-labelledby="ranks-heading" className="border-b border-line bg-panel">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
-          <h2 id="ranks-heading" className="font-display text-2xl sm:text-3xl">
+      {/* rank ladder — the soul of the product, staged as a dark revenue
+          board: gold on ink, like the tote board at the back of a real hall */}
+      <section aria-labelledby="ranks-heading" className="border-b border-line bg-ink">
+        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+          <Eyebrow n="04" dark>The board</Eyebrow>
+          <h2 id="ranks-heading" className="mt-2 font-display text-3xl text-paper sm:text-4xl">
             The rank ladder
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-paper/60">
             Ranks are set by verified monthly revenue, read through a read-only
             Stripe connection &mdash; nobody types their own number. This build
             simulates the connection; the skepticism is real.
           </p>
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full min-w-[560px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-line">
-                  <th scope="col" className="micro py-2 pr-4 font-medium text-muted">
-                    Rank
-                  </th>
-                  <th scope="col" className="micro py-2 pr-4 font-medium text-muted">
-                    Verified monthly revenue
-                  </th>
-                  <th scope="col" className="micro py-2 font-medium text-muted">
-                    In practice
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {RANKS.map((rank) => (
-                  <tr key={rank.id} className="border-b border-line">
-                    <td className="py-3 pr-4 align-top">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span
-                          aria-hidden="true"
-                          className="inline-block h-2 w-2 rounded-full"
-                          style={{ backgroundColor: rank.color }}
-                        />
-                        <span className="micro">{rank.name}</span>
-                      </span>
-                    </td>
-                    <td className="w-64 py-3 pr-4 align-top">
-                      <span className="text-sm">{money(rank.minRevenue)}+</span>
-                      <span className="mt-1.5 block h-1 w-full rounded-full bg-line">
-                        <span
-                          className="block h-full rounded-full"
-                          style={{
-                            width: `${Math.max(
-                              4,
-                              (rank.minRevenue / maxRevenue) * 100,
-                            )}%`,
-                            backgroundColor: rank.color,
-                          }}
-                        />
-                      </span>
-                    </td>
-                    <td className="py-3 align-top text-sm text-muted">{rank.blurb}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="stagger-children mt-10 flex flex-col divide-y divide-paper/10 border-y border-paper/15">
+            {RANKS.map((rank) => (
+              <div
+                key={rank.id}
+                className="grid items-center gap-x-6 gap-y-2 py-4 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.2fr)]"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-2.5 w-2.5 rounded-sm"
+                    style={{ backgroundColor: rank.color, boxShadow: `0 0 10px ${rank.color}66` }}
+                  />
+                  <span className="micro text-paper">{rank.name}</span>
+                </span>
+                <span className="flex items-center gap-3">
+                  <span className="w-24 shrink-0 font-display text-lg tabular-nums text-gold">
+                    {money(rank.minRevenue)}+
+                  </span>
+                  <span className="block h-1.5 flex-1 overflow-hidden rounded-full bg-paper/10">
+                    <span
+                      className="block h-full rounded-full"
+                      style={{
+                        width: `${Math.max(4, (rank.minRevenue / maxRevenue) * 100)}%`,
+                        background: `linear-gradient(90deg, ${rank.color}88, ${rank.color})`,
+                      }}
+                    />
+                  </span>
+                </span>
+                <span className="text-sm leading-relaxed text-paper/60">{rank.blurb}</span>
+              </div>
+            ))}
           </div>
+          <p className="micro mt-6 text-paper/40">
+            GOLD IS EARNED THE BORING WAY &mdash; ONE VERIFIED DOLLAR AT A TIME
+          </p>
         </Reveal>
       </section>
 
       {/* pricing */}
       <section aria-labelledby="pricing-heading" className="border-b border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
-          <div className="flex flex-wrap items-baseline gap-3">
-            <h2 id="pricing-heading" className="font-display text-2xl sm:text-3xl">
+        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+          <Eyebrow n="05">What costs money</Eyebrow>
+          <div className="mt-2 flex flex-wrap items-baseline gap-3">
+            <h2 id="pricing-heading" className="font-display text-3xl sm:text-4xl">
               Membership
             </h2>
             <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">
@@ -406,8 +415,10 @@ export default function LandingPage() {
               return (
                 <article
                   key={tier}
-                  className={`panel card-lift flex flex-col p-5 ${
-                    tier === "pro" ? "border-accent/40" : ""
+                  className={`panel card-lift relative flex flex-col p-5 ${
+                    tier === "pro"
+                      ? "border-accent/60 shadow-card sm:-translate-y-2"
+                      : ""
                   }`}
                 >
                   <div className="flex items-baseline justify-between gap-2">
@@ -462,8 +473,9 @@ export default function LandingPage() {
 
       {/* what's next — the build is alive; give people a reason to check back */}
       <section id="roadmap" aria-labelledby="next-heading" className="scroll-mt-6 border-t border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
-          <h2 id="next-heading" className="font-display text-3xl">
+        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+          <Eyebrow n="06">Shipping weekly</Eyebrow>
+          <h2 id="next-heading" className="mt-2 font-display text-3xl sm:text-4xl">
             The floor keeps changing
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
@@ -529,9 +541,9 @@ export default function LandingPage() {
 
       {/* questions people actually have, answered before they have to ask */}
       <section aria-labelledby="faq-heading" className="border-b border-line bg-panel">
-        <Reveal className="mx-auto w-full max-w-3xl px-4 py-14 sm:py-16">
-          <p className="micro text-muted">BEFORE YOU ASK</p>
-          <h2 id="faq-heading" className="mt-1 font-display text-2xl sm:text-3xl">
+        <Reveal className="mx-auto w-full max-w-3xl px-4 py-16 sm:py-20">
+          <Eyebrow n="07">Before you ask</Eyebrow>
+          <h2 id="faq-heading" className="mt-2 font-display text-3xl sm:text-4xl">
             Fair questions
           </h2>
           <div className="mt-6 flex flex-col divide-y divide-line border-y border-line">
