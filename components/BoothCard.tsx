@@ -147,7 +147,7 @@ export default function BoothCard({
             </p>
             <div className="flex gap-2">
               <Link
-                href="/profile"
+                href="/profile#booth"
                 className="flex-1 rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
               >
                 Customize

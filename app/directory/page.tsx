@@ -23,6 +23,8 @@ const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(
   FLOORS.map((f) => [f.id, f]),
 );
 
+const PUBLIC_FLOOR_COUNT = FLOORS.filter((f) => !f.hidden).length;
+
 const MIN_RANKS = RANKS.filter((r) => r.id > 0);
 
 /** One directory row — a real founder's stand. */
@@ -126,12 +128,15 @@ export default function DirectoryPage() {
       <p className="mt-2 text-sm leading-relaxed text-muted">
         Every startup on the floors, all founder-made —{" "}
         {communityCount > 0
-          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${FLOORS.length} floors so far`
-          : `the floors just opened across ${FLOORS.length} halls`}
+          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${PUBLIC_FLOOR_COUNT} floors so far`
+          : `the floors just opened across ${PUBLIC_FLOOR_COUNT} halls`}
         . Set up a stand and yours appears here on its own, under whatever
         category you give it.
       </p>
 
+      {/* Search and filters only exist once there's something to filter — a
+          zero-stand directory leads with the invitation, not empty tools. */}
+      {total > 0 && (
       <div className="mt-6 flex flex-col gap-3">
         <div>
           <label htmlFor="directory-search" className="sr-only">
@@ -185,13 +190,16 @@ export default function DirectoryPage() {
           ))}
         </div>
       </div>
+      )}
 
-      <p className="micro mt-6 text-muted">
-        {results.length === total
-          ? `${total} startups`
-          : `${results.length} of ${total} startups`}
-        {category !== null && ` · ${category}`}
-      </p>
+      {total > 0 && (
+        <p className="micro mt-6 text-muted">
+          {results.length === total
+            ? `${total} startups`
+            : `${results.length} of ${total} startups`}
+          {category !== null && ` · ${category}`}
+        </p>
+      )}
 
       {results.length === 0 ? (
         total === 0 ? (
@@ -202,7 +210,7 @@ export default function DirectoryPage() {
               this directory.
             </p>
             <Link
-              href="/profile"
+              href="/profile#booth"
               className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
             >
               Set up your stand

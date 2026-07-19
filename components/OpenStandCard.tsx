@@ -62,7 +62,7 @@ export default function OpenStandCard({
               back and claim it.
             </p>
             <Link
-              href="/profile"
+              href="/profile#booth"
               className="rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
             >
               Set up your booth in Profile

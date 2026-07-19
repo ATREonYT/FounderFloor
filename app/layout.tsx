@@ -65,18 +65,49 @@ export default function RootLayout({
         <footer className="border-t border-line bg-panel">
           {/* pb-20 on phones keeps the fixed chat button from sitting on the
               footer text; desktops have room to spare */}
-          <div className="mx-auto flex w-full max-w-5xl flex-col gap-1 px-4 pb-20 pt-6 text-sm text-muted sm:flex-row sm:items-baseline sm:justify-between sm:pb-6">
-            <p>
-              Built by one person and a robot.{" "}
-              <Link href="/about" className="underline hover:text-ink">
-                About &amp; privacy
-              </Link>{" "}
-              ·{" "}
-              <Link href="/about#feedback" className="underline hover:text-ink">
-                Send feedback
-              </Link>
+          <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-8 sm:pb-8">
+            <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
+              <div className="max-w-xs">
+                <div className="flex items-center gap-2">
+                  <PixelLogo size={18} />
+                  <span className="font-display text-base">FounderFloor</span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  A trade-show floor that never tears down. Built by one
+                  person and a robot.
+                </p>
+              </div>
+              <nav aria-label="Footer" className="flex gap-12 text-sm">
+                <div className="flex flex-col gap-2">
+                  <span className="micro text-muted">Explore</span>
+                  <Link href="/lobby" className="text-muted hover:text-ink hover:underline">
+                    Floors
+                  </Link>
+                  <Link href="/directory" className="text-muted hover:text-ink hover:underline">
+                    Directory
+                  </Link>
+                  <Link href="/floor/tutorial-hall" className="text-muted hover:text-ink hover:underline">
+                    Tutorial
+                  </Link>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="micro text-muted">The fine print</span>
+                  <Link href="/about" className="text-muted hover:text-ink hover:underline">
+                    About &amp; privacy
+                  </Link>
+                  <Link href="/about#feedback" className="text-muted hover:text-ink hover:underline">
+                    Send feedback
+                  </Link>
+                  <Link href="/#roadmap" className="text-muted hover:text-ink hover:underline">
+                    Roadmap
+                  </Link>
+                </div>
+              </nav>
+            </div>
+            <p className="mt-8 border-t border-line pt-4 text-xs text-muted">
+              Revenue ranks are verified &mdash; simulated in this build. Egos
+              are not.
             </p>
-            <p>Revenue ranks are verified &mdash; simulated in this build. Egos are not.</p>
           </div>
         </footer>
       </body>

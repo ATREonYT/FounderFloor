@@ -272,6 +272,21 @@ export default function ProfilePage() {
     setReady(true);
   }, []);
 
+  // Deep links (/profile#booth, #membership, …) arrive before the sections
+  // exist — the page renders behind a ready gate, so the browser's native
+  // anchor scroll finds nothing. Once the real content is up, honor the hash.
+  useEffect(() => {
+    if (!ready) return;
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const go = () => document.getElementById(hash)?.scrollIntoView();
+    // twice: once as soon as sections exist, once after the editors above
+    // have seeded and shifted the layout under our feet
+    requestAnimationFrame(go);
+    const settle = window.setTimeout(go, 450);
+    return () => window.clearTimeout(settle);
+  }, [ready]);
+
   // seed local editors from the hydrated store, once
   useEffect(() => {
     if (!ready) return;

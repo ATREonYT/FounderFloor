@@ -121,7 +121,7 @@ export default function LandingPage() {
                 Walk the floor →
               </Link>
               <Link
-                href="/profile"
+                href="/profile#booth"
                 className="btn-press rounded-md border border-ink px-6 py-3 text-sm font-medium text-ink hover:bg-panel"
               >
                 Set up a booth
@@ -461,7 +461,7 @@ export default function LandingPage() {
       </section>
 
       {/* what's next — the build is alive; give people a reason to check back */}
-      <section aria-labelledby="next-heading" className="border-t border-line">
+      <section id="roadmap" aria-labelledby="next-heading" className="scroll-mt-6 border-t border-line">
         <Reveal className="mx-auto w-full max-w-5xl px-4 py-14 sm:py-16">
           <h2 id="next-heading" className="font-display text-3xl">
             The floor keeps changing
@@ -527,12 +527,59 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
+      {/* questions people actually have, answered before they have to ask */}
+      <section aria-labelledby="faq-heading" className="border-b border-line bg-panel">
+        <Reveal className="mx-auto w-full max-w-3xl px-4 py-14 sm:py-16">
+          <p className="micro text-muted">BEFORE YOU ASK</p>
+          <h2 id="faq-heading" className="mt-1 font-display text-2xl sm:text-3xl">
+            Fair questions
+          </h2>
+          <div className="mt-6 flex flex-col divide-y divide-line border-y border-line">
+            {[
+              {
+                q: "Is it actually free?",
+                a: "Walking the floors, talking, connecting, and keeping a stand — free, permanently. Paid memberships buy visibility (priority in the directory, gold trim on your stand), never access.",
+              },
+              {
+                q: "Are the people real?",
+                a: "Yes — every stand is set up by a real founder and every avatar is a live visitor. The one exception is Pixel, the clearly-labeled tutorial robot, who never leaves the practice hall.",
+              },
+              {
+                q: "What happens to my stand when I close the tab?",
+                a: "It stays up for 7 days while you're away — collecting guestbook notes and connection requests. Come back within the week and the clock resets.",
+              },
+              {
+                q: "Do I need an account?",
+                a: "No — you can walk in as a guest with just a name. An account (free) makes your progress follow you across devices and lets you reset a forgotten password by email.",
+              },
+              {
+                q: "What are the ranks on the booths?",
+                a: "Monthly revenue tiers. They're labeled honestly: in this beta, verification is simulated — founders type a number. Read-only Stripe verification is the first post-beta feature.",
+              },
+            ].map(({ q, a }) => (
+              <details key={q} className="group py-1">
+                <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
+                  {q}
+                  <span
+                    aria-hidden="true"
+                    className="text-lg leading-none text-muted transition-transform duration-200 group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <p className="pb-4 pr-8 text-sm leading-relaxed text-muted">{a}</p>
+              </details>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
       {/* final CTA */}
       <section aria-labelledby="cta-heading" className="bg-ink">
         <div className="mx-auto w-full max-w-5xl px-4 py-16 text-center sm:py-20">
           <h2
             id="cta-heading"
-            className="mx-auto max-w-2xl font-display text-3xl leading-tight text-paper sm:text-4xl"
+            className="mx-auto max-w-2xl font-display text-3xl leading-tight text-paper [text-wrap:balance] sm:text-4xl"
           >
             The doors are propped open. They stay that way.
           </h2>
@@ -541,9 +588,9 @@ export default function LandingPage() {
           </p>
           <Link
             href="/lobby"
-            className="mt-8 inline-block rounded-md bg-accent px-6 py-3 text-sm font-medium text-white hover:bg-accent/90"
+            className="btn-press mt-8 inline-block rounded-md bg-accent px-7 py-3.5 text-sm font-medium text-white shadow-[0_2px_0_rgba(0,0,0,0.35)] hover:bg-accent/90"
           >
-            Walk the floor
+            Walk the floor →
           </Link>
         </div>
       </section>

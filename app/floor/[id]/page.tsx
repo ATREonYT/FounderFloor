@@ -1293,7 +1293,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             </p>
             <div className="mt-1 flex flex-col gap-2">
               <Link
-                href="/profile"
+                href="/profile#booth"
                 className="btn-press rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90"
               >
                 Set up your own booth

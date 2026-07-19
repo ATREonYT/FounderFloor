@@ -117,7 +117,7 @@ export default function LobbyPage() {
         </div>
         <p className="text-sm text-muted">
           Walking as <span className="text-ink">{state.profile.name}</span> ·{" "}
-          <Link href="/profile" className="text-accent hover:underline">
+          <Link href="/profile#identity" className="text-accent hover:underline">
             change
           </Link>{" "}
           ·{" "}
@@ -171,7 +171,9 @@ export default function LobbyPage() {
         </p>
       )}
 
-      <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 2x2 on all sizes >= sm: four floors read as a balanced square, not
+          a row of three plus an orphan */}
+      <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2">
         {FLOORS.filter((f) => !f.hidden).map((floor) => {
           const locked = TIER_ORDER[state.sub] < TIER_ORDER[floor.tier];
           return (
@@ -221,7 +223,7 @@ export default function LobbyPage() {
                   </svg>
                   <span className="text-sm text-muted">
                     {TIER_LABEL[floor.tier]} floor ·{" "}
-                    <Link href="/profile" className="text-accent hover:underline">
+                    <Link href="/profile#membership" className="text-accent hover:underline">
                       Upgrade in Profile
                     </Link>
                   </span>
