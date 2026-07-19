@@ -317,11 +317,16 @@ function sanitize(raw: unknown): AppState {
 
   if (looksLikeStartup(r.myStartup)) {
     const s = r.myStartup;
+    const rawTrim = (s.booth as { trim?: unknown }).trim;
     base.myStartup = {
       ...s,
       booth: {
         ...s.booth,
         sign: s.booth.sign.slice(0, 12),
+        trim:
+          rawTrim === "stripes" || rawTrim === "checker" || rawTrim === "dots"
+            ? rawTrim
+            : undefined,
         logo: isValidLogo((s.booth as { logo?: unknown }).logo)
           ? (s.booth as { logo?: string }).logo
           : undefined,

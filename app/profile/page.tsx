@@ -8,6 +8,7 @@ import { FLOORS } from "@/lib/data/floors";
 import { earnedTitles, questStates } from "@/lib/data/quests";
 import {
   TIER_ORDER,
+  type BannerTrim,
   type CarpetPattern,
   type GlyphId,
   type Startup,
@@ -44,6 +45,15 @@ const SWATCHES: string[] = [
   "#8A6B4D",
   "#555049",
   "#B08D2E",
+  "#A64D79",
+  "#3F4A5A",
+];
+
+const TRIMS: { id: BannerTrim; label: string }[] = [
+  { id: "plain", label: "Plain" },
+  { id: "stripes", label: "Stripes" },
+  { id: "checker", label: "Checker" },
+  { id: "dots", label: "Dots" },
 ];
 
 const PATTERNS: { id: CarpetPattern; label: string }[] = [
@@ -123,6 +133,7 @@ interface BoothForm {
   sign: string;
   glyph: GlyphId;
   pattern: CarpetPattern;
+  trim: BannerTrim;
   logo?: string;
 }
 
@@ -138,6 +149,7 @@ const EMPTY_FORM: BoothForm = {
   sign: "",
   glyph: "bolt",
   pattern: "solid",
+  trim: "plain",
 };
 
 function formFrom(s: Startup): BoothForm {
@@ -153,6 +165,7 @@ function formFrom(s: Startup): BoothForm {
     sign: s.booth.sign,
     glyph: s.booth.glyph,
     pattern: s.booth.pattern ?? "solid",
+    trim: s.booth.trim ?? "plain",
     logo: s.booth.logo,
   };
 }
@@ -284,6 +297,7 @@ export default function ProfilePage() {
         sign: form.sign.trim().slice(0, 12) || form.name.trim().slice(0, 12),
         glyph: form.glyph,
         pattern: form.pattern,
+        trim: form.trim,
         logo: form.logo,
       },
     };
@@ -305,6 +319,7 @@ export default function ProfilePage() {
       carpet,
       glyph: pick(GLYPH_IDS),
       pattern: pick(PATTERNS).id,
+      trim: pick(TRIMS).id,
     }));
   };
 
@@ -715,6 +730,26 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
+                <span className="micro mb-1.5 block text-muted">Banner trim</span>
+                <div className="flex gap-1.5" role="group" aria-label="Banner trim">
+                  {TRIMS.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => set("trim", t.id)}
+                      aria-pressed={form.trim === t.id}
+                      className={`rounded-sm border px-3 py-1.5 text-xs ${
+                        form.trim === t.id
+                          ? "border-accent text-accent ring-2 ring-accent ring-offset-1 ring-offset-panel"
+                          : "border-line text-muted hover:border-muted hover:text-ink"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
                 <button
                   type="button"
                   onClick={randomizeTheme}
@@ -769,6 +804,7 @@ export default function ProfilePage() {
               sign={form.sign.trim() || form.name.trim().slice(0, 12)}
               glyph={form.glyph}
               pattern={form.pattern}
+              trim={form.trim}
               logo={form.logo}
               founderLook={state.profile.look}
             />

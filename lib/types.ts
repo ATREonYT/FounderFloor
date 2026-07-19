@@ -84,6 +84,9 @@ export type GlyphId =
 
 export type CarpetPattern = "solid" | "border" | "stripes";
 
+/** Decorative band along the banner's bottom edge; absent = "plain". */
+export type BannerTrim = "plain" | "stripes" | "checker" | "dots";
+
 export interface BoothTheme {
   carpet: string; // hex
   banner: string; // hex
@@ -91,6 +94,8 @@ export interface BoothTheme {
   glyph: GlyphId;
   /** Carpet treatment; absent = "solid" (all seed booths). */
   pattern?: CarpetPattern;
+  /** Banner edge treatment; absent = "plain". */
+  trim?: BannerTrim;
   /**
    * Custom banner icon: a tiny data-URL PNG (uploads are downscaled to 16x16
    * client-side, capped at ~8KB). Replaces the glyph when present.

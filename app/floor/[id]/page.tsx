@@ -8,7 +8,7 @@ import { floorById } from "@/lib/data/floors";
 import { STARTUPS, IDLE_LINES, replyFor } from "@/lib/data/startups";
 import { createNetClient } from "@/lib/net";
 import { createGame } from "@/game/engine";
-import { isClaimableSpot, seedSpotIndex } from "@/game/tilemap";
+import { isClaimableSpot } from "@/game/tilemap";
 import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
 import type {
   ActivityItem,
@@ -874,19 +874,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     // The engine owns the connection: createGame() already called net.connect()
     // with its collision-aware spawn point — connecting again here would double-join.
 
-    // Directory deep link: /floor/<id>?booth=<startupId> auto-walks you from
-    // the spawn point up to the booth you searched for.
+    // Directory deep link: /floor/<id>?spot=<n> auto-walks you from the
+    // spawn point up to the stand you searched for.
     const search = new URLSearchParams(window.location.search);
-    const boothParam = search.get("booth");
     const spotParam = search.get("spot");
-    if (boothParam) {
-      // seedSpotIndex accounts for reservedSpot — a raw startupIds.indexOf
-      // drifts one spot off on floors whose reserved spot sits mid-list
-      const spotIndex = seedSpotIndex(f, boothParam);
-      if (spotIndex >= 0) handle.walkToBooth(spotIndex);
-    } else if (spotParam) {
-      // Community stands aren't in startupIds — the directory deep-links them
-      // by their claimed spot index directly.
+    if (spotParam) {
       const spotIndex = Number(spotParam);
       if (Number.isInteger(spotIndex) && spotIndex >= 0) handle.walkToBooth(spotIndex);
     }

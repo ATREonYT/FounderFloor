@@ -447,7 +447,39 @@ function sendPasswordChangedEmail(acct) {
 
 // Cost params are stored per account so they can be raised later without
 // breaking existing logins (older accounts keep the params they were hashed with).
-const SCRYPT = { N: 16384, r: 8, p: 1 };
+// N=32768 ≈ 33MB and ~100ms per hash — free for a person, ruinous at
+// billions-of-guesses scale.
+const SCRYPT = { N: 32768, r: 8, p: 1 };
+
+/**
+ * Per-identifier login backoff, on top of the per-IP limiter (which a
+ * distributed guesser sidesteps). Keyed by the *typed* identifier — not by
+ * whether an account exists — so the lockout itself can't be used to probe
+ * which emails are registered. 5 straight failures locks the identifier for
+ * 60s, doubling to a 15-minute ceiling; any success clears it.
+ */
+const loginFails = new Map(); // identifier -> { count, until }
+const LOGIN_LOCK_AFTER = 5;
+const LOGIN_LOCK_BASE_MS = 60_000;
+const LOGIN_LOCK_MAX_MS = 15 * 60_000;
+const MAX_LOGIN_FAILS = 5000;
+
+function loginLocked(key) {
+  const e = loginFails.get(key);
+  return !!e && e.until > Date.now();
+}
+
+function noteLoginFailure(key) {
+  if (!key) return;
+  const e = loginFails.get(key) ?? { count: 0, until: 0 };
+  e.count++;
+  if (e.count >= LOGIN_LOCK_AFTER) {
+    const excess = e.count - LOGIN_LOCK_AFTER;
+    e.until = Date.now() + Math.min(LOGIN_LOCK_MAX_MS, LOGIN_LOCK_BASE_MS * 2 ** excess);
+  }
+  if (loginFails.size >= MAX_LOGIN_FAILS && !loginFails.has(key)) return;
+  loginFails.set(key, e);
+}
 
 function hashPassword(password, salt, kdf = SCRYPT) {
   return scryptSync(password, salt, 32, { N: kdf.N, r: kdf.r, p: kdf.p, maxmem: 64 * 1024 * 1024 });
@@ -911,6 +943,7 @@ function sanitizeText(text) {
 
 const GLYPHS = new Set(["bolt", "leaf", "coin", "chip", "flask", "rocket", "heart", "cube", "wave", "star"]);
 const PATTERNS = new Set(["solid", "border", "stripes"]);
+const TRIMS = new Set(["stripes", "checker", "dots"]); // "plain" = absent
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const MAX_SPOT_INDEX = 63;
 
@@ -949,6 +982,7 @@ function sanitizeStartup(s) {
         sign: sanitizeStr(booth.sign, 12) || name.slice(0, 12).toUpperCase(),
         glyph: GLYPHS.has(booth.glyph) ? booth.glyph : "star",
         pattern: PATTERNS.has(booth.pattern) ? booth.pattern : "solid",
+        trim: TRIMS.has(booth.trim) ? booth.trim : undefined,
         // custom banner icon: tiny data-URL PNG, downscaled client-side
         logo:
           typeof booth.logo === "string" &&
@@ -1090,6 +1124,11 @@ function pruneCredentials() {
   // Hourly email logs age out entirely; drop empties so the map can't grow.
   for (const [k, v] of emailRecipientLog) {
     if (!v.some((ts) => now - ts < 3600_000)) emailRecipientLog.delete(k);
+  }
+  // Login backoff entries whose lock has lapsed (or that never locked)
+  // start fresh — the hourly sweep is the map's size bound.
+  for (const [k, v] of loginFails) {
+    if (v.until <= now) loginFails.delete(k);
   }
   if (changed) scheduleSave();
 }
@@ -1304,6 +1343,11 @@ async function handleAuthPost(req, res, pathname) {
   if (pathname === "/auth/login") {
     const email = normalizeEmail(body.email);
     const name = sanitizeStr(body.name, MAX_NAME_LEN);
+    const failKey = email || name.toLowerCase();
+    if (failKey && loginLocked(failKey)) {
+      sendJson(res, { error: "too many tries for this account — wait a minute, then try again" });
+      return;
+    }
     // Try email first, then fall back to a display-name match. The client
     // sends both fields, so a legacy account whose *name* happens to contain
     // "@" (names only strip control chars) still resolves by name instead of
@@ -1317,9 +1361,11 @@ async function handleAuthPost(req, res, pathname) {
     const expected = Buffer.from(acct?.hash ?? "0".repeat(64), "hex");
     const got = hashPassword(password, salt, acct?.kdf ?? SCRYPT);
     if (!acct || expected.length !== got.length || !timingSafeEqual(expected, got)) {
+      noteLoginFailure(failKey);
       sendJson(res, { error: "wrong email or password" });
       return;
     }
+    loginFails.delete(failKey);
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
     // Unrecognized browser? Tell the owner. The very first sign-in of a

@@ -3,6 +3,7 @@ import Link from "next/link";
 import "./globals.css";
 import PixelLogo from "@/components/PixelLogo";
 import NavConnections from "@/components/NavConnections";
+import NavProfile from "@/components/NavProfile";
 import Messenger from "@/components/Messenger";
 
 export const metadata: Metadata = {
@@ -50,12 +51,7 @@ export default function RootLayout({
                 Directory
               </Link>
               <NavConnections />
-              <Link
-                href="/profile"
-                className="text-sm text-muted hover:text-ink hover:underline"
-              >
-                Profile
-              </Link>
+              <NavProfile />
             </nav>
           </div>
         </header>

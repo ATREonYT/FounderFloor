@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef } from "react";
-import type { AvatarLook, CarpetPattern, GlyphId } from "@/lib/types";
+import type { AvatarLook, BannerTrim, CarpetPattern, GlyphId } from "@/lib/types";
 import { TILE } from "@/lib/types";
 import { SPRITE_H, SPRITE_W, SpriteBank, drawGlyph, luma, shade } from "@/game/sprites";
 
@@ -21,6 +21,7 @@ export interface BoothPreviewProps {
   sign: string;
   glyph: GlyphId;
   pattern: CarpetPattern;
+  trim?: BannerTrim;
   /** Custom banner icon (tiny data-URL PNG). Replaces the glyph when set. */
   logo?: string;
   founderLook: AvatarLook;
@@ -35,6 +36,7 @@ export default function BoothPreview({
   sign,
   glyph,
   pattern,
+  trim = "plain",
   logo,
   founderLook,
   floorA = "#D8D2C4",
@@ -128,6 +130,25 @@ export default function BoothPreview({
     ctx.textBaseline = "middle";
     ctx.fillText(sign.toUpperCase() || "YOUR SIGN", bx + 2 * TILE + 7, syPx + 9, 4 * TILE - 44);
 
+    // banner trim band (matches bannerDrawable)
+    if (trim !== "plain") {
+      const ty = syPx + TILE - 7;
+      const tw = 4 * TILE - 6;
+      ctx.fillStyle = dark;
+      ctx.fillRect(bx + 3, ty, tw, 4);
+      ctx.fillStyle = fg;
+      if (trim === "stripes") {
+        for (let x = 0; x < tw - 3; x += 8) ctx.fillRect(bx + 3 + x + 2, ty, 4, 4);
+      } else if (trim === "checker") {
+        for (let x = 0; x < tw - 1; x += 4) {
+          const odd = (x / 4) % 2 === 1;
+          ctx.fillRect(bx + 3 + x, odd ? ty + 2 : ty, 2, 2);
+        }
+      } else if (trim === "dots") {
+        for (let x = 4; x < tw - 3; x += 9) ctx.fillRect(bx + 3 + x, ty + 1, 2, 2);
+      }
+    }
+
     // founder in the lane, facing front
     const frames = bankRef.current.makeAvatar(founderLook);
     const fx = bx + 2 * TILE;
@@ -158,7 +179,7 @@ export default function BoothPreview({
       cleanupRef.current?.();
       cleanupRef.current = null;
     };
-  }, [carpet, banner, sign, glyph, pattern, logo, founderLook, floorA, floorB]);
+  }, [carpet, banner, sign, glyph, pattern, trim, logo, founderLook, floorA, floorB]);
 
   return (
     <canvas

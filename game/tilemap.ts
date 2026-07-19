@@ -468,6 +468,26 @@ function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(sign, bx + 2 * T + 7, by + 9, 4 * T - 44);
+      // customization: decorative band along the banner's bottom edge, in
+      // shades derived from the banner color so any combination stays cohesive
+      const trim = th.trim ?? "plain";
+      if (trim !== "plain") {
+        const ty = by + T - 7;
+        const tw = 4 * T - 6;
+        ctx.fillStyle = dark;
+        ctx.fillRect(bx + 3, ty, tw, 4);
+        ctx.fillStyle = fg;
+        if (trim === "stripes") {
+          for (let x = 0; x < tw - 3; x += 8) ctx.fillRect(bx + 3 + x + 2, ty, 4, 4);
+        } else if (trim === "checker") {
+          for (let x = 0; x < tw - 1; x += 4) {
+            const odd = (x / 4) % 2 === 1;
+            ctx.fillRect(bx + 3 + x, odd ? ty + 2 : ty, 2, 2);
+          }
+        } else if (trim === "dots") {
+          for (let x = 4; x < tw - 3; x += 9) ctx.fillRect(bx + 3 + x, ty + 1, 2, 2);
+        }
+      }
       if (yours) {
         ctx.fillStyle = GOLD;
         ctx.fillRect(bx + 3, by + T - 7, 4 * T - 6, 3);

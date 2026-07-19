@@ -5,6 +5,9 @@
  * 4x3 zone that faces DOWN — banner wall (row 0), founder lane (row 1),
  * counter (row 2) — plus a 1-tile carpet apron rendered below the zone.
  *
+ * Every spot on every floor is claimable by a real founder — there are no
+ * seeded demo booths (startupIds stays as a mechanism but ships empty).
+ *
  * Layout rules kept throughout:
  *   - >= 2 clear tiles between zones horizontally (gaps here are 4-5 tiles)
  *   - >= 3 clear rows between booth rows vertically (7 here, apron included)
@@ -15,13 +18,13 @@ import type { FloorDef } from "@/lib/types";
 
 export const FLOORS: FloorDef[] = [
   {
-    // 34x28. Two rows of four seed booths plus a bottom row of four open stands.
+    // 34x28. Three rows of four stands, all claimable.
     // Row A: y=3 (zone rows 3-5, apron 6). Row B: y=13 (zone rows 13-15, apron 16).
-    // Row C (claimable): y=21 (zone rows 21-23, apron 24), walls at 0 and 27.
+    // Row C: y=21 (zone rows 21-23, apron 24), walls at 0 and 27.
     // x = 3 / 11 / 19 / 27 -> rightmost zone ends at col 30, walls at 0 and 33.
     id: "main-hall",
     name: "Main Hall",
-    tagline: "The free floor. Everyone starts here; a surprising number never leave.",
+    tagline: "The free floor. Twelve stands, first come first served. Everyone starts here.",
     tier: "free",
     width: 34,
     height: 28,
@@ -45,25 +48,15 @@ export const FLOORS: FloorDef[] = [
       { x: 19, y: 21 },
       { x: 27, y: 21 },
     ],
-    startupIds: [
-      "soup-ticket",
-      "night-shift-audio",
-      "crate-and-pallet",
-      "gutterball",
-      "fernworks",
-      "ledgerline",
-      "copydesk",
-      "shelfware",
-    ],
+    startupIds: [],
   },
   {
-    // 26x18. Two rows of three booths; the bottom-center spot is listed LAST
-    // and reserved for the local player's own booth.
+    // 26x26. Two rows of three stands plus two below — all claimable.
     // Row A: y=3 (zone rows 3-5, apron 6). Row B: y=11 (zone rows 11-13, apron 14).
     // x = 3 / 11 / 19 -> rightmost zone ends at col 22, walls at 0 and 25.
     id: "indie-alley",
     name: "Indie Alley",
-    tagline: "Folding tables, real users, no adult supervision. One spot stays open for newcomers.",
+    tagline: "Folding tables, real users, no adult supervision.",
     tier: "free",
     width: 26,
     height: 26,
@@ -83,14 +76,7 @@ export const FLOORS: FloorDef[] = [
       { x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
       { x: 15, y: 19 },
     ],
-    startupIds: [
-      "mudroom",
-      "zine-machine",
-      "coldframe",
-      "patchbay",
-      "loafer",
-    ],
-    reservedSpot: 5,
+    startupIds: [],
   },
   {
     // 28x18. Two rows of three booths.
@@ -118,14 +104,7 @@ export const FLOORS: FloorDef[] = [
       { x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
       { x: 16, y: 19 },
     ],
-    startupIds: [
-      "wrenchlist",
-      "sheet-metal",
-      "barnacle",
-      "on-call-room",
-      "lower-third",
-      "dunning",
-    ],
+    startupIds: [],
   },
   {
     // 28x18. Same layout as Ramen District, different company.
@@ -151,14 +130,7 @@ export const FLOORS: FloorDef[] = [
       { x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
       { x: 16, y: 19 },
     ],
-    startupIds: [
-      "second-stove",
-      "glasshouse",
-      "rebar",
-      "pocket-notary",
-      "grave-matters",
-      "stretcher",
-    ],
+    startupIds: [],
   },
 ];
 

@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Directory — every seed startup across every floor. Text search, filter
- * chips (category, seeking co-founder, minimum rank), and a "Walk there"
- * link straight to the booth's floor. Presence dots come from /presence.
+ * Directory — every real startup on the floors, all founder-made. Text
+ * search, filter chips (category, seeking co-founder, minimum rank), and a
+ * "Walk there" link straight to the stand. Presence dots come from
+ * /presence. Categories grow from whatever founders type when they set up.
  */
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { STARTUPS } from "@/lib/data/startups";
 import { FLOORS } from "@/lib/data/floors";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { useAppState } from "@/lib/store";
@@ -19,32 +19,18 @@ import TierTag from "@/components/TierTag";
 import { usePresence } from "@/components/usePresence";
 import { useCommunityStartups } from "@/components/useCommunityStartups";
 
-// startupId -> the floor whose startupIds list it (module scope, computed once)
-const FLOOR_OF: Record<string, FloorDef> = (() => {
-  const out: Record<string, FloorDef> = {};
-  for (const f of FLOORS) {
-    for (const id of f.startupIds) out[id] = f;
-  }
-  return out;
-})();
-
 const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(
   FLOORS.map((f) => [f.id, f]),
 );
 
-const SEED_CATEGORIES: string[] = Array.from(
-  new Set(Object.values(STARTUPS).map((s) => s.category)),
-);
-
 const MIN_RANKS = RANKS.filter((r) => r.id > 0);
 
-/** One directory row — seed startup or a live community stand, unified. */
+/** One directory row — a real founder's stand. */
 interface DirRow {
   key: string;
   startup: Startup;
   floor: FloorDef | undefined;
   community: boolean;
-  /** Deep-link target: seed rows walk by id, community rows by spot index. */
   href: string;
   online: boolean;
 }
@@ -78,22 +64,10 @@ export default function DirectoryPage() {
   const community = useCommunityStartups();
   const [state] = useAppState();
 
-  // Seed + community stands as one list. A founder's own stand can appear on
-  // both (seed floors are fixed data; their live claim is separate) — key by
-  // startup id so the community entry wins and nothing double-lists.
+  // Every row is a real founder's stand (claimed on a floor, or registered
+  // and not yet standing anywhere).
   const allRows: DirRow[] = useMemo(() => {
     const rows: DirRow[] = [];
-    for (const s of Object.values(STARTUPS)) {
-      const floor = FLOOR_OF[s.id];
-      rows.push({
-        key: s.id,
-        startup: s,
-        floor,
-        community: false,
-        href: floor ? `/floor/${floor.id}?booth=${encodeURIComponent(s.id)}` : "#",
-        online: false,
-      });
-    }
     for (const c of community) {
       const floor = c.floorId !== null ? FLOOR_BY_ID[c.floorId] : undefined;
       rows.push({
@@ -108,19 +82,14 @@ export default function DirectoryPage() {
     return rows;
   }, [community]);
 
-  // Category chips grow from whatever founders actually signed up under —
-  // seed categories first (stable order), then any new community ones.
+  // Category chips grow purely from what founders typed when they set up.
   const categories: string[] = useMemo(() => {
-    const seen = new Set(SEED_CATEGORIES);
-    const extra: string[] = [];
+    const seen = new Set<string>();
     for (const r of allRows) {
       const cat = r.startup.category;
-      if (cat && !seen.has(cat)) {
-        seen.add(cat);
-        extra.push(cat);
-      }
+      if (cat) seen.add(cat);
     }
-    return [...SEED_CATEGORIES].sort().concat(extra.sort());
+    return [...seen].sort();
   }, [allRows]);
 
   const results: DirRow[] = useMemo(() => {
@@ -155,14 +124,12 @@ export default function DirectoryPage() {
     <main className="mx-auto w-full max-w-3xl px-4 py-12">
       <h1 className="font-display text-3xl">Directory</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Every booth across {FLOORS.length} floors — the{" "}
-        {Object.keys(STARTUPS).length} regulars
+        Every startup on the floors, all founder-made —{" "}
         {communityCount > 0
-          ? `, plus ${communityCount} new founder-made ${
-              communityCount === 1 ? "stand" : "stands"
-            }`
-          : " — and every stand a founder sets up shows up here on its own"}
-        . Search, filter, then go stand in front of one.
+          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${FLOORS.length} floors so far`
+          : `the floors just opened across ${FLOORS.length} halls`}
+        . Set up a stand and yours appears here on its own, under whatever
+        category you give it.
       </p>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -227,10 +194,26 @@ export default function DirectoryPage() {
       </p>
 
       {results.length === 0 ? (
-        <p className="mt-4 text-sm text-muted">
-          Nothing matches. Either loosen a filter or accept that it hasn&rsquo;t
-          been built yet.
-        </p>
+        total === 0 ? (
+          <div className="mt-4 flex flex-col items-start gap-3">
+            <p className="text-sm leading-relaxed text-muted">
+              No stands yet — the floor is wide open, which means the best
+              spots are too. Set up your startup and be the first name in
+              this directory.
+            </p>
+            <Link
+              href="/profile"
+              className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+            >
+              Set up your stand
+            </Link>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-muted">
+            Nothing matches. Either loosen a filter or accept that it
+            hasn&rsquo;t been built yet.
+          </p>
+        )
       ) : (
         <ul className="mt-2 divide-y divide-line border-y border-line">
           {results.map((r) => {

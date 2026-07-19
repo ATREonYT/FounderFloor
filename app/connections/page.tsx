@@ -9,8 +9,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAppState } from "@/lib/store";
-import { FLOORS } from "@/lib/data/floors";
-import { STARTUPS } from "@/lib/data/startups";
 import {
   getSeenMap,
   markThreadSeen,
@@ -30,14 +28,6 @@ function relativeTime(ts: number): string {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
-}
-
-/** Which floor a seed startup exhibits on (for the "visit them" link). */
-function floorOf(startupId: string): { id: string; name: string } | null {
-  for (const f of FLOORS) {
-    if (f.startupIds.includes(startupId)) return { id: f.id, name: f.name };
-  }
-  return null;
 }
 
 export default function ConnectionsPage() {
@@ -120,9 +110,6 @@ export default function ConnectionsPage() {
     if (!ok) setToast({ id: Date.now(), text: "Couldn't send — floor server unreachable." });
     refresh();
   };
-
-  // NPC founders collected at seed booths (local-only, no chat off-floor)
-  const npcConnections = state.connections.filter((c) => c.startupId);
 
   if (!ready) {
     return (
@@ -286,51 +273,6 @@ export default function ConnectionsPage() {
               </div>
             )}
           </div>
-        )}
-      </section>
-
-      {/* ---- collected founders (NPC booths) ---- */}
-      <section aria-label="Founders you met" className="panel p-6">
-        <h2 className="font-display text-xl">Founders you met</h2>
-        <p className="mt-1 text-sm text-muted">
-          Collected at their booths. They only talk in person — visit the floor.
-        </p>
-        {npcConnections.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">None yet. The booths are full of them.</p>
-        ) : (
-          <ul className="mt-4 divide-y divide-line">
-            {[...npcConnections]
-              .sort((a, b) => b.ts - a.ts)
-              .map((c) => {
-                const home = c.startupId ? floorOf(c.startupId) : null;
-                const startup = c.startupId ? STARTUPS[c.startupId] : undefined;
-                return (
-                  <li key={c.ts} className="flex flex-col gap-1.5 py-3">
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <span className="text-sm text-ink">{c.founder ?? c.name}</span>
-                      <span className="text-xs text-muted">{startup?.name ?? c.name}</span>
-                      <span className="micro text-muted">{relativeTime(c.ts)}</span>
-                      {home && (
-                        <Link
-                          href={`/floor/${home.id}${c.startupId ? `?booth=${c.startupId}` : ""}`}
-                          className="micro text-accent hover:underline"
-                        >
-                          visit on {home.name}
-                        </Link>
-                      )}
-                    </div>
-                    <input
-                      type="text"
-                      defaultValue={c.note ?? ""}
-                      maxLength={200}
-                      onBlur={(e) => actions.setConnectionNote(c.ts, e.target.value)}
-                      placeholder="add a note…"
-                      className="w-full max-w-md rounded-md border border-line px-2 py-1 text-xs placeholder:text-muted/60"
-                    />
-                  </li>
-                );
-              })}
-          </ul>
         )}
       </section>
 

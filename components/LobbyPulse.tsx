@@ -10,19 +10,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { STARTUPS } from "@/lib/data/startups";
 import { FLOORS } from "@/lib/data/floors";
 import { httpBase } from "@/lib/net";
 import { useInbox } from "@/lib/social";
 import { TIER_ORDER, type FloorDef, type SubTier } from "@/lib/types";
 import { useCommunityStartups } from "@/components/useCommunityStartups";
 import TierTag, { TIER_LABEL } from "@/components/TierTag";
-
-const FLOOR_OF: Record<string, FloorDef> = (() => {
-  const out: Record<string, FloorDef> = {};
-  for (const f of FLOORS) for (const id of f.startupIds) out[id] = f;
-  return out;
-})();
 
 const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(FLOORS.map((f) => [f.id, f]));
 
@@ -119,22 +112,7 @@ export default function LobbyPulse({
         tier: c.startup.tier,
       });
     }
-    for (const s of Object.values(STARTUPS)) {
-      if (!s.seekingCofounder) continue;
-      const floor = FLOOR_OF[s.id];
-      rows.push({
-        key: s.id,
-        name: s.name,
-        founder: s.founder,
-        category: s.category,
-        floor,
-        href: floor ? `/floor/${floor.id}?booth=${encodeURIComponent(s.id)}` : "/directory?seeking=1",
-        online: false,
-        community: false,
-      });
-    }
-    // live founders first, then paid members (a membership perk), then
-    // fresh community stands, then the regulars
+    // live founders first, then paid members (a membership perk)
     rows.sort(
       (a, b) =>
         Number(b.online) - Number(a.online) ||
