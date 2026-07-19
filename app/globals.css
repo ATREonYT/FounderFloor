@@ -230,26 +230,22 @@
     animation-play-state: paused;
   }
 
-  /* Headline accent: an underline that sweeps in after the page lands. */
+  /* Headline accent: an underline that sweeps in after the page lands.
+     Painted as an animated background (not a positioned pseudo-element) so
+     it follows the text when the phrase wraps across lines —
+     box-decoration-break gives every wrapped fragment its own underline. */
   .sweep-underline {
-    position: relative;
-  }
-  .sweep-underline::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0.02em;
-    height: 0.1em;
-    background: theme("colors.accent");
-    opacity: 0.5;
-    transform: scaleX(0);
-    transform-origin: left;
+    background-image: linear-gradient(rgba(217, 72, 15, 0.5), rgba(217, 72, 15, 0.5));
+    background-repeat: no-repeat;
+    background-position: 0 94%;
+    background-size: 0% 0.1em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
     animation: sweep 700ms var(--ease-out) 450ms both;
   }
   @keyframes sweep {
     to {
-      transform: scaleX(1);
+      background-size: 100% 0.1em;
     }
   }
 
@@ -272,9 +268,9 @@
     .marquee-track {
       animation: none;
     }
-    .sweep-underline::after {
+    .sweep-underline {
       animation: none;
-      transform: scaleX(1);
+      background-size: 100% 0.1em;
     }
     .reveal,
     .reveal.reveal-in {
