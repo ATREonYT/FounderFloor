@@ -1278,11 +1278,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* tutorial graduation: the ceremony at the end of the practice round */}
       {gradPanel && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-ink/40 p-4">
+        <div className="anim-fade absolute inset-0 z-30 flex items-center justify-center bg-ink/40 p-4">
           <div
             role="dialog"
             aria-label="Tutorial complete"
-            className="panel anim-in flex w-[380px] max-w-full flex-col gap-3 p-6 text-center shadow-card"
+            className="panel anim-pop flex w-[380px] max-w-full flex-col gap-3 p-6 text-center shadow-card"
           >
             <p className="micro text-verify">BADGE EARNED</p>
             <h2 className="font-display text-2xl">Tutorial graduate</h2>

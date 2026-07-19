@@ -20,7 +20,7 @@ export default function Toast({ toast }: { toast: ToastData | null }) {
       {toast && (
         <div
           key={toast.id}
-          className="panel px-4 py-2 text-sm shadow-card"
+          className="panel anim-pop px-4 py-2 text-sm shadow-card"
         >
           {toast.text}
         </div>

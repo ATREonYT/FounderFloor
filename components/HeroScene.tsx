@@ -43,8 +43,9 @@ const CARD = "#FAF7EF";
 const CARD_LINE = "#C6BCA4";
 const INK = "#23201A";
 
-// Real Main Hall exhibitors (lib/data/startups.ts), so the vignette matches
-// what you actually find inside.
+// Illustrative stands for the marketing vignette — deliberately generic
+// signage (the real floors hold only real founders' stands, so no fake
+// company names here; the middle one doubles as an invitation).
 interface BoothSpec {
   sign: string;
   glyph: GlyphId;
@@ -55,21 +56,21 @@ interface BoothSpec {
 
 const BOOTH_SPECS: BoothSpec[] = [
   {
-    sign: "SOUP TICKET",
-    glyph: "flask",
+    sign: "YOUR STAND",
+    glyph: "rocket",
     banner: "#D97742",
     carpet: "#9E3B2B",
     founder: { skin: 3, outfit: 2, hair: 5 },
   },
   {
-    sign: "GUTTERBALL",
+    sign: "OPEN SPOT",
     glyph: "star",
     banner: "#D9A13B",
     carpet: "#3E5A8C",
     founder: { skin: 0, outfit: 1, hair: 3 },
   },
   {
-    sign: "FERNWORKS",
+    sign: "DAY ONE CO",
     glyph: "leaf",
     banner: "#7FA65A",
     carpet: "#3F6B4F",

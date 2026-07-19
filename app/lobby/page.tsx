@@ -171,7 +171,7 @@ export default function LobbyPage() {
         </p>
       )}
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {FLOORS.filter((f) => !f.hidden).map((floor) => {
           const locked = TIER_ORDER[state.sub] < TIER_ORDER[floor.tier];
           return (
