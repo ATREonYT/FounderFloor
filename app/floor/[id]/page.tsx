@@ -953,7 +953,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           <div className="mt-5 flex gap-3">
             <Link
               href="/profile"
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+              className="rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
             >
               Upgrade in Profile
             </Link>
@@ -1294,7 +1294,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             <div className="mt-1 flex flex-col gap-2">
               <Link
                 href="/profile#booth"
-                className="btn-press rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent/90"
+                className="btn-press rounded-md bg-accent-strong px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-strong/90"
               >
                 Set up your own booth
               </Link>

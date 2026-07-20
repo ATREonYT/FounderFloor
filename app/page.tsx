@@ -33,7 +33,10 @@ function Ticker() {
     </span>
   );
   return (
-    <div className="marquee overflow-hidden border-b border-line bg-panel py-2" role="marquee">
+    <div
+      aria-hidden="true"
+      className="marquee overflow-hidden border-b border-line bg-panel py-2"
+    >
       <div className="marquee-track flex w-max">
         {row("a", false)}
         {row("b", true)}
@@ -55,7 +58,7 @@ const STEPS: { title: string; body: string; glyph: GlyphId }[] = [
   {
     title: "Talk to founders",
     glyph: "wave",
-    body: "Every booth has a person behind it. Walk up, press E, ask what they actually do. They will tell you, briefly.",
+    body: "Every stand has a person behind it. Walk up, press E, ask what they actually do. They will tell you, briefly.",
   },
   {
     title: "Connect",
@@ -106,7 +109,7 @@ export default function LandingPage() {
           phrase gets a sweeping accent underline, and the scene floats
           gently inside a framed panel */}
       <section className="border-b border-line">
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12">
+        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12">
           <div className="stagger-children">
             <p className="micro flex items-center gap-2 text-muted">
               <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-accent" />
@@ -117,15 +120,15 @@ export default function LandingPage() {
               <span className="sweep-underline">never tears down</span>.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">
-              FounderFloor is a small 2D world where startups keep a booth and
+              FounderFloor is a small 2D world where startups keep a stand and
               real founders stand at it. You walk around, you read the signs,
               you talk to people. Ranks come from verified revenue, so the
-              booth with the gold badge earned it the boring way.
+              stand with the gold badge earned it the boring way.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/lobby"
-                className="btn-press rounded-md bg-accent px-6 py-3 text-sm font-medium text-white shadow-[0_2px_0_rgba(35,32,26,0.25)] hover:bg-accent/90"
+                className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-white shadow-[0_2px_0_rgba(35,32,26,0.25)] hover:bg-accent-strong/90"
               >
                 Walk the floor →
               </Link>
@@ -133,7 +136,7 @@ export default function LandingPage() {
                 href="/profile#booth"
                 className="btn-press rounded-md border border-ink px-6 py-3 text-sm font-medium text-ink hover:bg-panel"
               >
-                Set up a booth
+                Set up a stand
               </Link>
             </div>
             <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
@@ -148,7 +151,10 @@ export default function LandingPage() {
           </div>
           <div className="anim-in">
             <div className="float-slow">
-              <div className="relative overflow-hidden rounded-lg border border-ink/20 shadow-[0_2px_6px_rgba(35,32,26,0.08),0_18px_40px_rgba(35,32,26,0.12)]">
+              {/* single clean frame — HeroScene draws its own rounded-md
+                  border, so the wrapper only adds the shadow (no second
+                  hairline, matching radius) */}
+              <div className="relative overflow-hidden rounded-md shadow-[0_2px_6px_rgba(35,32,26,0.08),0_18px_40px_rgba(35,32,26,0.12)]">
                 <HeroScene className="lg:h-[400px]" />
                 <span className="micro absolute left-3 top-3 rounded-sm border border-ink/15 bg-paper/85 px-2 py-1 text-muted backdrop-blur-[2px]">
                   MAIN HALL · AMBIENT VIEW
@@ -162,7 +168,7 @@ export default function LandingPage() {
         </div>
 
         {/* live pulse: real numbers from the floor server, counting up */}
-        <div className="mx-auto w-full max-w-6xl px-4 pb-12">
+        <div className="mx-auto w-full max-w-5xl px-4 pb-12">
           <LiveStats />
         </div>
       </section>
@@ -214,7 +220,7 @@ export default function LandingPage() {
                 href: "/lobby",
                 glyph: "cube" as const,
                 name: "Floors",
-                blurb: "The halls themselves. Walk in, browse booths, talk to whoever's there.",
+                blurb: "The halls themselves. Walk in, browse stands, talk to whoever's there.",
                 action: "Walk a floor",
               },
               {
@@ -235,7 +241,7 @@ export default function LandingPage() {
                 href: "/profile",
                 glyph: "bolt" as const,
                 name: "Profile",
-                blurb: "Your name, your booth, your quests and badges — and an account if you want one.",
+                blurb: "Your name, your stand, your quests and badges — and an account if you want one.",
                 action: "Set yourself up",
               },
             ].map((s) => (
@@ -416,16 +422,16 @@ export default function LandingPage() {
                 <article
                   key={tier}
                   className={`panel card-lift relative flex flex-col p-5 ${
-                    tier === "pro"
-                      ? "border-accent/60 shadow-card sm:-translate-y-2"
-                      : ""
+                    tier === "pro" ? "border-accent/60 shadow-card ring-1 ring-accent/30" : ""
                   }`}
                 >
+                  {tier === "pro" && (
+                    <span className="absolute -top-3 left-5 rounded-full bg-accent-strong px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-white shadow-sm">
+                      Recommended
+                    </span>
+                  )}
                   <div className="flex items-baseline justify-between gap-2">
                     <h3 className="font-display text-lg">{TIER_LABEL[tier]}</h3>
-                    {tier === "pro" ? (
-                      <span className="micro text-accent">the sensible one</span>
-                    ) : null}
                   </div>
                   <p className="mt-2 font-display text-3xl">
                     {amount}
@@ -460,7 +466,11 @@ export default function LandingPage() {
                   </ul>
                   <Link
                     href="/profile#membership"
-                    className="mt-5 rounded-md border border-ink px-4 py-2 text-center text-sm hover:bg-paper"
+                    className={`btn-press mt-5 rounded-md px-4 py-2.5 text-center text-sm font-medium ${
+                      tier === "pro"
+                        ? "bg-accent-strong text-white hover:bg-accent-strong/90"
+                        : "border border-ink hover:bg-paper"
+                    }`}
                   >
                     Choose {TIER_LABEL[tier]}
                   </Link>
@@ -502,7 +512,7 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <span className="text-ink">Your progress, everywhere</span>{" "}
-                  — booth, quests, badges, and streaks now follow your
+                  — stand, quests, badges, and streaks now follow your
                   account across devices.
                 </li>
                 <li>
@@ -565,7 +575,7 @@ export default function LandingPage() {
                 a: "No — you can walk in as a guest with just a name. An account (free) makes your progress follow you across devices and lets you reset a forgotten password by email.",
               },
               {
-                q: "What are the ranks on the booths?",
+                q: "What are the ranks on the stands?",
                 a: "Monthly revenue tiers. They're labeled honestly: in this beta, verification is simulated — founders type a number. Read-only Stripe verification is the first post-beta feature.",
               },
             ].map(({ q, a }) => (
@@ -600,7 +610,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/lobby"
-            className="btn-press mt-8 inline-block rounded-md bg-accent px-7 py-3.5 text-sm font-medium text-white shadow-[0_2px_0_rgba(0,0,0,0.35)] hover:bg-accent/90"
+            className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-white shadow-[0_2px_0_rgba(0,0,0,0.35)] hover:bg-accent-strong/90"
           >
             Walk the floor →
           </Link>

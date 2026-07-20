@@ -154,21 +154,58 @@ function scheduleSyncPush(): void {
 
 /**
  * Apply a pulled blob when it's newer than this device's last sync point.
- * The blob goes through sanitize() — the same defensive gate as
- * localStorage — and never touches the local identity or seen-marks.
+ * The blob goes through sanitize() — the same defensive gate as localStorage
+ * — and never touches the local identity or seen-marks.
+ *
+ * This is NOT a wholesale replace: a guest who built a booth, made
+ * connections and earned badges, then signs into an existing account, must
+ * not have that work silently deleted. So the additive things people work
+ * for are UNIONED with whatever the account already had, the booth is kept
+ * if the account has none, and streak counters take the higher value. Remote
+ * wins for single-value identity fields (name, look, membership tier).
  */
 function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean {
   if (!remote.state || typeof remote.state !== "object") return false;
   if (remote.savedAt <= getLastSyncTs()) return false;
+  const local = state;
   const merged = sanitize(remote.state);
-  merged.profile.id = state.profile.id;
-  if (merged.profile.name === "") merged.profile.name = state.profile.name;
-  merged.lastSeenAt = state.lastSeenAt;
-  merged.prevSeenAt = state.prevSeenAt;
+
+  // identity + seen-marks stay local
+  merged.profile.id = local.profile.id;
+  if (merged.profile.name === "") merged.profile.name = local.profile.name;
+  merged.lastSeenAt = local.lastSeenAt;
+  merged.prevSeenAt = local.prevSeenAt;
+
+  // union badges (never lose an earned badge)
+  merged.badges = Array.from(new Set([...merged.badges, ...local.badges])).slice(0, 20);
+
+  // union connections by their dedupe key (peerId, else timestamp)
+  const connKey = (c: (typeof local.connections)[number]) => c.peerId ?? `ts:${c.ts}`;
+  const byKey = new Map<string, (typeof local.connections)[number]>();
+  for (const c of local.connections) byKey.set(connKey(c), c);
+  for (const c of merged.connections) byKey.set(connKey(c), c); // remote wins on conflict
+  merged.connections = Array.from(byKey.values()).slice(0, 200);
+
+  // keep a locally-built booth if the account doesn't already have one
+  if (!merged.myStartup && local.myStartup) merged.myStartup = local.myStartup;
+
+  // merge claimed stands, and take the higher streak
+  merged.claims = { ...local.claims, ...merged.claims };
+  merged.visitStreak = Math.max(merged.visitStreak, local.visitStreak);
+  merged.bestStreak = Math.max(merged.bestStreak, local.bestStreak);
+
+  // union quest deeds so tutorial/quest progress can't regress
+  merged.badges = merged.badges; // (kept above)
+  merged.claimedQuests = Array.from(new Set([...merged.claimedQuests, ...local.claimedQuests]));
+  merged.onboarding = merged.onboarding.length >= local.onboarding.length ? merged.onboarding : local.onboarding;
+  merged.tutorialDone = merged.tutorialDone || local.tutorialDone;
+
   state = merged;
   persist();
   emit();
-  lastPushedJson = JSON.stringify(syncableState(state));
+  // Push the merged result back up so the account keeps the folded-in work,
+  // rather than marking it "already synced" and dropping it.
+  lastPushedJson = "";
   setLastSyncTs(remote.savedAt);
   return true;
 }
@@ -183,7 +220,11 @@ export function syncNow(): void {
   const me = state.profile.id;
   if (!me || state.profile.name === "") return;
   void pullState(me).then((remote) => {
-    if (remote && remote.state && applyRemoteState(remote)) return;
+    if (remote && remote.state) applyRemoteState(remote);
+    // Always follow with a push. It's hash-guarded, so it's a no-op unless a
+    // merge folded local work into the pulled state (applyRemoteState cleared
+    // lastPushedJson) or this device has unsynced changes — either way the
+    // account ends up holding the union, not the smaller of the two.
     scheduleSyncPush();
   });
 }

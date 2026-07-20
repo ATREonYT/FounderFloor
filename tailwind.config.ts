@@ -11,6 +11,10 @@ const config: Config = {
         muted: "#6F6A5E",
         line: "#E4DFD3",
         accent: "#D9480F",
+        // white on #D9480F is ~4.3:1 — a hair under AA for button text. This
+        // darker shade (~5.2:1) is for solid CTA fills; keep `accent` for
+        // borders, dots, and accent text where it already passes.
+        "accent-strong": "#C0410C",
         "accent-soft": "#FBE9E0",
         verify: "#2B8A3E",
         gold: "#B08D2E",

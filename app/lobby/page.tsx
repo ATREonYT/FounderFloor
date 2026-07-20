@@ -57,7 +57,7 @@ function FirstVisitPanel({
         <button
           type="submit"
           disabled={!name.trim()}
-          className="self-start rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Enter the lobby
         </button>
@@ -152,7 +152,7 @@ export default function LobbyPage() {
           <Link
             href="/floor/tutorial-hall"
             onClick={() => actions.resetTutorial()}
-            className="btn-press rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent/90"
+            className="btn-press rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-strong/90"
           >
             Start tutorial
           </Link>

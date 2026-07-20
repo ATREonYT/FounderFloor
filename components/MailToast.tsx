@@ -7,7 +7,7 @@
  * after a few seconds either way.
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export interface MailToastData {
   id: number; // fresh id per toast so repeat senders still re-animate
@@ -60,11 +60,18 @@ export default function MailToast({
   onOpen: (peerId: string) => void;
   onDismiss: () => void;
 }) {
+  // Auto-dismiss keyed on the toast's id only. Call sites pass a fresh inline
+  // onDismiss each render (recreated ~15×/s while the mouse moves on a floor),
+  // so depending on it would restart the 6s timer forever and the toast would
+  // never clear. A ref holds the latest onDismiss without re-arming the timer.
+  const dismissRef = useRef(onDismiss);
+  dismissRef.current = onDismiss;
+  const toastId = toast?.id;
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(onDismiss, 6000);
+    if (toastId === undefined) return;
+    const t = setTimeout(() => dismissRef.current(), 6000);
     return () => clearTimeout(t);
-  }, [toast, onDismiss]);
+  }, [toastId]);
 
   if (!toast) return null;
 

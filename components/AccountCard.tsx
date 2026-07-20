@@ -266,7 +266,7 @@ export default function AccountCard({
             <button
               type="submit"
               disabled={busy || !email.includes("@")}
-              className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy ? "…" : "Email me a reset link"}
             </button>
@@ -387,7 +387,7 @@ export default function AccountCard({
           <button
             type="submit"
             disabled={busy || missing.length > 0}
-            className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy ? "…" : mode === "register" ? "Create free account" : "Sign in"}
           </button>

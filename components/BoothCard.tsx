@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { NetClient, Startup } from "@/lib/types";
+import { isValidLogo } from "@/lib/store";
 import RankBadge from "@/components/RankBadge";
 import TierTag from "@/components/TierTag";
 import PixelGlyph from "@/components/PixelGlyph";
@@ -62,7 +63,11 @@ export default function BoothCard({
         className="flex items-center gap-2 rounded-t-md px-4 py-2"
         style={{ backgroundColor: s.booth.banner }}
       >
-        {s.booth.logo ? (
+        {/* Re-validate the logo at the render site: a live peer's booth comes
+            off the wire, and the client already knows the rule (tiny base64
+            PNG only) — don't rely solely on the server to keep an attacker
+            from swapping in a tracking-beacon URL or an SVG. */}
+        {isValidLogo(s.booth.logo) ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={s.booth.logo} alt="" aria-hidden="true" width={16} height={16} className="pixelated" />
         ) : (

@@ -66,7 +66,7 @@ export default function RequestCard({
         <button
           type="button"
           onClick={() => onRespond(true)}
-          className="btn-press flex-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent/90"
+          className="btn-press flex-1 rounded-md bg-accent-strong px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong/90"
         >
           Accept
         </button>

@@ -46,7 +46,8 @@
  * Run with: node server/index.mjs   (PORT_WS overrides the port, default 3001)
  */
 
-import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
+import { availableParallelism } from "node:os";
 import { closeSync, copyFileSync, fsyncSync, openSync, readFileSync, renameSync, writeSync } from "node:fs";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
@@ -54,6 +55,12 @@ import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
 
 const PORT = Number(process.env.PORT_WS || 3001);
+
+// CORS: defaults to "*" so the API works out of the box, but set
+// ALLOWED_ORIGIN (e.g. https://founderfloor.net) in production to stop other
+// sites using this API as free backend. Auth is bearer-token (not cookies),
+// so "*" is not a CSRF hole either way — this is blast-radius reduction.
+const ACAO = process.env.ALLOWED_ORIGIN || "*";
 
 const MAX_NAME_LEN = 24;
 const MAX_TEXT_LEN = 500;
@@ -233,8 +240,13 @@ const echoedEmails = [];
  * spamming /auth/forgot at a victim can't use up the victim's own reset budget.
  */
 const emailRecipientLog = new Map(); // `${bucket}|${email}` -> ts[] within the last hour
-const RECIPIENT_HOURLY = { courtesy: 4, critical: 10, operator: 20 };
-const DAILY_CEILING = { courtesy: 300, critical: 300, operator: 100 };
+// Separate buckets so no category can starve another. Crucially, security
+// NOTICES (sign-in alert, password-changed, email-changed) live in their own
+// bucket, apart from RESET links — an attacker flooding /auth/forgot at a
+// victim burns only the "reset" bucket and can never silence the tripwire
+// notices that would warn the victim an attack is underway.
+const RECIPIENT_HOURLY = { courtesy: 4, reset: 6, notice: 12, operator: 20 };
+const DAILY_CEILING = { courtesy: 300, reset: 200, notice: 300, operator: 100 };
 
 /**
  * Where beta feedback and abuse reports get mailed (they're stored in
@@ -258,14 +270,13 @@ function sendOperatorEmail(subject, title, rows, footer) {
     rows.map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\n${footer}`;
   sendEmail(OPERATOR_EMAIL, subject, emailShell(title, bodyHtml), text, "operator");
 }
-const emailDay = { day: "", courtesy: 0, critical: 0 };
+const emailDay = { day: "", courtesy: 0, reset: 0, notice: 0, operator: 0 };
 
 function rollEmailDay() {
   const day = new Date().toISOString().slice(0, 10);
   if (emailDay.day !== day) {
     emailDay.day = day;
-    emailDay.courtesy = 0;
-    emailDay.critical = 0;
+    for (const k of Object.keys(DAILY_CEILING)) emailDay[k] = 0;
   }
 }
 
@@ -390,6 +401,7 @@ function sendSigninAlertEmail(acct) {
         emailBtn(SITE_URL + "/profile", "Secure my account"),
     ),
     `Your FounderFloor account "${acct.name}" was signed in from a new browser on ${when}.\n\nIf this was you, ignore this. If not, reset your password at ${SITE_URL}/profile — that signs every browser out.`,
+    "notice",
   );
 }
 
@@ -407,6 +419,7 @@ function sendResetEmail(acct, link) {
         `Ignore this email — your password is unchanged and the link dies on its own.</p>`,
     ),
     `Reset your FounderFloor password (account "${acct.name}"):\n\n${link}\n\nThe link works once and expires in 30 minutes. If you didn't ask for this, ignore it — your password is unchanged.`,
+    "reset",
   );
 }
 
@@ -424,6 +437,7 @@ function sendEmailChangedNotice(oldEmail, acct, newEmail) {
         `taken over, and a human needs to hear from you.</p>`,
     ),
     `The recovery email for your FounderFloor account "${acct.name}" was just changed from this address to ${newEmail}.\n\nIf this wasn't you, reply to this email immediately — your account may have been taken over.`,
+    "notice",
   );
 }
 
@@ -442,6 +456,7 @@ function sendPasswordChangedEmail(acct) {
         `reply to this email so a human hears about it.</p>`,
     ),
     `The password for your FounderFloor account "${acct.name}" was just changed, and all sessions were signed out.\n\nIf this wasn't you, use "Forgot password" at ${SITE_URL}/profile to take the account back.`,
+    "notice",
   );
 }
 
@@ -481,8 +496,45 @@ function noteLoginFailure(key) {
   loginFails.set(key, e);
 }
 
+/**
+ * Password hashing is deliberately expensive (scrypt N=32768 ≈ 100ms + ~33MB).
+ * The SYNC variant would block the single Node thread that also serves every
+ * game frame and chat message — ~10 logins/sec would freeze the whole floor.
+ * So: async scrypt (runs on libuv's threadpool, off the event loop) behind a
+ * small semaphore, so a login flood queues a few hashes and rejects the rest
+ * instead of stalling everyone. `overloaded()` lets callers fail fast.
+ */
+const HASH_MAX_CONCURRENT = Math.max(2, (availableParallelism?.() ?? 4) - 1);
+const HASH_MAX_QUEUE = 32;
+let hashInFlight = 0;
+let hashQueued = 0;
+const hashWaiters = [];
+
+function overloaded() {
+  return hashQueued >= HASH_MAX_QUEUE;
+}
+
 function hashPassword(password, salt, kdf = SCRYPT) {
-  return scryptSync(password, salt, 32, { N: kdf.N, r: kdf.r, p: kdf.p, maxmem: 64 * 1024 * 1024 });
+  return new Promise((resolve, reject) => {
+    const run = () => {
+      hashInFlight++;
+      scrypt(password, salt, 32, { N: kdf.N, r: kdf.r, p: kdf.p, maxmem: 64 * 1024 * 1024 }, (err, buf) => {
+        hashInFlight--;
+        const next = hashWaiters.shift();
+        if (next) {
+          hashQueued--;
+          next();
+        }
+        if (err) reject(err);
+        else resolve(buf);
+      });
+    };
+    if (hashInFlight < HASH_MAX_CONCURRENT) run();
+    else {
+      hashQueued++;
+      hashWaiters.push(run);
+    }
+  });
 }
 
 const TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, refreshed on use
@@ -524,11 +576,17 @@ function verifyIdentity(profileId, token, gs) {
   const supplied = typeof gs === "string" && gs.length >= 16 && gs.length <= 64 ? gs : null;
   const bound = guestSecrets.get(profileId);
   if (!bound) {
-    if (supplied && guestSecrets.size < MAX_GUEST_SECRETS) {
+    // First use binds the secret to this id. An unbound id presented with NO
+    // secret is NOT authenticated — real clients always send their browser
+    // secret, so this is either a stale/legacy client (fine, it just becomes
+    // an anonymous guest) or someone using a victim's semi-public guest id to
+    // read their synced state, connections and DMs. Deny it.
+    if (!supplied) return false;
+    if (guestSecrets.size < MAX_GUEST_SECRETS) {
       guestSecrets.set(profileId, { secret: supplied, ts: Date.now() });
       scheduleSave();
     }
-    return true; // unbound guest — first use binds (or legacy client, no secret)
+    return true;
   }
   if (!supplied) return false;
   const a = Buffer.from(bound.secret);
@@ -1192,7 +1250,7 @@ function pushActivity(room, floorId, text) {
 function sendJson(res, body) {
   res.writeHead(200, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ACAO,
   });
   res.end(JSON.stringify(body));
 }
@@ -1254,10 +1312,38 @@ function resolveProfileId(target) {
   return target;
 }
 
+/**
+ * The rate-limit key for a request. Behind a reverse proxy (Caddy/Cloudflare),
+ * req.socket.remoteAddress is the PROXY's IP — so every visitor would share
+ * one bucket, and 10 logins/min would lock out the whole site while an
+ * attacker rotating identifiers slips through. Set TRUST_PROXY=1 when (and
+ * only when) a trusted proxy sits in front, and we read the client from the
+ * leftmost X-Forwarded-For hop. For IPv6 we key on the /64 prefix, since a
+ * single attacker owns trillions of addresses inside one /64.
+ */
+const TRUST_PROXY = process.env.TRUST_PROXY === "1";
+
+function clientIp(req) {
+  let ip = req.socket.remoteAddress ?? "?";
+  if (TRUST_PROXY) {
+    const xff = req.headers["x-forwarded-for"];
+    if (typeof xff === "string" && xff.length) {
+      ip = xff.split(",")[0].trim() || ip;
+    }
+  }
+  ip = ip.replace(/^::ffff:/, ""); // unwrap IPv4-mapped IPv6
+  if (ip.includes(":")) {
+    // collapse IPv6 to its /64 network prefix (first four hextets)
+    const parts = ip.split(":");
+    return parts.slice(0, 4).join(":") + "::/64";
+  }
+  return ip;
+}
+
 /** POST /auth/*: register, login, logout. Fixed-window rate limit per IP. */
 const authAttempts = new Map(); // ip -> { windowStart, count }
 function authRateLimited(req) {
-  const ip = req.socket.remoteAddress ?? "?";
+  const ip = clientIp(req);
   const now = Date.now();
   let a = authAttempts.get(ip);
   if (!a || now - a.windowStart >= 60_000) {
@@ -1324,7 +1410,7 @@ async function handleAuthPost(req, res, pathname) {
       name,
       email,
       salt,
-      hash: hashPassword(password, salt).toString("hex"),
+      hash: (await hashPassword(password, salt)).toString("hex"),
       kdf: { ...SCRYPT },
       devices: device ? [device] : [],
       created: Date.now(),
@@ -1348,6 +1434,12 @@ async function handleAuthPost(req, res, pathname) {
       sendJson(res, { error: "too many tries for this account — wait a minute, then try again" });
       return;
     }
+    // Shed load rather than pin the event loop: under a hashing flood, reject
+    // fast instead of queueing another 100ms scrypt behind the game frames.
+    if (overloaded()) {
+      sendJson(res, { error: "busy right now — try again in a moment" });
+      return;
+    }
     // Try email first, then fall back to a display-name match. The client
     // sends both fields, so a legacy account whose *name* happens to contain
     // "@" (names only strip control chars) still resolves by name instead of
@@ -1359,7 +1451,7 @@ async function handleAuthPost(req, res, pathname) {
     // Constant-shape compare either way, so login can't probe for accounts.
     const salt = acct?.salt ?? "0".repeat(32);
     const expected = Buffer.from(acct?.hash ?? "0".repeat(64), "hex");
-    const got = hashPassword(password, salt, acct?.kdf ?? SCRYPT);
+    const got = await hashPassword(password, salt, acct?.kdf ?? SCRYPT);
     if (!acct || expected.length !== got.length || !timingSafeEqual(expected, got)) {
       noteLoginFailure(failKey);
       sendJson(res, { error: "wrong email or password" });
@@ -1404,7 +1496,7 @@ async function handleAuthPost(req, res, pathname) {
     // and send nothing. Rotating it here would mint a fresh token, invalidate
     // the last one the owner actually received, and then drop the new email —
     // stranding the victim with only dead links.
-    if (!emailQuotaAvailable(acct.email, "critical")) return;
+    if (!emailQuotaAvailable(acct.email, "reset")) return;
     // One outstanding link per account: a new request invalidates the old.
     for (const [tok, v] of resetTokens) {
       if (v.id === acct.id) resetTokens.delete(tok);
@@ -1437,7 +1529,7 @@ async function handleAuthPost(req, res, pathname) {
     }
     const salt = randomBytes(16).toString("hex");
     acct.salt = salt;
-    acct.hash = hashPassword(password, salt).toString("hex");
+    acct.hash = (await hashPassword(password, salt)).toString("hex");
     acct.kdf = { ...SCRYPT };
     // The point of a reset is locking intruders out: kill every session.
     for (const [tok, v] of tokens) {
@@ -1490,7 +1582,7 @@ async function handleAuthPost(req, res, pathname) {
     const oldEmail = acct.email;
     if (oldEmail) {
       const password = typeof body.password === "string" ? body.password : "";
-      const got = hashPassword(password, acct.salt, acct.kdf);
+      const got = await hashPassword(password, acct.salt, acct.kdf);
       const expected = Buffer.from(acct.hash, "hex");
       if (expected.length !== got.length || !timingSafeEqual(expected, got)) {
         sendJson(res, { error: "enter your current password to change your email", needPassword: true });
@@ -1649,7 +1741,7 @@ function acceptPair(aId, aName, bId, bName, aStartup, bStartup) {
 function notFound(res) {
   res.writeHead(404, {
     "Content-Type": "text/plain",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ACAO,
   });
   res.end("not found");
 }
@@ -1666,7 +1758,7 @@ const server = createServer((req, res) => {
   // CORS preflight for the JSON POST routes
   if (req.method === "OPTIONS") {
     res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin": ACAO,
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization, X-FF-GS",
       "Access-Control-Max-Age": "86400",
@@ -1925,6 +2017,19 @@ const server = createServer((req, res) => {
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 
+// Connection-flood defenses: cap total sockets and per-IP sockets so one host
+// can't open thousands and exhaust memory, and drop any socket that connects
+// but never sends a valid `join` within a few seconds (idle-hold / slowloris).
+const MAX_WS_TOTAL = 3000;
+const MAX_WS_PER_IP = 24;
+const JOIN_GRACE_MS = 12_000;
+const wsPerIp = new Map(); // ip key -> count
+
+// Slowloris/idle-body guards on the HTTP side (Node defaults are generous).
+server.requestTimeout = 20_000; // whole request must arrive within 20s
+server.headersTimeout = 10_000; // headers within 10s
+server.keepAliveTimeout = 30_000;
+
 server.on("error", (err) => {
   console.error(`[server] error: ${err.message}`);
   process.exit(1);
@@ -1936,11 +2041,33 @@ wss.on("error", (err) => {
 });
 
 wss.on("connection", (ws, req) => {
+  // Shed connection floods before allocating anything for this socket.
+  if (wss.clients.size > MAX_WS_TOTAL) {
+    ws.close(1013, "server busy");
+    return;
+  }
+  const ipKey = clientIp(req);
+  const perIp = wsPerIp.get(ipKey) ?? 0;
+  if (perIp >= MAX_WS_PER_IP) {
+    ws.close(1013, "too many connections");
+    return;
+  }
+  wsPerIp.set(ipKey, perIp + 1);
+  let ipCounted = true;
+  const releaseIp = () => {
+    if (!ipCounted) return;
+    ipCounted = false;
+    const n = (wsPerIp.get(ipKey) ?? 1) - 1;
+    if (n <= 0) wsPerIp.delete(ipKey);
+    else wsPerIp.set(ipKey, n);
+  };
+
   let floorId = "lobby";
   try {
     const url = new URL(req.url ?? "/", "ws://internal");
     floorId = (url.searchParams.get("floor") || "lobby").slice(0, MAX_ID_LEN);
   } catch {
+    releaseIp();
     ws.close(1008, "bad request url");
     return;
   }
@@ -1953,6 +2080,12 @@ wss.on("connection", (ws, req) => {
   /** Set once a valid join arrives; also stored in the room map. */
   let client = null;
   let room = null;
+
+  // A socket that connects but never joins is either a probe or an attack —
+  // close it after the grace window so it can't sit and hold resources.
+  let joinTimer = setTimeout(() => {
+    if (!client) ws.close(1008, "no join");
+  }, JOIN_GRACE_MS);
 
   // move rate limiting: fixed 1s window per client
   let moveWindowStart = 0;
@@ -1981,6 +2114,11 @@ wss.on("connection", (ws, req) => {
   let boothSetsInWindow = 0;
 
   function handleJoin(msg) {
+    // A real join arrived within the grace window — cancel the idle-kill timer.
+    if (joinTimer) {
+      clearTimeout(joinTimer);
+      joinTimer = null;
+    }
     const p = msg.player;
     let rawId =
       typeof p?.id === "string" && p.id.trim()
@@ -2043,7 +2181,13 @@ wss.on("connection", (ws, req) => {
     // arrival within the window (flaky connection, floor-hopping) is silent.
     let seen = lastWalkIn.get(floorId);
     if (!seen) {
-      if (lastWalkIn.size >= MAX_FLOORS_TRACKED) lastWalkIn.clear();
+      // Evict the oldest floor's suppression, not all of them — a blanket
+      // clear() let an attacker cycling floors repeatedly wipe everyone's
+      // "walked in" cooldown and re-trigger ticker spam.
+      if (lastWalkIn.size >= MAX_FLOORS_TRACKED) {
+        const oldest = lastWalkIn.keys().next().value;
+        if (oldest !== undefined) lastWalkIn.delete(oldest);
+      }
       seen = new Map();
       lastWalkIn.set(floorId, seen);
     }
@@ -2098,6 +2242,14 @@ wss.on("connection", (ws, req) => {
     client.claim = claim;
     let byOwner = stands.get(floorId);
     if (!byOwner) {
+      // Cap the number of distinct floors we persist stands for: floorId comes
+      // straight off the ws URL, so without this an attacker could loop
+      // join→claim→disconnect on ?floor=<random> forever, ballooning
+      // floor-data.json (and every full-file save) without bound.
+      if (stands.size >= MAX_FLOORS_TRACKED) {
+        send(ws, { t: "booth_denied", spotIndex: claim.spotIndex });
+        return;
+      }
       byOwner = new Map();
       stands.set(floorId, byOwner);
     }
@@ -2321,6 +2473,11 @@ wss.on("connection", (ws, req) => {
   }
 
   ws.on("close", () => {
+    releaseIp();
+    if (joinTimer) {
+      clearTimeout(joinTimer);
+      joinTimer = null;
+    }
     if (!client || !room) return;
     const socks = socketsByProfile.get(client.rawId);
     if (socks) {

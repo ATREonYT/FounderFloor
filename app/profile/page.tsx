@@ -238,7 +238,7 @@ function ColorRow({
   return (
     <div>
       <span className="micro mb-1.5 block text-muted">{label}</span>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2">
         {SWATCHES.map((c) => (
           <button
             key={c}
@@ -246,7 +246,7 @@ function ColorRow({
             onClick={() => onPick(c)}
             aria-label={`${label} color ${c}`}
             aria-pressed={value === c}
-            className={`h-6 w-6 rounded-sm border ${
+            className={`h-8 w-8 rounded-sm border ${
               value === c
                 ? "border-accent ring-2 ring-accent ring-offset-1 ring-offset-panel"
                 : "border-line hover:border-muted"
@@ -442,7 +442,7 @@ export default function ProfilePage() {
       <nav aria-label="Profile sections" className="-mt-2 flex flex-wrap gap-1.5">
         {[
           ["identity", "Identity"],
-          ["booth", "My booth"],
+          ["booth", "My stand"],
           ["verification", "Verification"],
           ["membership", "Membership"],
           ["quests", "Quests"],
@@ -452,7 +452,7 @@ export default function ProfilePage() {
           <a
             key={id}
             href={`#${id}`}
-            className="rounded-md border border-line px-2.5 py-1 text-xs text-muted hover:border-ink hover:text-ink"
+            className="min-h-[36px] rounded-md border border-line px-3 py-1.5 text-xs text-muted hover:border-ink hover:text-ink"
           >
             {label}
           </a>
@@ -576,7 +576,7 @@ export default function ProfilePage() {
       </SectionCard>
 
       {/* ---- My booth ---- */}
-      <SectionCard title="My booth" id="booth">
+      <SectionCard title="My stand" id="booth">
         <div className="grid gap-6 md:grid-cols-[1fr,220px]">
           <div className="flex flex-col gap-4">
             <div>
@@ -802,9 +802,9 @@ export default function ProfilePage() {
                 type="button"
                 onClick={saveBooth}
                 disabled={!boothValid}
-                className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {state.myStartup ? "Save booth" : "Set up booth"}
+                {state.myStartup ? "Save stand" : "Set up stand"}
               </button>
               {state.myStartup && (
                 <button
@@ -819,14 +819,14 @@ export default function ProfilePage() {
                   }}
                   className="rounded-md border border-line px-4 py-2 text-sm text-muted hover:border-muted hover:text-ink"
                 >
-                  Take down booth
+                  Take down stand
                 </button>
               )}
               {!boothValid && (
                 <span className="text-xs text-muted">
                   {state.profile.name.trim() === ""
-                    ? "Set your name above first — booths need a founder."
-                    : "A booth needs at least a startup name."}
+                    ? "Set your name above first — stands need a founder."
+                    : "A stand needs at least a startup name."}
                 </span>
               )}
             </div>
@@ -900,7 +900,7 @@ export default function ProfilePage() {
           </button>
           {!state.myStartup && (
             <span className="text-xs text-muted">
-              Set up a booth first — the rank has to hang on something.
+              Set up a stand first — the rank has to hang on something.
             </span>
           )}
         </div>

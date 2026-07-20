@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import PixelLogo from "@/components/PixelLogo";
+import NavLink from "@/components/NavLink";
 import NavConnections from "@/components/NavConnections";
 import NavProfile from "@/components/NavProfile";
 import Messenger from "@/components/Messenger";
@@ -24,32 +25,23 @@ export default function RootLayout({
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4 sm:gap-6">
             <Link
               href="/"
-              className="flex items-center gap-2.5"
+              className="flex shrink-0 items-center gap-2.5"
               aria-label="FounderFloor home"
             >
               <PixelLogo size={22} />
-              <span className="font-display text-lg tracking-tight">
+              {/* wordmark hides on the tightest phones so the nav never
+                  overflows/scrolls at 375px — the pixel logo stays as the
+                  home affordance */}
+              <span className="hidden font-display text-lg tracking-tight min-[400px]:inline">
                 FounderFloor
               </span>
             </Link>
-            {/* min-w-0 + overflow-x-auto: on narrow phones the nav scrolls
-                sideways instead of pushing links off the edge */}
             <nav
               aria-label="Main"
-              className="ml-auto flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap sm:gap-5"
+              className="ml-auto flex min-w-0 items-center gap-3 whitespace-nowrap sm:gap-5"
             >
-              <Link
-                href="/lobby"
-                className="text-sm text-muted hover:text-ink hover:underline"
-              >
-                Floors
-              </Link>
-              <Link
-                href="/directory"
-                className="text-sm text-muted hover:text-ink hover:underline"
-              >
-                Directory
-              </Link>
+              <NavLink href="/lobby">Floors</NavLink>
+              <NavLink href="/directory">Directory</NavLink>
               <NavConnections />
               <NavProfile />
             </nav>

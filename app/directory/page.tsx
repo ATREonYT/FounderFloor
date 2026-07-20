@@ -43,7 +43,7 @@ function tierWeight(tier: "pro" | "founder" | undefined): number {
 }
 
 function chipClass(active: boolean): string {
-  return `min-h-[40px] rounded-md border px-3 py-2 text-xs ${
+  return `min-h-[44px] rounded-md border px-3 py-2.5 text-xs ${
     active
       ? "border-accent bg-accent-soft text-accent"
       : "border-line text-muted hover:border-muted hover:text-ink"
@@ -211,7 +211,7 @@ export default function DirectoryPage() {
             </p>
             <Link
               href="/profile#booth"
-              className="btn-press rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90"
+              className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
             >
               Set up your stand
             </Link>

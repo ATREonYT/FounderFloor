@@ -52,6 +52,12 @@ Environment=SITE_URL=https://founderfloor.net
 # Optional: beta feedback + abuse reports also land in this inbox
 # (they're always stored in floor-data.json either way).
 Environment=OPERATOR_EMAIL=you@yourworkmail.com
+# Behind Caddy/Cloudflare, set this so the rate limiter sees the real
+# client IP (X-Forwarded-For) instead of the proxy's — otherwise every
+# visitor shares one bucket. Only enable it WITH a trusted proxy in front.
+Environment=TRUST_PROXY=1
+# Optional: lock the API's CORS to your site instead of "*".
+Environment=ALLOWED_ORIGIN=https://founderfloor.net
 Restart=always
 RestartSec=3
 

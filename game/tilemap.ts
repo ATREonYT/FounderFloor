@@ -105,6 +105,10 @@ const T = TILE;
 const logoCache = new Map<string, HTMLImageElement>();
 const LOGO_CACHE_MAX = 64;
 function logoImage(dataUrl: string): HTMLImageElement | null {
+  // Re-check the rule at the point of use, not just on save: a live peer's
+  // booth logo arrives over the wire, so refuse anything that isn't a tiny
+  // base64 PNG (no external URLs / SVG that could beacon or spoof).
+  if (!(dataUrl.startsWith("data:image/png;base64,") && dataUrl.length <= 8000)) return null;
   let img = logoCache.get(dataUrl);
   if (!img) {
     if (typeof Image === "undefined") return null; // SSR guard

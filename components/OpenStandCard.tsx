@@ -50,7 +50,7 @@ export default function OpenStandCard({
             <button
               type="button"
               onClick={onClaim}
-              className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-white hover:bg-accent/90"
+              className="rounded-md bg-accent-strong px-3 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
             >
               {claimedElsewhere ? "Move your stand here" : "Claim this stand"}
             </button>

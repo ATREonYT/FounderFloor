@@ -331,7 +331,7 @@ export default function Messenger() {
       >
         <PixelChat />
         {badge > 0 && (
-          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-medium text-white">
+          <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent-strong px-1 text-[11px] font-medium text-white">
             {badge > 9 ? "9+" : badge}
           </span>
         )}
