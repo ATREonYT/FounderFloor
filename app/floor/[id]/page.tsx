@@ -23,7 +23,8 @@ import type {
   Startup,
 } from "@/lib/types";
 import { questStates, unlockedEmotes } from "@/lib/data/quests";
-import { buildCard, respondToRequest, sendConnectRequest, sendSocialDm, useInbox } from "@/lib/social";
+import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox } from "@/lib/social";
+import EditStandPanel from "@/components/EditStandPanel";
 import RequestCard from "@/components/RequestCard";
 import MailToast, { type MailToastData } from "@/components/MailToast";
 import BoothCard from "@/components/BoothCard";
@@ -99,6 +100,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [presence, setPresence] = useState({ count: 1, online: false });
   const [nearBooth, setNearBooth] = useState<BoothInstance | null>(null);
   const [activeBooth, setActiveBooth] = useState<BoothInstance | null>(null);
+  const [editingStand, setEditingStand] = useState(false);
   const [floorMsgs, setFloorMsgs] = useState<ChatMsg[]>([]);
   const [threads, setThreads] = useState<Record<string, ThreadState>>({});
   const [tab, setTab] = useState<string>("floor");
@@ -462,6 +464,29 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     showToast("Stand packed up.");
   }, [floor, actions, showToast]);
 
+  // On-floor stand editing: save to the store, re-register site-wide, and
+  // rebroadcast the claim so everyone on the floor sees the change at once.
+  const handleEditSave = useCallback(
+    (updated: Startup) => {
+      actions.saveMyStartup(updated);
+      void registerStartup(profileRef.current.id, updated);
+      if (floor && claimsRef.current[floor.id] !== undefined) {
+        const claim = { spotIndex: claimsRef.current[floor.id]!, startup: updated };
+        handleRef.current?.setMyBooth(claim);
+        netRef.current?.sendBoothSet(claim);
+      }
+      setEditingStand(false);
+      setActiveBooth(null);
+      showToast("Stand updated — the whole floor sees it.");
+    },
+    [floor, actions, showToast],
+  );
+
+  // Walking away (or closing the card) always closes the editor with it.
+  useEffect(() => {
+    if (!activeBooth) setEditingStand(false);
+  }, [activeBooth]);
+
   const handleSend = useCallback(
     (text: string, tabKey: string) => {
       const me = profileRef.current;
@@ -621,7 +646,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       if (!q.done || q.claimed) continue;
       actions.markQuestClaimed(q.def.id);
       actions.grantBadge(q.def.reward.badge);
-      showToast(`Quest complete: ${q.def.title} — ${q.def.rewardLabel}`);
+      showToast(`Quest complete: ${q.def.title} — +${q.def.reward.tickets} tickets, ${q.def.rewardLabel}`);
       setBurst((b) => b + 1);
       break; // one toast per render pass; the next completes on the following pass
     }
@@ -1126,7 +1151,16 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       {/* booth card */}
       {activeBooth && (
         <div className="pointer-events-none absolute right-3 top-16">
-          {activeBooth.startup ? (
+          {activeBooth.startup && activeBooth.isYours && editingStand && myStartup ? (
+            <EditStandPanel
+              startup={myStartup}
+              state={state}
+              onBuy={actions.buyItem}
+              onSave={handleEditSave}
+              onClose={() => setEditingStand(false)}
+              onFocusChange={handleFocusChange}
+            />
+          ) : activeBooth.startup ? (
             <BoothCard
               // A live player's stand carries its own startup data — never
               // resolve it through the local startups map, where every
@@ -1166,6 +1200,9 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               }
               onChat={() => activeBooth.startup && openNpcThread(activeBooth.startup)}
               onUnclaim={activeBooth.isYours ? handleUnclaim : undefined}
+              onEdit={
+                activeBooth.isYours && myStartup ? () => setEditingStand(true) : undefined
+              }
               onClose={() => setActiveBooth(null)}
               guestbook={
                 guestbookKey

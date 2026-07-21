@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import type { QuestState } from "@/lib/data/quests";
+import TicketIcon from "@/components/TicketIcon";
 
 export default function QuestPanel({ quests }: { quests: QuestState[] }) {
   const [open, setOpen] = useState(false);
@@ -71,9 +72,14 @@ export default function QuestPanel({ quests }: { quests: QuestState[] }) {
                 style={{ width: `${Math.round((q.count / q.def.goal) * 100)}%` }}
               />
             </div>
-            <p className={`mt-1 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
-              {q.done ? "✓ " : "reward: "}
-              {q.def.rewardLabel}
+            <p className={`mt-1 flex flex-wrap items-baseline gap-x-1.5 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
+              <span className="whitespace-nowrap text-gold-deep">
+                <TicketIcon /> {q.def.reward.tickets}
+              </span>
+              <span>
+                {q.done ? "✓ " : "+ "}
+                {q.def.rewardLabel}
+              </span>
             </p>
           </li>
         ))}

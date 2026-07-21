@@ -119,6 +119,25 @@ export const BOOTH_PROPS: (ShopItem & { prop: BoothProp })[] = [
 /** Max props equipped at once (owning more is fine — swap anytime). */
 export const MAX_EQUIPPED_PROPS = 3;
 
+/** The booth color palette — shared by the profile editor and the on-floor
+ * quick editor so a stand can't be painted a color the other can't show. */
+export const BOOTH_SWATCHES: string[] = [
+  "#8C3B2E",
+  "#C4562B",
+  "#4E6E4E",
+  "#7A8C50",
+  "#3B5B92",
+  "#57829B",
+  "#6B4E71",
+  "#2F6F6A",
+  "#A98C5B",
+  "#8A6B4D",
+  "#555049",
+  "#B08D2E",
+  "#A64D79",
+  "#3F4A5A",
+];
+
 export function shopItem(id: string): ShopItem | undefined {
   return (
     BOOTH_STYLES.find((s) => s.id === id) ?? BOOTH_PROPS.find((p) => p.id === id)

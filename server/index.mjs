@@ -1475,7 +1475,7 @@ function sanitizeCard(card) {
   const name = sanitizeStr(card.name, MAX_NAME_LEN);
   if (!id || !name) return null;
   const badges = Array.isArray(card.badges)
-    ? card.badges.filter((b) => typeof b === "string").map((b) => b.slice(0, 32)).slice(0, 20)
+    ? card.badges.filter((b) => typeof b === "string").map((b) => b.slice(0, 32)).slice(0, 48)
     : [];
   const rev = Number(card.startupRevenue);
   return {

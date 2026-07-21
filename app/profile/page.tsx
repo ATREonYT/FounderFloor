@@ -20,6 +20,7 @@ import {
 import {
   BOOTH_PROPS,
   BOOTH_STYLES,
+  BOOTH_SWATCHES,
   EARN,
   MAX_EQUIPPED_PROPS,
   dailyTickets,
@@ -46,23 +47,9 @@ import {
   type BillingCycle,
 } from "@/lib/pricing";
 import Toast, { type ToastData } from "@/components/Toast";
+import TicketIcon from "@/components/TicketIcon";
 
-const SWATCHES: string[] = [
-  "#8C3B2E",
-  "#C4562B",
-  "#4E6E4E",
-  "#7A8C50",
-  "#3B5B92",
-  "#57829B",
-  "#6B4E71",
-  "#2F6F6A",
-  "#A98C5B",
-  "#8A6B4D",
-  "#555049",
-  "#B08D2E",
-  "#A64D79",
-  "#3F4A5A",
-];
+const SWATCHES = BOOTH_SWATCHES;
 
 const TRIMS: { id: BannerTrim; label: string }[] = [
   { id: "plain", label: "Plain" },
@@ -155,6 +142,84 @@ const BADGE_META: Record<string, { name: string; blurb: string; howTo: string; g
     howTo: "One of the first 100 Founding Members.",
     glyph: "chip",
   },
+  orator: {
+    name: "Talk of the Floor",
+    blurb: "Ten founders, ten conversations.",
+    howTo: "Chat with ten different founders. Comes with the Conversationalist title.",
+    glyph: "wave",
+  },
+  keynote: {
+    name: "Keynote Energy",
+    blurb: "Twenty-five founders know your name.",
+    howTo: "Chat with twenty-five different founders.",
+    glyph: "bolt",
+  },
+  networker: {
+    name: "Networker",
+    blurb: "Ten connections and climbing.",
+    howTo: "Make ten connections. Comes with the Networker title.",
+    glyph: "heart",
+  },
+  rainmaker: {
+    name: "Rainmaker",
+    blurb: "Twenty-five connections. People point you out.",
+    howTo: "Make twenty-five connections. Comes with the Rainmaker title.",
+    glyph: "star",
+  },
+  penpal: {
+    name: "Pen Pal",
+    blurb: "Five guestbooks carry your handwriting.",
+    howTo: "Sign five stands' guestbooks.",
+    glyph: "flask",
+  },
+  calligrapher: {
+    name: "Calligrapher",
+    blurb: "Fifteen guestbooks. Your pen is tired.",
+    howTo: "Sign fifteen stands' guestbooks.",
+    glyph: "leaf",
+  },
+  hype: {
+    name: "Hype Section",
+    blurb: "Fifty reactions of pure enthusiasm.",
+    howTo: "Send fifty reactions on the floors.",
+    glyph: "rocket",
+  },
+  ovation: {
+    name: "Standing Ovation",
+    blurb: "Two hundred reactions. Hands still clapping.",
+    howTo: "Send two hundred reactions on the floors.",
+    glyph: "coin",
+  },
+  cartographer: {
+    name: "The Grand Tour",
+    blurb: "Every public floor, walked.",
+    howTo: "Set foot on all four public floors. Comes with the Explorer title.",
+    glyph: "cube",
+  },
+  "week-streak": {
+    name: "Fixture",
+    blurb: "Seven days in a row. Staff know your order.",
+    howTo: "Visit seven days in a row. Comes with the Fixture title.",
+    glyph: "leaf",
+  },
+  fortnight: {
+    name: "Part of the Furniture",
+    blurb: "Fourteen straight days on the floor.",
+    howTo: "Visit fourteen days in a row.",
+    glyph: "chip",
+  },
+  stylist: {
+    name: "Stylist",
+    blurb: "Bought a new look for the stand.",
+    howTo: "Buy any booth style with tickets. Comes with the Stylist title.",
+    glyph: "star",
+  },
+  decorated: {
+    name: "Fully Decorated",
+    blurb: "Three accessories, zero restraint.",
+    howTo: "Have three accessories on your stand at once.",
+    glyph: "cube",
+  },
 };
 
 interface BoothForm {
@@ -212,28 +277,6 @@ function formFrom(s: Startup): BoothForm {
   };
 }
 
-/** Tiny pixel raffle ticket, the currency mark. */
-function TicketIcon({ size = 14 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 14 14"
-      shapeRendering="crispEdges"
-      aria-hidden="true"
-      className="pixelated inline-block shrink-0 align-[-2px]"
-    >
-      <rect x="1" y="3" width="12" height="8" fill="#B08D2E" />
-      <rect x="1" y="3" width="12" height="1" fill="#7A611F" />
-      <rect x="1" y="10" width="12" height="1" fill="#7A611F" />
-      <rect x="0" y="6" width="1" height="2" fill="#F2EFE7" />
-      <rect x="13" y="6" width="1" height="2" fill="#F2EFE7" />
-      <rect x="4" y="5" width="1" height="4" fill="#7A611F" />
-      <rect x="6" y="5" width="4" height="1" fill="#F2EFE7" />
-      <rect x="6" y="7" width="4" height="1" fill="#F2EFE7" />
-    </svg>
-  );
-}
 
 /** Display name for a floor id; "" means the connection happened off-floor. */
 function floorName(floorId: string): string {
@@ -516,7 +559,7 @@ export default function ProfilePage() {
       actions.grantBadge(q.def.reward.badge);
       setToast({
         id: Date.now(),
-        text: `Quest complete: ${q.def.title} — ${q.def.rewardLabel}`,
+        text: `Quest complete: ${q.def.title} — +${q.def.reward.tickets} tickets, ${q.def.rewardLabel}`,
       });
       break; // one per pass; the rest follow on subsequent renders
     }
@@ -673,9 +716,14 @@ export default function ProfilePage() {
                     {q.def.blurb}
                   </span>
                 </p>
-                <p className={`text-xs ${q.done ? "text-verify" : "text-muted"}`}>
-                  {q.done ? "✓ " : "reward: "}
-                  {q.def.rewardLabel}
+                <p className={`flex flex-wrap items-baseline gap-x-1.5 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
+                  <span className="whitespace-nowrap text-gold-deep">
+                    <TicketIcon /> {q.def.reward.tickets}
+                  </span>
+                  <span>
+                    {q.done ? "✓ " : "+ "}
+                    {q.def.rewardLabel}
+                  </span>
                 </p>
               </div>
               <span className="micro shrink-0 text-muted">
@@ -1409,23 +1457,35 @@ export default function ProfilePage() {
 
           <div className="rounded-md border border-line p-4">
             <span className="micro text-muted">In a hurry</span>
-            {ticketPacksLive() ? (
-              <ul className="mt-2 space-y-1.5">
-                {/* only packs whose payment link is actually configured —
-                    a button that silently does nothing is worse than none */}
-                {TICKET_PACKS.filter((pack) => ticketPackLink(pack.id)).map((pack) => (
+            <ul className="mt-2 space-y-1.5">
+              {/* every pack shows its price; only configured ones are buyable —
+                  a button that silently does nothing is worse than none */}
+              {TICKET_PACKS.map((pack) => {
+                const link = ticketPackLink(pack.id);
+                return (
                   <li key={pack.id}>
                     <button
                       type="button"
-                      aria-label={`Buy ${pack.name}: ${pack.tickets} tickets for $${pack.usd}`}
+                      disabled={!link}
+                      aria-label={
+                        link
+                          ? `Buy ${pack.name}: ${pack.tickets} tickets for $${pack.usd}`
+                          : `${pack.name}: ${pack.tickets} tickets for $${pack.usd} — not on sale yet`
+                      }
                       onClick={() => {
-                        const link = ticketPackLink(pack.id);
                         if (link) openCheckout(link);
                       }}
-                      className="flex w-full items-center justify-between gap-2 rounded-sm border border-line px-3 py-2 text-left text-xs hover:border-ink"
+                      className="flex w-full items-center justify-between gap-2 rounded-sm border border-line px-3 py-2 text-left text-xs hover:border-ink disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:border-line"
                     >
                       <span>
-                        <span className="text-ink">{pack.name}</span>
+                        <span className="text-ink">
+                          {pack.name}
+                          {!link && (
+                            <span className="micro ml-1.5 rounded-sm border border-line px-1 py-0.5 text-muted">
+                              soon
+                            </span>
+                          )}
+                        </span>
                         <span className="block text-[11px] text-muted">{pack.blurb}</span>
                       </span>
                       <span className="shrink-0 text-right">
@@ -1436,22 +1496,24 @@ export default function ProfilePage() {
                       </span>
                     </button>
                   </li>
-                ))}
-                {!acctEmail && (
+                );
+              })}
+              {!ticketPacksLive() ? (
+                <li className="pt-1 text-[11px] leading-snug text-muted">
+                  Packs aren&rsquo;t on sale quite yet. Good news: every single
+                  item is earnable free, forever — packs will only ever buy
+                  patience.
+                </li>
+              ) : (
+                !acctEmail && (
                   <li className="pt-1 text-[11px] leading-snug text-muted">
                     Packs attach to your account email — pay with the email
                     you sign in with (it still counts if you create the
                     account after).
                   </li>
-                )}
-              </ul>
-            ) : (
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                Ticket packs aren&rsquo;t on sale yet. Good news: every single
-                item is earnable free, forever — packs will only ever buy
-                patience.
-              </p>
-            )}
+                )
+              )}
+            </ul>
           </div>
         </div>
       </SectionCard>

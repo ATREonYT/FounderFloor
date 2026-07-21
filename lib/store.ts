@@ -203,7 +203,7 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
   merged.prevSeenAt = local.prevSeenAt;
 
   // union badges (never lose an earned badge)
-  merged.badges = Array.from(new Set([...merged.badges, ...local.badges])).slice(0, 20);
+  merged.badges = Array.from(new Set([...merged.badges, ...local.badges])).slice(0, 48);
 
   // union connections by their dedupe key (peerId, else timestamp)
   const connKey = (c: (typeof local.connections)[number]) => c.peerId ?? `ts:${c.ts}`;
@@ -533,7 +533,7 @@ function sanitize(raw: unknown): AppState {
       if (typeof v !== "string") continue;
       const id = v.trim();
       if (id && id.length <= 32) ids.add(id);
-      if (ids.size >= 20) break;
+      if (ids.size >= 48) break;
     }
     base.badges = Array.from(ids);
   }
@@ -789,7 +789,7 @@ const ACTIONS: StoreActions = {
     const badge = id.trim();
     if (!badge || badge.length > 32) return;
     if (state.badges.includes(badge)) return;
-    if (state.badges.length >= 20) return; // matches the sanitize() cap
+    if (state.badges.length >= 48) return; // matches the sanitize() cap
     // every new badge pays a ticket bounty, whatever earned it
     setState({
       ...state,

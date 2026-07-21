@@ -23,6 +23,8 @@ interface BoothCardProps {
   onChat: () => void;
   /** Present only for your own stand: pack it up. */
   onUnclaim?: () => void;
+  /** Present only for your own stand: open the on-floor editor. */
+  onEdit?: () => void;
   onClose: () => void;
   /** When set, a guestbook renders below the founder row. */
   guestbook?: {
@@ -44,6 +46,7 @@ export default function BoothCard({
   onConnect,
   onChat,
   onUnclaim,
+  onEdit,
   onClose,
   guestbook,
 }: BoothCardProps) {
@@ -151,12 +154,22 @@ export default function BoothCard({
               This is your stand. Try not to talk to yourself.
             </p>
             <div className="flex gap-2">
-              <Link
-                href="/profile#booth"
-                className="flex-1 rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
-              >
-                Customize
-              </Link>
+              {onEdit ? (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="flex-1 rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
+                >
+                  Edit stand
+                </button>
+              ) : (
+                <Link
+                  href="/profile#booth"
+                  className="flex-1 rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
+                >
+                  Customize
+                </Link>
+              )}
               {onUnclaim && (
                 <button
                   type="button"
@@ -167,6 +180,11 @@ export default function BoothCard({
                 </button>
               )}
             </div>
+            {onEdit && (
+              <Link href="/profile#booth" className="micro text-muted hover:text-ink hover:underline">
+                glyph, logo &amp; the full shop → profile editor
+              </Link>
+            )}
           </>
         ) : live ? (
           <>
