@@ -85,13 +85,16 @@ export default function RootLayout({
                 <div className="flex flex-col gap-2">
                   <span className="micro text-muted">The fine print</span>
                   <Link href="/about" className="text-muted hover:text-ink hover:underline">
-                    About &amp; privacy
+                    About
+                  </Link>
+                  <Link href="/terms" className="text-muted hover:text-ink hover:underline">
+                    Terms of Service
+                  </Link>
+                  <Link href="/privacy" className="text-muted hover:text-ink hover:underline">
+                    Privacy Policy
                   </Link>
                   <Link href="/about#feedback" className="text-muted hover:text-ink hover:underline">
                     Send feedback
-                  </Link>
-                  <Link href="/#roadmap" className="text-muted hover:text-ink hover:underline">
-                    Roadmap
                   </Link>
                 </div>
               </nav>

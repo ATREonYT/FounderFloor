@@ -30,7 +30,16 @@ export default function AboutPage() {
           talk to founders, and connect with the ones worth remembering. This
           page covers everything: what the site is, what it stores, what it
           emails you, what costs money, and how it&rsquo;s secured — because a
-          site that asks for your trust should say so in plain words.
+          site that asks for your trust should say so in plain words. The
+          formal versions live at{" "}
+          <Link href="/terms" className="text-accent hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-accent hover:underline">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </header>
 
