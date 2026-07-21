@@ -354,6 +354,7 @@ export default function ProfilePage() {
   const [progress, setProgress] = useState(0);
   const [cycle, setCycle] = useState<BillingCycle>("annual");
   const [toast, setToast] = useState<ToastData | null>(null);
+  const [questsOpen, setQuestsOpen] = useState(false);
 
   useEffect(() => {
     setReady(true);
@@ -596,9 +597,9 @@ export default function ProfilePage() {
         {[
           ["identity", "Identity"],
           ["booth", "My stand"],
+          ["tickets", "Tickets"],
           ["verification", "Verification"],
           ["membership", "Membership"],
-          ["tickets", "Tickets"],
           ["quests", "Quests"],
           ["badges", "Badge book"],
           ["connections", "Connections"],
@@ -698,40 +699,73 @@ export default function ProfilePage() {
         </div>
       </SectionCard>
 
-      {/* ---- Quests ---- */}
+      {/* ---- Quests: collapsed to the next few by default — 21 rows is a
+          wall of text; the full board is one click away ---- */}
       <SectionCard title="Quests" id="quests">
-        <ul className="divide-y divide-line">
-          {questList.map((q) => (
-            <li key={q.def.id} className="flex items-center gap-3 py-2.5">
-              <span
-                aria-hidden="true"
-                className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-                  q.done ? "bg-verify" : "bg-line"
-                }`}
-              />
-              <div className="min-w-0 flex-1">
-                <p className={`text-sm ${q.done ? "text-muted line-through" : "text-ink"}`}>
-                  {q.def.title}
-                  <span className="ml-2 text-xs text-muted no-underline">
-                    {q.def.blurb}
-                  </span>
-                </p>
-                <p className={`flex flex-wrap items-baseline gap-x-1.5 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
-                  <span className="whitespace-nowrap text-gold-deep">
-                    <TicketIcon /> {q.def.reward.tickets}
-                  </span>
-                  <span>
-                    {q.done ? "✓ " : "+ "}
-                    {q.def.rewardLabel}
-                  </span>
-                </p>
-              </div>
-              <span className="micro shrink-0 text-muted">
-                {q.count}/{q.def.goal}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {(() => {
+          const claimedCount = questList.filter((q) => q.claimed).length;
+          const boardTickets = questList
+            .filter((q) => !q.claimed)
+            .reduce((sum, q) => sum + q.def.reward.tickets, 0);
+          const shown = questsOpen
+            ? questList
+            : questList.filter((q) => !q.done).slice(0, 3);
+          return (
+            <>
+              <p className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-xs text-muted">
+                <span>
+                  {claimedCount}/{questList.length} complete
+                  {!questsOpen && shown.length > 0 && " · up next:"}
+                </span>
+                <span className="text-gold-deep">
+                  <TicketIcon /> {boardTickets.toLocaleString("en-US")} still on the board
+                </span>
+              </p>
+              <ul className="divide-y divide-line">
+                {shown.map((q) => (
+                  <li key={q.def.id} className="flex items-center gap-3 py-2.5">
+                    <span
+                      aria-hidden="true"
+                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                        q.done ? "bg-verify" : "bg-line"
+                      }`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm ${q.done ? "text-muted line-through" : "text-ink"}`}>
+                        {q.def.title}
+                        <span className="ml-2 text-xs text-muted no-underline">
+                          {q.def.blurb}
+                        </span>
+                      </p>
+                      <p className={`flex flex-wrap items-baseline gap-x-1.5 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
+                        <span className="whitespace-nowrap text-gold-deep">
+                          <TicketIcon /> {q.def.reward.tickets}
+                        </span>
+                        <span>
+                          {q.done ? "✓ " : "+ "}
+                          {q.def.rewardLabel}
+                        </span>
+                      </p>
+                    </div>
+                    <span className="micro shrink-0 text-muted">
+                      {q.count}/{q.def.goal}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => setQuestsOpen((v) => !v)}
+                aria-expanded={questsOpen}
+                className="mt-2 w-full rounded-md border border-line px-3 py-1.5 text-xs text-muted hover:border-ink hover:text-ink"
+              >
+                {questsOpen
+                  ? "Show fewer"
+                  : `Show all ${questList.length} quests ▾`}
+              </button>
+            </>
+          );
+        })()}
       </SectionCard>
 
       {/* ---- My booth ---- */}
@@ -1156,6 +1190,132 @@ export default function ProfilePage() {
         </div>
       </SectionCard>
 
+      {/* ---- Ticket booth: the earn-or-buy currency ---- */}
+      <SectionCard title="Ticket booth" id="tickets">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-2xl font-medium">
+            <TicketIcon size={20} /> {walletBalance(state).toLocaleString("en-US")}
+            <span className="ml-1.5 text-sm font-normal text-muted">tickets</span>
+          </p>
+          <span className="micro text-muted">spent on booth styles &amp; accessories, up in My stand</span>
+        </div>
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+          Tickets buy the looks that make your stand impossible to miss —
+          never access, never reach. Everything is earnable by showing up;
+          packs just speed it up.
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-md border border-line p-4">
+            <span className="micro text-muted">How to earn</span>
+            <ul className="mt-2 space-y-1.5 text-xs leading-relaxed">
+              <li className="flex justify-between gap-2">
+                <span>Daily check-in (grows with your streak)</span>
+                <span className="shrink-0 text-gold-deep">
+                  <TicketIcon /> {dailyTickets(1)}&ndash;{EARN.dailyCap}
+                </span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>Every new connection</span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.connection}</span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>Every guestbook you sign</span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.guestbook}</span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>Every new badge</span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.badge}</span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>
+                  Quest rewards (<a href="#quests" className="text-accent hover:underline">see quests</a>)
+                </span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> 30&ndash;100</span>
+              </li>
+            </ul>
+            {(() => {
+              // an honest streak: only alive if today or yesterday was counted
+              const dayOf = (ms: number): string => {
+                const d = new Date(ms);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              };
+              const now = Date.now();
+              const alive =
+                state.lastVisitDay === dayOf(now) || state.lastVisitDay === dayOf(now - 86_400_000);
+              const streak = alive ? state.visitStreak : 0;
+              return (
+                <p className="mt-3 text-[11px] leading-snug text-muted">
+                  Current streak: {streak} {streak === 1 ? "day" : "days"} — your
+                  next check-in pays <TicketIcon /> {dailyTickets(streak + 1)}.
+                </p>
+              );
+            })()}
+          </div>
+
+          <div className="rounded-md border border-line p-4">
+            <span className="micro text-muted">In a hurry</span>
+            <ul className="mt-2 space-y-1.5">
+              {/* every pack shows its price; only configured ones are buyable —
+                  a button that silently does nothing is worse than none */}
+              {TICKET_PACKS.map((pack) => {
+                const link = ticketPackLink(pack.id);
+                return (
+                  <li key={pack.id}>
+                    <button
+                      type="button"
+                      disabled={!link}
+                      aria-label={
+                        link
+                          ? `Buy ${pack.name}: ${pack.tickets} tickets for $${pack.usd}`
+                          : `${pack.name}: ${pack.tickets} tickets for $${pack.usd} — not on sale yet`
+                      }
+                      onClick={() => {
+                        if (link) openCheckout(link);
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-sm border border-line px-3 py-2 text-left text-xs hover:border-ink disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:border-line"
+                    >
+                      <span>
+                        <span className="text-ink">
+                          {pack.name}
+                          {!link && (
+                            <span className="micro ml-1.5 rounded-sm border border-line px-1 py-0.5 text-muted">
+                              soon
+                            </span>
+                          )}
+                        </span>
+                        <span className="block text-[11px] text-muted">{pack.blurb}</span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-gold-deep">
+                          <TicketIcon /> {pack.tickets.toLocaleString("en-US")}
+                        </span>
+                        <span className="block text-muted">${pack.usd}</span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+              {!ticketPacksLive() ? (
+                <li className="pt-1 text-[11px] leading-snug text-muted">
+                  Packs aren&rsquo;t on sale quite yet. Good news: every single
+                  item is earnable free, forever — packs will only ever buy
+                  patience.
+                </li>
+              ) : (
+                !acctEmail && (
+                  <li className="pt-1 text-[11px] leading-snug text-muted">
+                    Packs attach to your account email — pay with the email
+                    you sign in with (it still counts if you create the
+                    account after).
+                  </li>
+                )
+              )}
+            </ul>
+          </div>
+        </div>
+      </SectionCard>
+
       {/* ---- Verification ---- */}
       <SectionCard title="Verification" id="verification">
         <p className="text-sm leading-relaxed text-muted">
@@ -1389,132 +1549,6 @@ export default function ProfilePage() {
               </article>
             );
           })}
-        </div>
-      </SectionCard>
-
-      {/* ---- Ticket booth: the earn-or-buy currency ---- */}
-      <SectionCard title="Ticket booth" id="tickets">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-2xl font-medium">
-            <TicketIcon size={20} /> {walletBalance(state).toLocaleString("en-US")}
-            <span className="ml-1.5 text-sm font-normal text-muted">tickets</span>
-          </p>
-          <span className="micro text-muted">spent on booth styles &amp; accessories, up in My stand</span>
-        </div>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Tickets buy the looks that make your stand impossible to miss —
-          never access, never reach. Everything is earnable by showing up;
-          packs just speed it up.
-        </p>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-md border border-line p-4">
-            <span className="micro text-muted">How to earn</span>
-            <ul className="mt-2 space-y-1.5 text-xs leading-relaxed">
-              <li className="flex justify-between gap-2">
-                <span>Daily check-in (grows with your streak)</span>
-                <span className="shrink-0 text-gold-deep">
-                  <TicketIcon /> {dailyTickets(1)}&ndash;{EARN.dailyCap}
-                </span>
-              </li>
-              <li className="flex justify-between gap-2">
-                <span>Every new connection</span>
-                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.connection}</span>
-              </li>
-              <li className="flex justify-between gap-2">
-                <span>Every guestbook you sign</span>
-                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.guestbook}</span>
-              </li>
-              <li className="flex justify-between gap-2">
-                <span>Every new badge</span>
-                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.badge}</span>
-              </li>
-              <li className="flex justify-between gap-2">
-                <span>
-                  Quest rewards (<a href="#quests" className="text-accent hover:underline">see quests</a>)
-                </span>
-                <span className="shrink-0 text-gold-deep"><TicketIcon /> 30&ndash;100</span>
-              </li>
-            </ul>
-            {(() => {
-              // an honest streak: only alive if today or yesterday was counted
-              const dayOf = (ms: number): string => {
-                const d = new Date(ms);
-                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-              };
-              const now = Date.now();
-              const alive =
-                state.lastVisitDay === dayOf(now) || state.lastVisitDay === dayOf(now - 86_400_000);
-              const streak = alive ? state.visitStreak : 0;
-              return (
-                <p className="mt-3 text-[11px] leading-snug text-muted">
-                  Current streak: {streak} {streak === 1 ? "day" : "days"} — your
-                  next check-in pays <TicketIcon /> {dailyTickets(streak + 1)}.
-                </p>
-              );
-            })()}
-          </div>
-
-          <div className="rounded-md border border-line p-4">
-            <span className="micro text-muted">In a hurry</span>
-            <ul className="mt-2 space-y-1.5">
-              {/* every pack shows its price; only configured ones are buyable —
-                  a button that silently does nothing is worse than none */}
-              {TICKET_PACKS.map((pack) => {
-                const link = ticketPackLink(pack.id);
-                return (
-                  <li key={pack.id}>
-                    <button
-                      type="button"
-                      disabled={!link}
-                      aria-label={
-                        link
-                          ? `Buy ${pack.name}: ${pack.tickets} tickets for $${pack.usd}`
-                          : `${pack.name}: ${pack.tickets} tickets for $${pack.usd} — not on sale yet`
-                      }
-                      onClick={() => {
-                        if (link) openCheckout(link);
-                      }}
-                      className="flex w-full items-center justify-between gap-2 rounded-sm border border-line px-3 py-2 text-left text-xs hover:border-ink disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:border-line"
-                    >
-                      <span>
-                        <span className="text-ink">
-                          {pack.name}
-                          {!link && (
-                            <span className="micro ml-1.5 rounded-sm border border-line px-1 py-0.5 text-muted">
-                              soon
-                            </span>
-                          )}
-                        </span>
-                        <span className="block text-[11px] text-muted">{pack.blurb}</span>
-                      </span>
-                      <span className="shrink-0 text-right">
-                        <span className="block text-gold-deep">
-                          <TicketIcon /> {pack.tickets.toLocaleString("en-US")}
-                        </span>
-                        <span className="block text-muted">${pack.usd}</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-              {!ticketPacksLive() ? (
-                <li className="pt-1 text-[11px] leading-snug text-muted">
-                  Packs aren&rsquo;t on sale quite yet. Good news: every single
-                  item is earnable free, forever — packs will only ever buy
-                  patience.
-                </li>
-              ) : (
-                !acctEmail && (
-                  <li className="pt-1 text-[11px] leading-snug text-muted">
-                    Packs attach to your account email — pay with the email
-                    you sign in with (it still counts if you create the
-                    account after).
-                  </li>
-                )
-              )}
-            </ul>
-          </div>
         </div>
       </SectionCard>
 
