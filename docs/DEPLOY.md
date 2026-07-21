@@ -147,6 +147,9 @@ and exposes it at `/debug/emails`) — never set it in production.
 | `NEXT_PUBLIC_STRIPE_LINK_FOUNDER_MONTHLY` | Stripe Payment Link URL |
 | `NEXT_PUBLIC_STRIPE_LINK_FOUNDER_ANNUAL` | Stripe Payment Link URL |
 | `NEXT_PUBLIC_STRIPE_LINK_FOUNDING` | Stripe Payment Link URL |
+| `NEXT_PUBLIC_STRIPE_LINK_TICKETS_S` | Stripe Payment Link URL (ticket pack) |
+| `NEXT_PUBLIC_STRIPE_LINK_TICKETS_M` | Stripe Payment Link URL (ticket pack) |
+| `NEXT_PUBLIC_STRIPE_LINK_TICKETS_L` | Stripe Payment Link URL (ticket pack) |
 
 - Without the Stripe vars everything works and the membership UI honestly
   says billing isn't live (buttons simulate). With them, every buy button
@@ -169,6 +172,17 @@ its price, so a different amount won't grant anything:
 | FounderFloor Founder+ | $19 | Monthly subscription |
 | FounderFloor Founder+ (annual) | $159 | Yearly subscription |
 | FounderFloor Founding Member | $79 | One-time payment |
+| Ticket Strip (300 tickets) | $2.99 | One-time payment |
+| Ticket Roll (800 tickets) | $6.99 | One-time payment |
+| Ticket Crate (2,000 tickets) | $14.99 | One-time payment |
+
+Ticket packs are consumable: the webhook credits the buyer's account with
+the tickets (deduped per checkout session, so Stripe's webhook retries
+can't double-pay), and the wallet banks them on the buyer's next page
+load. On the three PACK links, set the after-payment redirect to
+`https://founderfloor.net/profile?paid=tickets#tickets` (note the
+different query + anchor — it drops the buyer at the Ticket booth, not
+the Membership section).
 
 On each link, under **After payment**, pick "Don't show confirmation
 page" → redirect to your website, URL:

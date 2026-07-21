@@ -10,11 +10,22 @@ import { earnedTitles, questStates } from "@/lib/data/quests";
 import {
   TIER_ORDER,
   type BannerTrim,
+  type BoothProp,
+  type BoothStyle,
   type CarpetPattern,
   type GlyphId,
   type Startup,
   type SubTier,
 } from "@/lib/types";
+import {
+  BOOTH_PROPS,
+  BOOTH_STYLES,
+  EARN,
+  MAX_EQUIPPED_PROPS,
+  dailyTickets,
+  ownsItem,
+  walletBalance,
+} from "@/lib/data/shop";
 import AccountCard from "@/components/AccountCard";
 import AvatarPicker from "@/components/AvatarPicker";
 import BoothPreview from "@/components/BoothPreview";
@@ -23,12 +34,15 @@ import PixelGlyph, { GLYPH_IDS } from "@/components/PixelGlyph";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
 import {
   FOUNDING_OFFER,
+  TICKET_PACKS,
   TIER_PERKS,
   TIER_PRICING,
   annualFreeMonths,
   billingLive,
   checkoutLink,
   foundingCheckoutLink,
+  ticketPackLink,
+  ticketPacksLive,
   type BillingCycle,
 } from "@/lib/pricing";
 import Toast, { type ToastData } from "@/components/Toast";
@@ -156,6 +170,8 @@ interface BoothForm {
   glyph: GlyphId;
   pattern: CarpetPattern;
   trim: BannerTrim;
+  style: BoothStyle;
+  props: BoothProp[];
   logo?: string;
 }
 
@@ -172,6 +188,8 @@ const EMPTY_FORM: BoothForm = {
   glyph: "bolt",
   pattern: "solid",
   trim: "plain",
+  style: "classic",
+  props: [],
 };
 
 function formFrom(s: Startup): BoothForm {
@@ -188,8 +206,33 @@ function formFrom(s: Startup): BoothForm {
     glyph: s.booth.glyph,
     pattern: s.booth.pattern ?? "solid",
     trim: s.booth.trim ?? "plain",
+    style: s.booth.style ?? "classic",
+    props: s.booth.props ?? [],
     logo: s.booth.logo,
   };
+}
+
+/** Tiny pixel raffle ticket, the currency mark. */
+function TicketIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+      className="pixelated inline-block shrink-0 align-[-2px]"
+    >
+      <rect x="1" y="3" width="12" height="8" fill="#B08D2E" />
+      <rect x="1" y="3" width="12" height="1" fill="#7A611F" />
+      <rect x="1" y="10" width="12" height="1" fill="#7A611F" />
+      <rect x="0" y="6" width="1" height="2" fill="#F2EFE7" />
+      <rect x="13" y="6" width="1" height="2" fill="#F2EFE7" />
+      <rect x="4" y="5" width="1" height="4" fill="#7A611F" />
+      <rect x="6" y="5" width="4" height="1" fill="#F2EFE7" />
+      <rect x="6" y="7" width="4" height="1" fill="#F2EFE7" />
+    </svg>
+  );
 }
 
 /** Display name for a floor id; "" means the connection happened off-floor. */
@@ -312,15 +355,24 @@ export default function ProfilePage() {
   }, [toast]);
 
   // Back from Stripe checkout (the payment link's confirmation page
-  // redirects to /profile?paid=1#membership). The webhook that grants the
-  // plan can land a few seconds after the redirect, so pull now and again
-  // shortly after — the entitlement flips the tier when it arrives.
+  // redirects to /profile?paid=1#membership for plans, ?paid=tickets#tickets
+  // for ticket packs). The webhook that grants the purchase can land a few
+  // seconds after the redirect, so pull now and again shortly after — the
+  // entitlement/credit lands when it arrives.
   useEffect(() => {
     if (!ready) return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("paid") !== "1") return;
-    window.history.replaceState(null, "", "/profile#membership");
-    setToast({ id: Date.now(), text: "Payment received — activating your plan…" });
+    const paid = params.get("paid");
+    if (paid !== "1" && paid !== "tickets") return;
+    const anchor = paid === "tickets" ? "#tickets" : "#membership";
+    window.history.replaceState(null, "", `/profile${anchor}`);
+    setToast({
+      id: Date.now(),
+      text:
+        paid === "tickets"
+          ? "Payment received — your tickets are on the way…"
+          : "Payment received — activating your plan…",
+    });
     syncNow();
     const t1 = window.setTimeout(syncNow, 4000);
     const t2 = window.setTimeout(syncNow, 10000);
@@ -375,6 +427,23 @@ export default function ProfilePage() {
         glyph: form.glyph,
         pattern: form.pattern,
         trim: form.trim,
+        // belt and suspenders: only owned looks ever leave the editor —
+        // but anything already on the SAVED stand stays grandfathered, so
+        // a wallet clobbered by a stale pre-deploy tab can't strip a
+        // legitimately bought style off the booth at the next save
+        style:
+          form.style !== "classic" &&
+          (ownsItem(state, `style:${form.style}`) ||
+            state.myStartup?.booth.style === form.style)
+            ? form.style
+            : undefined,
+        props: (() => {
+          const prior = state.myStartup?.booth.props ?? [];
+          const equipped = form.props
+            .filter((p) => ownsItem(state, `prop:${p}`) || prior.includes(p))
+            .slice(0, MAX_EQUIPPED_PROPS);
+          return equipped.length ? equipped : undefined;
+        })(),
         logo: form.logo,
       },
     };
@@ -486,6 +555,7 @@ export default function ProfilePage() {
           ["booth", "My stand"],
           ["verification", "Verification"],
           ["membership", "Membership"],
+          ["tickets", "Tickets"],
           ["quests", "Quests"],
           ["badges", "Badge book"],
           ["connections", "Connections"],
@@ -808,7 +878,12 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div>
-                <span className="micro mb-1.5 block text-muted">Banner trim</span>
+                <span className="micro mb-1.5 block text-muted">
+                  Banner trim
+                  {form.style !== "classic" && (
+                    <span className="ml-1.5 normal-case">(Classic Stall only)</span>
+                  )}
+                </span>
                 <div className="flex gap-1.5" role="group" aria-label="Banner trim">
                   {TRIMS.map((t) => (
                     <button
@@ -816,7 +891,8 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => set("trim", t.id)}
                       aria-pressed={form.trim === t.id}
-                      className={`rounded-sm border px-3 py-1.5 text-xs ${
+                      disabled={form.style !== "classic"}
+                      className={`rounded-sm border px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-40 ${
                         form.trim === t.id
                           ? "border-accent text-accent ring-2 ring-accent ring-offset-1 ring-offset-panel"
                           : "border-line text-muted hover:border-muted hover:text-ink"
@@ -825,6 +901,141 @@ export default function ProfilePage() {
                       {t.label}
                     </button>
                   ))}
+                </div>
+              </div>
+              <div>
+                <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                  <span className="micro text-muted">Booth style</span>
+                  <span className="micro text-muted">
+                    <TicketIcon /> {walletBalance(state).toLocaleString("en-US")} tickets
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1.5" role="group" aria-label="Booth style">
+                  {BOOTH_STYLES.map((s) => {
+                    const owned = ownsItem(state, s.id);
+                    const selected = form.style === s.style;
+                    return (
+                      <div
+                        key={s.id}
+                        className={`flex items-center justify-between gap-2 rounded-sm border px-3 py-2 ${
+                          selected
+                            ? "border-accent ring-1 ring-accent"
+                            : "border-line"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <span className={`block text-xs ${selected ? "text-accent" : "text-ink"}`}>
+                            {s.name}
+                          </span>
+                          <span className="block text-[11px] leading-snug text-muted">{s.blurb}</span>
+                        </div>
+                        {owned ? (
+                          <button
+                            type="button"
+                            onClick={() => set("style", s.style)}
+                            aria-pressed={selected}
+                            className={`shrink-0 rounded-sm border px-2.5 py-1 text-xs ${
+                              selected
+                                ? "border-accent text-accent"
+                                : "border-line text-muted hover:border-ink hover:text-ink"
+                            }`}
+                          >
+                            {selected ? "In use" : "Use"}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label={`Buy ${s.name} for ${s.price} tickets`}
+                            onClick={() => {
+                              if (actions.buyItem(s.id)) {
+                                set("style", s.style);
+                                setToast({
+                                  id: Date.now(),
+                                  text: `${s.name} is yours — it's on in the preview. Save stand takes it to the floor.`,
+                                });
+                              } else {
+                                setToast({
+                                  id: Date.now(),
+                                  text: `Not enough tickets — ${s.name} costs ${s.price}. Earn them at the Ticket booth below.`,
+                                });
+                              }
+                            }}
+                            className="shrink-0 rounded-sm border border-gold/60 px-2.5 py-1 text-xs text-gold-deep hover:border-gold"
+                          >
+                            <TicketIcon /> {s.price}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <span className="micro mb-1.5 block text-muted">
+                  Accessories (up to {MAX_EQUIPPED_PROPS})
+                </span>
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Booth accessories">
+                  {BOOTH_PROPS.map((p) => {
+                    const owned = ownsItem(state, p.id);
+                    const equipped = form.props.includes(p.prop);
+                    if (!owned) {
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          title={p.blurb}
+                          aria-label={`Buy ${p.name} for ${p.price} tickets`}
+                          onClick={() => {
+                            if (actions.buyItem(p.id)) {
+                              const placed = form.props.length < MAX_EQUIPPED_PROPS;
+                              if (placed) set("props", [...form.props, p.prop]);
+                              setToast({
+                                id: Date.now(),
+                                text: placed
+                                  ? `${p.name} bought and placed — Save stand takes it to the floor.`
+                                  : `${p.name} bought. All ${MAX_EQUIPPED_PROPS} slots are full — take one down to place it.`,
+                              });
+                            } else {
+                              setToast({
+                                id: Date.now(),
+                                text: `Not enough tickets — ${p.name} costs ${p.price}.`,
+                              });
+                            }
+                          }}
+                          className="rounded-sm border border-gold/60 px-3 py-1.5 text-xs text-gold-deep hover:border-gold"
+                        >
+                          {p.name} · <TicketIcon /> {p.price}
+                        </button>
+                      );
+                    }
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        title={p.blurb}
+                        aria-pressed={equipped}
+                        onClick={() => {
+                          if (equipped) {
+                            set("props", form.props.filter((x) => x !== p.prop));
+                          } else if (form.props.length < MAX_EQUIPPED_PROPS) {
+                            set("props", [...form.props, p.prop]);
+                          } else {
+                            setToast({
+                              id: Date.now(),
+                              text: `Max ${MAX_EQUIPPED_PROPS} accessories — take one down first.`,
+                            });
+                          }
+                        }}
+                        className={`rounded-sm border px-3 py-1.5 text-xs ${
+                          equipped
+                            ? "border-accent text-accent ring-2 ring-accent ring-offset-1 ring-offset-panel"
+                            : "border-line text-muted hover:border-muted hover:text-ink"
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div>
@@ -883,6 +1094,8 @@ export default function ProfilePage() {
               glyph={form.glyph}
               pattern={form.pattern}
               trim={form.trim}
+              style={form.style}
+              boothProps={form.props}
               logo={form.logo}
               founderLook={state.profile.look}
             />
@@ -1128,6 +1341,118 @@ export default function ProfilePage() {
               </article>
             );
           })}
+        </div>
+      </SectionCard>
+
+      {/* ---- Ticket booth: the earn-or-buy currency ---- */}
+      <SectionCard title="Ticket booth" id="tickets">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="text-2xl font-medium">
+            <TicketIcon size={20} /> {walletBalance(state).toLocaleString("en-US")}
+            <span className="ml-1.5 text-sm font-normal text-muted">tickets</span>
+          </p>
+          <span className="micro text-muted">spent on booth styles &amp; accessories, up in My stand</span>
+        </div>
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+          Tickets buy the looks that make your stand impossible to miss —
+          never access, never reach. Everything is earnable by showing up;
+          packs just speed it up.
+        </p>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-md border border-line p-4">
+            <span className="micro text-muted">How to earn</span>
+            <ul className="mt-2 space-y-1.5 text-xs leading-relaxed">
+              <li className="flex justify-between gap-2">
+                <span>Daily check-in (grows with your streak)</span>
+                <span className="shrink-0 text-gold-deep">
+                  <TicketIcon /> {dailyTickets(1)}&ndash;{EARN.dailyCap}
+                </span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>Every new connection</span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.connection}</span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>Every guestbook you sign</span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.guestbook}</span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>Every new badge</span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> {EARN.badge}</span>
+              </li>
+              <li className="flex justify-between gap-2">
+                <span>
+                  Quest rewards (<a href="#quests" className="text-accent hover:underline">see quests</a>)
+                </span>
+                <span className="shrink-0 text-gold-deep"><TicketIcon /> 30&ndash;100</span>
+              </li>
+            </ul>
+            {(() => {
+              // an honest streak: only alive if today or yesterday was counted
+              const dayOf = (ms: number): string => {
+                const d = new Date(ms);
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+              };
+              const now = Date.now();
+              const alive =
+                state.lastVisitDay === dayOf(now) || state.lastVisitDay === dayOf(now - 86_400_000);
+              const streak = alive ? state.visitStreak : 0;
+              return (
+                <p className="mt-3 text-[11px] leading-snug text-muted">
+                  Current streak: {streak} {streak === 1 ? "day" : "days"} — your
+                  next check-in pays <TicketIcon /> {dailyTickets(streak + 1)}.
+                </p>
+              );
+            })()}
+          </div>
+
+          <div className="rounded-md border border-line p-4">
+            <span className="micro text-muted">In a hurry</span>
+            {ticketPacksLive() ? (
+              <ul className="mt-2 space-y-1.5">
+                {/* only packs whose payment link is actually configured —
+                    a button that silently does nothing is worse than none */}
+                {TICKET_PACKS.filter((pack) => ticketPackLink(pack.id)).map((pack) => (
+                  <li key={pack.id}>
+                    <button
+                      type="button"
+                      aria-label={`Buy ${pack.name}: ${pack.tickets} tickets for $${pack.usd}`}
+                      onClick={() => {
+                        const link = ticketPackLink(pack.id);
+                        if (link) openCheckout(link);
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-sm border border-line px-3 py-2 text-left text-xs hover:border-ink"
+                    >
+                      <span>
+                        <span className="text-ink">{pack.name}</span>
+                        <span className="block text-[11px] text-muted">{pack.blurb}</span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <span className="block text-gold-deep">
+                          <TicketIcon /> {pack.tickets.toLocaleString("en-US")}
+                        </span>
+                        <span className="block text-muted">${pack.usd}</span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {!acctEmail && (
+                  <li className="pt-1 text-[11px] leading-snug text-muted">
+                    Packs attach to your account email — pay with the email
+                    you sign in with (it still counts if you create the
+                    account after).
+                  </li>
+                )}
+              </ul>
+            ) : (
+              <p className="mt-2 text-xs leading-relaxed text-muted">
+                Ticket packs aren&rsquo;t on sale yet. Good news: every single
+                item is earnable free, forever — packs will only ever buy
+                patience.
+              </p>
+            )}
+          </div>
         </div>
       </SectionCard>
 

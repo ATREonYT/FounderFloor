@@ -1,19 +1,25 @@
 "use client";
 
 /**
- * Pixel-accurate booth preview for the customization menu — draws the same
- * banner / counter / carpet the tilemap renders in-game, plus the founder
- * standing in their lane, so what you save is exactly what the floor shows.
+ * Pixel-accurate booth preview for the customization menu — renders with
+ * the SAME art module the floor uses (game/boothArt.ts), plus the founder
+ * standing in their lane, so what you save (style, props, colors, trim)
+ * is exactly what the hall shows.
  */
 
 import { useEffect, useRef } from "react";
-import type { AvatarLook, BannerTrim, CarpetPattern, GlyphId } from "@/lib/types";
+import type {
+  AvatarLook,
+  BannerTrim,
+  BoothProp,
+  BoothStyle,
+  BoothTheme,
+  CarpetPattern,
+  GlyphId,
+} from "@/lib/types";
 import { TILE } from "@/lib/types";
-import { SPRITE_H, SPRITE_W, SpriteBank, drawGlyph, luma, shade } from "@/game/sprites";
-
-const INK = "#23201A";
-const WOOD_TOP = "#C9B990";
-const WOOD_FRONT = "#A08B62";
+import { SPRITE_H, SPRITE_W, SpriteBank, shade } from "@/game/sprites";
+import { drawBoothBanner, drawBoothCounter } from "@/game/boothArt";
 
 export interface BoothPreviewProps {
   carpet: string;
@@ -22,6 +28,8 @@ export interface BoothPreviewProps {
   glyph: GlyphId;
   pattern: CarpetPattern;
   trim?: BannerTrim;
+  style?: BoothStyle;
+  boothProps?: BoothProp[];
   /** Custom banner icon (tiny data-URL PNG). Replaces the glyph when set. */
   logo?: string;
   founderLook: AvatarLook;
@@ -37,6 +45,8 @@ export default function BoothPreview({
   glyph,
   pattern,
   trim = "plain",
+  style = "classic",
+  boothProps,
   logo,
   founderLook,
   floorA = "#D8D2C4",
@@ -44,7 +54,9 @@ export default function BoothPreview({
 }: BoothPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bankRef = useRef<SpriteBank | null>(null);
-  const cleanupRef = useRef<(() => void) | null>(null);
+
+  // join array props into a stable dep so the effect re-runs only on change
+  const propsKey = (boothProps ?? []).join(",");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -53,9 +65,10 @@ export default function BoothPreview({
     if (!ctx) return;
     if (!bankRef.current) bankRef.current = new SpriteBank();
 
-    // world: 6 tiles wide (booth + 1 tile margin each side), 5.5 tiles tall
+    // world: 6 tiles wide (booth + 1 tile margin each side); extra headroom
+    // on top so the taller styles (tent peak, arcade marquee) never clip
     const worldW = 6 * TILE;
-    const worldH = 5.5 * TILE;
+    const worldH = 6 * TILE;
     const cssW = canvas.clientWidth || 240;
     const zoom = cssW / worldW;
     const cssH = Math.round(worldH * zoom);
@@ -64,122 +77,85 @@ export default function BoothPreview({
     canvas.height = Math.round(cssH * dpr);
     canvas.style.height = `${cssH}px`;
 
-    ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
-    ctx.imageSmoothingEnabled = false;
+    const theme: BoothTheme = {
+      carpet,
+      banner,
+      sign: sign || "YOUR SIGN",
+      glyph,
+      pattern,
+      trim: trim === "plain" ? undefined : trim,
+      style: style === "classic" ? undefined : style,
+      props: boothProps && boothProps.length ? boothProps : undefined,
+    };
 
-    // hall floor checker behind the stand
-    for (let ty = 0; ty < 6; ty++) {
-      for (let tx = 0; tx < 6; tx++) {
-        ctx.fillStyle = (tx + ty) & 1 ? floorB : floorA;
-        ctx.fillRect(tx * TILE, ty * TILE, TILE, TILE);
+    const render = (logoImg: CanvasImageSource | null): void => {
+      ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+
+      // hall floor checker behind the stand
+      for (let ty = 0; ty < 6; ty++) {
+        for (let tx = 0; tx < 6; tx++) {
+          ctx.fillStyle = (tx + ty) & 1 ? floorB : floorA;
+          ctx.fillRect(tx * TILE, ty * TILE, TILE, TILE);
+        }
       }
-    }
 
-    // booth zone: top-left tile (1, 0.75) in this little world
-    const sx = 1;
-    const syPx = 0.75 * TILE;
-    const bx = sx * TILE;
+      // booth zone: banner row starts 1.25 tiles down (headroom above)
+      const bx = 1 * TILE;
+      const by = 1.25 * TILE;
 
-    // carpet: 4 tiles wide, 4 tall (3 zone rows + apron), same as drawCarpet
-    const cw = 4 * TILE;
-    const ch = 4 * TILE;
-    ctx.fillStyle = carpet;
-    ctx.fillRect(bx, syPx, cw, ch);
-    if (pattern === "stripes") {
-      ctx.fillStyle = shade(carpet, -0.08);
-      for (let i = 0; i < 4; i += 2) ctx.fillRect(bx + i * TILE, syPx, TILE, ch);
-    } else if (pattern === "border") {
-      ctx.strokeStyle = shade(carpet, 0.14);
-      ctx.lineWidth = 3;
-      ctx.strokeRect(bx + 5.5, syPx + 5.5, cw - 11, ch - 11);
-    }
-    ctx.strokeStyle = shade(carpet, -0.16);
-    ctx.lineWidth = 2;
-    ctx.strokeRect(bx + 1, syPx + 1, cw - 2, ch - 2);
+      // carpet: 4 tiles wide, 4 tall (3 zone rows + apron), same as drawCarpet
+      const cw = 4 * TILE;
+      const ch = 4 * TILE;
+      ctx.fillStyle = carpet;
+      ctx.fillRect(bx, by, cw, ch);
+      if (pattern === "stripes") {
+        ctx.fillStyle = shade(carpet, -0.08);
+        for (let i = 0; i < 4; i += 2) ctx.fillRect(bx + i * TILE, by, TILE, ch);
+      } else if (pattern === "border") {
+        ctx.strokeStyle = shade(carpet, 0.14);
+        ctx.lineWidth = 3;
+        ctx.strokeRect(bx + 5.5, by + 5.5, cw - 11, ch - 11);
+      }
+      ctx.strokeStyle = shade(carpet, -0.16);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(bx + 1, by + 1, cw - 2, ch - 2);
 
-    // banner (matches bannerDrawable)
-    const dark = shade(banner, -0.42);
-    const fg = luma(banner) > 0.62 ? INK : "#FFFDF5";
-    ctx.fillStyle = dark;
-    ctx.fillRect(bx, syPx, 4 * TILE, TILE);
-    ctx.fillStyle = banner;
-    ctx.fillRect(bx + 3, syPx - 8, 4 * TILE - 6, TILE + 4);
-    ctx.strokeStyle = dark;
-    ctx.lineWidth = 2;
-    ctx.strokeRect(bx + 4, syPx - 7, 4 * TILE - 8, TILE + 2);
+      // banner layer (architecture + banner-row props)
+      drawBoothBanner(ctx, { bx, by, theme, logoImg, seed: 0x5eed });
+
+      // founder in the lane, facing front
+      const frames = bankRef.current!.makeAvatar(founderLook);
+      const fx = bx + 2 * TILE;
+      const fy = by + 2 * TILE - 6;
+      ctx.fillStyle = "rgba(35,32,26,0.16)";
+      ctx.beginPath();
+      ctx.ellipse(fx, fy - 1, 8, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.drawImage(frames.down[0], Math.round(fx - SPRITE_W / 2), Math.round(fy - SPRITE_H));
+
+      // counter layer (architecture + counter-row props)
+      drawBoothCounter(ctx, { bx, by, theme, seed: 0x5eed });
+    };
+
+    render(null);
+
     if (logo) {
       // data-URL decode is async; guard so a stale load never paints over a
       // newer render of this effect
       let stale = false;
       const img = new Image();
       img.onload = () => {
-        if (stale) return;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(img, bx + 8, syPx, 16, 16);
+        if (!stale) render(img);
       };
       img.src = logo;
-      cleanupRef.current = () => {
+      return () => {
         stale = true;
       };
-    } else {
-      drawGlyph(ctx, glyph, bx + 10, syPx + 1, 14, fg);
     }
-    ctx.fillStyle = fg;
-    ctx.font = "700 9px ui-monospace, SFMono-Regular, Menlo, monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(sign.toUpperCase() || "YOUR SIGN", bx + 2 * TILE + 7, syPx + 9, 4 * TILE - 44);
-
-    // banner trim band (matches bannerDrawable)
-    if (trim !== "plain") {
-      const ty = syPx + TILE - 7;
-      const tw = 4 * TILE - 6;
-      ctx.fillStyle = dark;
-      ctx.fillRect(bx + 3, ty, tw, 4);
-      ctx.fillStyle = fg;
-      if (trim === "stripes") {
-        for (let x = 0; x < tw - 3; x += 8) ctx.fillRect(bx + 3 + x + 2, ty, 4, 4);
-      } else if (trim === "checker") {
-        for (let x = 0; x < tw - 1; x += 4) {
-          const odd = (x / 4) % 2 === 1;
-          ctx.fillRect(bx + 3 + x, odd ? ty + 2 : ty, 2, 2);
-        }
-      } else if (trim === "dots") {
-        for (let x = 4; x < tw - 3; x += 9) ctx.fillRect(bx + 3 + x, ty + 1, 2, 2);
-      }
-    }
-
-    // founder in the lane, facing front
-    const frames = bankRef.current.makeAvatar(founderLook);
-    const fx = bx + 2 * TILE;
-    const fy = syPx + 2 * TILE - 6;
-    ctx.fillStyle = "rgba(35,32,26,0.16)";
-    ctx.beginPath();
-    ctx.ellipse(fx, fy - 1, 8, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.drawImage(frames.down[0], Math.round(fx - SPRITE_W / 2), Math.round(fy - SPRITE_H));
-
-    // counter (matches drawCounterBase) + a flyer stack
-    const y0 = syPx + 2 * TILE;
-    ctx.fillStyle = WOOD_FRONT;
-    ctx.fillRect(bx, y0 + 12, 4 * TILE, TILE - 12);
-    ctx.fillStyle = shade(WOOD_FRONT, -0.24);
-    ctx.fillRect(bx, y0 + TILE - 3, 4 * TILE, 3);
-    ctx.fillStyle = WOOD_TOP;
-    ctx.fillRect(bx, y0, 4 * TILE, 12);
-    ctx.fillStyle = shade(WOOD_TOP, -0.2);
-    ctx.fillRect(bx, y0 + 12, 4 * TILE, 2);
-    ctx.fillStyle = "#FFFDF5";
-    ctx.fillRect(bx + 2 * TILE + 6, y0 + 2, 14, 9);
-    ctx.strokeStyle = "#D9D2C2";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx + 2 * TILE + 6.5, y0 + 2.5, 13, 8);
-
-    return () => {
-      cleanupRef.current?.();
-      cleanupRef.current = null;
-    };
-  }, [carpet, banner, sign, glyph, pattern, trim, logo, founderLook, floorA, floorB]);
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carpet, banner, sign, glyph, pattern, trim, style, propsKey, logo, founderLook, floorA, floorB]);
 
   return (
     <canvas

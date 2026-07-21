@@ -128,7 +128,7 @@ const PROFILE_STATE_TTL_MS = 180 * 24 * 60 * 60 * 1000;
 const STATE_KEYS = new Set([
   "profile", "sub", "connections", "myStartup", "claims", "onboarding",
   "tutorialDone", "badges", "quest", "claimedQuests", "lastVisitDay",
-  "visitStreak", "bestStreak",
+  "visitStreak", "bestStreak", "wallet",
 ]);
 
 /**
@@ -247,7 +247,33 @@ const PRICE_TO_PLAN = new Map([
   ["subscription:1900", { tier: "founder" }],
   ["subscription:15900", { tier: "founder" }],
   ["payment:7900", { tier: "founder", badge: "founding" }],
+  // Ticket packs (lib/pricing.ts TICKET_PACKS): consumable currency, so
+  // fulfillment credits a cumulative per-account counter instead of
+  // setting an entitlement — and MUST dedupe on the checkout session id,
+  // because Stripe retries webhooks and a retried pack must not pay twice.
+  ["payment:299", { tickets: 300 }],
+  ["payment:699", { tickets: 800 }],
+  ["payment:1499", { tickets: 2000 }],
 ]);
+
+/**
+ * Checkout session ids already fulfilled (Stripe retries deliveries).
+ * Bounded FIFO, persisted — 2000 ids is months of sales at beta scale.
+ */
+const processedSessions = new Set();
+const MAX_PROCESSED_SESSIONS = 2000;
+
+function markSessionProcessed(id) {
+  if (typeof id !== "string" || !id) return;
+  processedSessions.add(id.slice(0, 80));
+  if (processedSessions.size > MAX_PROCESSED_SESSIONS) {
+    // Sets iterate in insertion order — drop the oldest.
+    for (const old of processedSessions) {
+      processedSessions.delete(old);
+      if (processedSessions.size <= MAX_PROCESSED_SESSIONS) break;
+    }
+  }
+}
 
 /**
  * pendingPaid: email -> entitlement for payments whose email has no account
@@ -271,15 +297,42 @@ function sanitizePaid(p) {
   return out;
 }
 
-/** Fold a payment that arrived before its account existed into the account. */
+/**
+ * A held payment (pendingPaid value) rebuilt from untrusted disk data. May
+ * carry a plan tier, purchased tickets, or both — a shopper can buy a
+ * ticket pack AND subscribe before ever registering.
+ */
+function sanitizePending(p) {
+  if (!p || typeof p !== "object") return undefined;
+  const out = {
+    customer: typeof p.customer === "string" ? p.customer.slice(0, 64) : "",
+    ts: typeof p.ts === "number" ? p.ts : 0,
+  };
+  if (p.tier === "pro" || p.tier === "founder") out.tier = p.tier;
+  if (p.badge === "founding") out.badge = "founding";
+  const t = Number(p.tickets);
+  if (Number.isFinite(t) && t > 0) out.tickets = Math.min(1_000_000, Math.trunc(t));
+  return out.tier || out.tickets ? out : undefined;
+}
+
+/** Fold payments that arrived before their account existed into the account. */
 function applyPendingPaid(acct) {
   if (!acct.email) return;
   const p = pendingPaid.get(acct.email);
   if (!p) return;
   pendingPaid.delete(acct.email);
-  if (acct.paid?.badge && !p.badge) p.badge = acct.paid.badge;
-  acct.paid = p;
-  console.log(`[stripe] held payment applied to ${acct.id} (${p.tier})`);
+  if (p.tier) {
+    const paid = { tier: p.tier, customer: p.customer, ts: p.ts };
+    if (p.badge) paid.badge = p.badge;
+    else if (acct.paid?.badge) paid.badge = acct.paid.badge;
+    acct.paid = paid;
+  }
+  if (p.tickets) {
+    acct.ticketsPurchased = (acct.ticketsPurchased ?? 0) + p.tickets;
+  }
+  console.log(
+    `[stripe] held payment applied to ${acct.id} (${p.tier ?? "no plan"}${p.tickets ? ` +${p.tickets} tickets` : ""})`,
+  );
   scheduleSave();
 }
 
@@ -836,6 +889,8 @@ function loadData() {
       };
       const paid = sanitizePaid(a.paid);
       if (paid) acct.paid = paid;
+      const tp = Number(a.ticketsPurchased);
+      if (Number.isFinite(tp) && tp > 0) acct.ticketsPurchased = Math.min(100_000_000, Math.trunc(tp));
       accounts.set(nameLower.slice(0, MAX_NAME_LEN), acct);
       indexAccount(acct);
     }
@@ -844,8 +899,13 @@ function loadData() {
     for (const [email, p] of Object.entries(parsed.pendingPaid)) {
       if (pendingPaid.size >= MAX_PENDING_PAID) break;
       const norm = normalizeEmail(email);
-      const paid = sanitizePaid(p);
-      if (norm && paid) pendingPaid.set(norm, paid);
+      const pending = sanitizePending(p);
+      if (norm && pending) pendingPaid.set(norm, pending);
+    }
+  }
+  if (Array.isArray(parsed.processedSessions)) {
+    for (const id of parsed.processedSessions.slice(-MAX_PROCESSED_SESSIONS)) {
+      if (typeof id === "string" && id) processedSessions.add(id.slice(0, 80));
     }
   }
   if (parsed.resetTokens && typeof parsed.resetTokens === "object") {
@@ -983,6 +1043,7 @@ function saveNow() {
     registry: Object.fromEntries(registry),
     profileStates: Object.fromEntries(profileStates),
     pendingPaid: Object.fromEntries(pendingPaid),
+    processedSessions: [...processedSessions],
   };
   const tmp = `${DATA_FILE}.tmp`;
   try {
@@ -1099,6 +1160,8 @@ function sanitizeText(text) {
 const GLYPHS = new Set(["bolt", "leaf", "coin", "chip", "flask", "rocket", "heart", "cube", "wave", "star"]);
 const PATTERNS = new Set(["solid", "border", "stripes"]);
 const TRIMS = new Set(["stripes", "checker", "dots"]); // "plain" = absent
+const BOOTH_STYLES = new Set(["bigtop", "garden", "arcade", "neon"]); // "classic" = absent
+const BOOTH_PROPS = new Set(["plant", "balloons", "trophy", "spotlight"]);
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
 const MAX_SPOT_INDEX = 63;
 
@@ -1138,6 +1201,12 @@ function sanitizeStartup(s) {
         glyph: GLYPHS.has(booth.glyph) ? booth.glyph : "star",
         pattern: PATTERNS.has(booth.pattern) ? booth.pattern : "solid",
         trim: TRIMS.has(booth.trim) ? booth.trim : undefined,
+        style: BOOTH_STYLES.has(booth.style) ? booth.style : undefined,
+        props: (() => {
+          if (!Array.isArray(booth.props)) return undefined;
+          const clean = [...new Set(booth.props.filter((p) => BOOTH_PROPS.has(p)))].slice(0, 3);
+          return clean.length ? clean : undefined;
+        })(),
         // custom banner icon: tiny data-URL PNG, downscaled client-side
         logo:
           typeof booth.logo === "string" &&
@@ -1949,6 +2018,7 @@ const server = createServer((req, res) => {
       const obj = event?.data?.object;
 
       if (type === "checkout.session.completed" && obj && obj.payment_status === "paid") {
+        const sessionId = typeof obj.id === "string" ? obj.id.slice(0, 80) : "";
         const email = normalizeEmail(obj.customer_details?.email ?? obj.customer_email);
         const mode = obj.mode === "subscription" || obj.mode === "payment" ? obj.mode : "";
         // Try the pre-tax subtotal first, then the charged total: with
@@ -1959,25 +2029,58 @@ const server = createServer((req, res) => {
         const plan =
           PRICE_TO_PLAN.get(`${mode}:${Number(obj.amount_subtotal)}`) ??
           PRICE_TO_PLAN.get(`${mode}:${Number(obj.amount_total)}`);
-        if (email && plan) {
-          const paid = {
-            tier: plan.tier,
-            customer: typeof obj.customer === "string" ? obj.customer.slice(0, 64) : "",
-            ts: Date.now(),
-          };
-          if (plan.badge) paid.badge = plan.badge;
+        if (sessionId && processedSessions.has(sessionId)) {
+          // Stripe redelivered an event we already fulfilled — ack and skip,
+          // or a retried ticket pack would pay out twice.
+        } else if (email && plan) {
+          const customer = typeof obj.customer === "string" ? obj.customer.slice(0, 64) : "";
           const acct = accountsByEmail.get(email);
-          if (acct) {
-            // A founding badge is bought once and kept for life — a later
-            // subscription purchase must not silently drop it.
-            if (acct.paid?.badge && !paid.badge) paid.badge = acct.paid.badge;
-            acct.paid = paid;
-            console.log(`[stripe] ${paid.tier} activated for ${acct.id}`);
-          } else if (pendingPaid.size < MAX_PENDING_PAID) {
-            pendingPaid.set(email, paid);
-            console.log(`[stripe] paid checkout held for ${email} — no account with that email yet`);
+          // Only a fulfilled (credited or held) payment is marked processed;
+          // a dropped one stays retryable via Stripe's redelivery.
+          let fulfilled = false;
+          if (plan.tickets) {
+            // consumable: credit the cumulative purchased-tickets counter
+            if (acct) {
+              acct.ticketsPurchased = (acct.ticketsPurchased ?? 0) + plan.tickets;
+              fulfilled = true;
+              console.log(`[stripe] +${plan.tickets} tickets for ${acct.id}`);
+            } else if (pendingPaid.size < MAX_PENDING_PAID || pendingPaid.has(email)) {
+              const prev = pendingPaid.get(email);
+              pendingPaid.set(email, {
+                ...(prev ?? {}),
+                tickets: (prev?.tickets ?? 0) + plan.tickets,
+                // a held subscription's customer id is the revocable handle —
+                // a pack purchase must not overwrite it
+                customer: prev?.tier ? prev.customer : prev?.customer || customer,
+                ts: Date.now(),
+              });
+              fulfilled = true;
+              console.log(`[stripe] ticket pack held for ${email} — no account with that email yet`);
+            }
+          } else {
+            const paid = { tier: plan.tier, customer, ts: Date.now() };
+            if (plan.badge) paid.badge = plan.badge;
+            if (acct) {
+              // A founding badge is bought once and kept for life — a later
+              // subscription purchase must not silently drop it.
+              if (acct.paid?.badge && !paid.badge) paid.badge = acct.paid.badge;
+              acct.paid = paid;
+              fulfilled = true;
+              console.log(`[stripe] ${paid.tier} activated for ${acct.id}`);
+            } else if (pendingPaid.size < MAX_PENDING_PAID || pendingPaid.has(email)) {
+              // keep any tickets the same email already has on hold
+              const prev = pendingPaid.get(email);
+              pendingPaid.set(email, { ...(prev ?? {}), ...paid });
+              fulfilled = true;
+              console.log(`[stripe] paid checkout held for ${email} — no account with that email yet`);
+            }
           }
-          scheduleSave();
+          if (fulfilled) {
+            markSessionProcessed(sessionId);
+            scheduleSave();
+          } else {
+            console.warn(`[stripe] PAID checkout dropped (pending store full) — session left unprocessed for retry`);
+          }
         } else {
           console.warn(
             `[stripe] checkout didn't match a plan: mode=${mode} subtotal=${obj.amount_subtotal} total=${obj.amount_total} email=${email ? "present" : "missing"}`,
@@ -1996,7 +2099,17 @@ const server = createServer((req, res) => {
             }
           }
           for (const [email, p] of pendingPaid) {
-            if (p.customer === customer && !p.badge) pendingPaid.delete(email);
+            if (p.customer === customer && !p.badge && p.tier) {
+              // revoke only the held PLAN — one-time ticket purchases on the
+              // same hold were paid for separately and must survive
+              if (p.tickets) {
+                delete p.tier;
+                pendingPaid.set(email, p);
+              } else {
+                pendingPaid.delete(email);
+              }
+              scheduleSave();
+            }
           }
         }
       }
@@ -2125,10 +2238,20 @@ const server = createServer((req, res) => {
       return;
     }
     const entry = profileStates.get(me);
-    // Accounts also get their billing entitlement (null when none): the
-    // client treats it as the truth about paid tiers once billing is live.
-    const paid = me.startsWith(ACCT_PREFIX) ? (accountsById.get(me)?.paid ?? null) : null;
-    sendJson(res, entry ? { state: entry.state, savedAt: entry.savedAt, paid } : { state: null, savedAt: 0, paid });
+    // Accounts also get their billing entitlement (null when none) and the
+    // cumulative purchased-ticket counter: the client treats the first as
+    // the truth about paid tiers once billing is live, and folds the second
+    // into the wallet exactly once (wallet.redeemed high-water mark).
+    const isAcct = me.startsWith(ACCT_PREFIX);
+    const acctRec = isAcct ? accountsById.get(me) : undefined;
+    const paid = acctRec?.paid ?? null;
+    const coins = isAcct ? (acctRec?.ticketsPurchased ?? 0) : null;
+    sendJson(
+      res,
+      entry
+        ? { state: entry.state, savedAt: entry.savedAt, paid, coins }
+        : { state: null, savedAt: 0, paid, coins },
+    );
     return;
   }
 

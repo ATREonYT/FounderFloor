@@ -76,6 +76,40 @@ export function foundingCheckoutLink(): string | null {
   return process.env.NEXT_PUBLIC_STRIPE_LINK_FOUNDING || null;
 }
 
+/**
+ * Ticket packs — the real-money side of the ticket economy. Everything a
+ * pack buys is also earnable by playing (lib/data/shop.ts documents the
+ * rates); money only compresses time. The server recognizes each pack by
+ * its exact price, so these amounts must match the Stripe products.
+ */
+export interface TicketPack {
+  id: "s" | "m" | "l";
+  name: string;
+  tickets: number;
+  usd: number;
+  blurb: string;
+}
+
+export const TICKET_PACKS: TicketPack[] = [
+  { id: "s", name: "Ticket Strip", tickets: 300, usd: 2.99, blurb: "A prop or two, right now" },
+  { id: "m", name: "Ticket Roll", tickets: 800, usd: 6.99, blurb: "A new booth style, today" },
+  { id: "l", name: "Ticket Crate", tickets: 2000, usd: 14.99, blurb: "The whole shop, basically" },
+];
+
+export function ticketPackLink(id: TicketPack["id"]): string | null {
+  const links: Record<TicketPack["id"], string | undefined> = {
+    s: process.env.NEXT_PUBLIC_STRIPE_LINK_TICKETS_S,
+    m: process.env.NEXT_PUBLIC_STRIPE_LINK_TICKETS_M,
+    l: process.env.NEXT_PUBLIC_STRIPE_LINK_TICKETS_L,
+  };
+  return links[id] || null;
+}
+
+/** True once any ticket-pack payment link is configured. */
+export function ticketPacksLive(): boolean {
+  return Boolean(ticketPackLink("s") || ticketPackLink("m") || ticketPackLink("l"));
+}
+
 /** True once any payment link is configured — flips the UI from simulation. */
 export function billingLive(): boolean {
   return Boolean(

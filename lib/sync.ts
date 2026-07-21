@@ -21,7 +21,10 @@ export const SYNC_TS_KEY = "founderfloor:sync-ts";
 /** The slice of state that travels: everything except device-local marks. */
 export function syncableState(s: AppState): Record<string, unknown> {
   const { lastSeenAt: _seen, prevSeenAt: _prev, ...rest } = s;
-  return rest;
+  // wallet.earnedBase is per-device sync bookkeeping, meaningless to other
+  // devices — strip it so pushing it can't clobber theirs
+  const { earnedBase: _base, ...wallet } = rest.wallet;
+  return { ...rest, wallet };
 }
 
 /** Billing entitlement the server attached to an account (null = none). */
@@ -32,7 +35,13 @@ export interface PaidEntitlement {
 
 export async function pullState(
   me: string,
-): Promise<{ state: unknown; savedAt: number; paid: PaidEntitlement | null } | null> {
+): Promise<{
+  state: unknown;
+  savedAt: number;
+  paid: PaidEntitlement | null;
+  /** Cumulative purchased tickets for this account (null for guests). */
+  coins: number | null;
+} | null> {
   const base = httpBase();
   if (!base || !me) return null;
   try {
@@ -43,13 +52,19 @@ export async function pullState(
     if (gs) headers["X-FF-GS"] = gs;
     const res = await fetch(`${base}/state?me=${encodeURIComponent(me)}`, { headers });
     if (!res.ok) return null;
-    const data = (await res.json()) as { state?: unknown; savedAt?: number; paid?: unknown };
+    const data = (await res.json()) as {
+      state?: unknown;
+      savedAt?: number;
+      paid?: unknown;
+      coins?: unknown;
+    };
     const paid =
       data.paid && typeof data.paid === "object" ? (data.paid as PaidEntitlement) : null;
     return {
       state: data.state ?? null,
       savedAt: typeof data.savedAt === "number" ? data.savedAt : 0,
       paid,
+      coins: typeof data.coins === "number" && Number.isFinite(data.coins) ? data.coins : null,
     };
   } catch {
     return null; // offline — local-only until the server is back

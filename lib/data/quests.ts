@@ -24,6 +24,8 @@ export interface QuestDef {
   unit: string;
   reward: {
     badge: string;
+    /** Ticket bounty granted at claim time (see lib/data/shop.ts). */
+    tickets: number;
     /** Bonus emote unlocked (keys 6-8). */
     emote?: EmoteKind;
     /** Earned title, selectable in Profile, shown on your hover card. */
@@ -40,8 +42,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Finish (or skip) the floor tour.",
     goal: 1,
     unit: "tour",
-    reward: { badge: "first-steps" },
-    rewardLabel: "badge: First steps",
+    reward: { badge: "first-steps", tickets: 30 },
+    rewardLabel: "30 tickets + badge: First steps",
   },
   {
     id: "make-the-rounds",
@@ -49,8 +51,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Chat with three different founders (say something — walking up is browsing).",
     goal: 3,
     unit: "founders",
-    reward: { badge: "rounds", emote: "rocket" },
-    rewardLabel: "unlocks the Rocket reaction (key 6)",
+    reward: { badge: "rounds", tickets: 60, emote: "rocket" },
+    rewardLabel: "60 tickets + the Rocket reaction (key 6)",
   },
   {
     id: "connector",
@@ -58,8 +60,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Make three connections.",
     goal: 3,
     unit: "connections",
-    reward: { badge: "connector", title: "Connector" },
-    rewardLabel: "title: Connector",
+    reward: { badge: "connector", tickets: 80, title: "Connector" },
+    rewardLabel: "80 tickets + title: Connector",
   },
   {
     id: "leave-your-mark",
@@ -67,8 +69,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Sign two guestbooks.",
     goal: 2,
     unit: "guestbooks",
-    reward: { badge: "mark", emote: "fire" },
-    rewardLabel: "unlocks the Fire reaction (key 7)",
+    reward: { badge: "mark", tickets: 60, emote: "fire" },
+    rewardLabel: "60 tickets + the Fire reaction (key 7)",
   },
   {
     id: "open-for-business",
@@ -76,8 +78,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Claim a stand on any floor.",
     goal: 1,
     unit: "stand",
-    reward: { badge: "exhibitor", title: "Exhibitor" },
-    rewardLabel: "title: Exhibitor",
+    reward: { badge: "exhibitor", tickets: 80, title: "Exhibitor" },
+    rewardLabel: "80 tickets + title: Exhibitor",
   },
   {
     id: "tourist",
@@ -85,8 +87,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Set foot on two different floors.",
     goal: 2,
     unit: "floors",
-    reward: { badge: "tourist", emote: "handshake" },
-    rewardLabel: "unlocks the Handshake reaction (key 8)",
+    reward: { badge: "tourist", tickets: 50, emote: "handshake" },
+    rewardLabel: "50 tickets + the Handshake reaction (key 8)",
   },
   {
     id: "crowd-pleaser",
@@ -94,8 +96,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Send ten reactions.",
     goal: 10,
     unit: "reactions",
-    reward: { badge: "crowd-pleaser", title: "Socialite" },
-    rewardLabel: "title: Socialite",
+    reward: { badge: "crowd-pleaser", tickets: 60, title: "Socialite" },
+    rewardLabel: "60 tickets + title: Socialite",
   },
   {
     id: "habit",
@@ -103,8 +105,8 @@ export const QUESTS: QuestDef[] = [
     blurb: "Show up three days in a row.",
     goal: 3,
     unit: "days",
-    reward: { badge: "habit", title: "Regular" },
-    rewardLabel: "title: Regular",
+    reward: { badge: "habit", tickets: 100, title: "Regular" },
+    rewardLabel: "100 tickets + title: Regular",
   },
 ];
 

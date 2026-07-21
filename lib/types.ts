@@ -87,6 +87,18 @@ export type CarpetPattern = "solid" | "border" | "stripes";
 /** Decorative band along the banner's bottom edge; absent = "plain". */
 export type BannerTrim = "plain" | "stripes" | "checker" | "dots";
 
+/**
+ * Booth architecture — structurally different builds, not palette swaps.
+ * "classic" is the free stall everyone starts with; the rest are bought
+ * with tickets (see lib/data/shop.ts). Every style keeps the same 4x3
+ * footprint and banner/lane/counter convention, so collision, claiming,
+ * and interaction never change — only what the hall sees.
+ */
+export type BoothStyle = "classic" | "bigtop" | "garden" | "arcade" | "neon";
+
+/** Equippable booth accessories (max 3 at once), bought with tickets. */
+export type BoothProp = "plant" | "balloons" | "trophy" | "spotlight";
+
 export interface BoothTheme {
   carpet: string; // hex
   banner: string; // hex
@@ -96,6 +108,10 @@ export interface BoothTheme {
   pattern?: CarpetPattern;
   /** Banner edge treatment; absent = "plain". */
   trim?: BannerTrim;
+  /** Booth architecture; absent = "classic". */
+  style?: BoothStyle;
+  /** Equipped accessories, max 3; absent = none. */
+  props?: BoothProp[];
   /**
    * Custom banner icon: a tiny data-URL PNG (uploads are downscaled to 16x16
    * client-side, capped at ~8KB). Replaces the glyph when present.
@@ -463,9 +479,43 @@ export interface QuestProgress {
   emotes: number;
 }
 
+/**
+ * The ticket wallet — deliberately built from MONOTONIC parts so that
+ * cross-device merges can always take max/union and no sequence of syncs
+ * can mint, refund, or double-count tickets:
+ *
+ *   earned    cumulative tickets earned by playing (only ever grows)
+ *   redeemed  cumulative PURCHASED tickets, as last reported by the
+ *             server for this account (only ever grows; reset on
+ *             identity switch — packs belong to the account)
+ *   owned     bought shop item ids ("style:bigtop") — spend is DERIVED
+ *             as the summed price of owned items, so two devices buying
+ *             concurrently union their purchases and both deduct
+ *   connHigh  connection-count high-water already paid for, so removing
+ *             and re-adding a connection can't farm the bounty
+ *
+ * The spendable balance is computed: earned + redeemed - cost(owned).
+ * See walletBalance() in lib/data/shop.ts.
+ */
+export interface Wallet {
+  earned: number;
+  redeemed: number;
+  owned: string[];
+  connHigh: number;
+  /**
+   * DEVICE-LOCAL sync bookkeeping (stripped from the synced blob): the
+   * `earned` value the server last acknowledged from this device. A merge
+   * folds `earned - earnedBase` (this device's unsynced earnings) on top
+   * of the remote value — max() alone would silently discard the smaller
+   * side's earnings (guest sign-in, concurrent devices).
+   */
+  earnedBase: number;
+}
+
 export interface AppState {
   profile: PlayerProfile;
   sub: SubTier;
+  wallet: Wallet;
   connections: Connection[];
   myStartup?: Startup;
   /** Claimed stand per floor: floorId -> boothSpots index. */

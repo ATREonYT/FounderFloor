@@ -8,8 +8,9 @@
  */
 
 import { TILE } from "../lib/types";
-import type { BoothClaim, BoothInstance, FloorDef, GlyphId, Startup } from "../lib/types";
-import { drawGlyph, luma, shade } from "./sprites";
+import type { BoothClaim, BoothInstance, FloorDef, Startup } from "../lib/types";
+import { shade } from "./sprites";
+import { drawBoothBanner, drawBoothCounter } from "./boothArt";
 
 // ---------- shared shapes ----------
 
@@ -92,7 +93,6 @@ const CARD_LINE = "#C6BCA4";
 const VACANT_FACE = "#CFC8B8";
 const INK = "#23201A";
 const MUTED = "#6F6A5E";
-const GOLD = "#B08D2E";
 const ACCENT = "#D9480F";
 
 const T = TILE;
@@ -444,120 +444,41 @@ function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {
   const th = b.startup.booth;
   const bx = sx * T;
   const by = sy * T;
-  const face = th.banner;
-  const dark = shade(face, -0.42);
-  const fg = luma(face) > 0.62 ? INK : "#FFFDF5";
-  const sign = th.sign.toUpperCase();
-  const glyph: GlyphId = th.glyph;
-  const yours = b.isYours;
   return {
     sortY: (sy + 1) * T,
     minX: bx - 2,
     maxX: bx + 4 * T + 2,
     draw(ctx) {
-      // structural back wall
-      ctx.fillStyle = dark;
-      ctx.fillRect(bx, by, 4 * T, T);
-      // banner face, hung slightly proud of the wall
-      ctx.fillStyle = face;
-      ctx.fillRect(bx + 3, by - 8, 4 * T - 6, T + 4);
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(bx + 4, by - 7, 4 * T - 8, T + 2);
-      const logo = th.logo ? logoImage(th.logo) : null;
-      if (logo) ctx.drawImage(logo, bx + 8, by, 16, 16);
-      else drawGlyph(ctx, glyph, bx + 10, by + 1, 14, fg);
-      ctx.fillStyle = fg;
-      ctx.font = "700 9px ui-monospace, SFMono-Regular, Menlo, monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(sign, bx + 2 * T + 7, by + 9, 4 * T - 44);
-      // customization: decorative band along the banner's bottom edge, in
-      // shades derived from the banner color so any combination stays cohesive
-      const trim = th.trim ?? "plain";
-      if (trim !== "plain") {
-        const ty = by + T - 7;
-        const tw = 4 * T - 6;
-        ctx.fillStyle = dark;
-        ctx.fillRect(bx + 3, ty, tw, 4);
-        ctx.fillStyle = fg;
-        if (trim === "stripes") {
-          for (let x = 0; x < tw - 3; x += 8) ctx.fillRect(bx + 3 + x + 2, ty, 4, 4);
-        } else if (trim === "checker") {
-          for (let x = 0; x < tw - 1; x += 4) {
-            const odd = (x / 4) % 2 === 1;
-            ctx.fillRect(bx + 3 + x, odd ? ty + 2 : ty, 2, 2);
-          }
-        } else if (trim === "dots") {
-          for (let x = 4; x < tw - 3; x += 9) ctx.fillRect(bx + 3 + x, ty + 1, 2, 2);
-        }
-      }
-      if (yours) {
-        ctx.fillStyle = GOLD;
-        ctx.fillRect(bx + 3, by + T - 7, 4 * T - 6, 3);
-      }
-      // Founder+ membership perk: a gold edge along the banner top — reads
-      // from across the hall without shouting
-      if (b.startup.tier === "founder") {
-        ctx.fillStyle = GOLD;
-        ctx.fillRect(bx + 3, by - 8, 4 * T - 6, 2);
-        ctx.fillRect(bx + 3, by - 8, 2, 8);
-        ctx.fillRect(bx + 4 * T - 5, by - 8, 2, 8);
-      }
-      // player-owned stands wear a presence lamp: green = owner on the floor,
-      // gray = stand is up but the owner is away
-      if (b.ownerId) {
-        ctx.fillStyle = dark;
-        ctx.fillRect(bx + 4 * T - 15, by - 6, 8, 8);
-        ctx.fillStyle = b.ownerOnline ? "#2B8A3E" : "#9A937F";
-        ctx.fillRect(bx + 4 * T - 13, by - 4, 4, 4);
-      }
+      drawBoothBanner(ctx, {
+        bx,
+        by,
+        theme: th,
+        yours: b.isYours,
+        tier: b.startup.tier,
+        logoImg: th.logo ? logoImage(th.logo) : null,
+        ownerLamp: b.ownerId ? { online: b.ownerOnline === true } : null,
+        seed: hashStr(b.startup.id),
+      });
     },
   };
 }
 
 function counterDrawable(b: BoothInstance & { startup: Startup }): Drawable {
   const { x: sx, y: sy } = b.spot;
+  const th = b.startup.booth;
   const bx = sx * T;
-  const y0 = (sy + 2) * T;
-  const r = mulberry32(hashStr(b.startup.id) ^ 0x9e3779b9);
-  const laptopSlot = Math.floor(r() * 4);
-  const flyerSlot = (laptopSlot + 1 + Math.floor(r() * 3)) % 4;
-  const hasMug = r() < 0.75;
-  const mugSlot = (flyerSlot + 1 + Math.floor(r() * 2)) % 4;
-  const mugColor = shade(b.startup.booth.banner, -0.1);
+  const by = sy * T;
   return {
     minX: bx - 2,
     maxX: bx + 4 * T + 2,
     sortY: (sy + 3) * T,
     draw(ctx) {
-      drawCounterBase(ctx, bx, y0);
-      // laptop, closed, small badge in booth accent
-      const lx = bx + laptopSlot * T;
-      ctx.fillStyle = "#33302A";
-      ctx.fillRect(lx + 8, y0 - 2, 16, 10);
-      ctx.fillStyle = "#4A463E";
-      ctx.fillRect(lx + 8, y0 - 2, 16, 2);
-      ctx.fillStyle = mugColor;
-      ctx.fillRect(lx + 15, y0 + 2, 2, 2);
-      // flyer stack
-      const fx = bx + flyerSlot * T;
-      ctx.fillStyle = CARD;
-      ctx.fillRect(fx + 10, y0 + 1, 14, 9);
-      ctx.strokeStyle = CARD_LINE;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(fx + 10.5, y0 + 1.5, 13, 8);
-      ctx.fillStyle = ACCENT;
-      ctx.fillRect(fx + 12, y0 + 3, 10, 1);
-      ctx.fillStyle = MUTED;
-      ctx.fillRect(fx + 12, y0 + 5, 8, 1);
-      ctx.fillRect(fx + 12, y0 + 7, 9, 1);
-      if (hasMug) {
-        const mx = bx + mugSlot * T;
-        ctx.fillStyle = mugColor;
-        ctx.fillRect(mx + 13, y0 - 1, 6, 7);
-        ctx.fillRect(mx + 19, y0 + 1, 2, 3);
-      }
+      drawBoothCounter(ctx, {
+        bx,
+        by,
+        theme: th,
+        seed: hashStr(b.startup.id),
+      });
     },
   };
 }

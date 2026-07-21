@@ -16,13 +16,18 @@ import { useSyncExternalStore } from "react";
 import type {
   AppState,
   AvatarLook,
+  BoothProp,
+  BoothStyle,
   Connection,
   OnboardingStep,
   Startup,
   SubTier,
+  Wallet,
 } from "@/lib/types";
 import { ONBOARDING_STEPS } from "@/lib/types";
 import { FLOORS } from "@/lib/data/floors";
+import { QUESTS } from "@/lib/data/quests";
+import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
 import type { PaidEntitlement } from "@/lib/sync";
 import { billingLive } from "@/lib/pricing";
@@ -72,6 +77,12 @@ export interface StoreActions {
   /** Pick an earned title (<= 24 chars; empty clears). Shown on your hover card. */
   setTitle(t: string): void;
   /**
+   * Buy a shop item ("style:bigtop", "prop:plant") with tickets. Returns
+   * true when the purchase went through; false when unknown, already
+   * owned, or unaffordable — callers show the honest reason.
+   */
+  buyItem(itemId: string): boolean;
+  /**
    * Switch to a server-issued identity (sign-in) or back to a fresh guest id
    * (sign-out). Keeps look/status/title and all local progress; the social
    * graph on the server is keyed by the id, so it follows the account.
@@ -85,6 +96,7 @@ function defaultState(): AppState {
   return {
     profile: { id: "", name: "", look: { skin: 0, outfit: 0, hair: 0 } },
     sub: "free",
+    wallet: { earned: 0, redeemed: 0, owned: [], connHigh: 0, earnedBase: 0 },
     connections: [],
     claims: {},
     onboarding: [],
@@ -145,10 +157,22 @@ function scheduleSyncPush(): void {
     const blob = syncableState(state);
     const json = JSON.stringify(blob);
     if (json === lastPushedJson) return;
+    const pushedEarned = state.wallet.earned;
     void pushState(me, blob).then((savedAt) => {
       if (savedAt !== null) {
         lastPushedJson = json;
         setLastSyncTs(savedAt);
+        // the server now holds this earned total — advance the device's
+        // acknowledged mark so only future earnings count as unsynced.
+        // (earnedBase is stripped from the blob, so this can't re-push.)
+        if (state.profile.id === me && state.wallet.earnedBase < pushedEarned) {
+          state = {
+            ...state,
+            wallet: { ...state.wallet, earnedBase: Math.min(pushedEarned, state.wallet.earned) },
+          };
+          persist();
+          emit();
+        }
       }
     });
   }, 2500);
@@ -196,6 +220,29 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
   merged.visitStreak = Math.max(merged.visitStreak, local.visitStreak);
   merged.bestStreak = Math.max(merged.bestStreak, local.bestStreak);
 
+  // wallet: redeemed/connHigh are true high-water marks (max is exact) and
+  // owned is a set (union is exact; spend derives from it, so purchases
+  // travel with their cost). `earned` is different — it's a counter BOTH
+  // sides increment — so the merge folds this device's unsynced delta
+  // (earned - earnedBase) on top of the remote value; a bare max() would
+  // silently discard the smaller side's earnings (guest sign-in, two
+  // devices earning concurrently). earnedBase then marks the remote value
+  // as acknowledged; the follow-up push carries the folded total up.
+  const remoteEarned = merged.wallet.earned;
+  const localDelta = Math.max(0, local.wallet.earned - local.wallet.earnedBase);
+  merged.wallet = {
+    earned: Math.min(1_000_000, remoteEarned + localDelta),
+    redeemed: Math.max(merged.wallet.redeemed, local.wallet.redeemed),
+    owned: Array.from(new Set([...merged.wallet.owned, ...local.wallet.owned])).slice(0, 64),
+    connHigh: Math.max(merged.wallet.connHigh, local.wallet.connHigh),
+    earnedBase: remoteEarned,
+  };
+  // the visit-day marker must move forward with the streak, or a pull from
+  // a device that hasn't visited today re-arms today's daily grant
+  if (local.lastVisitDay && (!merged.lastVisitDay || local.lastVisitDay > merged.lastVisitDay)) {
+    merged.lastVisitDay = local.lastVisitDay;
+  }
+
   // union quest deeds so tutorial/quest progress can't regress
   merged.badges = merged.badges; // (kept above)
   merged.claimedQuests = Array.from(new Set([...merged.claimedQuests, ...local.claimedQuests]));
@@ -236,6 +283,20 @@ function applyEntitlement(paid: PaidEntitlement | null): void {
 }
 
 /**
+ * Bank purchased ticket packs. The server reports the account's CUMULATIVE
+ * purchased tickets; the wallet just remembers the latest total (monotonic
+ * max), and the balance derives from it — so a pack counts exactly once no
+ * matter how many devices pull it or how often.
+ */
+function applyCoinCredits(coins: number | null): void {
+  if (coins === null || !Number.isFinite(coins)) return;
+  if (!state.profile.id.startsWith("acct_")) return;
+  const total = Math.min(10_000_000, Math.trunc(coins));
+  if (total <= state.wallet.redeemed) return;
+  setState({ ...state, wallet: { ...state.wallet, redeemed: total } });
+}
+
+/**
  * Pull-and-apply for the current identity, then push if the server had
  * nothing newer. Called on load and after sign-in; safe to call anytime.
  */
@@ -249,6 +310,7 @@ export function syncNow(): void {
     // Entitlement applies even when the blob was stale/absent — a fresh
     // payment changes `paid` without touching savedAt.
     if (remote) applyEntitlement(remote.paid);
+    if (remote) applyCoinCredits(remote.coins);
     // Always follow with a push. It's hash-guarded, so it's a no-op unless a
     // merge folded local work into the pulled state (applyRemoteState cleared
     // lastPushedJson) or this device has unsynced changes — either way the
@@ -371,6 +433,27 @@ function sanitize(raw: unknown): AppState {
     base.sub = r.sub;
   }
 
+  if (r.wallet && typeof r.wallet === "object" && !Array.isArray(r.wallet)) {
+    const w = r.wallet as Record<string, unknown>;
+    const earned = Math.min(1_000_000, Math.max(0, Math.trunc(numOr(w.earned, 0))));
+    base.wallet = {
+      earned,
+      redeemed: Math.min(10_000_000, Math.max(0, Math.trunc(numOr(w.redeemed, 0)))),
+      owned: [],
+      connHigh: Math.min(10_000, Math.max(0, Math.trunc(numOr(w.connHigh, 0)))),
+      // never above earned — an inflated base would hide real earnings
+      earnedBase: Math.min(earned, Math.max(0, Math.trunc(numOr(w.earnedBase, 0)))),
+    };
+    if (Array.isArray(w.owned)) {
+      const ids = new Set<string>();
+      for (const v of w.owned) {
+        if (typeof v === "string" && v && v.length <= 24) ids.add(v);
+        if (ids.size >= 64) break;
+      }
+      base.wallet.owned = Array.from(ids);
+    }
+  }
+
   if (Array.isArray(r.connections)) {
     base.connections = r.connections.filter(looksLikeConnection).map((c) => {
       const out: Connection = { name: c.name, ts: c.ts, floorId: c.floorId };
@@ -389,6 +472,13 @@ function sanitize(raw: unknown): AppState {
   if (looksLikeStartup(r.myStartup)) {
     const s = r.myStartup;
     const rawTrim = (s.booth as { trim?: unknown }).trim;
+    const rawStyle = (s.booth as { style?: unknown }).style;
+    const rawProps = (s.booth as { props?: unknown }).props;
+    const props = Array.isArray(rawProps)
+      ? (rawProps.filter((p): p is BoothProp =>
+          p === "plant" || p === "balloons" || p === "trophy" || p === "spotlight",
+        ).slice(0, 3))
+      : [];
     base.myStartup = {
       ...s,
       booth: {
@@ -398,6 +488,11 @@ function sanitize(raw: unknown): AppState {
           rawTrim === "stripes" || rawTrim === "checker" || rawTrim === "dots"
             ? rawTrim
             : undefined,
+        style:
+          rawStyle === "bigtop" || rawStyle === "garden" || rawStyle === "arcade" || rawStyle === "neon"
+            ? (rawStyle as BoothStyle)
+            : undefined,
+        props: props.length ? Array.from(new Set(props)) : undefined,
         logo: isValidLogo((s.booth as { logo?: unknown }).logo)
           ? (s.booth as { logo?: string }).logo
           : undefined,
@@ -549,6 +644,11 @@ function getServerSnapshot(): AppState {
 
 // ---------- actions (module-level, stable identity) ----------
 
+/** Wallet with `n` more EARNED tickets, clamped to the sanitize() ceiling. */
+function credited(w: Wallet, n: number): Wallet {
+  return { ...w, earned: Math.min(1_000_000, w.earned + Math.max(0, Math.trunc(n))) };
+}
+
 const ACTIONS: StoreActions = {
   setName(name: string): void {
     ensureClientInit();
@@ -581,7 +681,17 @@ const ACTIONS: StoreActions = {
     // connections land in the same millisecond.
     const maxExisting = kept.reduce((m, x) => Math.max(m, x.ts), 0);
     const ts = Math.max(Date.now(), maxExisting + 1);
-    setState({ ...state, connections: [{ ...c, ts }, ...kept] });
+    // Pay only when the connection count reaches a NEW personal high —
+    // a re-connect, or removing and re-adding someone, earns nothing.
+    const newCount = kept.length + 1;
+    const isPaid = kept.length === state.connections.length && newCount > state.wallet.connHigh;
+    setState({
+      ...state,
+      connections: [{ ...c, ts }, ...kept],
+      wallet: isPaid
+        ? { ...credited(state.wallet, EARN.connection), connHigh: newCount }
+        : state.wallet,
+    });
   },
 
   removeConnection(ts: number): void {
@@ -680,7 +790,12 @@ const ACTIONS: StoreActions = {
     if (!badge || badge.length > 32) return;
     if (state.badges.includes(badge)) return;
     if (state.badges.length >= 20) return; // matches the sanitize() cap
-    setState({ ...state, badges: [...state.badges, badge] });
+    // every new badge pays a ticket bounty, whatever earned it
+    setState({
+      ...state,
+      badges: [...state.badges, badge],
+      wallet: credited(state.wallet, EARN.badge),
+    });
   },
 
   setTutorialDone(done: boolean): void {
@@ -707,7 +822,11 @@ const ACTIONS: StoreActions = {
     ensureClientInit();
     const k = key.trim().slice(0, 64);
     if (!k || state.quest.signed.includes(k) || state.quest.signed.length >= 200) return;
-    setState({ ...state, quest: { ...state.quest, signed: [...state.quest.signed, k] } });
+    setState({
+      ...state,
+      quest: { ...state.quest, signed: [...state.quest.signed, k] },
+      wallet: credited(state.wallet, EARN.guestbook),
+    });
   },
 
   recordFloorVisit(floorId: string): void {
@@ -727,7 +846,12 @@ const ACTIONS: StoreActions = {
     ensureClientInit();
     const q = id.trim().slice(0, 32);
     if (!q || state.claimedQuests.includes(q) || state.claimedQuests.length >= 50) return;
-    setState({ ...state, claimedQuests: [...state.claimedQuests, q] });
+    const bounty = QUESTS.find((def) => def.id === q)?.reward.tickets ?? 0;
+    setState({
+      ...state,
+      claimedQuests: [...state.claimedQuests, q],
+      wallet: credited(state.wallet, bounty),
+    });
   },
 
   recordVisit(): void {
@@ -741,17 +865,22 @@ const ACTIONS: StoreActions = {
     };
     const today = dayOf(now);
     let { visitStreak, bestStreak, lastVisitDay } = state;
+    let wallet = state.wallet;
     if (lastVisitDay !== today) {
       const yesterday = dayOf(now - 24 * 60 * 60 * 1000);
       visitStreak = lastVisitDay === yesterday ? visitStreak + 1 : 1;
       bestStreak = Math.max(bestStreak, visitStreak);
       lastVisitDay = today;
+      // daily check-in pay: first visit of each calendar day, scaling with
+      // the streak — showing up is the job, the streak is the raise
+      wallet = credited(wallet, dailyTickets(visitStreak));
     }
     setState({
       ...state,
       visitStreak,
       bestStreak,
       lastVisitDay,
+      wallet,
       // a real gap rolls the away-mark forward; same-session visits keep it,
       // so the digest still describes "since you last sat down"
       prevSeenAt: sameSession ? state.prevSeenAt : state.lastSeenAt,
@@ -769,12 +898,40 @@ const ACTIONS: StoreActions = {
     setState({ ...state, profile });
   },
 
+  buyItem(itemId: string): boolean {
+    ensureClientInit();
+    const item = shopItem(itemId);
+    if (!item || item.price === 0) return false;
+    if (state.wallet.owned.includes(itemId)) return false;
+    if (walletBalance(state) < item.price) return false;
+    if (state.wallet.owned.length >= 64) return false; // matches sanitize() cap
+    // owning the item IS the spend — the balance derives from owned prices
+    setState({
+      ...state,
+      wallet: { ...state.wallet, owned: [...state.wallet.owned, itemId] },
+    });
+    return true;
+  },
+
   setIdentity(id: string, name: string): void {
     ensureClientInit();
     const nextId = id.trim().slice(0, 64) || makeId();
     const nextName = name.trim().slice(0, 24) || state.profile.name;
     if (nextId === state.profile.id && nextName === state.profile.name) return;
-    setState({ ...state, profile: { ...state.profile, id: nextId, name: nextName } });
+    // The wallet crosses identity switches largely UNCHANGED — including
+    // redeemed. Zeroing redeemed here would strand owned items bought with
+    // pack funds (cost keeps counting, funding vanishes -> a permanent
+    // deficit that silently swallows future earnings). The cost of keeping
+    // it is that pack value can leak between identities in the SAME
+    // browser — bounded by what that browser's human actually paid, and
+    // cosmetics-only. earnedBase DOES reset: relative to the new identity's
+    // server state, everything earned here is unsynced, so the first merge
+    // folds it in instead of letting a max() discard it.
+    setState({
+      ...state,
+      profile: { ...state.profile, id: nextId, name: nextName },
+      wallet: { ...state.wallet, earnedBase: 0 },
+    });
     // Signing in on a second device pulls the account's progress down;
     // a fresh account uploads this device's progress instead.
     setLastSyncTs(0);
