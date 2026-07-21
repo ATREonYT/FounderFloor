@@ -151,9 +151,59 @@ and exposes it at `/debug/emails`) — never set it in production.
 - Without the Stripe vars everything works and the membership UI honestly
   says billing isn't live (buttons simulate). With them, every buy button
   opens real checkout — no code change.
-- Create the five Payment Links in the Stripe dashboard (Products →
-  Payment Links): Pro $9/mo, Pro $79/yr, Founder+ $19/mo, Founder+
-  $159/yr, Founding Member $79 one-time.
+
+### Stripe setup, end to end
+
+Two halves: **Payment Links** (the checkout pages the web app opens) and
+the **webhook** (how the floor server learns a payment happened and turns
+the plan on for that account).
+
+**1. Create the five Payment Links** (Stripe dashboard → Payment Links →
+New). Prices must be EXACTLY these — the server recognizes a purchase by
+its price, so a different amount won't grant anything:
+
+| Product | Price | Type |
+|---|---|---|
+| FounderFloor Pro | $9 | Monthly subscription |
+| FounderFloor Pro (annual) | $79 | Yearly subscription |
+| FounderFloor Founder+ | $19 | Monthly subscription |
+| FounderFloor Founder+ (annual) | $159 | Yearly subscription |
+| FounderFloor Founding Member | $79 | One-time payment |
+
+On each link, under **After payment**, pick "Don't show confirmation
+page" → redirect to your website, URL:
+`https://founderfloor.net/profile?paid=1#membership` — that bounces the
+buyer back to their profile, where the site pulls the fresh entitlement
+and the plan appears.
+
+**2. Put the five link URLs in Vercel** (Project → Settings →
+Environment Variables), one per variable from the table above, then
+**Redeploy** — `NEXT_PUBLIC_*` vars are baked in at build time and do
+nothing until a redeploy.
+
+**3. Wire the webhook** (this is what actually grants plans):
+
+1. Stripe dashboard → Developers → Webhooks → **Add endpoint**.
+2. Endpoint URL: `https://floor.founderfloor.net/stripe/webhook`
+3. Events to send: `checkout.session.completed` and
+   `customer.subscription.deleted` (the second takes the plan away when
+   a subscription is cancelled).
+4. Reveal the endpoint's **Signing secret** (`whsec_...`) and add it to
+   the systemd unit: `Environment=STRIPE_WEBHOOK_SECRET=whsec_...`, then
+   `sudo systemctl daemon-reload && sudo systemctl restart founderfloor`.
+
+How fulfillment works: Stripe tells the server "this email paid this
+price"; the server attaches the plan to the account with that email
+(checkout prefills the signed-in buyer's address). If the buyer has no
+account yet, the payment is held and applied the moment an account with
+that email exists. Perks show up on the buyer's next page load on any
+device. A cancelled subscription drops the plan back to free
+automatically; the Founding badge is one-time and never revoked.
+
+**Test before going live:** Stripe's test mode has separate Payment
+Links and webhook secrets. Do one dry run with test links + card
+`4242 4242 4242 4242`, watch the plan flip on your own account, then
+swap in the live link URLs and live `whsec_`.
 
 ## 3. Launch-day checklist
 

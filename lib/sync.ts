@@ -24,9 +24,15 @@ export function syncableState(s: AppState): Record<string, unknown> {
   return rest;
 }
 
+/** Billing entitlement the server attached to an account (null = none). */
+export interface PaidEntitlement {
+  tier?: string;
+  badge?: string;
+}
+
 export async function pullState(
   me: string,
-): Promise<{ state: unknown; savedAt: number } | null> {
+): Promise<{ state: unknown; savedAt: number; paid: PaidEntitlement | null } | null> {
   const base = httpBase();
   if (!base || !me) return null;
   try {
@@ -37,8 +43,14 @@ export async function pullState(
     if (gs) headers["X-FF-GS"] = gs;
     const res = await fetch(`${base}/state?me=${encodeURIComponent(me)}`, { headers });
     if (!res.ok) return null;
-    const data = (await res.json()) as { state?: unknown; savedAt?: number };
-    return { state: data.state ?? null, savedAt: typeof data.savedAt === "number" ? data.savedAt : 0 };
+    const data = (await res.json()) as { state?: unknown; savedAt?: number; paid?: unknown };
+    const paid =
+      data.paid && typeof data.paid === "object" ? (data.paid as PaidEntitlement) : null;
+    return {
+      state: data.state ?? null,
+      savedAt: typeof data.savedAt === "number" ? data.savedAt : 0,
+      paid,
+    };
   } catch {
     return null; // offline — local-only until the server is back
   }

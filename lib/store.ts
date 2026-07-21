@@ -24,6 +24,8 @@ import type {
 import { ONBOARDING_STEPS } from "@/lib/types";
 import { FLOORS } from "@/lib/data/floors";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
+import type { PaidEntitlement } from "@/lib/sync";
+import { billingLive } from "@/lib/pricing";
 
 const STORAGE_KEY = "founderfloor:v1";
 
@@ -211,6 +213,29 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
 }
 
 /**
+ * Once real billing is live, the server's word on what an account has PAID
+ * for beats whatever tier the local state carries (including tiers
+ * "simulated" before billing existed). Runs only for signed-in accounts —
+ * guests can't be matched to a Stripe payment, so their local state stands.
+ */
+function applyEntitlement(paid: PaidEntitlement | null): void {
+  if (!billingLive()) return;
+  if (!state.profile.id.startsWith("acct_")) return;
+  const tier: SubTier =
+    paid?.tier === "founder" ? "founder" : paid?.tier === "pro" ? "pro" : "free";
+  // The founding badge is granted INTO state (and pushed) so it outlives the
+  // entitlement lookup — badges once earned are never clawed back.
+  const badge = paid?.badge === "founding" ? "founding" : null;
+  const needBadge = badge !== null && !state.badges.includes(badge);
+  if (state.sub === tier && !needBadge) return;
+  setState({
+    ...state,
+    sub: tier,
+    badges: needBadge && badge ? [...state.badges, badge].slice(0, 20) : state.badges,
+  });
+}
+
+/**
  * Pull-and-apply for the current identity, then push if the server had
  * nothing newer. Called on load and after sign-in; safe to call anytime.
  */
@@ -221,6 +246,9 @@ export function syncNow(): void {
   if (!me || state.profile.name === "") return;
   void pullState(me).then((remote) => {
     if (remote && remote.state) applyRemoteState(remote);
+    // Entitlement applies even when the blob was stale/absent — a fresh
+    // payment changes `paid` without touching savedAt.
+    if (remote) applyEntitlement(remote.paid);
     // Always follow with a push. It's hash-guarded, so it's a no-op unless a
     // merge folded local work into the pulled state (applyRemoteState cleared
     // lastPushedJson) or this device has unsynced changes — either way the

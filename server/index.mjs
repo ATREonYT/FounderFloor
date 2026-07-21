@@ -46,7 +46,7 @@
  * Run with: node server/index.mjs   (PORT_WS overrides the port, default 3001)
  */
 
-import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { availableParallelism } from "node:os";
 import { closeSync, copyFileSync, fsyncSync, openSync, readFileSync, renameSync, writeSync } from "node:fs";
 import { createServer } from "node:http";
@@ -223,6 +223,92 @@ const EMAIL_FROM = process.env.EMAIL_FROM || "FounderFloor <noreply@founderfloor
 const EMAIL_REPLY_TO = process.env.EMAIL_REPLY_TO || "";
 const SITE_URL = (process.env.SITE_URL || "https://founderfloor.net").replace(/\/+$/, "");
 const EMAIL_ECHO = process.env.EMAIL_ECHO === "1";
+
+/*
+ * Stripe billing fulfillment. Stripe Payment Links do the checkout; this
+ * server only has to learn about completed payments, which arrive at
+ * POST /stripe/webhook signed with STRIPE_WEBHOOK_SECRET (Stripe dashboard →
+ * Developers → Webhooks → the endpoint's signing secret, "whsec_..."). With
+ * the secret unset, the endpoint doesn't exist and nothing here runs.
+ *
+ * What was bought is derived from the session's price (amount + one-time vs
+ * subscription), never from anything a shopper can type into a URL — so
+ * paying the $9 link can't be dressed up as the $19 plan. The entitlement
+ * lands on the account whose email paid; /state serves it back to that
+ * account's clients, which is how the perks turn on across devices.
+ */
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
+const STRIPE_SIG_TOLERANCE_MS = 5 * 60 * 1000;
+// checkout mode + amount_total (minor units, currency-agnostic) -> plan.
+// Must mirror lib/pricing.ts: Pro $9/$79, Founder+ $19/$159, Founding $79.
+const PRICE_TO_PLAN = new Map([
+  ["subscription:900", { tier: "pro" }],
+  ["subscription:7900", { tier: "pro" }],
+  ["subscription:1900", { tier: "founder" }],
+  ["subscription:15900", { tier: "founder" }],
+  ["payment:7900", { tier: "founder", badge: "founding" }],
+]);
+
+/**
+ * pendingPaid: email -> entitlement for payments whose email has no account
+ * yet (paid first, registered after; or paid with a different address and
+ * added it to the account later). Applied the moment an account gains that
+ * email, in /auth/register and /auth/set-email.
+ */
+const pendingPaid = new Map();
+const MAX_PENDING_PAID = 500;
+
+/** An account entitlement (acct.paid) rebuilt from untrusted disk data. */
+function sanitizePaid(p) {
+  if (!p || typeof p !== "object") return undefined;
+  if (p.tier !== "pro" && p.tier !== "founder") return undefined;
+  const out = {
+    tier: p.tier,
+    customer: typeof p.customer === "string" ? p.customer.slice(0, 64) : "",
+    ts: typeof p.ts === "number" ? p.ts : 0,
+  };
+  if (p.badge === "founding") out.badge = "founding";
+  return out;
+}
+
+/** Fold a payment that arrived before its account existed into the account. */
+function applyPendingPaid(acct) {
+  if (!acct.email) return;
+  const p = pendingPaid.get(acct.email);
+  if (!p) return;
+  pendingPaid.delete(acct.email);
+  if (acct.paid?.badge && !p.badge) p.badge = acct.paid.badge;
+  acct.paid = p;
+  console.log(`[stripe] held payment applied to ${acct.id} (${p.tier})`);
+  scheduleSave();
+}
+
+/**
+ * Stripe-Signature: "t=<unix>,v1=<hmac>[,v1=...]" — HMAC-SHA256 of
+ * "<t>.<raw body>" with the signing secret, fresh within tolerance.
+ */
+function verifyStripeSignature(header, rawBody) {
+  if (typeof header !== "string" || !header) return false;
+  let t = "";
+  const sigs = [];
+  for (const part of header.split(",")) {
+    const eq = part.indexOf("=");
+    if (eq < 0) continue;
+    const k = part.slice(0, eq).trim();
+    const v = part.slice(eq + 1).trim();
+    if (k === "t") t = v;
+    else if (k === "v1") sigs.push(v);
+  }
+  const ts = Number(t);
+  if (!Number.isFinite(ts) || Math.abs(Date.now() - ts * 1000) > STRIPE_SIG_TOLERANCE_MS) return false;
+  const expected = createHmac("sha256", STRIPE_WEBHOOK_SECRET).update(`${t}.`).update(rawBody).digest();
+  for (const s of sigs) {
+    if (!/^[0-9a-f]{64}$/i.test(s)) continue;
+    const got = Buffer.from(s, "hex");
+    if (got.length === expected.length && timingSafeEqual(got, expected)) return true;
+  }
+  return false;
+}
 const echoedEmails = [];
 
 /*
@@ -748,8 +834,18 @@ function loadData() {
           : [],
         created: typeof a.created === "number" ? a.created : 0,
       };
+      const paid = sanitizePaid(a.paid);
+      if (paid) acct.paid = paid;
       accounts.set(nameLower.slice(0, MAX_NAME_LEN), acct);
       indexAccount(acct);
+    }
+  }
+  if (parsed.pendingPaid && typeof parsed.pendingPaid === "object") {
+    for (const [email, p] of Object.entries(parsed.pendingPaid)) {
+      if (pendingPaid.size >= MAX_PENDING_PAID) break;
+      const norm = normalizeEmail(email);
+      const paid = sanitizePaid(p);
+      if (norm && paid) pendingPaid.set(norm, paid);
     }
   }
   if (parsed.resetTokens && typeof parsed.resetTokens === "object") {
@@ -886,6 +982,7 @@ function saveNow() {
     guestSecrets: Object.fromEntries(guestSecrets),
     registry: Object.fromEntries(registry),
     profileStates: Object.fromEntries(profileStates),
+    pendingPaid: Object.fromEntries(pendingPaid),
   };
   const tmp = `${DATA_FILE}.tmp`;
   try {
@@ -1280,6 +1377,28 @@ function readJson(req) {
   });
 }
 
+/**
+ * Raw request bytes (no JSON parse) — Stripe signatures are HMACs of the
+ * exact payload, so the body must be verified before it's parsed.
+ */
+function readRawBody(req, maxBytes) {
+  return new Promise((resolve) => {
+    let size = 0;
+    const chunks = [];
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > maxBytes) {
+        resolve(null);
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", () => resolve(null));
+  });
+}
+
 /** Requester calling card, rebuilt from an untrusted body. */
 function sanitizeCard(card) {
   if (!card || typeof card !== "object") return null;
@@ -1417,6 +1536,7 @@ async function handleAuthPost(req, res, pathname) {
     };
     accounts.set(key, acct);
     indexAccount(acct);
+    applyPendingPaid(acct); // a checkout that paid with this email first
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
     scheduleSave();
@@ -1592,6 +1712,7 @@ async function handleAuthPost(req, res, pathname) {
     }
     acct.email = email;
     accountsByEmail.set(email, acct);
+    applyPendingPaid(acct); // a checkout that paid with this email first
     scheduleSave();
     // Tell the OLD address it lost the account (its owner's tripwire), and the
     // new one that it's now linked.
@@ -1805,6 +1926,79 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Stripe's server calls this on payment events; nobody else can — every
+  // request must carry a fresh HMAC made with the webhook signing secret.
+  // A completed checkout attaches the purchased plan to the account whose
+  // email paid (or parks it until that email gets an account); a cancelled
+  // subscription takes the plan away again.
+  if (STRIPE_WEBHOOK_SECRET && req.method === "POST" && url.pathname === "/stripe/webhook") {
+    void (async () => {
+      const raw = await readRawBody(req, 256 * 1024);
+      if (!raw || !verifyStripeSignature(req.headers["stripe-signature"], raw)) {
+        res.writeHead(400, { "Content-Type": "application/json", "Access-Control-Allow-Origin": ACAO });
+        res.end('{"error":"bad signature"}');
+        return;
+      }
+      let event = null;
+      try {
+        event = JSON.parse(raw.toString("utf8"));
+      } catch {
+        /* signed but unparseable — acknowledge and move on */
+      }
+      const type = event?.type;
+      const obj = event?.data?.object;
+
+      if (type === "checkout.session.completed" && obj && obj.payment_status === "paid") {
+        const email = normalizeEmail(obj.customer_details?.email ?? obj.customer_email);
+        const mode = obj.mode === "subscription" || obj.mode === "payment" ? obj.mode : "";
+        const plan = PRICE_TO_PLAN.get(`${mode}:${Number(obj.amount_total)}`);
+        if (email && plan) {
+          const paid = {
+            tier: plan.tier,
+            customer: typeof obj.customer === "string" ? obj.customer.slice(0, 64) : "",
+            ts: Date.now(),
+          };
+          if (plan.badge) paid.badge = plan.badge;
+          const acct = accountsByEmail.get(email);
+          if (acct) {
+            // A founding badge is bought once and kept for life — a later
+            // subscription purchase must not silently drop it.
+            if (acct.paid?.badge && !paid.badge) paid.badge = acct.paid.badge;
+            acct.paid = paid;
+            console.log(`[stripe] ${paid.tier} activated for ${acct.id}`);
+          } else if (pendingPaid.size < MAX_PENDING_PAID) {
+            pendingPaid.set(email, paid);
+            console.log(`[stripe] paid checkout held for ${email} — no account with that email yet`);
+          }
+          scheduleSave();
+        } else {
+          console.warn(
+            `[stripe] checkout didn't match a plan: mode=${mode} amount=${obj.amount_total} email=${email ? "present" : "missing"}`,
+          );
+        }
+      } else if (type === "customer.subscription.deleted" && obj) {
+        const customer = typeof obj.customer === "string" ? obj.customer : "";
+        if (customer) {
+          for (const acct of accountsById.values()) {
+            // Founding membership is a one-time purchase, not this
+            // subscription — cancelling must not revoke the badge or its year.
+            if (acct.paid && acct.paid.customer === customer && !acct.paid.badge) {
+              delete acct.paid;
+              console.log(`[stripe] subscription ended for ${acct.id} — back to free`);
+              scheduleSave();
+            }
+          }
+          for (const [email, p] of pendingPaid) {
+            if (p.customer === customer && !p.badge) pendingPaid.delete(email);
+          }
+        }
+      }
+      // 200 for every verified event, handled or not — Stripe retries anything else.
+      sendJson(res, { received: true });
+    })();
+    return;
+  }
+
   // Test seam only: exists solely when EMAIL_ECHO=1 (never in production),
   // so E2E tests can read the mail that would have been sent.
   if (EMAIL_ECHO && req.method === "GET" && url.pathname === "/debug/emails") {
@@ -1924,7 +2118,10 @@ const server = createServer((req, res) => {
       return;
     }
     const entry = profileStates.get(me);
-    sendJson(res, entry ? { state: entry.state, savedAt: entry.savedAt } : { state: null, savedAt: 0 });
+    // Accounts also get their billing entitlement (null when none): the
+    // client treats it as the truth about paid tiers once billing is live.
+    const paid = me.startsWith(ACCT_PREFIX) ? (accountsById.get(me)?.paid ?? null) : null;
+    sendJson(res, entry ? { state: entry.state, savedAt: entry.savedAt, paid } : { state: null, savedAt: 0, paid });
     return;
   }
 

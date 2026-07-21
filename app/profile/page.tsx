@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isValidLogo, useAppState } from "@/lib/store";
+import { isValidLogo, syncNow, useAppState } from "@/lib/store";
+import { getAuth } from "@/lib/auth";
 import { registerStartup, unregisterStartup } from "@/lib/social";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { FLOORS } from "@/lib/data/floors";
@@ -309,6 +310,40 @@ export default function ProfilePage() {
     const t = setTimeout(() => setToast(null), 2600);
     return () => clearTimeout(t);
   }, [toast]);
+
+  // Back from Stripe checkout (the payment link's confirmation page
+  // redirects to /profile?paid=1#membership). The webhook that grants the
+  // plan can land a few seconds after the redirect, so pull now and again
+  // shortly after — the entitlement flips the tier when it arrives.
+  useEffect(() => {
+    if (!ready) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paid") !== "1") return;
+    window.history.replaceState(null, "", "/profile#membership");
+    setToast({ id: Date.now(), text: "Payment received — activating your plan…" });
+    syncNow();
+    const t1 = window.setTimeout(syncNow, 4000);
+    const t2 = window.setTimeout(syncNow, 10000);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [ready]);
+
+  // Signed-in account email (post-hydration only — getAuth reads localStorage)
+  const acctEmail = ready ? getAuth()?.email : undefined;
+
+  /**
+   * Open a Stripe Payment Link, prefilling the account email so the payment
+   * lands on the right account. The server matches payments by the email
+   * typed at checkout — prefilling makes "wrong email" hard to do.
+   */
+  const openCheckout = (link: string) => {
+    const url = acctEmail
+      ? `${link}${link.includes("?") ? "&" : "?"}prefilled_email=${encodeURIComponent(acctEmail)}`
+      : link;
+    window.open(url, "_blank", "noopener");
+  };
 
   const set = <K extends keyof BoothForm>(key: K, value: BoothForm[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -942,9 +977,15 @@ export default function ProfilePage() {
       {/* ---- Membership ---- */}
       <SectionCard title="Membership" id="membership">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          {!billingLive() && (
+          {!billingLive() ? (
             <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">
               billing not live yet — buttons simulate the switch
+            </span>
+          ) : (
+            <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">
+              {acctEmail
+                ? `your plan attaches to ${acctEmail} — use that email at checkout`
+                : "plans attach to your account email — pay with the email you sign in with (it still counts if you create the account after)"}
             </span>
           )}
           <div
@@ -992,7 +1033,7 @@ export default function ProfilePage() {
               onClick={() => {
                 const link = foundingCheckoutLink();
                 if (link) {
-                  window.open(link, "_blank", "noopener");
+                  openCheckout(link);
                   return;
                 }
                 actions.setSub("founder");
@@ -1069,7 +1110,7 @@ export default function ProfilePage() {
                       if (tier !== "free") {
                         const link = checkoutLink(tier, cycle);
                         if (link) {
-                          window.open(link, "_blank", "noopener");
+                          openCheckout(link);
                           return;
                         }
                       }
