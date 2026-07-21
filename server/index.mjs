@@ -1951,7 +1951,14 @@ const server = createServer((req, res) => {
       if (type === "checkout.session.completed" && obj && obj.payment_status === "paid") {
         const email = normalizeEmail(obj.customer_details?.email ?? obj.customer_email);
         const mode = obj.mode === "subscription" || obj.mode === "payment" ? obj.mode : "";
-        const plan = PRICE_TO_PLAN.get(`${mode}:${Number(obj.amount_total)}`);
+        // Try the pre-tax subtotal first, then the charged total: with
+        // tax-INCLUSIVE prices (the intended setup) both equal the listed
+        // price, but if a Stripe price is ever set tax-exclusive the total
+        // becomes listed+VAT and only the subtotal still matches — either
+        // way the customer gets what they paid for.
+        const plan =
+          PRICE_TO_PLAN.get(`${mode}:${Number(obj.amount_subtotal)}`) ??
+          PRICE_TO_PLAN.get(`${mode}:${Number(obj.amount_total)}`);
         if (email && plan) {
           const paid = {
             tier: plan.tier,
@@ -1973,7 +1980,7 @@ const server = createServer((req, res) => {
           scheduleSave();
         } else {
           console.warn(
-            `[stripe] checkout didn't match a plan: mode=${mode} amount=${obj.amount_total} email=${email ? "present" : "missing"}`,
+            `[stripe] checkout didn't match a plan: mode=${mode} subtotal=${obj.amount_subtotal} total=${obj.amount_total} email=${email ? "present" : "missing"}`,
           );
         }
       } else if (type === "customer.subscription.deleted" && obj) {
