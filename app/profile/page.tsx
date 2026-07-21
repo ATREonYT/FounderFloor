@@ -279,11 +279,17 @@ export default function ProfilePage() {
     if (!ready) return;
     const hash = window.location.hash.slice(1);
     if (!hash) return;
-    const go = () => document.getElementById(hash)?.scrollIntoView();
-    // twice: once as soon as sections exist, once after the editors above
-    // have seeded and shifted the layout under our feet
-    requestAnimationFrame(go);
-    const settle = window.setTimeout(go, 450);
+    const el = document.getElementById(hash);
+    if (!el) return;
+    // Scroll once the section exists, then re-check after the editors above
+    // finish seeding: only correct if the layout actually shifted the target
+    // away from the top — otherwise a second scrollIntoView is a visible
+    // double-jump for no reason.
+    requestAnimationFrame(() => el.scrollIntoView());
+    const settle = window.setTimeout(() => {
+      const top = el.getBoundingClientRect().top;
+      if (Math.abs(top) > 8) el.scrollIntoView();
+    }, 450);
     return () => window.clearTimeout(settle);
   }, [ready]);
 
