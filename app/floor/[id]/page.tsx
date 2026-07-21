@@ -25,6 +25,7 @@ import type {
 import { questStates, unlockedEmotes } from "@/lib/data/quests";
 import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
+import { acquireFloorLock } from "@/lib/tabLock";
 import RequestCard from "@/components/RequestCard";
 import MailToast, { type MailToastData } from "@/components/MailToast";
 import BoothCard from "@/components/BoothCard";
@@ -101,6 +102,34 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [nearBooth, setNearBooth] = useState<BoothInstance | null>(null);
   const [activeBooth, setActiveBooth] = useState<BoothInstance | null>(null);
   const [editingStand, setEditingStand] = useState(false);
+  /**
+   * One game at a time. "mine" = this tab runs it; "blocked" = another TAB
+   * of this browser holds the lock; "elsewhere" = the SERVER replaced this
+   * connection because the same identity joined from another window/device.
+   */
+  const [session, setSession] = useState<"pending" | "mine" | "blocked" | "elsewhere">("pending");
+  const lockReleaseRef = useRef<(() => void) | null>(null);
+
+  const takeLock = useCallback((steal: boolean) => {
+    lockReleaseRef.current?.();
+    setSession("pending");
+    lockReleaseRef.current = acquireFloorLock(
+      {
+        onAcquired: () => setSession("mine"),
+        onBlocked: () => setSession("blocked"),
+        onLost: () => setSession("blocked"),
+      },
+      { steal },
+    );
+  }, []);
+
+  useEffect(() => {
+    takeLock(false);
+    return () => {
+      lockReleaseRef.current?.();
+      lockReleaseRef.current = null;
+    };
+  }, [takeLock]);
   const [floorMsgs, setFloorMsgs] = useState<ChatMsg[]>([]);
   const [threads, setThreads] = useState<Record<string, ThreadState>>({});
   const [tab, setTab] = useState<string>("floor");
@@ -654,7 +683,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
   // ---- mount the game + net client ----
   useEffect(() => {
-    if (!allowed) return;
+    if (!allowed || session !== "mine") return;
     const f = floorById(params.id);
     const canvas = canvasRef.current;
     if (!f || !canvas) return;
@@ -663,6 +692,13 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     const net = createNetClient();
     netRef.current = net;
     const offNet = net.on((ev) => {
+      if (ev.t === "replaced") {
+        // The same identity joined this floor from another window or device
+        // — the server handed the session over. Show the takeover panel;
+        // rejoining from here kicks it right back.
+        setSession("elsewhere");
+        return;
+      }
       if (ev.t === "welcome") {
         setActivity(ev.activity.slice(-MAX_ACTIVITY));
         // Reconcile DM thread liveness against the fresh player list.
@@ -926,7 +962,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       for (const t of Object.values(replyTimers.current)) clearTimeout(t);
       replyTimers.current = {};
     };
-  }, [allowed, params.id, actions, showToast, openNpcThread, openPlayerThread, refreshInbox]);
+  }, [allowed, session, params.id, actions, showToast, openNpcThread, openPlayerThread, refreshInbox]);
 
   useEffect(() => {
     return () => {
@@ -982,6 +1018,66 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             >
               Upgrade in Profile
             </Link>
+            <Link
+              href="/lobby"
+              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-panel"
+            >
+              Back to the lobby
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (session === "blocked") {
+    return (
+      <main className="mx-auto w-full max-w-xl px-4 py-16">
+        <div className="panel p-6">
+          <h1 className="font-display text-2xl">The floor is open in another tab</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            One of you is plenty — running the game twice would put two of
+            you in the same hall. Keep playing over there, or take over here.
+          </p>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => takeLock(true)}
+              className="rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
+            >
+              Play here instead
+            </button>
+            <Link
+              href="/lobby"
+              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-panel"
+            >
+              Back to the lobby
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (session === "elsewhere") {
+    return (
+      <main className="mx-auto w-full max-w-xl px-4 py-16">
+        <div className="panel p-6">
+          <h1 className="font-display text-2xl">You joined from somewhere else</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            This session was handed over to a newer one — another window or
+            another device walked onto the floor as you. If that wasn&rsquo;t
+            you, change your password; if it was, carry on there or take the
+            floor back here.
+          </p>
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => setSession("mine")}
+              className="rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
+            >
+              Rejoin here
+            </button>
             <Link
               href="/lobby"
               className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-panel"

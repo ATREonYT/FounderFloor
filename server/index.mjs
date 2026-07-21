@@ -2470,6 +2470,33 @@ wss.on("connection", (ws, req) => {
       rooms.set(floorId, room);
     }
 
+    // One live presence per identity per floor: a verified join replaces any
+    // older connection with the same identity (a second tab, another device)
+    // — otherwise the hall shows the same person twice. Impersonators can't
+    // weaponize this kick: they were downgraded to a fresh random guest id
+    // above, so they never match anyone else's rawId. The inbox room is
+    // exempt — background messenger sockets may legitimately coexist.
+    if (floorId !== "__inbox") {
+      for (const [oldId, oldC] of [...room]) {
+        if (oldC.rawId !== rawId || oldC.ws === ws) continue;
+        // Remove it from the room NOW so this join's welcome doesn't carry
+        // the ghost (and the id below doesn't get a pointless -2 suffix);
+        // the old socket's own close handler then finds nothing left to do.
+        room.delete(oldId);
+        broadcast(room, { t: "player_leave", id: oldId });
+        try {
+          oldC.ws.close(4001, "replaced by a newer session");
+        } catch {
+          try {
+            oldC.ws.terminate();
+          } catch {
+            /* already gone */
+          }
+        }
+        console.log(`[ws] replaced older session of ${rawId} on floor=${floorId}`);
+      }
+    }
+
     // Keep player ids unique within the room; the joiner learns the final id
     // via welcome.selfId.
     let id = rawId;
@@ -2811,25 +2838,31 @@ wss.on("connection", (ws, req) => {
       socks.delete(ws);
       if (socks.size === 0) socketsByProfile.delete(client.rawId);
     }
-    room.delete(client.id);
-    broadcast(room, { t: "player_leave", id: client.id });
-    broadcast(room, { t: "status", online: true, count: room.size });
-    // Their stand stays up. If this was the owner's last connection on the
-    // floor, tell everyone it just went "away" (and stamp lastSeen for expiry).
-    const st = stands.get(floorId)?.get(client.rawId);
-    if (st && !ownerOnline(room, client.rawId)) {
-      st.lastSeen = Date.now();
-      scheduleSave();
-      broadcast(room, {
-        t: "booth_set",
-        ownerId: client.rawId,
-        ownerName: st.ownerName,
-        online: false,
-        claim: st.claim,
-      });
+    // A connection replaced at join time was already removed from the room —
+    // and its id may now belong to the REPLACEMENT connection (same rawId,
+    // same id). Only run leave-cleanup if this entry is still ours, or this
+    // late close would evict the newer session as a ghost.
+    if (room.get(client.id) === client) {
+      room.delete(client.id);
+      broadcast(room, { t: "player_leave", id: client.id });
+      broadcast(room, { t: "status", online: true, count: room.size });
+      // Their stand stays up. If this was the owner's last connection on the
+      // floor, tell everyone it just went "away" (and stamp lastSeen for expiry).
+      const st = stands.get(floorId)?.get(client.rawId);
+      if (st && !ownerOnline(room, client.rawId)) {
+        st.lastSeen = Date.now();
+        scheduleSave();
+        broadcast(room, {
+          t: "booth_set",
+          ownerId: client.rawId,
+          ownerName: st.ownerName,
+          online: false,
+          claim: st.claim,
+        });
+      }
+      console.log(`[ws] leave floor=${floorId} id=${client.id} (${room.size} online)`);
+      if (room.size === 0) rooms.delete(floorId);
     }
-    console.log(`[ws] leave floor=${floorId} id=${client.id} (${room.size} online)`);
-    if (room.size === 0) rooms.delete(floorId);
     client = null;
     room = null;
   });

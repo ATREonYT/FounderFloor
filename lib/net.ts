@@ -296,9 +296,18 @@ export function createNetClient(wsUrl?: string): NetClient {
       // Browsers always follow error with close; the close handler decides.
     };
 
-    sock.onclose = () => {
+    sock.onclose = (e: CloseEvent) => {
       if (ws !== sock) return;
       ws = null;
+      // 4001 = the server replaced this session because the same identity
+      // joined the floor again (second tab / other device). Terminal: a
+      // reconnect here would kick the newer session and ping-pong forever.
+      if (e.code === 4001) {
+        phase = "closed";
+        clearTimer();
+        emit({ t: "replaced" });
+        return;
+      }
       handleFailure(opened);
     };
   }

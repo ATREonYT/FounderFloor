@@ -322,7 +322,15 @@ export type NetEvent =
    */
   | { t: "social_dm"; from: string; fromName: string; to: string; toName: string; text: string; ts: number }
   | { t: "chat"; msg: ChatMsg }
-  | { t: "status"; online: boolean; count: number };
+  | { t: "status"; online: boolean; count: number }
+  /**
+   * Client-synthesized (never sent by the server as a frame): the server
+   * closed this connection with code 4001 because the same identity joined
+   * the floor again — from another tab, window, or device. The transport
+   * goes terminal (no reconnect; reconnecting would just kick the newer
+   * session back and ping-pong forever) and the page shows a takeover UI.
+   */
+  | { t: "replaced" };
 
 export interface RemoteBooth {
   /** The owner's stable profile id (not the per-connection wire id). */
