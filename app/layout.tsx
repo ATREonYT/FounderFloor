@@ -96,10 +96,13 @@ export default function RootLayout({
                 </div>
               </nav>
             </div>
-            <p className="mt-8 border-t border-line pt-4 text-xs text-muted">
-              Revenue ranks are verified &mdash; simulated in this build. Egos
-              are not.
-            </p>
+            <div className="mt-8 flex flex-col gap-1 border-t border-line pt-4 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+              <p>&copy; {new Date().getFullYear()} FounderFloor. All rights reserved.</p>
+              <p>
+                Revenue ranks are verified &mdash; simulated in this build. Egos
+                are not.
+              </p>
+            </div>
           </div>
         </footer>
       </body>
