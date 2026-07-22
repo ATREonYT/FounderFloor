@@ -33,6 +33,33 @@ export function buildCard(state: AppState): ProfileCard {
   };
 }
 
+/**
+ * Sign-in continuity: hand the old guest identity's floor stands and
+ * directory listing to the account that was just signed into, so the hall
+ * doesn't keep a ghost "away" copy of the person's booth under the
+ * abandoned guest id. Server-verified on both ends (guest secret + bearer
+ * token); a no-op offline or when nothing needs moving.
+ */
+export async function migrateStands(fromGuestId: string, toAccountId: string): Promise<void> {
+  const base = httpBase();
+  if (!base || !fromGuestId || !toAccountId || fromGuestId === toAccountId) return;
+  if (fromGuestId.startsWith("acct_") || !toAccountId.startsWith("acct_")) return;
+  try {
+    await fetch(`${base}/stands/migrate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fromId: fromGuestId,
+        toId: toAccountId,
+        gs: guestSecret(),
+        token: tokenFor(toAccountId),
+      }),
+    });
+  } catch {
+    // offline — the guest stand simply ages out (7-day expiry)
+  }
+}
+
 async function post(path: string, body: unknown): Promise<boolean> {
   const base = httpBase();
   if (!base) return false;

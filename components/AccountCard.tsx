@@ -18,6 +18,7 @@ import {
   setAccountEmail,
 } from "@/lib/auth";
 import { makeGuestId } from "@/lib/store";
+import { migrateStands } from "@/lib/social";
 
 function Field({
   id,
@@ -80,10 +81,13 @@ function PasswordInput({
 export default function AccountCard({
   onIdentity,
   currentName,
+  currentId = "",
 }: {
   /** Called with the new identity after sign-in/out (wires store.setIdentity). */
   onIdentity: (id: string, name: string) => void;
   currentName: string;
+  /** The identity being LEFT on sign-in — its floor stands migrate to the account. */
+  currentId?: string;
 }) {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"register" | "login" | "forgot">("register");
@@ -133,6 +137,12 @@ export default function AccountCard({
       return;
     }
     setPassword("");
+    // Bring the guest identity's floor stands and directory listing along —
+    // otherwise the hall keeps a ghost "away" copy of the booth under the
+    // abandoned guest id, and the person appears twice.
+    if (currentId && !currentId.startsWith("acct_")) {
+      void migrateStands(currentId, result.id);
+    }
     onIdentity(result.id, result.name);
     setTick((t) => t + 1);
   };

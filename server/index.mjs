@@ -2225,6 +2225,73 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // Sign-in continuity: move a guest identity's stands and directory
+  // listing onto the account that just signed in from the same browser.
+  // Without this, playing as a guest and then registering leaves a ghost
+  // "away" stand behind under the abandoned guest id — the same person
+  // twice on one floor. Both sides must prove themselves: the guest
+  // secret owns the old id, the bearer token owns the new — so nobody can
+  // graft a stranger's stand onto their account or strip one off a guest.
+  if (req.method === "POST" && url.pathname === "/stands/migrate") {
+    void (async () => {
+      if (authRateLimited(req)) {
+        sendJson(res, { error: "slow down — try again in a minute" });
+        return;
+      }
+      const body = await readJson(req);
+      const fromId = body ? sanitizeStr(body.fromId, MAX_ID_LEN) : "";
+      const toId = body ? sanitizeStr(body.toId, MAX_ID_LEN) : "";
+      if (
+        !body ||
+        !fromId ||
+        !toId ||
+        fromId === toId ||
+        fromId.startsWith(ACCT_PREFIX) || // accounts never migrate away
+        !toId.startsWith(ACCT_PREFIX) // ...and only migrate INTO accounts
+      ) {
+        notFound(res);
+        return;
+      }
+      if (!verifyIdentity(fromId, undefined, body.gs) || !verifyToken(body.token, toId)) {
+        notFound(res);
+        return;
+      }
+      let moved = 0;
+      for (const [fid, byOwner] of stands) {
+        const st = byOwner.get(fromId);
+        if (!st) continue;
+        byOwner.delete(fromId);
+        const floorRoom = rooms.get(fid);
+        if (floorRoom) broadcast(floorRoom, { t: "booth_clear", ownerId: fromId });
+        if (byOwner.has(toId)) {
+          // the account already has a stand on this floor — it wins
+          continue;
+        }
+        byOwner.set(toId, st);
+        moved++;
+        if (floorRoom) {
+          broadcast(floorRoom, {
+            t: "booth_set",
+            ownerId: toId,
+            ownerName: st.ownerName,
+            online: ownerOnline(floorRoom, toId),
+            claim: st.claim,
+          });
+        }
+      }
+      // the directory listing follows the same way
+      const reg = registry.get(fromId);
+      if (reg) {
+        registry.delete(fromId);
+        if (!registry.has(toId)) registry.set(toId, reg);
+      }
+      if (moved || reg) scheduleSave();
+      console.log(`[stands] migrated ${moved} stand(s) ${fromId} -> ${toId}`);
+      sendJson(res, { ok: true, moved });
+    })();
+    return;
+  }
+
   // Cross-device progress: an identity's app state (booth, badges, quests,
   // streaks, membership) saved by one browser and pulled by another.
   if (req.method === "GET" && url.pathname === "/state") {

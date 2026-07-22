@@ -616,7 +616,11 @@ export default function ProfilePage() {
 
       {/* ---- Account ---- */}
       <SectionCard title="Account">
-        <AccountCard onIdentity={actions.setIdentity} currentName={state.profile.name} />
+        <AccountCard
+          onIdentity={actions.setIdentity}
+          currentName={state.profile.name}
+          currentId={state.profile.id}
+        />
       </SectionCard>
 
       {/* ---- Identity ---- */}
