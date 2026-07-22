@@ -5,6 +5,7 @@ import PixelLogo from "@/components/PixelLogo";
 import NavLink from "@/components/NavLink";
 import NavConnections from "@/components/NavConnections";
 import NavProfile from "@/components/NavProfile";
+import MemberBadge from "@/components/MemberBadge";
 import Messenger from "@/components/Messenger";
 
 export const metadata: Metadata = {
@@ -51,6 +52,8 @@ export default function RootLayout({
               <NavLink href="/lobby">Floors</NavLink>
               <NavLink href="/directory">Directory</NavLink>
               <NavConnections />
+              {/* paying members wear their tier in the chrome, site-wide */}
+              <MemberBadge />
               <NavProfile />
             </nav>
           </div>

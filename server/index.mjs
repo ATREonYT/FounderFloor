@@ -1157,6 +1157,92 @@ function sanitizeText(text) {
     : "";
 }
 
+// ---------- content moderation ----------
+// Two severity tiers. SLURS/hate: the whole message is rejected — there is
+// no "masked" version of a slur worth broadcasting. PROFANITY: the word is
+// masked in place and the rest of the message goes through. Matching is
+// token-based on a normalized form (lowercase, look-alike characters
+// folded, repeated letters collapsed) so "F0ck"/"fuuuck" are caught while
+// "Scunthorpe"/"assist"/"class" are not.
+
+const LEET_MAP = { 0: "o", 1: "i", 3: "e", 4: "a", 5: "s", 7: "t", "@": "a", "$": "s", "!": "i", "+": "t" };
+function normalizeToken(word) {
+  return word
+    .toLowerCase()
+    .replace(/[013457@$!+]/g, (c) => LEET_MAP[c] ?? c)
+    .replace(/[^a-z]/g, "");
+}
+const collapseRuns = (w) => w.replace(/(.)\1+/g, "$1");
+
+// Hateful slurs and direct-harm phrases — message dropped entirely.
+const SLUR_WORDS = new Set([
+  "nigger", "niger", "nigga", "niga", "negro", "coon", "faggot", "fagot", "fag",
+  "dyke", "tranny", "trannie", "shemale", "kike", "spic", "chink", "gook",
+  "wetback", "beaner", "raghead", "towelhead", "retard", "retarded", "tard",
+  "kys",
+]);
+// Direct-harm phrases matched on the flattened text (spaces removed).
+const SLUR_PHRASES = ["killyourself", "gokillyourself", "killurself"];
+
+// Common profanity — masked in place, message otherwise delivered.
+const PROFANITY_WORDS = new Set([
+  "fuck", "fucker", "fucking", "fucked", "fuk", "fuks", "motherfucker",
+  "shit", "shitty", "bullshit", "shite", "bitch", "bitches", "bitchy",
+  "asshole", "arsehole", "ass", "arse", "cunt", "cunts", "dick", "dickhead",
+  "cock", "pussy", "bastard", "whore", "slut", "sluts", "twat", "wanker",
+  "prick", "douche", "douchebag", "jackass", "piss", "pissed", "cum",
+  "jizz", "dildo", "bollocks", "damn", "goddamn",
+]);
+
+const inSet = (set, tok) => set.has(tok) || set.has(collapseRuns(tok));
+
+/**
+ * Moderate a free-text message. Returns null when the text contains hate
+ * speech (drop it), otherwise the text with profanity masked.
+ */
+function moderateText(text) {
+  if (!text) return text;
+  const flat = normalizeToken(text);
+  for (const p of SLUR_PHRASES) {
+    if (flat.includes(p)) return null;
+  }
+  const parts = text.split(/(\s+)/);
+  for (const part of parts) {
+    const tok = normalizeToken(part);
+    if (tok && inSet(SLUR_WORDS, tok)) return null;
+  }
+  return parts
+    .map((part) => {
+      if (/^\s*$/.test(part)) return part;
+      const tok = normalizeToken(part);
+      return tok && inSet(PROFANITY_WORDS, tok)
+        ? "✱".repeat(Math.min(part.length, 6))
+        : part;
+    })
+    .join("");
+}
+
+/**
+ * Moderate a display field (name, status, sign, pitch…): these render all
+ * over the site, so BOTH tiers are masked in place — a slur in a name
+ * becomes ✱✱✱ rather than kicking the join.
+ */
+function moderateField(text) {
+  if (!text) return text;
+  const flat = normalizeToken(text);
+  if (SLUR_PHRASES.some((p) => flat.includes(p))) return "✱✱✱";
+  return text
+    .split(/(\s+)/)
+    .map((part) => {
+      if (/^\s*$/.test(part)) return part;
+      const tok = normalizeToken(part);
+      return tok && (inSet(SLUR_WORDS, tok) || inSet(PROFANITY_WORDS, tok))
+        ? "✱".repeat(Math.min(part.length, 6))
+        : part;
+    })
+    .join("");
+}
+
 const GLYPHS = new Set(["bolt", "leaf", "coin", "chip", "flask", "rocket", "heart", "cube", "wave", "star"]);
 const PATTERNS = new Set(["solid", "border", "stripes"]);
 const TRIMS = new Set(["stripes", "checker", "dots"]); // "plain" = absent
@@ -1176,7 +1262,7 @@ function sanitizeStr(v, max, fallback = "") {
  */
 function sanitizeStartup(s) {
   if (!s || typeof s !== "object") return null;
-  const name = sanitizeStr(s.name, 40);
+  const name = moderateField(sanitizeStr(s.name, 40));
   if (!name) return null;
   const booth = s.booth && typeof s.booth === "object" ? s.booth : {};
   const goalProgress = Number(s.goalProgress);
@@ -1184,12 +1270,12 @@ function sanitizeStartup(s) {
   return {
       id: sanitizeStr(s.id, MAX_ID_LEN, "mine"),
       name,
-      oneLiner: sanitizeStr(s.oneLiner, 80),
-      pitch: sanitizeStr(s.pitch, 600),
-      founder: sanitizeStr(s.founder, MAX_NAME_LEN, "founder"),
+      oneLiner: moderateField(sanitizeStr(s.oneLiner, 80)),
+      pitch: moderateField(sanitizeStr(s.pitch, 600)),
+      founder: moderateField(sanitizeStr(s.founder, MAX_NAME_LEN, "founder")) || "founder",
       founderLook: sanitizeLook(s.founderLook),
-      category: sanitizeStr(s.category, 32),
-      goal: sanitizeStr(s.goal, 80),
+      category: moderateField(sanitizeStr(s.category, 32)),
+      goal: moderateField(sanitizeStr(s.goal, 80)),
       goalProgress: Number.isFinite(goalProgress) ? Math.min(1, Math.max(0, goalProgress)) : 0,
       verifiedRevenue: Number.isFinite(verifiedRevenue) ? Math.max(0, verifiedRevenue) : 0,
       seekingCofounder: s.seekingCofounder === true,
@@ -1197,7 +1283,7 @@ function sanitizeStartup(s) {
       booth: {
         carpet: HEX_COLOR.test(booth.carpet) ? booth.carpet : "#C2B8A3",
         banner: HEX_COLOR.test(booth.banner) ? booth.banner : "#5C5548",
-        sign: sanitizeStr(booth.sign, 12) || name.slice(0, 12).toUpperCase(),
+        sign: moderateField(sanitizeStr(booth.sign, 12)) || name.slice(0, 12).toUpperCase(),
         glyph: GLYPHS.has(booth.glyph) ? booth.glyph : "star",
         pattern: PATTERNS.has(booth.pattern) ? booth.pattern : "solid",
         trim: TRIMS.has(booth.trim) ? booth.trim : undefined,
@@ -1874,7 +1960,7 @@ async function handleSocialPost(req, res, pathname) {
     const from = sanitizeStr(body.from, MAX_ID_LEN);
     const fromName = sanitizeStr(body.fromName, MAX_NAME_LEN) || "founder";
     const to = sanitizeStr(body.to, MAX_ID_LEN);
-    const text = sanitizeText(body.text);
+    const text = moderateText(sanitizeText(body.text));
     const mine = from && social.get(from);
     if (!mine || !to || !text || !mine.connections.some((c) => c.peerId === to)) {
       notFound(res); // DMs only flow between connected profiles
@@ -2525,10 +2611,10 @@ wss.on("connection", (ws, req) => {
       console.log(`[auth] rejected impersonation of ${rawId} — downgraded to guest`);
       rawId = randomUUID();
     }
-    const name = sanitizeName(p?.name);
+    const name = moderateField(sanitizeName(p?.name)) || "guest";
     const look = sanitizeLook(p?.look);
-    const status = sanitizeStr(p?.status, MAX_STATUS_LEN);
-    const title = sanitizeStr(p?.title, 24);
+    const status = moderateField(sanitizeStr(p?.status, MAX_STATUS_LEN));
+    const title = moderateField(sanitizeStr(p?.title, 24));
     const s = sanitizeMove(msg.s);
 
     room = rooms.get(floorId);
@@ -2731,8 +2817,8 @@ wss.on("connection", (ws, req) => {
     if (++signsInWindow > SIGNS_PER_SEC) return; // drop excess signs silently
 
     const key = sanitizeStr(msg.key, MAX_KEY_LEN);
-    const text = sanitizeStr(msg.text, MAX_SIGN_LEN);
-    if (!key || !text) return; // drop empty keys / empty or whitespace-only text
+    const text = moderateText(sanitizeStr(msg.text, MAX_SIGN_LEN));
+    if (!key || !text) return; // drop empty keys / empty, whitespace-only, or hateful text
     if (!isValidGuestbookKey(key)) return; // fabricated key shapes are dropped
 
     const entry = { from: client.name, text, ts: now };
@@ -2773,8 +2859,8 @@ wss.on("connection", (ws, req) => {
     }
     if (++chatsInWindow > CHATS_PER_SEC) return; // drop excess chat silently
 
-    const text = sanitizeText(msg.text);
-    if (!text) return; // drop empty / whitespace-only messages
+    const text = moderateText(sanitizeText(msg.text));
+    if (!text) return; // drop empty, whitespace-only, or hateful messages
     const scope = msg.scope === "dm" ? "dm" : "floor";
     const base = {
       id: `m${BOOT}-${nextMsgId++}`,

@@ -35,6 +35,7 @@ import EmoteBar from "@/components/EmoteBar";
 import HoverCard from "@/components/HoverCard";
 import TutorialCoach from "@/components/TutorialCoach";
 import QuestPanel from "@/components/QuestPanel";
+import MemberBadge from "@/components/MemberBadge";
 import TicketIcon from "@/components/TicketIcon";
 import { walletBalance } from "@/lib/data/shop";
 import EventPill from "@/components/EventPill";
@@ -1159,6 +1160,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           </span>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
+          {/* your membership, worn on the floor chrome too */}
+          <MemberBadge glass />
           <span className="glass flex items-center gap-2 px-3 py-2 text-xs text-muted shadow-float">
             <span
               aria-hidden="true"

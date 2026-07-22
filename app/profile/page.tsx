@@ -48,6 +48,7 @@ import {
   type BillingCycle,
 } from "@/lib/pricing";
 import Toast, { type ToastData } from "@/components/Toast";
+import ConfettiBurst from "@/components/ConfettiBurst";
 import TicketIcon from "@/components/TicketIcon";
 
 const SWATCHES = BOOTH_SWATCHES;
@@ -362,6 +363,14 @@ export default function ProfilePage() {
   const [cycle, setCycle] = useState<BillingCycle>("annual");
   const [toast, setToast] = useState<ToastData | null>(null);
   const [questsOpen, setQuestsOpen] = useState(false);
+  // Post-checkout: what we're waiting on, and what to celebrate once it lands
+  const [pendingPay, setPendingPay] = useState<{
+    kind: "tickets" | "plan";
+    baseRedeemed: number;
+    baseSub: SubTier;
+  } | null>(null);
+  const [burst, setBurst] = useState(0);
+  const [celebrateTier, setCelebrateTier] = useState<SubTier | null>(null);
 
   useEffect(() => {
     setReady(true);
@@ -408,8 +417,9 @@ export default function ProfilePage() {
   // Back from Stripe checkout (the payment link's confirmation page
   // redirects to /profile?paid=1#membership for plans, ?paid=tickets#tickets
   // for ticket packs). The webhook that grants the purchase can land a few
-  // seconds after the redirect, so pull now and again shortly after — the
-  // entitlement/credit lands when it arrives.
+  // seconds after the redirect, so poll the sync until the credit arrives
+  // (up to 90s), then celebrate — confetti for tickets, a full ceremony
+  // card for a new membership.
   useEffect(() => {
     if (!ready) return;
     const params = new URLSearchParams(window.location.search);
@@ -424,14 +434,46 @@ export default function ProfilePage() {
           ? "Payment received — your tickets are on the way…"
           : "Payment received — activating your plan…",
     });
-    syncNow();
-    const t1 = window.setTimeout(syncNow, 4000);
-    const t2 = window.setTimeout(syncNow, 10000);
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
+    setPendingPay({
+      kind: paid === "tickets" ? "tickets" : "plan",
+      baseRedeemed: state.wallet.redeemed,
+      baseSub: state.sub,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready]);
+
+  // While a payment is pending, pull the sync every 3s (webhooks usually
+  // land within seconds; 90s covers a slow retry) …
+  useEffect(() => {
+    if (!pendingPay) return;
+    syncNow();
+    const iv = window.setInterval(syncNow, 3000);
+    const stop = window.setTimeout(() => setPendingPay(null), 90_000);
+    return () => {
+      window.clearInterval(iv);
+      window.clearTimeout(stop);
+    };
+  }, [pendingPay]);
+
+  // … and the moment the credit lands in state, celebrate.
+  useEffect(() => {
+    if (!pendingPay) return;
+    if (pendingPay.kind === "tickets") {
+      const delta = state.wallet.redeemed - pendingPay.baseRedeemed;
+      if (delta > 0) {
+        setPendingPay(null);
+        setBurst(Date.now());
+        setToast({
+          id: Date.now(),
+          text: `+${delta.toLocaleString("en-US")} tickets in your wallet — go get seen.`,
+        });
+      }
+    } else if (state.sub !== "free" && state.sub !== pendingPay.baseSub) {
+      setPendingPay(null);
+      setBurst(Date.now());
+      setCelebrateTier(state.sub);
+    }
+  }, [pendingPay, state.wallet.redeemed, state.sub]);
 
   // Signed-in account email (post-hydration only — getAuth reads localStorage)
   const acctEmail = ready ? getAuth()?.email : undefined;
@@ -1719,6 +1761,55 @@ export default function ProfilePage() {
       </SectionCard>
 
       <Toast toast={toast} />
+      <ConfettiBurst burstId={burst} />
+
+      {/* membership ceremony — a paid plan just activated. One big moment,
+          then back to the floor. */}
+      {celebrateTier && celebrateTier !== "free" && (
+        <div
+          className="anim-fade fixed inset-0 z-[70] flex items-center justify-center bg-ink/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Membership activated"
+          onClick={() => setCelebrateTier(null)}
+        >
+          <div
+            className={`anim-pop w-full max-w-sm rounded-2xl border-2 bg-panel p-8 text-center shadow-float ${
+              celebrateTier === "founder" ? "border-gold" : "border-accent"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span
+              aria-hidden="true"
+              className={`text-3xl ${
+                celebrateTier === "founder" ? "text-gold-deep" : "text-accent"
+              }`}
+            >
+              ✦
+            </span>
+            <p className="micro mt-3 text-muted">Membership activated</p>
+            <h2 className="mt-1 font-display text-3xl">
+              You&rsquo;re {TIER_LABEL[celebrateTier]} now
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              {TIER_BLURB[celebrateTier]} Your tier now shows at the top of
+              every page — and on the floor chrome, so the halls know who
+              showed up.
+            </p>
+            <button
+              type="button"
+              onClick={() => setCelebrateTier(null)}
+              className={`btn-press mt-6 w-full rounded-md px-4 py-2.5 text-sm font-medium text-white shadow-card ${
+                celebrateTier === "founder"
+                  ? "bg-gold-deep hover:bg-gold-deep/90"
+                  : "bg-accent-strong hover:bg-accent-strong/90"
+              }`}
+            >
+              Back to the floor
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
