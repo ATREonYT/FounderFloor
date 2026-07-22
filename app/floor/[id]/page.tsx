@@ -35,6 +35,8 @@ import EmoteBar from "@/components/EmoteBar";
 import HoverCard from "@/components/HoverCard";
 import TutorialCoach from "@/components/TutorialCoach";
 import QuestPanel from "@/components/QuestPanel";
+import TicketIcon from "@/components/TicketIcon";
+import { walletBalance } from "@/lib/data/shop";
 import EventPill from "@/components/EventPill";
 import ConfettiBurst from "@/components/ConfettiBurst";
 import Toast, { type ToastData } from "@/components/Toast";
@@ -1179,8 +1181,17 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* quest tracker — the single "what should I do?" surface (the ticker
           now lives in the chat panel's header, and the tour is its own card) */}
-      <div className="pointer-events-none absolute left-3 top-24 sm:top-16">
+      <div className="pointer-events-none absolute left-3 top-24 flex flex-col items-start gap-2 sm:top-16">
         <QuestPanel quests={quests} />
+        {/* wallet at a glance — quests above pay out in tickets, so the
+            balance lives right under the quest board */}
+        <Link
+          href="/profile#tickets"
+          className="glass pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 text-xs text-gold-deep shadow-float hover:bg-paper"
+          title="Your ticket balance — spend it on booth styles and props"
+        >
+          <TicketIcon /> {walletBalance(state).toLocaleString("en-US")} tickets
+        </Link>
       </div>
 
       {/* incoming connection DM — pixel mail, top right, click to open */}

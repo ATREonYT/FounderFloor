@@ -299,15 +299,21 @@ function SectionCard({
   title,
   children,
   id,
+  aside,
 }: {
   title: string;
   children: React.ReactNode;
   /** Anchor target, e.g. the landing pricing cards link to #membership. */
   id?: string;
+  /** Rendered right of the title — e.g. the wallet chip on My stand. */
+  aside?: React.ReactNode;
 }) {
   return (
     <section id={id} aria-label={title} className="panel scroll-mt-6 p-6">
-      <h2 className="font-display text-xl">{title}</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-xl">{title}</h2>
+        {aside}
+      </div>
       <div className="mt-4">{children}</div>
     </section>
   );
@@ -593,7 +599,7 @@ export default function ProfilePage() {
 
       {/* jump nav — the page runs eight sections deep, and most visits are
           for exactly one of them (usually the booth editor) */}
-      <nav aria-label="Profile sections" className="no-scrollbar -mt-2 flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+      <nav aria-label="Profile sections" className="no-scrollbar -mt-2 flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0">
         {[
           ["identity", "Identity"],
           ["booth", "My stand"],
@@ -711,69 +717,86 @@ export default function ProfilePage() {
           const boardTickets = questList
             .filter((q) => !q.claimed)
             .reduce((sum, q) => sum + q.def.reward.tickets, 0);
-          const shown = questsOpen
-            ? questList
-            : questList.filter((q) => !q.done).slice(0, 3);
+          const preview = questList.filter((q) => !q.done).slice(0, 3);
+          const previewIds = new Set(preview.map((q) => q.def.id));
+          const rest = questList.filter((q) => !previewIds.has(q.def.id));
+          const row = (q: (typeof questList)[number]) => (
+            <li key={q.def.id} className="flex items-center gap-3 py-2.5">
+              <span
+                aria-hidden="true"
+                className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                  q.done ? "bg-verify" : "bg-line"
+                }`}
+              />
+              <div className="min-w-0 flex-1">
+                <p className={`text-sm ${q.done ? "text-muted line-through" : "text-ink"}`}>
+                  {q.def.title}
+                  <span className="ml-2 text-xs text-muted no-underline">
+                    {q.def.blurb}
+                  </span>
+                </p>
+                <p className={`flex flex-wrap items-baseline gap-x-1.5 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
+                  <span className="whitespace-nowrap text-gold-deep">
+                    <TicketIcon /> {q.def.reward.tickets}
+                  </span>
+                  <span>
+                    {q.done ? "✓ " : "+ "}
+                    {q.def.rewardLabel}
+                  </span>
+                </p>
+              </div>
+              <span className="micro shrink-0 text-muted">
+                {q.count}/{q.def.goal}
+              </span>
+            </li>
+          );
           return (
             <>
-              <p className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-xs text-muted">
+              {/* The toggle lives UP HERE so expanding/collapsing only ever
+                  grows/shrinks content below it — the viewport never jumps. */}
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
                 <span>
                   {claimedCount}/{questList.length} complete
-                  {!questsOpen && shown.length > 0 && " · up next:"}
+                  <span className="ml-2 text-gold-deep">
+                    <TicketIcon /> {boardTickets.toLocaleString("en-US")} still on the board
+                  </span>
                 </span>
-                <span className="text-gold-deep">
-                  <TicketIcon /> {boardTickets.toLocaleString("en-US")} still on the board
-                </span>
-              </p>
-              <ul className="divide-y divide-line">
-                {shown.map((q) => (
-                  <li key={q.def.id} className="flex items-center gap-3 py-2.5">
-                    <span
-                      aria-hidden="true"
-                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-                        q.done ? "bg-verify" : "bg-line"
-                      }`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-sm ${q.done ? "text-muted line-through" : "text-ink"}`}>
-                        {q.def.title}
-                        <span className="ml-2 text-xs text-muted no-underline">
-                          {q.def.blurb}
-                        </span>
-                      </p>
-                      <p className={`flex flex-wrap items-baseline gap-x-1.5 text-xs ${q.done ? "text-verify" : "text-muted"}`}>
-                        <span className="whitespace-nowrap text-gold-deep">
-                          <TicketIcon /> {q.def.reward.tickets}
-                        </span>
-                        <span>
-                          {q.done ? "✓ " : "+ "}
-                          {q.def.rewardLabel}
-                        </span>
-                      </p>
-                    </div>
-                    <span className="micro shrink-0 text-muted">
-                      {q.count}/{q.def.goal}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                onClick={() => setQuestsOpen((v) => !v)}
-                aria-expanded={questsOpen}
-                className="mt-2 w-full rounded-md border border-line px-3 py-1.5 text-xs text-muted hover:border-ink hover:text-ink"
-              >
-                {questsOpen
-                  ? "Show fewer"
-                  : `Show all ${questList.length} quests ▾`}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setQuestsOpen((v) => !v)}
+                  aria-expanded={questsOpen}
+                  className="rounded-full border border-line bg-panel px-3 py-1 text-xs text-muted hover:border-ink hover:text-ink"
+                >
+                  {questsOpen ? "Show fewer ▴" : `Show all ${questList.length} ▾`}
+                </button>
+              </div>
+              <ul className="divide-y divide-line">{preview.map(row)}</ul>
+              <div className={`reveal-rows ${questsOpen ? "open" : ""}`}>
+                <div>
+                  <ul className="divide-y divide-line border-t border-line">
+                    {rest.map(row)}
+                  </ul>
+                </div>
+              </div>
             </>
           );
         })()}
       </SectionCard>
 
       {/* ---- My booth ---- */}
-      <SectionCard title="My stand" id="booth">
+      <SectionCard
+        title="My stand"
+        id="booth"
+        aside={
+          <a
+            href="#tickets"
+            className="flex items-center gap-1.5 rounded-full border border-gold/50 bg-panel px-3 py-1 text-xs text-gold-deep hover:border-gold"
+            title="Your ticket balance — earn more at the Ticket booth"
+          >
+            <TicketIcon /> {walletBalance(state).toLocaleString("en-US")} tickets
+          </a>
+        }
+      >
         <div className="grid gap-6 md:grid-cols-[1fr,220px]">
           <div className="flex flex-col gap-4">
             <div>

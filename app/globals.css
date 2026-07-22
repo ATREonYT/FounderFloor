@@ -95,6 +95,27 @@
       0 8px 24px -16px rgba(35, 32, 26, 0.1);
   }
 
+  /* Smooth expand/collapse for content of unknown height (quest boards):
+     the grid-rows 0fr -> 1fr technique — no max-height guessing, no jump.
+     Toggle .open on the container; the single child needs no classes. */
+  .reveal-rows {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 320ms var(--ease-out);
+  }
+  .reveal-rows.open {
+    grid-template-rows: 1fr;
+  }
+  .reveal-rows > * {
+    min-height: 0;
+    overflow: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-rows {
+      transition: none;
+    }
+  }
+
   /* Floating glass chrome for in-game overlays (quest pill, booth cards,
      chat): translucent panel + blur so the hall stays visible underneath —
      the single strongest "this is a 2026 product" cue on the floor. */
