@@ -22,7 +22,7 @@ export default function TermsPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <header>
-        <p className="micro text-muted">EFFECTIVE 21 JULY 2026</p>
+        <p className="micro text-muted">EFFECTIVE 22 JULY 2026</p>
         <h1 className="mt-1 font-display text-3xl">Terms of Service</h1>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
           These terms are the agreement between you and FounderFloor&rsquo;s
@@ -134,6 +134,25 @@ export default function TermsPage() {
           subscriptions, except to the extent you consent to immediate
           performance. If billing is not yet live, the membership page says
           so and nothing is charged.
+        </p>
+        <p>
+          <strong>Tickets.</strong> Tickets are a virtual in-game currency
+          for cosmetic items. They have no monetary value, are not
+          transferable, and cannot be exchanged back into money. Everything
+          tickets buy can also be earned free by playing. Ticket packs are
+          digital content <strong>delivered in full immediately</strong> upon
+          payment — by purchasing, you expressly consent to immediate
+          delivery and acknowledge that your statutory right of withdrawal
+          ends once delivery has begun.{" "}
+          <strong>
+            All ticket purchases are therefore final and non-refundable
+          </strong>
+          , to the extent permitted by law. This doesn&rsquo;t limit
+          statutory rights that cannot be waived — if a purchase fails to
+          deliver, contact the operator and it will be made right. If the
+          service is discontinued, remaining tickets expire without
+          compensation; the operator will give reasonable notice where
+          practical.
         </p>
       </Section>
 

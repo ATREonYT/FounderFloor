@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { isValidLogo, syncNow, useAppState } from "@/lib/store";
 import { getAuth } from "@/lib/auth";
 import { registerStartup, unregisterStartup } from "@/lib/social";
@@ -1352,13 +1353,25 @@ export default function ProfilePage() {
                   patience.
                 </li>
               ) : (
-                !acctEmail && (
+                <>
+                  {!acctEmail && (
+                    <li className="pt-1 text-[11px] leading-snug text-muted">
+                      Packs attach to your account email — pay with the email
+                      you sign in with (it still counts if you create the
+                      account after).
+                    </li>
+                  )}
+                  {/* pre-purchase notice, required for the EU withdrawal
+                      waiver to hold up: instant delivery => sales are final */}
                   <li className="pt-1 text-[11px] leading-snug text-muted">
-                    Packs attach to your account email — pay with the email
-                    you sign in with (it still counts if you create the
-                    account after).
+                    Tickets are delivered instantly, so all pack sales are
+                    final — see the{" "}
+                    <Link href="/terms" className="underline hover:text-ink">
+                      terms
+                    </Link>
+                    . Everything they buy is also earnable free.
                   </li>
-                )
+                </>
               )}
             </ul>
           </div>
