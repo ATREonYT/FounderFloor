@@ -84,7 +84,7 @@ export default function MailToast({
           onOpen(toast.peerId);
         }}
         aria-label={`New message from ${toast.fromName} — open chat`}
-        className="panel anim-toast btn-press pointer-events-auto flex w-[280px] max-w-[calc(100vw-24px)] items-start gap-2.5 border-l-2 border-l-accent p-3 text-left shadow-card"
+        className="glass anim-toast btn-press pointer-events-auto flex w-[280px] max-w-[calc(100vw-24px)] items-start gap-2.5 border-l-2 border-l-accent p-3 text-left shadow-float"
       >
         <span className="mt-0.5 shrink-0">
           <PixelMail />

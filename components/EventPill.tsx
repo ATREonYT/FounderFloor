@@ -44,7 +44,7 @@ export default function EventPill({ floorId, onLiveHere }: EventPillProps) {
 
   if (view.ev.live) {
     const liveClass =
-      "micro inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent-soft px-3 py-2 text-accent shadow-card";
+      "micro inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent-soft px-3 py-2 text-accent shadow-float";
     const dot = (
       <span
         aria-hidden="true"
@@ -77,7 +77,7 @@ export default function EventPill({ floorId, onLiveHere }: EventPillProps) {
   return (
     <span
       title={view.ev.blurb}
-      className="panel inline-flex items-center gap-1.5 px-3 py-2 text-xs text-muted shadow-card"
+      className="glass inline-flex items-center gap-1.5 px-3 py-2 text-xs text-muted shadow-float"
     >
       {view.ev.name} · {view.label}
     </span>

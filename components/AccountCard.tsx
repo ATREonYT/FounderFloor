@@ -25,14 +25,16 @@ function Field({
   label,
   hint,
   children,
+  className,
 }: {
   id: string;
   label: string;
   hint?: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex w-full max-w-xs flex-col">
+    <div className={className ?? "flex w-full max-w-md flex-col"}>
       <label htmlFor={id} className="micro mb-1.5 block text-muted">
         {label}
       </label>
@@ -261,7 +263,7 @@ export default function AccountCard({
             Check your inbox (and spam, once).
           </p>
         ) : (
-          <form onSubmit={submit} className="flex flex-col items-start gap-3">
+<form onSubmit={submit} className="flex w-full max-w-md flex-col items-start gap-3">
             <Field id="forgot-email" label="Email">
               <input
                 id="forgot-email"
@@ -276,7 +278,7 @@ export default function AccountCard({
             <button
               type="submit"
               disabled={busy || !email.includes("@")}
-              className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:border disabled:border-line disabled:bg-paper disabled:text-muted"
             >
               {busy ? "…" : "Email me a reset link"}
             </button>
@@ -322,7 +324,7 @@ export default function AccountCard({
       {/* Plain toggle buttons, not an ARIA tablist — a real tablist owes screen
           readers arrow-key navigation and an associated tabpanel we don't
           provide, so aria-pressed is the honest contract here. */}
-      <div className="flex gap-1.5">
+      <div className="inline-flex w-full max-w-md rounded-full border border-line/70 bg-paper p-1">
         {(["register", "login"] as const).map((m) => (
           <button
             key={m}
@@ -332,17 +334,24 @@ export default function AccountCard({
               setMode(m);
               setError(null);
             }}
-            className={`micro rounded-sm border px-2.5 py-1.5 ${
+            className={`flex-1 whitespace-nowrap rounded-full px-3 py-1.5 text-sm ${
               mode === m
-                ? "border-accent text-accent"
-                : "border-line text-muted hover:border-muted"
+                ? "bg-panel font-medium text-ink shadow-card"
+                : "text-muted hover:text-ink"
             }`}
           >
-            {m === "register" ? "Create account" : "I have an account"}
+            {m === "register" ? "Create account" : "Sign in"}
           </button>
         ))}
       </div>
-      <form onSubmit={submit} className="flex flex-col items-start gap-3">
+      <form
+        onSubmit={submit}
+        className={
+          mode === "register"
+            ? "grid w-full items-start gap-3 sm:grid-cols-2"
+            : "flex w-full max-w-md flex-col items-start gap-3"
+        }
+      >
         <Field
           id="acct-email"
           label={mode === "register" ? "Email" : "Email (or account name, for older accounts)"}
@@ -385,6 +394,7 @@ export default function AccountCard({
           id="acct-pass"
           label="Password"
           hint={mode === "register" ? "At least 6 characters." : undefined}
+          className={mode === "register" ? "w-full sm:max-w-[calc(50%-0.375rem)] sm:col-span-2" : undefined}
         >
           <PasswordInput
             id="acct-pass"
@@ -393,11 +403,11 @@ export default function AccountCard({
             autoComplete={mode === "register" ? "new-password" : "current-password"}
           />
         </Field>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
           <button
             type="submit"
             disabled={busy || missing.length > 0}
-            className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:border disabled:border-line disabled:bg-paper disabled:text-muted"
           >
             {busy ? "…" : mode === "register" ? "Create free account" : "Sign in"}
           </button>
@@ -416,7 +426,7 @@ export default function AccountCard({
         </div>
         {/* A grey button with no reason is a dead end — say what's missing. */}
         {missing.length > 0 && !busy && (
-          <p className="text-xs text-muted">Still needed: {missing.join(", ")}.</p>
+          <p className="text-xs text-muted sm:col-span-2">Still needed: {missing.join(", ")}.</p>
         )}
       </form>
       {error && (

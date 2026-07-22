@@ -104,7 +104,7 @@ export default function LobbyPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-12">
+    <main className="mx-auto w-full max-w-5xl px-4 py-12 pb-24 sm:pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-display text-3xl">Pick a floor</h1>
@@ -179,7 +179,7 @@ export default function LobbyPage() {
           return (
             <article
               key={floor.id}
-              className={`panel card-lift flex flex-col p-5 ${locked ? "bg-paper/50" : ""}`}
+              className={`panel card-lift flex flex-col p-5 ${locked ? "opacity-70 saturate-[0.85]" : ""}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <h2

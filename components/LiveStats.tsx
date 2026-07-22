@@ -115,9 +115,9 @@ export default function LiveStats() {
   ];
 
   return (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-4">
+    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {tiles.map((t) => (
-        <div key={t.label} className="flex flex-col gap-1 bg-panel px-4 py-4 sm:px-5">
+        <div key={t.label} className="panel flex flex-col gap-1 px-4 py-4 sm:px-5">
           <dd className="order-1 flex items-baseline gap-2 font-display text-3xl text-ink">
             <CountUp value={t.value} />
             {t.live && (

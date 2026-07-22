@@ -101,7 +101,7 @@ export default function HoverCard({
     <div
       ref={ref}
       role="tooltip"
-      className="panel pointer-events-none fixed z-[60] w-56 max-w-[calc(100vw-16px)] px-3 py-2 shadow-card"
+      className="glass pointer-events-none fixed z-[60] w-56 max-w-[calc(100vw-16px)] px-3 py-2 shadow-float"
       style={{
         left: pos?.left ?? target.x + OFFSET,
         top: pos?.top ?? target.y + OFFSET,

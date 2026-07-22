@@ -799,16 +799,32 @@ export function createGame(opts: GameOptions): GameHandle {
     // Coarse pointers: the mobile HUD column (chat bar, emotes, hints) owns
     // the bottom of the screen, so the map anchors top-right instead.
     const my = coarsePointer ? MINIMAP_TOP_COARSE : cssH - MINIMAP_BOTTOM - mh;
-    // paper backing
-    ctx.fillStyle = "rgba(242,239,231,0.92)";
-    ctx.fillRect(mx - 4, my - 4, mw + 8, mh + 8);
-    ctx.strokeStyle = "#E4DFD3";
+    // glass backing — same material language as the DOM overlays: rounded,
+    // translucent, soft shadow, hairline. (The old flat paper square was
+    // the one piece of floor chrome that still read as legacy software.)
+    const pad = 6;
+    ctx.save();
+    ctx.shadowColor = "rgba(35,32,26,0.18)";
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 6;
+    ctx.beginPath();
+    ctx.roundRect(mx - pad, my - pad, mw + pad * 2, mh + pad * 2, 10);
+    ctx.fillStyle = "rgba(255,255,255,0.88)";
+    ctx.fill();
+    ctx.restore();
+    ctx.beginPath();
+    ctx.roundRect(mx - pad + 0.5, my - pad + 0.5, mw + pad * 2 - 1, mh + pad * 2 - 1, 10);
+    ctx.strokeStyle = "rgba(228,223,211,0.9)";
     ctx.lineWidth = 1;
-    ctx.strokeRect(mx - 3.5, my - 3.5, mw + 7, mh + 7);
-    // floor rectangle
+    ctx.stroke();
+    // floor rectangle, clipped to soft corners (restored after the viewport box)
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(mx, my, mw, mh, 5);
+    ctx.clip();
     ctx.fillStyle = floor.theme.floorA;
     ctx.fillRect(mx, my, mw, mh);
-    ctx.strokeRect(mx + 0.5, my + 0.5, mw - 1, mh - 1);
+    ctx.strokeStyle = "#E4DFD3";
     // booth zones (4x3 blocks)
     for (const b of built.booths) {
       const bx = mx + b.spot.x * TILE * k;
@@ -838,6 +854,7 @@ export function createGame(opts: GameOptions): GameHandle {
       ctx.strokeStyle = "rgba(35,32,26,0.35)";
       ctx.strokeRect(mx + vx0 * k + 0.5, my + vy0 * k + 0.5, (vx1 - vx0) * k - 1, (vy1 - vy0) * k - 1);
     }
+    ctx.restore(); // end rounded clip
   };
 
   const render = (nowMs: number): void => {

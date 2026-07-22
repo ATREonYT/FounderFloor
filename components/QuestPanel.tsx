@@ -21,7 +21,7 @@ export default function QuestPanel({ quests }: { quests: QuestState[] }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-expanded={false}
-        className="panel pointer-events-auto flex items-center gap-2 px-3 py-2 text-left shadow-card hover:bg-paper"
+        className="glass pointer-events-auto flex items-center gap-2 px-3 py-2 text-left shadow-float hover:bg-paper"
       >
         <span aria-hidden="true" className="text-accent">
           ⭑
@@ -41,7 +41,7 @@ export default function QuestPanel({ quests }: { quests: QuestState[] }) {
   return (
     <section
       aria-label="Quests"
-      className="panel anim-in pointer-events-auto w-[300px] max-w-[calc(100vw-24px)] shadow-card"
+      className="glass anim-in pointer-events-auto w-[300px] max-w-[calc(100vw-24px)] shadow-float"
     >
       <button
         type="button"

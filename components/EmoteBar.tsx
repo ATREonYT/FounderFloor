@@ -52,7 +52,7 @@ export default function EmoteBar({
     <div
       role="toolbar"
       aria-label="Reactions"
-      className="panel pointer-events-auto flex gap-0.5 p-1 shadow-card"
+      className="glass pointer-events-auto flex gap-0.5 p-1 shadow-float"
     >
       {EMOTES.map((em) => {
         const open = unlocked.includes(em.kind);

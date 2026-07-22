@@ -35,7 +35,7 @@ export default function RequestCard({
       tabIndex={-1}
       role={compact ? "dialog" : undefined}
       aria-label={compact ? `Connection request from ${c.name}` : undefined}
-      className={`panel anim-in pointer-events-auto w-[300px] max-w-[calc(100vw-24px)] p-3 shadow-card outline-none ${
+      className={`glass anim-in pointer-events-auto w-[300px] max-w-[calc(100vw-24px)] p-3 shadow-float outline-none ${
         compact ? "border-l-2 border-l-accent" : ""
       }`}
     >

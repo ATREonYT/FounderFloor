@@ -35,7 +35,7 @@ function Ticker() {
   return (
     <div
       aria-hidden="true"
-      className="marquee overflow-hidden border-b border-line bg-panel py-2"
+      className="marquee edge-fade-x overflow-hidden border-b border-line/60 bg-panel py-2"
     >
       <div className="marquee-track flex w-max">
         {row("a", false)}
@@ -117,7 +117,7 @@ export default function LandingPage() {
             </p>
             <h1 className="mt-4 font-display text-4xl leading-tight sm:text-[3.4rem] sm:leading-[1.08]">
               A trade-show floor that{" "}
-              <span className="sweep-underline">never tears down</span>.
+              <span className="sweep-underline">never tears{"\u00A0"}down</span>.
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">
               FounderFloor is a small 2D world where startups keep a stand and
@@ -128,7 +128,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/lobby"
-                className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-white shadow-[0_2px_0_rgba(35,32,26,0.25)] hover:bg-accent-strong/90"
+                className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
               >
                 Walk the floor →
               </Link>
@@ -140,10 +140,10 @@ export default function LandingPage() {
               </Link>
             </div>
             <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
-              <span className="flex items-center gap-1.5">
+              <span className="hidden items-center gap-1.5 sm:flex">
                 <Kbd>W A S D</Kbd> walk
               </span>
-              <span className="flex items-center gap-1.5">
+              <span className="hidden items-center gap-1.5 sm:flex">
                 <Kbd>E</Kbd> talk
               </span>
               <span>Nothing to install. Free to walk in.</span>
@@ -610,7 +610,7 @@ export default function LandingPage() {
           </p>
           <Link
             href="/lobby"
-            className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-white shadow-[0_2px_0_rgba(0,0,0,0.35)] hover:bg-accent-strong/90"
+            className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
           >
             Walk the floor →
           </Link>

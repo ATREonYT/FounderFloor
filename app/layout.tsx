@@ -21,7 +21,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col bg-paper text-ink">
-        <header className="border-b border-line bg-panel">
+        {/* sticky translucent chrome — the page scrolls under it. Floor
+            pages hide it (body[data-on-floor], set by the floor page): the
+            game is fullscreen with its own chrome, and the route-transition
+            opacity animation traps the game's z-index below any positioned
+            header — so the nav would otherwise float over the hall. */}
+        <header
+          data-site-nav
+          className="sticky top-0 z-40 border-b border-line/60 bg-panel/80 backdrop-blur-md"
+        >
           <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4 sm:gap-6">
             <Link
               href="/"

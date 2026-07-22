@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import PixelLogo from "@/components/PixelLogo";
 import { FLOORS } from "@/lib/data/floors";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { useAppState } from "@/lib/store";
@@ -43,10 +44,10 @@ function tierWeight(tier: "pro" | "founder" | undefined): number {
 }
 
 function chipClass(active: boolean): string {
-  return `min-h-[44px] rounded-md border px-3 py-2.5 text-xs ${
+  return `min-h-[44px] shrink-0 whitespace-nowrap rounded-full border px-3.5 py-2.5 text-xs ${
     active
       ? "border-accent bg-accent-soft text-accent"
-      : "border-line text-muted hover:border-muted hover:text-ink"
+      : "border-line bg-panel text-muted hover:border-muted hover:text-ink"
   }`;
 }
 
@@ -147,13 +148,18 @@ export default function DirectoryPage() {
             type="search"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by name, one-liner, category, founder"
+            placeholder="Search startups…"
             autoComplete="off"
             className="h-11 w-full rounded-md border border-line px-3 text-sm placeholder:text-muted/70"
           />
         </div>
 
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Category filter">
+        <div
+          className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+          role="group"
+          aria-label="Category filter"
+        >
+          <span className="micro shrink-0 text-muted">Category</span>
           {categories.map((c) => (
             <button
               key={c}
@@ -167,7 +173,12 @@ export default function DirectoryPage() {
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="More filters">
+        <div
+          className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+          role="group"
+          aria-label="Stage and co-founder filters"
+        >
+          <span className="micro shrink-0 text-muted">Stage</span>
           <button
             type="button"
             aria-pressed={seeking}
@@ -195,23 +206,24 @@ export default function DirectoryPage() {
       {total > 0 && (
         <p className="micro mt-6 text-muted">
           {results.length === total
-            ? `${total} startups`
-            : `${results.length} of ${total} startups`}
+            ? `${total} ${total === 1 ? "startup" : "startups"}`
+            : `${results.length} of ${total} ${total === 1 ? "startup" : "startups"}`}
           {category !== null && ` · ${category}`}
         </p>
       )}
 
       {results.length === 0 ? (
         total === 0 ? (
-          <div className="mt-4 flex flex-col items-start gap-3">
+          <div className="panel mx-auto mt-8 flex w-full max-w-md flex-col items-center gap-3 px-6 py-10 text-center">
+            <PixelLogo size={40} />
+            <h2 className="font-display text-xl">The floor is wide open</h2>
             <p className="text-sm leading-relaxed text-muted">
-              No stands yet — the floor is wide open, which means the best
-              spots are too. Set up your startup and be the first name in
-              this directory.
+              No stands yet — which means the best spots are still free. Set
+              up your startup and be the first name in this directory.
             </p>
             <Link
               href="/profile#booth"
-              className="btn-press rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
+              className="btn-press mt-1 rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
             >
               Set up your stand
             </Link>

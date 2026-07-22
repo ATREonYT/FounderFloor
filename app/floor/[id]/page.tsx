@@ -130,6 +130,15 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       lockReleaseRef.current = null;
     };
   }, [takeLock]);
+
+  // The floor is fullscreen with its own chrome — hide the site nav while
+  // here (see the matching rule in globals.css).
+  useEffect(() => {
+    document.body.dataset.onFloor = "1";
+    return () => {
+      delete document.body.dataset.onFloor;
+    };
+  }, []);
   const [floorMsgs, setFloorMsgs] = useState<ChatMsg[]>([]);
   const [threads, setThreads] = useState<Record<string, ThreadState>>({});
   const [tab, setTab] = useState<string>("floor");
@@ -974,7 +983,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   if (!floor) {
     return (
       <main className="mx-auto w-full max-w-xl px-4 py-16">
-        <div className="panel p-6">
+        <div className="glass p-6">
           <h1 className="font-display text-2xl">No such floor</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             There is no floor called &ldquo;{params.id}&rdquo;. Halls get
@@ -1002,7 +1011,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   if (!tierOk) {
     return (
       <main className="mx-auto w-full max-w-xl px-4 py-16">
-        <div className="panel p-6">
+        <div className="glass p-6">
           <div className="flex items-center gap-3">
             <h1 className="font-display text-2xl">{floor.name}</h1>
             <TierTag tier={floor.tier} />
@@ -1020,7 +1029,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             </Link>
             <Link
               href="/lobby"
-              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-panel"
+              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-glass"
             >
               Back to the lobby
             </Link>
@@ -1033,7 +1042,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   if (session === "blocked") {
     return (
       <main className="mx-auto w-full max-w-xl px-4 py-16">
-        <div className="panel p-6">
+        <div className="glass p-6">
           <h1 className="font-display text-2xl">The floor is open in another tab</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             One of you is plenty — running the game twice would put two of
@@ -1049,7 +1058,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             </button>
             <Link
               href="/lobby"
-              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-panel"
+              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-glass"
             >
               Back to the lobby
             </Link>
@@ -1062,7 +1071,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   if (session === "elsewhere") {
     return (
       <main className="mx-auto w-full max-w-xl px-4 py-16">
-        <div className="panel p-6">
+        <div className="glass p-6">
           <h1 className="font-display text-2xl">You joined from somewhere else</h1>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             This session was handed over to a newer one — another window or
@@ -1080,7 +1089,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             </button>
             <Link
               href="/lobby"
-              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-panel"
+              className="rounded-md border border-ink px-4 py-2 text-sm hover:bg-glass"
             >
               Back to the lobby
             </Link>
@@ -1137,7 +1146,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       {/* top bar */}
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
-          <span className="panel flex items-center gap-3 px-3 py-2 shadow-card">
+          <span className="glass flex items-center gap-3 px-3 py-2 shadow-float">
             <span className="font-display text-base leading-none">{floor.name}</span>
             <TierTag tier={floor.tier} />
           </span>
@@ -1148,7 +1157,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           </span>
         </div>
         <div className="pointer-events-auto flex items-center gap-2">
-          <span className="panel flex items-center gap-2 px-3 py-2 text-xs text-muted shadow-card">
+          <span className="glass flex items-center gap-2 px-3 py-2 text-xs text-muted shadow-float">
             <span
               aria-hidden="true"
               className={`inline-block h-2 w-2 rounded-full ${
@@ -1161,7 +1170,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           </span>
           <Link
             href="/lobby"
-            className="panel px-3 py-2 text-xs text-ink shadow-card hover:bg-paper"
+            className="glass px-3 py-2 text-xs text-ink shadow-float hover:bg-paper"
           >
             Leave
           </Link>
@@ -1226,8 +1235,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* interact hint */}
       {nearBooth && !activeBooth && (
-        <div className="pointer-events-none absolute bottom-24 left-1/2 -translate-x-1/2">
-          <span className="panel px-3 py-1.5 text-sm shadow-card">
+        <div className="pointer-events-none absolute bottom-44 left-1/2 -translate-x-1/2 sm:bottom-24">
+          <span className="glass px-3 py-1.5 text-sm shadow-float">
             {!coarse && (
               <kbd className="micro mr-2 rounded-sm border border-line px-1 py-0.5 text-muted">
                 E
@@ -1326,7 +1335,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* tutorial coach — one instruction at a time, above the bottom HUD */}
       {!state.tutorialDone && (
-        <div className="pointer-events-none absolute bottom-20 left-1/2 flex -translate-x-1/2 justify-center">
+        <div className="pointer-events-none absolute bottom-44 left-1/2 flex -translate-x-1/2 justify-center sm:bottom-20">
           <TutorialCoach
             done={state.onboarding}
             coarse={coarse}
@@ -1366,7 +1375,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
                 setMinimapOn(next);
                 handleRef.current?.setMinimap(next);
               }}
-              className={`panel pointer-events-auto px-3 text-xs shadow-card ${
+              className={`glass pointer-events-auto px-3 text-xs shadow-float ${
                 minimapOn ? "text-ink" : "text-muted"
               }`}
             >
@@ -1377,7 +1386,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               above the emote bar read as misplaced on phones */}
           <div className="relative">
             {helpOpen && (
-              <div className="panel pointer-events-auto absolute bottom-10 right-0 w-56 p-3 text-xs leading-relaxed text-muted shadow-card">
+              <div className="glass pointer-events-auto absolute bottom-10 right-0 w-56 p-3 text-xs leading-relaxed text-muted shadow-float">
                 <p className="micro mb-1.5 text-ink">Controls</p>
                 {coarse ? (
                   <p>Tap to walk. Tap a booth to talk. Buttons below to react.</p>
@@ -1398,7 +1407,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               onClick={() => setHelpOpen((v) => !v)}
               aria-expanded={helpOpen}
               aria-label="Help"
-              className="panel pointer-events-auto h-9 w-9 text-sm text-muted shadow-card hover:text-ink"
+              className="glass pointer-events-auto h-9 w-9 text-sm text-muted shadow-float hover:text-ink"
             >
               ?
             </button>
@@ -1415,7 +1424,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           <div
             role="dialog"
             aria-label="Tutorial complete"
-            className="panel anim-pop flex w-[380px] max-w-full flex-col gap-3 p-6 text-center shadow-card"
+            className="glass anim-pop flex w-[380px] max-w-full flex-col gap-3 p-6 text-center shadow-float"
           >
             <p className="micro text-verify">BADGE EARNED</p>
             <h2 className="font-display text-2xl">Tutorial graduate</h2>

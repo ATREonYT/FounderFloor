@@ -36,8 +36,25 @@ const config: Config = {
         ],
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
+      /**
+       * 2026 geometry on a retro palette: the whole old scale read as
+       * boxy shareware. Every existing rounded-* call site picks these up.
+       */
+      borderRadius: {
+        sm: "6px",
+        DEFAULT: "8px",
+        md: "10px",
+        lg: "14px",
+        xl: "18px",
+        "2xl": "22px",
+        "3xl": "28px",
+      },
       boxShadow: {
-        card: "0 1px 2px rgba(35,32,26,0.06), 0 4px 12px rgba(35,32,26,0.05)",
+        // resting card: barely-there contact shadow + a wide soft wash
+        card: "0 1px 2px rgba(35,32,26,0.05), 0 8px 24px -12px rgba(35,32,26,0.12)",
+        // floating chrome: popovers, toasts, the on-floor panels
+        float:
+          "0 1px 2px rgba(35,32,26,0.06), 0 12px 32px -12px rgba(35,32,26,0.18), 0 32px 64px -32px rgba(35,32,26,0.14)",
       },
     },
   },

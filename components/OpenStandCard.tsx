@@ -23,7 +23,7 @@ export default function OpenStandCard({
   return (
     <aside
       aria-label="Open stand"
-      className="panel anim-in pointer-events-auto flex w-[340px] max-w-[calc(100vw-24px)] flex-col shadow-card"
+      className="glass anim-in pointer-events-auto flex w-[340px] max-w-[calc(100vw-24px)] flex-col shadow-float"
     >
       <div className="flex items-center gap-2 rounded-t-md bg-line/60 px-4 py-2">
         <span className="micro text-muted">Open stand</span>

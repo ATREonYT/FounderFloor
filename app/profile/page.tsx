@@ -593,7 +593,7 @@ export default function ProfilePage() {
 
       {/* jump nav — the page runs eight sections deep, and most visits are
           for exactly one of them (usually the booth editor) */}
-      <nav aria-label="Profile sections" className="-mt-2 flex flex-wrap gap-1.5">
+      <nav aria-label="Profile sections" className="no-scrollbar -mt-2 flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
         {[
           ["identity", "Identity"],
           ["booth", "My stand"],
@@ -607,7 +607,7 @@ export default function ProfilePage() {
           <a
             key={id}
             href={`#${id}`}
-            className="min-h-[36px] rounded-md border border-line px-3 py-1.5 text-xs text-muted hover:border-ink hover:text-ink"
+            className="min-h-[36px] shrink-0 whitespace-nowrap rounded-full border border-line bg-panel px-3.5 py-1.5 text-xs text-muted hover:border-ink hover:text-ink"
           >
             {label}
           </a>

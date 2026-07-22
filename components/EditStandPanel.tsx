@@ -117,7 +117,7 @@ export default function EditStandPanel({
   return (
     <aside
       aria-label="Edit your stand"
-      className="panel anim-in pointer-events-auto flex w-[340px] max-w-[calc(100vw-24px)] flex-col shadow-card"
+      className="glass anim-in pointer-events-auto flex w-[340px] max-w-[calc(100vw-24px)] flex-col shadow-float"
     >
       <div className="flex items-center justify-between rounded-t-md border-b border-line px-4 py-2">
         <span className="micro text-muted">Editing your stand — live</span>

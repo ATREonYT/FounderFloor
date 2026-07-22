@@ -181,7 +181,7 @@ export default function Messenger() {
         <div
           role="dialog"
           aria-label="Chats"
-          className="panel anim-in fixed bottom-20 right-4 z-40 flex max-h-[min(480px,70vh)] w-[320px] max-w-[calc(100vw-24px)] flex-col shadow-card"
+          className="glass anim-in fixed bottom-20 right-4 z-40 flex max-h-[min(480px,70vh)] w-[320px] max-w-[calc(100vw-24px)] flex-col shadow-float"
         >
           <div className="flex items-center gap-2 border-b border-line px-3 py-2">
             {activeThread ? (
@@ -327,7 +327,7 @@ export default function Messenger() {
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close chats" : `Open chats${badge ? ` (${badge} unread)` : ""}`}
         aria-expanded={open}
-        className="btn-press fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-md border border-ink bg-ink shadow-card hover:bg-ink/90"
+        className="btn-press fixed bottom-4 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-md border border-ink bg-ink shadow-float hover:bg-ink/90"
       >
         <PixelChat />
         {badge > 0 && (

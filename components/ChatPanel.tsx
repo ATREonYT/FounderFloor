@@ -112,7 +112,7 @@ export default function ChatPanel({
     return (
       <section
         aria-label="Chat (collapsed)"
-        className="panel pointer-events-auto w-full overflow-hidden shadow-card sm:w-80"
+        className="glass pointer-events-auto w-full overflow-hidden shadow-float sm:w-80"
       >
         <button
           type="button"
@@ -143,7 +143,7 @@ export default function ChatPanel({
   return (
     <section
       aria-label="Chat"
-      className="panel anim-in pointer-events-auto flex w-full flex-col overflow-hidden shadow-card sm:w-80"
+      className="glass anim-in pointer-events-auto flex w-full flex-col overflow-hidden shadow-float sm:w-80"
     >
       <div className="flex items-stretch border-b border-line">
         <div
