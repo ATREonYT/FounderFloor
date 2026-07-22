@@ -317,6 +317,100 @@
     }
   }
 
+  /* ==================== MEMBERSHIP CEREMONY ====================
+     The one screen that's allowed to show off: rotating prize rays, a
+     medal that drops in on a spring and then breathes, a foil sheen
+     sweeping the headline, and sparks twinkling around the card. */
+  @keyframes ceremony-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .ceremony-rays {
+    background: repeating-conic-gradient(
+      var(--ray-color, rgba(176, 141, 46, 0.45)) 0deg 9deg,
+      transparent 9deg 30deg
+    );
+    mask-image: radial-gradient(circle, black 20%, transparent 66%);
+    -webkit-mask-image: radial-gradient(circle, black 20%, transparent 66%);
+    animation: ceremony-spin 18s linear infinite;
+  }
+
+  @keyframes seal-drop {
+    0% {
+      opacity: 0;
+      transform: translateY(-64px) scale(0.3) rotate(-18deg);
+    }
+    55% {
+      opacity: 1;
+      transform: translateY(8px) scale(1.12) rotate(4deg);
+    }
+    78% {
+      transform: translateY(-3px) scale(0.97) rotate(-2deg);
+    }
+    100% {
+      transform: translateY(0) scale(1) rotate(0deg);
+    }
+  }
+  .seal-drop {
+    animation:
+      seal-drop 750ms var(--ease-spring) 120ms both,
+      float-slow 5s ease-in-out 1.4s infinite;
+  }
+
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.3) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1) rotate(24deg);
+    }
+  }
+  .twinkle {
+    animation: twinkle 2.1s ease-in-out infinite;
+  }
+
+  /* Foil-stamp headline: mostly ink, with a bright band sweeping through. */
+  @keyframes sheen {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  .ceremony-title {
+    background-size: 250% 100%;
+    background-position: 0 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: sheen 3s ease-in-out 700ms infinite;
+  }
+  .ceremony-title-founder {
+    background-image: linear-gradient(
+      105deg,
+      #23201a 38%,
+      #b08d2e 47%,
+      #e8c766 50%,
+      #b08d2e 53%,
+      #23201a 62%
+    );
+  }
+  .ceremony-title-pro {
+    background-image: linear-gradient(
+      105deg,
+      #23201a 38%,
+      #d9480f 47%,
+      #f0906b 50%,
+      #d9480f 53%,
+      #23201a 62%
+    );
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .btn-press,
     .btn-press:active:not(:disabled),
@@ -333,6 +427,10 @@
     .stagger-children > *,
     .float-slow,
     .pulse-dot,
+    .ceremony-rays,
+    .seal-drop,
+    .twinkle,
+    .ceremony-title,
     .marquee-track {
       animation: none;
     }

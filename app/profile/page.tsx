@@ -49,6 +49,7 @@ import {
 } from "@/lib/pricing";
 import Toast, { type ToastData } from "@/components/Toast";
 import ConfettiBurst from "@/components/ConfettiBurst";
+import MembershipCeremony from "@/components/MembershipCeremony";
 import TicketIcon from "@/components/TicketIcon";
 
 const SWATCHES = BOOTH_SWATCHES;
@@ -474,6 +475,14 @@ export default function ProfilePage() {
       setCelebrateTier(state.sub);
     }
   }, [pendingPay, state.wallet.redeemed, state.sub]);
+
+  // The ceremony gets an encore: a second confetti volley while the card
+  // is up, so the moment doesn't die after the first 1.4s burst.
+  useEffect(() => {
+    if (!celebrateTier) return;
+    const t = window.setTimeout(() => setBurst(Date.now()), 1100);
+    return () => window.clearTimeout(t);
+  }, [celebrateTier]);
 
   // Signed-in account email (post-hydration only — getAuth reads localStorage)
   const acctEmail = ready ? getAuth()?.email : undefined;
@@ -1766,49 +1775,11 @@ export default function ProfilePage() {
       {/* membership ceremony — a paid plan just activated. One big moment,
           then back to the floor. */}
       {celebrateTier && celebrateTier !== "free" && (
-        <div
-          className="anim-fade fixed inset-0 z-[70] flex items-center justify-center bg-ink/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Membership activated"
-          onClick={() => setCelebrateTier(null)}
-        >
-          <div
-            className={`anim-pop w-full max-w-sm rounded-2xl border-2 bg-panel p-8 text-center shadow-float ${
-              celebrateTier === "founder" ? "border-gold" : "border-accent"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span
-              aria-hidden="true"
-              className={`text-3xl ${
-                celebrateTier === "founder" ? "text-gold-deep" : "text-accent"
-              }`}
-            >
-              ✦
-            </span>
-            <p className="micro mt-3 text-muted">Membership activated</p>
-            <h2 className="mt-1 font-display text-3xl">
-              You&rsquo;re {TIER_LABEL[celebrateTier]} now
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              {TIER_BLURB[celebrateTier]} Your tier now shows at the top of
-              every page — and on the floor chrome, so the halls know who
-              showed up.
-            </p>
-            <button
-              type="button"
-              onClick={() => setCelebrateTier(null)}
-              className={`btn-press mt-6 w-full rounded-md px-4 py-2.5 text-sm font-medium text-white shadow-card ${
-                celebrateTier === "founder"
-                  ? "bg-gold-deep hover:bg-gold-deep/90"
-                  : "bg-accent-strong hover:bg-accent-strong/90"
-              }`}
-            >
-              Back to the floor
-            </button>
-          </div>
-        </div>
+        <MembershipCeremony
+          tier={celebrateTier}
+          blurb={TIER_BLURB[celebrateTier]}
+          onClose={() => setCelebrateTier(null)}
+        />
       )}
     </main>
   );
