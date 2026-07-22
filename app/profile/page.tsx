@@ -664,42 +664,64 @@ export default function ProfilePage() {
           </div>
           <div>
             <span className="micro mb-1.5 block text-muted">
-              Title — earned through quests, shows on your hover card
+              Title — earned through quests, worn over your head on the floor
             </span>
             {earnedTitleList.length === 0 ? (
               <p className="text-sm text-muted">
                 None earned yet. The quest list on any floor knows the way.
               </p>
             ) : (
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => actions.setTitle("")}
-                  aria-pressed={!state.profile.title}
-                  className={`micro rounded-sm border px-2 py-1 ${
-                    !state.profile.title
-                      ? "border-ink text-ink"
-                      : "border-line text-muted hover:border-muted"
-                  }`}
-                >
-                  none
-                </button>
-                {earnedTitleList.map((t) => (
+              <>
+                <div className="flex flex-wrap gap-1.5">
                   <button
-                    key={t}
                     type="button"
-                    onClick={() => actions.setTitle(t)}
-                    aria-pressed={state.profile.title === t}
-                    className={`micro rounded-sm border px-2 py-1 ${
-                      state.profile.title === t
-                        ? "border-gold text-gold-deep ring-1 ring-gold/40"
-                        : "border-line text-muted hover:border-muted"
+                    onClick={() => actions.setTitle("")}
+                    aria-pressed={!state.profile.title}
+                    className={`micro rounded-full border px-3 py-1.5 ${
+                      !state.profile.title
+                        ? "border-ink bg-panel text-ink"
+                        : "border-line text-muted hover:border-muted hover:text-ink"
                     }`}
                   >
-                    {t}
+                    none
                   </button>
-                ))}
-              </div>
+                  {earnedTitleList.map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => actions.setTitle(t)}
+                      aria-pressed={state.profile.title === t}
+                      className={`micro rounded-full border px-3 py-1.5 ${
+                        state.profile.title === t
+                          ? "border-gold bg-gold/10 text-gold-deep shadow-card"
+                          : "border-line text-muted hover:border-gold/60 hover:text-gold-deep"
+                      }`}
+                    >
+                      {state.profile.title === t && (
+                        <span aria-hidden="true" className="mr-1">
+                          ✦
+                        </span>
+                      )}
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                {state.profile.title && (
+                  // live preview — exactly the label stack everyone sees
+                  // over your avatar on the floor
+                  <div className="mt-3 inline-flex flex-col items-center gap-1 rounded-lg border border-line/70 bg-paper px-8 pb-3 pt-4">
+                    <span className="rounded-full border border-gold/80 bg-ink/90 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#E8C766]">
+                      {state.profile.title}
+                    </span>
+                    <span className="rounded-full bg-ink/90 px-3 py-1 text-[11px] leading-none text-white">
+                      {state.profile.name || "You"}
+                    </span>
+                    <span className="micro mt-1.5 text-muted">
+                      how it looks on the floor
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
           <div>

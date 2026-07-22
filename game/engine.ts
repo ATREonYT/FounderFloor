@@ -48,6 +48,10 @@ const MINIMAP_BOTTOM = 56; // keep clear of the controls hint (fine pointers)
 const MINIMAP_TOP_COARSE = 148; // below the top bar + ticker; the mobile HUD owns the bottom
 const LABEL_H = 14;
 const LABEL_H_STATUS = 25;
+/** Extra height when an earned quest title plate floats above the name pill. */
+const TITLE_PLATE_H = 13;
+const TITLE_PLATE_GAP = 2;
+const TITLE_EXTRA = TITLE_PLATE_H + TITLE_PLATE_GAP;
 
 interface Remote {
   name: string;
@@ -760,12 +764,31 @@ export function createGame(opts: GameOptions): GameHandle {
     labelWidths.set(key, w);
     return w;
   };
+  const titleWidths = new Map<string, number>();
+  const titleWidth = (t: string): number => {
+    const hit = titleWidths.get(t);
+    if (hit !== undefined) return hit;
+    ctx.font = "600 7px system-ui, -apple-system, Segoe UI, sans-serif";
+    // letterspacing is applied manually below (canvas letterSpacing isn't
+    // everywhere yet): character count x 1px of tracking
+    const w = Math.min(ctx.measureText(t).width + t.length * 1, 110);
+    if (titleWidths.size > 200) titleWidths.clear();
+    titleWidths.set(t, w);
+    return w;
+  };
 
-  const drawLabel = (name: string, status: string | undefined, wx: number, wy: number): void => {
+  const drawLabel = (
+    name: string,
+    status: string | undefined,
+    title: string | undefined,
+    wx: number,
+    wy: number,
+  ): void => {
     const sx = Math.round((wx - cam.x) * ZOOM);
     const sy = Math.round((wy - SPRITE_H - cam.y) * ZOOM - 8);
-    if (sx < -90 || sx > cssW + 90 || sy < -40 || sy > cssH + 40) return;
+    if (sx < -90 || sx > cssW + 90 || sy < -60 || sy > cssH + 60) return;
     const st = status ? status.trim() : "";
+    const ti = title ? title.trim().toUpperCase() : "";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const bw = Math.ceil(labelWidth(name, st)) + 12;
@@ -782,6 +805,30 @@ export function createGame(opts: GameOptions): GameHandle {
       ctx.fillStyle = "rgba(242,239,231,0.7)";
       ctx.font = "9px system-ui, -apple-system, Segoe UI, sans-serif";
       ctx.fillText(st, sx, by + 18, 140);
+    }
+    if (ti) {
+      // earned-title plate: a slim gold-trimmed banner floating above the
+      // name — the on-floor payoff for finishing a quest line
+      const tw = Math.ceil(titleWidth(ti)) + 16;
+      const tx = Math.round(sx - tw / 2);
+      const ty = by - TITLE_PLATE_GAP - TITLE_PLATE_H;
+      ctx.fillStyle = "rgba(35,32,26,0.84)";
+      pillPath(tx, ty, tw, TITLE_PLATE_H);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(176,141,46,0.9)";
+      ctx.lineWidth = 1;
+      pillPath(tx + 0.5, ty + 0.5, tw - 1, TITLE_PLATE_H - 1);
+      ctx.stroke();
+      ctx.fillStyle = "#E8C766";
+      ctx.font = "600 7px system-ui, -apple-system, Segoe UI, sans-serif";
+      const prev = (ctx as CanvasRenderingContext2D & { letterSpacing?: string }).letterSpacing;
+      if (prev !== undefined) {
+        (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = "1px";
+      }
+      ctx.fillText(ti, sx, ty + TITLE_PLATE_H / 2 + 0.5, 110);
+      if (prev !== undefined) {
+        (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = prev;
+      }
     }
   };
 
@@ -933,17 +980,23 @@ export function createGame(opts: GameOptions): GameHandle {
 
     // screen-space pass: labels, bubbles, interaction nudge, minimap
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (const r of remotes.values()) drawLabel(r.name, r.status, r.x, r.y);
-    for (const n of npcs) drawLabel(n.name, undefined, n.x, n.y);
-    if (me.status) drawLabel(me.name, me.status, player.x, player.y);
+    for (const r of remotes.values()) drawLabel(r.name, r.status, r.title, r.x, r.y);
+    for (const n of npcs) drawLabel(n.name, undefined, undefined, n.x, n.y);
+    // your own label appears once there's something on it worth seeing —
+    // a status line or an equipped quest title
+    if (me.status || me.title) drawLabel(me.name, me.status, me.title, player.x, player.y);
 
     // chat / emote bubbles sit above the name pills
     bubbles.prune(nowMs);
+    const myLabelH =
+      me.status || me.title
+        ? (me.status ? LABEL_H_STATUS : LABEL_H) + (me.title ? TITLE_EXTRA : 0)
+        : 0;
     bubbles.draw(
       ctx,
       "me",
       (player.x - cam.x) * ZOOM,
-      bubbleTailY(player.y, me.status ? LABEL_H_STATUS : 0),
+      bubbleTailY(player.y, myLabelH),
       nowMs,
       cssW,
       cssH
@@ -953,7 +1006,7 @@ export function createGame(opts: GameOptions): GameHandle {
         ctx,
         id,
         (r.x - cam.x) * ZOOM,
-        bubbleTailY(r.y, r.status ? LABEL_H_STATUS : LABEL_H),
+        bubbleTailY(r.y, (r.status ? LABEL_H_STATUS : LABEL_H) + (r.title ? TITLE_EXTRA : 0)),
         nowMs,
         cssW,
         cssH
