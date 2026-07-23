@@ -323,8 +323,10 @@ export function earnedTitles(state: AppState): string[] {
   // Membership titles: carried by the plan, shown wherever titles show
   // (hover cards, calling cards) — visible status is part of what the
   // subscription buys.
+  // Founding subsumes Founder+ (it IS a Founder+ plan plus the permanent
+  // badge) — one clear status, not two competing ones.
   if (state.badges.includes("founding")) titles.push("Founding member");
-  if (state.sub === "founder") titles.push("Founder+ member");
+  else if (state.sub === "founder") titles.push("Founder+ member");
   else if (state.sub === "pro") titles.push("Pro member");
   for (const q of questStates(state)) {
     if (q.done && q.def.reward.title) titles.push(q.def.reward.title);

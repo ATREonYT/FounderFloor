@@ -134,6 +134,42 @@ yet instead of promising a link that never arrives.
 `EMAIL_ECHO=1` exists for automated tests only (captures mail in memory
 and exposes it at `/debug/emails`) — never set it in production.
 
+**If reset mail never arrives**, check in this order:
+
+1. `curl -s https://<floor-host>/health` — `"emailLive":false` means
+   `RESEND_API_KEY` isn't set in the systemd unit at all.
+2. `journalctl -u founderfloor | grep email` — the server now logs every
+   send and every Resend rejection **with Resend's reason**. The two
+   classics: the domain isn't Verified yet (Resend then only delivers to
+   the address that owns the Resend account), or `EMAIL_FROM` uses a
+   domain other than the verified one.
+3. Spam folder — especially for addresses on a different domain than the
+   sender (e.g. mail from `founderfloor.net` to `founder-floor.com`).
+
+### Locked out (operator password rescue)
+
+If the operator account itself can't receive reset mail, set its password
+directly on the VPS — no email involved:
+
+```
+sudo systemctl stop founderfloor       # the server saves over the file while running
+node server/tools/set-password.mjs ak@founder-floor.com 'new-password-here'
+sudo systemctl start founderfloor
+```
+
+The tool backs up the data file first and signs out every existing session
+of that account.
+
+### Operator console
+
+`ADMIN_EMAILS` (comma-separated, default `ak@founder-floor.com`) names the
+accounts allowed to use `/admin` on the site: grants (membership, founding
+badge, tickets), bans/unbans (by email or profile id — bans kick live
+sessions, clear stands, and block both login and floor joins), kicks,
+stand clearing, and floor-wide announcements. Sign in as that account and
+open `founderfloor.net/admin`. For everyone else the endpoints return the
+same 404 as any unknown path.
+
 ## 2. The web app (Vercel)
 
 - Import the repo in Vercel; the project root is the repo root (the default).

@@ -166,6 +166,42 @@ const accounts = new Map();
 const accountsByEmail = new Map(); // email -> account record (same object)
 const accountsById = new Map(); // acct id -> account record (same object)
 const tokens = new Map();
+
+/**
+ * Operator accounts, by email. Admin endpoints (/admin/*) require a valid
+ * session token whose account email is on this list — so admin rights ride
+ * on ordinary sign-in, no second credential to leak. Comma-separated env.
+ */
+const ADMIN_EMAILS = new Set(
+  (process.env.ADMIN_EMAILS || "ak@founder-floor.com")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean),
+);
+
+/**
+ * banned: key -> { reason, ts, by }. Keys are profile ids (acct_… or guest
+ * uuids) and/or emails — a ban usually sets both. Enforced at ws join and
+ * at login; persisted with the rest of the data file.
+ */
+const banned = new Map();
+const MAX_BANNED = 2000;
+
+function isBannedId(id) {
+  return typeof id === "string" && banned.has(id.toLowerCase());
+}
+function isBannedAcct(acct) {
+  return !!acct && (banned.has(acct.id.toLowerCase()) || (acct.email && banned.has(acct.email)));
+}
+
+/** Resolve an /admin/* caller: valid token AND admin-listed email, or null. */
+function adminFor(body) {
+  const token = typeof body?.token === "string" ? body.token : "";
+  const entry = tokens.get(token);
+  if (!entry) return null;
+  const acct = accountsById.get(entry.id);
+  return acct?.email && ADMIN_EMAILS.has(acct.email) ? acct : null;
+}
 const MAX_ACCOUNTS = 5000;
 const ACCT_PREFIX = "acct_";
 const MAX_EMAIL_LEN = 254;
@@ -473,7 +509,14 @@ function sendEmail(to, subject, html, text, bucket = "critical") {
     }),
   })
     .then(async (res) => {
-      if (!res.ok) console.warn(`[email] resend ${res.status} for "${subject}"`);
+      if (!res.ok) {
+        // The body says WHY (unverified domain, bad from address, test-mode
+        // recipient restriction…) — without it, delivery failures are invisible.
+        const detail = await res.text().catch(() => "");
+        console.warn(`[email] resend ${res.status} sending "${subject}" to ${to}: ${detail.slice(0, 300)}`);
+      } else {
+        console.log(`[email] sent "${subject}" to ${to}`);
+      }
     })
     .catch((err) => console.warn(`[email] send failed: ${err.message}`));
 }
@@ -930,6 +973,18 @@ function loadData() {
     }
   }
 
+  if (parsed.banned && typeof parsed.banned === "object") {
+    for (const [key, v] of Object.entries(parsed.banned)) {
+      if (banned.size >= MAX_BANNED) break;
+      if (!key || typeof v !== "object" || v === null) continue;
+      banned.set(key.toLowerCase().slice(0, MAX_EMAIL_LEN), {
+        reason: typeof v.reason === "string" ? v.reason.slice(0, 200) : "",
+        ts: typeof v.ts === "number" ? v.ts : Date.now(),
+        by: typeof v.by === "string" ? v.by.slice(0, MAX_EMAIL_LEN) : "",
+      });
+    }
+  }
+
   if (parsed.registry && typeof parsed.registry === "object") {
     const cutoff = Date.now() - REGISTRY_TTL_MS;
     for (const [pid, v] of Object.entries(parsed.registry)) {
@@ -1044,6 +1099,7 @@ function saveNow() {
     profileStates: Object.fromEntries(profileStates),
     pendingPaid: Object.fromEntries(pendingPaid),
     processedSessions: [...processedSessions],
+    banned: Object.fromEntries(banned),
   };
   const tmp = `${DATA_FILE}.tmp`;
   try {
@@ -1733,6 +1789,10 @@ async function handleAuthPost(req, res, pathname) {
       return;
     }
     loginFails.delete(failKey);
+    if (isBannedAcct(acct)) {
+      sendJson(res, { error: "this account is suspended — contact the operator via the About page" });
+      return;
+    }
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
     // Unrecognized browser? Tell the owner. The very first sign-in of a
@@ -1992,6 +2052,230 @@ async function handleSocialPost(req, res, pathname) {
 }
 
 /**
+ * /admin/* — operator console (ADMIN_EMAILS accounts only). Non-admins get
+ * the same 404 as an unknown path: the surface stays dark.
+ */
+async function handleAdminPost(req, res, pathname) {
+  const body = await readJson(req);
+  if (!body) {
+    notFound(res);
+    return;
+  }
+  {
+    const admin = adminFor(body);
+    if (!admin) {
+      notFound(res);
+      return;
+    }
+
+    if (pathname === "/admin/overview") {
+      const floors = new Map();
+      for (const [floorId, room] of rooms) {
+        if (floorId === "__inbox") continue;
+        floors.set(floorId, { floorId, online: room.size, stands: 0 });
+      }
+      for (const [floorId, byOwner] of stands) {
+        const f = floors.get(floorId) ?? { floorId, online: 0, stands: 0 };
+        f.stands = byOwner.size;
+        floors.set(floorId, f);
+      }
+      sendJson(res, {
+        floors: [...floors.values()],
+        accounts: accounts.size,
+        banned: [...banned].map(([key, v]) => ({ key, ...v })),
+        emailLive: !!RESEND_API_KEY && !EMAIL_ECHO,
+        uptimeSec: Math.round(process.uptime()),
+      });
+      return;
+    }
+
+    if (pathname === "/admin/grant") {
+      const email = normalizeEmail(body.email);
+      const acct = email ? accountsByEmail.get(email) : undefined;
+      if (!acct) {
+        sendJson(res, { error: "no account with that email" });
+        return;
+      }
+      const tier = body.tier === "pro" || body.tier === "founder" ? body.tier : null;
+      const founding = body.badge === "founding";
+      if (tier) {
+        const paid = { tier, customer: `admin:${admin.email}`, ts: Date.now() };
+        if (founding || acct.paid?.badge === "founding") paid.badge = "founding";
+        acct.paid = paid;
+      } else if (body.tier === "none") {
+        acct.paid = undefined;
+      } else if (founding) {
+        // founding implies the founder tier — a badge can't float alone
+        acct.paid = { tier: "founder", customer: `admin:${admin.email}`, ts: Date.now(), badge: "founding" };
+      }
+      const tickets = Number(body.tickets);
+      if (Number.isFinite(tickets) && tickets !== 0) {
+        acct.ticketsPurchased = Math.max(
+          0,
+          Math.min(10_000_000, (acct.ticketsPurchased ?? 0) + Math.trunc(tickets)),
+        );
+      }
+      scheduleSave();
+      console.log(`[admin] ${admin.email} granted to ${email}: tier=${body.tier ?? "-"} founding=${founding} tickets=${body.tickets ?? 0}`);
+      sendJson(res, {
+        ok: true,
+        account: { email: acct.email, paid: acct.paid ?? null, ticketsPurchased: acct.ticketsPurchased ?? 0 },
+      });
+      return;
+    }
+
+    if (pathname === "/admin/ban") {
+      const email = normalizeEmail(body.email);
+      const id = sanitizeStr(body.id, MAX_ID_LEN);
+      if (!email && !id) {
+        sendJson(res, { error: "give an email or a profile id" });
+        return;
+      }
+      if (banned.size >= MAX_BANNED) {
+        sendJson(res, { error: "ban list is full" });
+        return;
+      }
+      const entry = {
+        reason: sanitizeStr(body.reason, 200),
+        ts: Date.now(),
+        by: admin.email,
+      };
+      const keys = [];
+      if (email) keys.push(email);
+      if (id) keys.push(id.toLowerCase());
+      // an email ban also bans that account's id, and vice versa
+      const acct = (email && accountsByEmail.get(email)) || (id && accountsById.get(id)) || null;
+      if (acct) {
+        keys.push(acct.id.toLowerCase());
+        if (acct.email) keys.push(acct.email);
+      }
+      for (const k of new Set(keys)) banned.set(k, entry);
+      // kick every live session of the banned identity and clear their stands
+      const targetIds = new Set(keys);
+      for (const [floorId, room] of rooms) {
+        for (const [cid, c] of [...room]) {
+          if (targetIds.has((c.rawId ?? "").toLowerCase())) {
+            room.delete(cid);
+            broadcast(room, { t: "player_leave", id: cid });
+            try { c.ws.close(4003, "suspended"); } catch { /* gone */ }
+          }
+        }
+        const byOwner = stands.get(floorId);
+        if (byOwner) {
+          for (const ownerId of [...byOwner.keys()]) {
+            if (targetIds.has(ownerId.toLowerCase())) {
+              byOwner.delete(ownerId);
+              broadcast(room, { t: "booth_clear", ownerId });
+            }
+          }
+        }
+      }
+      scheduleSave();
+      console.log(`[admin] ${admin.email} banned ${[...new Set(keys)].join(", ")}`);
+      sendJson(res, { ok: true, banned: [...new Set(keys)] });
+      return;
+    }
+
+    if (pathname === "/admin/unban") {
+      const key = (normalizeEmail(body.email) || sanitizeStr(body.id, MAX_ID_LEN)).toLowerCase();
+      if (!key) {
+        sendJson(res, { error: "give an email or a profile id" });
+        return;
+      }
+      const removed = [];
+      for (const k of [...banned.keys()]) {
+        if (k === key) {
+          banned.delete(k);
+          removed.push(k);
+        }
+      }
+      // lifting an account ban lifts its paired keys too
+      const acct = accountsByEmail.get(key) ?? accountsById.get(key);
+      if (acct) {
+        for (const k of [acct.id.toLowerCase(), acct.email ?? ""]) {
+          if (k && banned.delete(k)) removed.push(k);
+        }
+      }
+      scheduleSave();
+      console.log(`[admin] ${admin.email} unbanned ${removed.join(", ") || key}`);
+      sendJson(res, { ok: true, removed });
+      return;
+    }
+
+    if (pathname === "/admin/kick") {
+      const id = sanitizeStr(body.id, MAX_ID_LEN).toLowerCase();
+      if (!id) {
+        sendJson(res, { error: "give a profile id" });
+        return;
+      }
+      let kicked = 0;
+      for (const [, room] of rooms) {
+        for (const [cid, c] of [...room]) {
+          if ((c.rawId ?? "").toLowerCase() === id) {
+            room.delete(cid);
+            broadcast(room, { t: "player_leave", id: cid });
+            try { c.ws.close(4008, "removed by operator"); } catch { /* gone */ }
+            kicked++;
+          }
+        }
+      }
+      console.log(`[admin] ${admin.email} kicked ${id} (${kicked} sessions)`);
+      sendJson(res, { ok: true, kicked });
+      return;
+    }
+
+    if (pathname === "/admin/stand-clear") {
+      const floorId = sanitizeStr(body.floorId, MAX_ID_LEN);
+      const ownerId = sanitizeStr(body.ownerId, MAX_ID_LEN);
+      const byOwner = stands.get(floorId);
+      if (!byOwner) {
+        sendJson(res, { error: "no stands on that floor" });
+        return;
+      }
+      const room = rooms.get(floorId);
+      let cleared = 0;
+      if (ownerId) {
+        if (byOwner.delete(ownerId)) {
+          if (room) broadcast(room, { t: "booth_clear", ownerId });
+          cleared = 1;
+        }
+      } else if (Number.isInteger(body.spotIndex)) {
+        for (const [oid, s] of [...byOwner]) {
+          if (s.claim?.spotIndex === body.spotIndex) {
+            byOwner.delete(oid);
+            if (room) broadcast(room, { t: "booth_clear", ownerId: oid });
+            cleared++;
+          }
+        }
+      }
+      scheduleSave();
+      console.log(`[admin] ${admin.email} cleared ${cleared} stand(s) on ${floorId}`);
+      sendJson(res, { ok: true, cleared });
+      return;
+    }
+
+    if (pathname === "/admin/announce") {
+      const text = moderateText(sanitizeText(body.text));
+      if (!text) {
+        sendJson(res, { error: "nothing to announce" });
+        return;
+      }
+      let floorsReached = 0;
+      for (const [floorId, room] of rooms) {
+        if (floorId === "__inbox") continue;
+        pushActivity(room, floorId, `📣 ${text}`);
+        floorsReached++;
+      }
+      console.log(`[admin] ${admin.email} announced: ${text}`);
+      sendJson(res, { ok: true, floorsReached });
+      return;
+    }
+  }
+
+  notFound(res);
+}
+
+/**
  * Store the mutual connection both ways and tell the requester if online.
  * Startup names ride along (when known) so chat lists can show "name · company".
  */
@@ -2078,6 +2362,11 @@ const server = createServer((req, res) => {
 
   if (req.method === "POST" && url.pathname.startsWith("/auth/")) {
     void handleAuthPost(req, res, url.pathname);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname.startsWith("/admin/")) {
+    void handleAdminPost(req, res, url.pathname);
     return;
   }
 
@@ -2610,6 +2899,12 @@ wss.on("connection", (ws, req) => {
     if (!verifyIdentity(rawId, msg.token, msg.gs)) {
       console.log(`[auth] rejected impersonation of ${rawId} — downgraded to guest`);
       rawId = randomUUID();
+    }
+    // banned identities don't get on the floor (id ban catches guests too;
+    // account bans also match by email so a fresh token doesn't help)
+    if (isBannedId(rawId) || isBannedAcct(accountsById.get(rawId))) {
+      ws.close(4003, "suspended");
+      return;
     }
     const name = moderateField(sanitizeName(p?.name)) || "guest";
     const look = sanitizeLook(p?.look);

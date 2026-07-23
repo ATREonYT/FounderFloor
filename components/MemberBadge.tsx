@@ -13,22 +13,25 @@ import { TIER_LABEL } from "@/components/TierTag";
 
 export default function MemberBadge({ glass = false }: { glass?: boolean }) {
   const [state] = useAppState();
-  if (state.sub === "free") return null;
-  const founder = state.sub === "founder";
+  const founding = state.badges.includes("founding");
+  if (state.sub === "free" && !founding) return null;
+  // Founding subsumes Founder+ — the rarer status is the one worth wearing.
+  const label = founding ? "Founding member" : TIER_LABEL[state.sub];
+  const goldTone = founding || state.sub === "founder";
   return (
     <Link
       href="/profile#membership"
-      title={`Your membership: ${TIER_LABEL[state.sub]}`}
+      title={`Your membership: ${label}`}
       className={`micro flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 ${
         glass ? "bg-panel/85 py-2 shadow-float backdrop-blur-md" : "py-1"
       } ${
-        founder
+        goldTone
           ? "border-gold/70 bg-gold/10 text-gold-deep hover:border-gold"
           : "border-accent/50 bg-accent-soft/60 text-accent hover:border-accent"
       }`}
     >
       <span aria-hidden="true">✦</span>
-      {TIER_LABEL[state.sub]}
+      {label}
     </Link>
   );
 }

@@ -1627,9 +1627,17 @@ export default function ProfilePage() {
                   ))}
                 </ul>
                 {current ? (
-                  <span className="micro mt-4 rounded-md border border-accent/40 px-3 py-1.5 text-center text-accent">
-                    Current plan
-                  </span>
+                  tier === "founder" && state.badges.includes(FOUNDING_OFFER.badgeId) ? (
+                    // founding subsumes Founder+ — say so instead of showing
+                    // two seemingly separate memberships
+                    <span className="micro mt-4 rounded-md border border-gold/60 px-3 py-1.5 text-center text-gold-deep">
+                      Included with your founding membership
+                    </span>
+                  ) : (
+                    <span className="micro mt-4 rounded-md border border-accent/40 px-3 py-1.5 text-center text-accent">
+                      Current plan
+                    </span>
+                  )
                 ) : (
                   <button
                     type="button"
