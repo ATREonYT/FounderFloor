@@ -471,18 +471,11 @@ export default function ProfilePage() {
       }
     } else if (state.sub !== "free" && state.sub !== pendingPay.baseSub) {
       setPendingPay(null);
-      setBurst(Date.now());
+      // no confetti yet — the ceremony's full-screen intro owns the first
+      // seconds; it fires onBurst at the hand-off to the card
       setCelebrateTier(state.sub);
     }
   }, [pendingPay, state.wallet.redeemed, state.sub]);
-
-  // The ceremony gets an encore: a second confetti volley while the card
-  // is up, so the moment doesn't die after the first 1.4s burst.
-  useEffect(() => {
-    if (!celebrateTier) return;
-    const t = window.setTimeout(() => setBurst(Date.now()), 1100);
-    return () => window.clearTimeout(t);
-  }, [celebrateTier]);
 
   // Signed-in account email (post-hydration only — getAuth reads localStorage)
   const acctEmail = ready ? getAuth()?.email : undefined;
@@ -1779,6 +1772,7 @@ export default function ProfilePage() {
           tier={celebrateTier}
           blurb={TIER_BLURB[celebrateTier]}
           onClose={() => setCelebrateTier(null)}
+          onBurst={() => setBurst(Date.now())}
         />
       )}
     </main>

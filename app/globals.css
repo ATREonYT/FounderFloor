@@ -411,6 +411,128 @@
     );
   }
 
+  /* ==================== CEREMONY INTRO (full screen) ====================
+     The cinematic before the card: the room goes dark, gold threads race
+     in from the screen edges, converge, and DRAW the four-pointed star —
+     which ignites, sends out a shockwave, and announces the tier. Pure
+     CSS timeline (delays choreograph the phases); the component swaps to
+     the ceremony card at the end. */
+  @keyframes cine-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes cine-vanish {
+    to {
+      opacity: 0;
+    }
+  }
+  /* threads from the screen edges: draw in, then dissolve as the star forms */
+  .cine-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+      cine-draw 640ms var(--ease-out) both,
+      cine-vanish 500ms ease 1450ms forwards;
+  }
+  /* the star outline draws itself out of the converged threads */
+  .cine-star-outline {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cine-draw 1150ms var(--ease-out) 1250ms both;
+  }
+  @keyframes cine-fill-in {
+    from {
+      opacity: 0;
+      transform: scale(0.82);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .cine-star-fill {
+    opacity: 0;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: cine-fill-in 650ms var(--ease-spring) 2250ms both;
+  }
+  @keyframes cine-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.035);
+    }
+  }
+  .cine-star-group {
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: cine-breathe 4.5s ease-in-out 3s infinite;
+  }
+  /* ignition shockwave — a ring that blows out from the star. The
+     centering translate lives INSIDE the keyframes (a keyframe transform
+     replaces utility transforms wholesale); fill is forwards-only so the
+     ring stays invisible until ignition. */
+  @keyframes cine-ring {
+    from {
+      opacity: 0.9;
+      transform: translate(-50%, -50%) scale(0.12);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  .cine-ring {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.12);
+    animation: cine-ring 950ms var(--ease-out) 2350ms forwards;
+  }
+  /* the announcement: letters land from wide tracking */
+  @keyframes cine-track-in {
+    from {
+      opacity: 0;
+      letter-spacing: 0.6em;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      letter-spacing: 0.12em;
+      transform: none;
+    }
+  }
+  .cine-track-in {
+    animation: cine-track-in 900ms var(--ease-out) 2750ms both;
+  }
+  .cine-fade-up {
+    animation: fade-up 550ms var(--ease-out) both;
+  }
+  /* pulsing halo once the star is lit */
+  @keyframes cine-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 12px var(--cine-glow, rgba(232, 199, 102, 0.35)));
+    }
+    50% {
+      filter: drop-shadow(0 0 30px var(--cine-glow, rgba(232, 199, 102, 0.55)));
+    }
+  }
+  .cine-glow {
+    animation: cine-glow 3.4s ease-in-out 2.9s infinite;
+  }
+  /* the whole intro hands off: swells slightly and dissolves */
+  @keyframes cine-exit {
+    to {
+      opacity: 0;
+      transform: scale(1.05);
+    }
+  }
+  .cine-exit {
+    animation: cine-exit 480ms var(--ease-out) both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .btn-press,
     .btn-press:active:not(:disabled),
@@ -431,6 +553,15 @@
     .seal-drop,
     .twinkle,
     .ceremony-title,
+    .cine-line,
+    .cine-star-outline,
+    .cine-star-fill,
+    .cine-star-group,
+    .cine-ring,
+    .cine-track-in,
+    .cine-fade-up,
+    .cine-glow,
+    .cine-exit,
     .marquee-track {
       animation: none;
     }
