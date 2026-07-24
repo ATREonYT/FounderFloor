@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { isValidLogo, syncNow, useAppState } from "@/lib/store";
 import { getAuth } from "@/lib/auth";
@@ -398,16 +398,28 @@ export default function ProfilePage() {
     return () => window.clearTimeout(settle);
   }, [ready]);
 
-  // seed local editors from the hydrated store, once
+  // Seed local editors from the hydrated store — and RE-seed whenever the
+  // synced copy itself changes identity-wise (sign-in pulls the account's
+  // startup down, sign-out blanks it, another device saved). Local typing
+  // never touches state.myStartup (only Save does), so this can't fight
+  // the keyboard; it only follows real store transitions.
+  const seededStartup = useRef<string | null>(null);
   useEffect(() => {
     if (!ready) return;
+    const snapshot = state.myStartup ? JSON.stringify(state.myStartup) : "";
+    if (seededStartup.current === snapshot) return;
+    seededStartup.current = snapshot;
     if (state.myStartup) {
       setForm(formFrom(state.myStartup));
       setMonthly(String(state.myStartup.verifiedRevenue || ""));
       setProgress(Math.round((state.myStartup.goalProgress ?? 0) * 100));
+    } else {
+      setForm(EMPTY_FORM);
+      setMonthly("");
+      setProgress(0);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready]);
+  }, [ready, state.myStartup]);
 
   useEffect(() => {
     if (!toast) return;
@@ -638,6 +650,12 @@ export default function ProfilePage() {
   const questList = questStates(state);
   const earnedTitleList = earnedTitles(state);
 
+  // A REAL founding membership always carries the founder tier (the server
+  // entitlement grants both); a lone founding badge is a stale local
+  // leftover and doesn't count as one.
+  const isFounding =
+    state.badges.includes(FOUNDING_OFFER.badgeId) && state.sub === "founder";
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-12">
       <h1 className="font-display text-3xl">Profile</h1>
@@ -699,6 +717,9 @@ export default function ProfilePage() {
             <input
               id="profile-status"
               type="text"
+              // uncontrolled (commits on blur) — the key remounts it when the
+              // identity changes, so sign-out/sign-in swaps the shown value
+              key={state.profile.id}
               defaultValue={state.profile.status ?? ""}
               maxLength={40}
               onBlur={(e) => actions.setStatus(e.target.value.slice(0, 40))}
@@ -1550,7 +1571,7 @@ export default function ProfilePage() {
             numbered founding badge on your card that never goes away. When
             they&rsquo;re gone, they&rsquo;re gone.
           </p>
-          {state.badges.includes(FOUNDING_OFFER.badgeId) ? (
+          {isFounding ? (
             <span className="micro mt-3 inline-block rounded-md border border-gold/60 px-3 py-1.5 text-gold-deep">
               You&rsquo;re a founding member
             </span>
@@ -1627,7 +1648,7 @@ export default function ProfilePage() {
                   ))}
                 </ul>
                 {current ? (
-                  tier === "founder" && state.badges.includes(FOUNDING_OFFER.badgeId) ? (
+                  tier === "founder" && isFounding ? (
                     // founding subsumes Founder+ — say so instead of showing
                     // two seemingly separate memberships
                     <span className="micro mt-4 rounded-md border border-gold/60 px-3 py-1.5 text-center text-gold-deep">
@@ -1638,7 +1659,11 @@ export default function ProfilePage() {
                       Current plan
                     </span>
                   )
-                ) : (
+                ) : isFounding && billingLive() ? null : (
+                  // (real founding members see no switch buttons — their plan
+                  // is permanent, and a "switch to free" next to it only
+                  // confuses. On no-billing deploys the SIMULATED founding
+                  // state keeps them, or the tier UI dead-ends forever.)
                   <button
                     type="button"
                     onClick={() => {

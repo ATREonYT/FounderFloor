@@ -147,35 +147,53 @@ let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let lastPushedJson = "";
 
 /** Debounced push of syncable state to the floor server (no-op offline). */
+function pushNow(): Promise<void> {
+  const me = state.profile.id;
+  if (!me || state.profile.name === "") return Promise.resolve(); // nothing worth syncing yet
+  const blob = syncableState(state);
+  const json = JSON.stringify(blob);
+  if (json === lastPushedJson) return Promise.resolve();
+  const pushedEarned = state.wallet.earned;
+  return pushState(me, blob).then((savedAt) => {
+    if (savedAt !== null) {
+      lastPushedJson = json;
+      setLastSyncTs(savedAt);
+      // the server now holds this earned total — advance the device's
+      // acknowledged mark so only future earnings count as unsynced.
+      // (earnedBase is stripped from the blob, so this can't re-push.)
+      if (state.profile.id === me && state.wallet.earnedBase < pushedEarned) {
+        state = {
+          ...state,
+          wallet: { ...state.wallet, earnedBase: Math.min(pushedEarned, state.wallet.earned) },
+        };
+        persist();
+        emit();
+      }
+    }
+  });
+}
+
 function scheduleSyncPush(): void {
   if (typeof window === "undefined" || !hydrated) return;
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(() => {
     syncTimer = null;
-    const me = state.profile.id;
-    if (!me || state.profile.name === "") return; // nothing worth syncing yet
-    const blob = syncableState(state);
-    const json = JSON.stringify(blob);
-    if (json === lastPushedJson) return;
-    const pushedEarned = state.wallet.earned;
-    void pushState(me, blob).then((savedAt) => {
-      if (savedAt !== null) {
-        lastPushedJson = json;
-        setLastSyncTs(savedAt);
-        // the server now holds this earned total — advance the device's
-        // acknowledged mark so only future earnings count as unsynced.
-        // (earnedBase is stripped from the blob, so this can't re-push.)
-        if (state.profile.id === me && state.wallet.earnedBase < pushedEarned) {
-          state = {
-            ...state,
-            wallet: { ...state.wallet, earnedBase: Math.min(pushedEarned, state.wallet.earned) },
-          };
-          persist();
-          emit();
-        }
-      }
-    });
+    void pushNow();
   }, 2500);
+}
+
+/**
+ * Run any pending (debounced) push right now and wait for it. Called before
+ * sign-out: the session token dies with logout, so the last edits must reach
+ * the account first or the blank-slate reset would drop them.
+ */
+export function flushSyncPush(): Promise<void> {
+  if (typeof window === "undefined" || !hydrated) return Promise.resolve();
+  if (syncTimer) {
+    clearTimeout(syncTimer);
+    syncTimer = null;
+  }
+  return pushNow();
 }
 
 /**
@@ -918,15 +936,30 @@ const ACTIONS: StoreActions = {
     const nextId = id.trim().slice(0, 64) || makeId();
     const nextName = name.trim().slice(0, 24) || state.profile.name;
     if (nextId === state.profile.id && nextName === state.profile.name) return;
-    // The wallet crosses identity switches largely UNCHANGED — including
-    // redeemed. Zeroing redeemed here would strand owned items bought with
-    // pack funds (cost keeps counting, funding vanishes -> a permanent
-    // deficit that silently swallows future earnings). The cost of keeping
-    // it is that pack value can leak between identities in the SAME
-    // browser — bounded by what that browser's human actually paid, and
-    // cosmetics-only. earnedBase DOES reset: relative to the new identity's
-    // server state, everything earned here is unsynced, so the first merge
-    // folds it in instead of letting a max() discard it.
+
+    // SIGN-OUT (account -> guest): the workspace goes blank. The account's
+    // data lives on the server (every change pushes, and AccountCard
+    // flushes the debounce before logout) and comes back on the next
+    // sign-in; leaving it on a shared screen would hand the next visitor a
+    // stranger's booth, wallet, and badges.
+    if (state.profile.id.startsWith("acct_") && !nextId.startsWith("acct_")) {
+      const fresh = defaultState();
+      fresh.profile = { ...fresh.profile, id: nextId };
+      setState(fresh);
+      setLastSyncTs(0);
+      lastPushedJson = "";
+      return; // a fresh guest has nothing to pull
+    }
+
+    // SIGN-IN / identity change: the wallet crosses largely UNCHANGED —
+    // including redeemed. Zeroing redeemed here would strand owned items
+    // bought with pack funds (cost keeps counting, funding vanishes -> a
+    // permanent deficit that silently swallows future earnings). The cost
+    // of keeping it is that pack value can leak between identities in the
+    // SAME browser — bounded by what that browser's human actually paid,
+    // and cosmetics-only. earnedBase DOES reset: relative to the new
+    // identity's server state, everything earned here is unsynced, so the
+    // first merge folds it in instead of letting a max() discard it.
     setState({
       ...state,
       profile: { ...state.profile, id: nextId, name: nextName },

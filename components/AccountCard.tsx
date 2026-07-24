@@ -17,7 +17,7 @@ import {
   register,
   setAccountEmail,
 } from "@/lib/auth";
-import { makeGuestId } from "@/lib/store";
+import { flushSyncPush, makeGuestId } from "@/lib/store";
 import { migrateStands } from "@/lib/social";
 
 function Field({
@@ -150,6 +150,9 @@ export default function AccountCard({
   };
 
   const signOut = async () => {
+    // push any unsynced edits while the session token still works — the
+    // sign-out reset blanks this device, so the account must hold them first
+    await flushSyncPush().catch(() => undefined);
     await logout();
     // fresh guest id — the account's social graph stays on the server
     onIdentity(makeGuestId(), currentName);
