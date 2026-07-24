@@ -151,11 +151,20 @@ export default function AccountCard({
 
   const signOut = async () => {
     // push any unsynced edits while the session token still works — the
-    // sign-out reset blanks this device, so the account must hold them first
-    await flushSyncPush().catch(() => undefined);
+    // sign-out reset blanks this device, so the account MUST hold them
+    // first. If the push didn't land (server unreachable, token expired),
+    // refuse to sign out rather than destroy the only copy.
+    const flushed = await flushSyncPush().catch(() => false);
+    if (!flushed) {
+      setError(
+        "can't reach the floor server, so your latest changes aren't saved to the account yet — try again in a moment",
+      );
+      return;
+    }
     await logout();
-    // fresh guest id — the account's social graph stays on the server
-    onIdentity(makeGuestId(), currentName);
+    // fresh anonymous guest — the blank slate is deliberate (the account's
+    // data and social graph stay on the server, keyed by the account id)
+    onIdentity(makeGuestId(), "");
     setError(null); // don't carry a signed-in error into the signed-out form
     setAddEmailState("idle");
     setTick((t) => t + 1);

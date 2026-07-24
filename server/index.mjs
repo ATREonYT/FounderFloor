@@ -123,7 +123,11 @@ const MAX_STANDS_PER_FLOOR = 64;
  */
 const profileStates = new Map();
 const MAX_PROFILE_STATES = 5000;
-const MAX_STATE_BYTES = 24 * 1024;
+// 64 KB: sized so a maxed-out legitimate state (200 connections with
+// 200-char notes, full quest ledgers, an 8 KB booth logo) still fits —
+// at 24 KB heavy users silently stopped syncing. Worst-case memory is
+// bounded by MAX_ACCOUNTS anyway.
+const MAX_STATE_BYTES = 64 * 1024;
 const PROFILE_STATE_TTL_MS = 180 * 24 * 60 * 60 * 1000;
 const STATE_KEYS = new Set([
   "profile", "sub", "connections", "myStartup", "claims", "onboarding",

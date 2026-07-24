@@ -1575,7 +1575,7 @@ export default function ProfilePage() {
             <span className="micro mt-3 inline-block rounded-md border border-gold/60 px-3 py-1.5 text-gold-deep">
               You&rsquo;re a founding member
             </span>
-          ) : (
+          ) : foundingCheckoutLink() || !billingLive() ? (
             <button
               type="button"
               onClick={() => {
@@ -1595,6 +1595,12 @@ export default function ProfilePage() {
             >
               {foundingCheckoutLink() ? "Become a founding member" : "Simulate founding membership"}
             </button>
+          ) : (
+            // billing is live but the founding link is gone: the offer is
+            // over — never show the simulate path to real visitors
+            <span className="micro mt-3 inline-block rounded-md border border-line px-3 py-1.5 text-muted">
+              Founding memberships are closed
+            </span>
           )}
         </article>
 

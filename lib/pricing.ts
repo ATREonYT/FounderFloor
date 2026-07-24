@@ -112,10 +112,14 @@ export function ticketPacksLive(): boolean {
 
 /** True once any payment link is configured — flips the UI from simulation. */
 export function billingLive(): boolean {
+  // the founding link counts: a deploy configured with ONLY the founding
+  // offer is still charging real money, so entitlements must apply and
+  // simulate buttons must not show
   return Boolean(
     checkoutLink("pro", "monthly") ||
       checkoutLink("pro", "annual") ||
       checkoutLink("founder", "monthly") ||
-      checkoutLink("founder", "annual"),
+      checkoutLink("founder", "annual") ||
+      foundingCheckoutLink(),
   );
 }

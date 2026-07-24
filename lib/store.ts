@@ -84,8 +84,9 @@ export interface StoreActions {
   buyItem(itemId: string): boolean;
   /**
    * Switch to a server-issued identity (sign-in) or back to a fresh guest id
-   * (sign-out). Keeps look/status/title and all local progress; the social
-   * graph on the server is keyed by the id, so it follows the account.
+   * (sign-out). Sign-in keeps local progress and merges it into the account;
+   * sign-out BLANKS this device (the account's copy lives on the server and
+   * returns on the next sign-in). The social graph is keyed by id server-side.
    */
   setIdentity(id: string, name: string): void;
 }
@@ -147,21 +148,27 @@ let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let lastPushedJson = "";
 
 /** Debounced push of syncable state to the floor server (no-op offline). */
-function pushNow(): Promise<void> {
+/** Push the current state. Resolves TRUE when the server holds it (or there
+ * was nothing to push), FALSE when a push was attempted and did not land —
+ * callers about to do something destructive (sign-out) must check. */
+function pushNow(): Promise<boolean> {
   const me = state.profile.id;
-  if (!me || state.profile.name === "") return Promise.resolve(); // nothing worth syncing yet
+  if (!me || state.profile.name === "") return Promise.resolve(true); // nothing worth syncing yet
   const blob = syncableState(state);
   const json = JSON.stringify(blob);
-  if (json === lastPushedJson) return Promise.resolve();
+  if (json === lastPushedJson) return Promise.resolve(true);
   const pushedEarned = state.wallet.earned;
   return pushState(me, blob).then((savedAt) => {
-    if (savedAt !== null) {
+    if (savedAt === null) return false;
+    // identity guard on ALL bookkeeping: a push that lands after a
+    // sign-out reset must not resurrect the old sync marks
+    if (state.profile.id === me) {
       lastPushedJson = json;
       setLastSyncTs(savedAt);
       // the server now holds this earned total — advance the device's
       // acknowledged mark so only future earnings count as unsynced.
       // (earnedBase is stripped from the blob, so this can't re-push.)
-      if (state.profile.id === me && state.wallet.earnedBase < pushedEarned) {
+      if (state.wallet.earnedBase < pushedEarned) {
         state = {
           ...state,
           wallet: { ...state.wallet, earnedBase: Math.min(pushedEarned, state.wallet.earned) },
@@ -170,6 +177,7 @@ function pushNow(): Promise<void> {
         emit();
       }
     }
+    return true;
   });
 }
 
@@ -187,8 +195,8 @@ function scheduleSyncPush(): void {
  * sign-out: the session token dies with logout, so the last edits must reach
  * the account first or the blank-slate reset would drop them.
  */
-export function flushSyncPush(): Promise<void> {
-  if (typeof window === "undefined" || !hydrated) return Promise.resolve();
+export function flushSyncPush(): Promise<boolean> {
+  if (typeof window === "undefined" || !hydrated) return Promise.resolve(true);
   if (syncTimer) {
     clearTimeout(syncTimer);
     syncTimer = null;
@@ -296,7 +304,8 @@ function applyEntitlement(paid: PaidEntitlement | null): void {
   setState({
     ...state,
     sub: tier,
-    badges: needBadge && badge ? [...state.badges, badge].slice(0, 20) : state.badges,
+    // the entitlement badge goes FIRST so a full badge book can't drop it
+    badges: needBadge && badge ? [...new Set([badge, ...state.badges])].slice(0, 48) : state.badges,
   });
 }
 
@@ -324,16 +333,22 @@ export function syncNow(): void {
   const me = state.profile.id;
   if (!me || state.profile.name === "") return;
   void pullState(me).then((remote) => {
+    // Identity guard: a pull that resolves after a sign-out/sign-in must
+    // not apply the OLD identity's data to the new one (a late account
+    // pull would otherwise resurrect the account's blob under a fresh
+    // guest id — and then re-publish it).
+    if (state.profile.id !== me) return;
     if (remote && remote.state) applyRemoteState(remote);
     // Entitlement applies even when the blob was stale/absent — a fresh
     // payment changes `paid` without touching savedAt.
     if (remote) applyEntitlement(remote.paid);
     if (remote) applyCoinCredits(remote.coins);
-    // Always follow with a push. It's hash-guarded, so it's a no-op unless a
-    // merge folded local work into the pulled state (applyRemoteState cleared
-    // lastPushedJson) or this device has unsynced changes — either way the
-    // account ends up holding the union, not the smaller of the two.
-    scheduleSyncPush();
+    // Follow with a push ONLY when the pull answered. It's hash-guarded, so
+    // it's a no-op unless a merge folded local work into the pulled state or
+    // this device has unsynced changes. After a FAILED pull, pushing blind
+    // could overwrite the account's blob with a fresher-but-emptier local
+    // state (e.g. right after a sign-out reset).
+    if (remote) scheduleSyncPush();
   });
 }
 
@@ -694,7 +709,10 @@ const ACTIONS: StoreActions = {
         : c.startupId !== undefined
           ? x.startupId === c.startupId
           : x.startupId === undefined && x.peerId === undefined && x.name === c.name;
-    const kept = state.connections.filter((x) => !isSame(x));
+    let kept = state.connections.filter((x) => !isSame(x));
+    // live cap matches the merge/sanitize cap (200): an uncapped list can
+    // outgrow the server's state-blob byte limit and silently stop syncing
+    if (kept.length >= 200) kept = kept.slice(-199);
     // ts doubles as the removal key, so keep it unique even when two
     // connections land in the same millisecond.
     const maxExisting = kept.reduce((m, x) => Math.max(m, x.ts), 0);
@@ -945,6 +963,11 @@ const ACTIONS: StoreActions = {
     if (state.profile.id.startsWith("acct_") && !nextId.startsWith("acct_")) {
       const fresh = defaultState();
       fresh.profile = { ...fresh.profile, id: nextId };
+      // The invisible anti-refarm ledgers survive the blank: without them a
+      // sign-out/sign-in loop re-pays the daily check-in and re-claims quest
+      // bounties into every merge — free ticket minting.
+      fresh.lastVisitDay = state.lastVisitDay;
+      fresh.claimedQuests = state.claimedQuests;
       setState(fresh);
       setLastSyncTs(0);
       lastPushedJson = "";
