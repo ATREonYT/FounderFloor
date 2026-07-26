@@ -31,6 +31,8 @@ export function syncableState(s: AppState): Record<string, unknown> {
 export interface PaidEntitlement {
   tier?: string;
   badge?: string;
+  /** When the entitlement was granted (webhook/admin) — ms epoch. */
+  ts?: number;
 }
 
 export async function pullState(

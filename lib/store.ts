@@ -24,7 +24,7 @@ import type {
   SubTier,
   Wallet,
 } from "@/lib/types";
-import { ONBOARDING_STEPS } from "@/lib/types";
+import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
 import { FLOORS } from "@/lib/data/floors";
 import { QUESTS } from "@/lib/data/quests";
 import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
@@ -141,6 +141,39 @@ function setState(next: AppState): void {
   emit();
   scheduleSyncPush();
 }
+
+// ---------- membership celebration events ----------
+
+/**
+ * Fired when a pull upgrades the signed-in account's entitlement (a fresh
+ * Stripe purchase or operator grant landing). The RECIPIENT's screens play
+ * the ceremony — wherever they are — via components/MembershipWatcher.
+ */
+export interface CelebrationEvent {
+  tier: "pro" | "founder";
+  founding: boolean;
+}
+let celebrationCb: ((e: CelebrationEvent) => void) | null = null;
+let pendingCelebration: CelebrationEvent | null = null;
+function fireCelebration(e: CelebrationEvent): void {
+  if (celebrationCb) celebrationCb(e);
+  else pendingCelebration = e; // watcher not mounted yet — hold the moment
+}
+export function onCelebration(cb: (e: CelebrationEvent) => void): () => void {
+  celebrationCb = cb;
+  if (pendingCelebration) {
+    cb(pendingCelebration);
+    pendingCelebration = null;
+  }
+  return () => {
+    if (celebrationCb === cb) celebrationCb = null;
+  };
+}
+
+/** One ceremony per grant per device: remembers the last entitlement shown. */
+const CELEBRATED_KEY = "founderfloor:celebrated";
+/** Grants older than this play no catch-up ceremony on a new device. */
+const CELEBRATION_FRESH_MS = 14 * 24 * 60 * 60 * 1000;
 
 // ---------- cross-device sync ----------
 
@@ -300,6 +333,33 @@ function applyEntitlement(paid: PaidEntitlement | null): void {
   // entitlement lookup — badges once earned are never clawed back.
   const badge = paid?.badge === "founding" ? "founding" : null;
   const needBadge = badge !== null && !state.badges.includes(badge);
+
+  // The recipient's ceremony: play it once per grant per device. The
+  // fingerprint pins the exact entitlement (account, tier, badge, grant
+  // time); the freshness window keeps months-old memberships from
+  // re-celebrating on every new browser.
+  if (tier !== "free") {
+    const fingerprint = `${state.profile.id}|${tier}|${badge ?? ""}|${paid?.ts ?? 0}`;
+    let seen = "";
+    try {
+      seen = window.localStorage.getItem(CELEBRATED_KEY) ?? "";
+    } catch {
+      /* storage blocked — celebrate at most this once */
+    }
+    if (seen !== fingerprint) {
+      try {
+        window.localStorage.setItem(CELEBRATED_KEY, fingerprint);
+      } catch {
+        /* fine */
+      }
+      const isUpgrade = TIER_ORDER[tier] > TIER_ORDER[state.sub] || needBadge;
+      const fresh = typeof paid?.ts === "number" && Date.now() - paid.ts < CELEBRATION_FRESH_MS;
+      if (isUpgrade && fresh) {
+        fireCelebration({ tier, founding: badge === "founding" });
+      }
+    }
+  }
+
   if (state.sub === tier && !needBadge) return;
   setState({
     ...state,

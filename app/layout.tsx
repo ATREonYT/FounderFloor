@@ -6,6 +6,8 @@ import NavLink from "@/components/NavLink";
 import NavConnections from "@/components/NavConnections";
 import NavProfile from "@/components/NavProfile";
 import MemberBadge from "@/components/MemberBadge";
+import NavAdmin from "@/components/NavAdmin";
+import MembershipWatcher from "@/components/MembershipWatcher";
 import Messenger from "@/components/Messenger";
 
 export const metadata: Metadata = {
@@ -54,6 +56,8 @@ export default function RootLayout({
               <NavConnections />
               {/* paying members wear their tier in the chrome, site-wide */}
               <MemberBadge />
+              {/* the operator's console shortcut — invisible to everyone else */}
+              <NavAdmin />
               <NavProfile />
             </nav>
           </div>
@@ -64,6 +68,10 @@ export default function RootLayout({
         {/* site-wide chats: bubble button bottom-right, mail toasts top-right
             (hides itself on floors — the game has its own chat panel) */}
         <Messenger />
+
+        {/* plays the membership ceremony on the RECIPIENT's screen when an
+            entitlement upgrade lands, whatever page they're on */}
+        <MembershipWatcher />
 
         <footer className="border-t border-line bg-panel">
           {/* pb-20 on phones keeps the fixed chat button from sitting on the

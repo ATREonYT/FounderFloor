@@ -14,9 +14,6 @@ import { notFound } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { httpBase } from "@/lib/net";
 import { syncNow } from "@/lib/store";
-import ConfettiBurst from "@/components/ConfettiBurst";
-import MembershipCeremony from "@/components/MembershipCeremony";
-import { TIER_LABEL } from "@/components/TierTag";
 
 interface Overview {
   floors: { floorId: string; online: number; stands: number }[];
@@ -75,13 +72,6 @@ export default function AdminPage() {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [gate, setGate] = useState<"checking" | "admin" | "denied">("checking");
   const [log, setLog] = useState<string[]>([]);
-  // membership-grant celebration
-  const [celebrate, setCelebrate] = useState<{
-    tier: "pro" | "founder";
-    founding: boolean;
-    recipient: string; // "" = self
-  } | null>(null);
-  const [burst, setBurst] = useState(0);
   const say = (s: string) => setLog((l) => [`${new Date().toLocaleTimeString()} — ${s}`, ...l].slice(0, 30));
 
   const refresh = useCallback(async () => {
@@ -130,18 +120,10 @@ export default function AdminPage() {
       if (path === "/admin/grant") {
         const self = typeof body.email === "string" && body.email === auth?.email;
         // a grant to the signed-in account applies immediately — pull the
-        // entitlement now so the tier badge and floor access flip live
+        // entitlement now (the global MembershipWatcher plays the ceremony
+        // on the RECIPIENT's screen, yours included when you grant yourself)
         if (self) syncNow();
-        // a MEMBERSHIP grant deserves the full ceremony (ticket-only
-        // grants stay quiet — the log line is enough)
-        const tier = body.tier === "pro" || body.tier === "founder" ? body.tier : null;
-        if (tier) {
-          setCelebrate({
-            tier,
-            founding: body.badge === "founding",
-            recipient: self ? "" : String(body.email ?? ""),
-          });
-        }
+        else say("granted — they'll get the ceremony on their screen when it lands");
       }
       void refresh();
     } catch (err) {
@@ -358,27 +340,6 @@ export default function AdminPage() {
         </section>
       )}
 
-      <ConfettiBurst burstId={burst} />
-      {celebrate && (
-        <MembershipCeremony
-          tier={celebrate.tier}
-          bigText={celebrate.founding ? "Founding member" : undefined}
-          title={
-            celebrate.recipient
-              ? `${celebrate.recipient} is ${celebrate.founding ? "a Founding member" : TIER_LABEL[celebrate.tier]} now`
-              : celebrate.founding
-                ? "You\u2019re a Founding member now"
-                : undefined
-          }
-          blurb={
-            celebrate.recipient
-              ? "Granted from the operator console — their doors are open the next time they visit the floors."
-              : "Granted from the operator console — your doors are open."
-          }
-          onClose={() => setCelebrate(null)}
-          onBurst={() => setBurst(Date.now())}
-        />
-      )}
     </main>
   );
 }

@@ -49,7 +49,6 @@ import {
 } from "@/lib/pricing";
 import Toast, { type ToastData } from "@/components/Toast";
 import ConfettiBurst from "@/components/ConfettiBurst";
-import MembershipCeremony from "@/components/MembershipCeremony";
 import TicketIcon from "@/components/TicketIcon";
 
 const SWATCHES = BOOTH_SWATCHES;
@@ -371,7 +370,6 @@ export default function ProfilePage() {
     baseSub: SubTier;
   } | null>(null);
   const [burst, setBurst] = useState(0);
-  const [celebrateTier, setCelebrateTier] = useState<SubTier | null>(null);
 
   useEffect(() => {
     setReady(true);
@@ -482,10 +480,9 @@ export default function ProfilePage() {
         });
       }
     } else if (state.sub !== "free" && state.sub !== pendingPay.baseSub) {
+      // the plan landed — the global MembershipWatcher plays the ceremony
+      // (it fires on the entitlement pull); here we just stop polling
       setPendingPay(null);
-      // no confetti yet — the ceremony's full-screen intro owns the first
-      // seconds; it fires onBurst at the hand-off to the card
-      setCelebrateTier(state.sub);
     }
   }, [pendingPay, state.wallet.redeemed, state.sub]);
 
@@ -1804,16 +1801,7 @@ export default function ProfilePage() {
       <Toast toast={toast} />
       <ConfettiBurst burstId={burst} />
 
-      {/* membership ceremony — a paid plan just activated. One big moment,
-          then back to the floor. */}
-      {celebrateTier && celebrateTier !== "free" && (
-        <MembershipCeremony
-          tier={celebrateTier}
-          blurb={TIER_BLURB[celebrateTier]}
-          onClose={() => setCelebrateTier(null)}
-          onBurst={() => setBurst(Date.now())}
-        />
-      )}
+
     </main>
   );
 }
