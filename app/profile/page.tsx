@@ -384,22 +384,45 @@ export default function ProfilePage() {
     if (!hash) return;
     const el = document.getElementById(hash);
     if (!el) return;
-    // Scroll once the section exists, then re-check after the editors above
-    // finish seeding: only correct if the layout actually shifted the target
-    // away from its resting spot — the sections carry scroll-mt-20 (80px,
-    // clearing the 56px sticky nav), so THAT is the expected offset. The old
-    // check compared against 0 and therefore double-scrolled every time.
+    // Custom eased scroll instead of the browser's native smooth scroll:
+    // native easing ends with a hard edge, and any post-load correction on
+    // top of it reads as a snap. This drives the scroll by hand with a long
+    // ease-out tail (easeOutQuint) and RE-AIMS at the live target every
+    // frame — content that finishes loading mid-flight just bends the path,
+    // so there is nothing left to correct at the end. Sections rest 80px
+    // down (scroll-mt-20), clear of the 56px sticky nav.
     const REST = 80;
-    requestAnimationFrame(() => el.scrollIntoView());
-    // the correction is an INSTANT micro-nudge, not a second smooth glide —
-    // a ~25px snap is imperceptible, a second animation reads as a stutter
-    const settle = window.setTimeout(() => {
-      const top = el.getBoundingClientRect().top;
-      if (Math.abs(top - REST) > 12) {
-        window.scrollBy({ top: top - REST, behavior: "instant" as ScrollBehavior });
-      }
-    }, 700);
-    return () => window.clearTimeout(settle);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - REST, behavior: "instant" as ScrollBehavior });
+      });
+      return;
+    }
+    const DURATION = 1100;
+    const startY = window.scrollY;
+    const startT = performance.now();
+    let raf = 0;
+    let cancelled = false;
+    const cancel = () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+      window.removeEventListener("wheel", cancel);
+      window.removeEventListener("touchstart", cancel);
+    };
+    // the user grabbing the wheel mid-flight wins immediately
+    window.addEventListener("wheel", cancel, { passive: true });
+    window.addEventListener("touchstart", cancel, { passive: true });
+    const step = (now: number) => {
+      if (cancelled) return;
+      const target = window.scrollY + el.getBoundingClientRect().top - REST;
+      const t = Math.min(1, (now - startT) / DURATION);
+      const eased = 1 - Math.pow(1 - t, 5); // easeOutQuint — soft landing
+      window.scrollTo({ top: startY + (target - startY) * eased, behavior: "instant" as ScrollBehavior });
+      if (t < 1) raf = requestAnimationFrame(step);
+      else cancel();
+    };
+    raf = requestAnimationFrame(step);
+    return cancel;
   }, [ready]);
 
   // Seed local editors from the hydrated store — and RE-seed whenever the
