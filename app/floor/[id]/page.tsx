@@ -34,6 +34,7 @@ import ChatPanel, { type ChatThread } from "@/components/ChatPanel";
 import EmoteBar from "@/components/EmoteBar";
 import HoverCard from "@/components/HoverCard";
 import TutorialCoach from "@/components/TutorialCoach";
+import GraduationCeremony from "@/components/GraduationCeremony";
 import QuestPanel from "@/components/QuestPanel";
 import MemberBadge from "@/components/MemberBadge";
 import TicketIcon from "@/components/TicketIcon";
@@ -1432,44 +1433,14 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       {/* hover card — desktop pointer only by nature */}
       <HoverCard target={hover} startups={startups} />
 
-      {/* tutorial graduation: the ceremony at the end of the practice round */}
+      {/* tutorial graduation: the full ceremony at the end of the practice
+          round — portaled to <body>, so the page's stacking context can't
+          trap it under the game chrome */}
       {gradPanel && (
-        <div className="anim-fade absolute inset-0 z-30 flex items-center justify-center bg-ink/40 p-4">
-          <div
-            role="dialog"
-            aria-label="Tutorial complete"
-            className="glass anim-pop flex w-[380px] max-w-full flex-col gap-3 p-6 text-center shadow-float"
-          >
-            <p className="micro text-verify">BADGE EARNED</p>
-            <h2 className="font-display text-2xl">Tutorial graduate</h2>
-            <p className="text-sm leading-relaxed text-muted">
-              That&rsquo;s everything: walking, talking, reacting, connecting.
-              The real floors work exactly the same — except everyone out
-              there is a real founder. Two good next moves:
-            </p>
-            <div className="mt-1 flex flex-col gap-2">
-              <Link
-                href="/profile#booth"
-                className="btn-press rounded-md bg-accent-strong px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-strong/90"
-              >
-                Set up your own booth
-              </Link>
-              <Link
-                href="/lobby"
-                className="btn-press rounded-md border border-line px-4 py-2.5 text-sm text-muted hover:border-ink hover:text-ink"
-              >
-                Walk the real floors
-              </Link>
-            </div>
-            <button
-              type="button"
-              onClick={() => setGradPanel(false)}
-              className="micro text-muted underline hover:text-ink"
-            >
-              Stay and practice a bit more
-            </button>
-          </div>
-        </div>
+        <GraduationCeremony
+          onClose={() => setGradPanel(false)}
+          onBurst={() => setBurst((b) => b + 1)}
+        />
       )}
 
       <ConfettiBurst burstId={burst} />

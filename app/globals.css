@@ -541,6 +541,50 @@
     animation: cine-exit 480ms var(--ease-out) both;
   }
 
+  /* ==================== GRADUATION (tutorial complete) ====================
+     The membership ceremony's sibling, in the opposite register: paper
+     instead of night, a certificate seal instead of the star. An ink ring
+     inscribes itself, a gold ring follows inside it, the rosette stamps
+     into the middle, and the graduate line letter-tracks in underneath —
+     like watching a diploma get sealed. Reuses cine-draw / cine-fill-in /
+     cine-track-in keyframes; only the timeline is new. */
+  .grad-ring {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cine-draw 950ms var(--ease-out) 150ms both;
+  }
+  .grad-ring-inner {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cine-draw 800ms var(--ease-out) 550ms both;
+  }
+  .grad-seal-fill {
+    opacity: 0;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: cine-fill-in 620ms var(--ease-spring) 1150ms both;
+  }
+  .grad-title {
+    animation: cine-track-in 900ms var(--ease-out) 1500ms both;
+  }
+  @keyframes grad-rule {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  .grad-rule {
+    transform-origin: center;
+    animation: grad-rule 700ms var(--ease-out) 2050ms both;
+  }
+  /* gentle breath on the finished seal, so it reads alive while the
+     player takes the moment in */
+  .grad-breathe {
+    animation: float-slow 5.5s ease-in-out 2.2s infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .btn-press,
     .btn-press:active:not(:disabled),
@@ -570,6 +614,12 @@
     .cine-fade-up,
     .cine-glow,
     .cine-exit,
+    .grad-ring,
+    .grad-ring-inner,
+    .grad-seal-fill,
+    .grad-title,
+    .grad-rule,
+    .grad-breathe,
     .marquee-track {
       animation: none;
     }

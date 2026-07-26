@@ -710,7 +710,7 @@ export default function ProfilePage() {
       </nav>
 
       {/* ---- Account ---- */}
-      <SectionCard title="Account">
+      <SectionCard title="Account" id="account">
         <AccountCard
           onIdentity={actions.setIdentity}
           currentName={state.profile.name}
