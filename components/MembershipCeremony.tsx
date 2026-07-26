@@ -135,12 +135,17 @@ export default function MembershipCeremony({
           } as React.CSSProperties
         }
       >
-        {/* faint rays turning behind everything */}
+        {/* faint rays turning behind everything — the parent centers, the
+            child only rotates (mixing both transforms made the spin drift) */}
         <div
           aria-hidden="true"
-          className="ceremony-rays absolute left-1/2 top-[42%] h-[95vmin] w-[95vmin] -translate-x-1/2 -translate-y-1/2"
-          style={{ "--ray-color": founder ? "rgba(232,199,102,0.10)" : "rgba(240,144,107,0.10)" } as React.CSSProperties}
-        />
+          className="pointer-events-none absolute left-1/2 top-[42%] h-[95vmin] w-[95vmin] -translate-x-1/2 -translate-y-1/2"
+        >
+          <div
+            className="ceremony-rays absolute inset-0"
+            style={{ "--ray-color": founder ? "rgba(232,199,102,0.10)" : "rgba(240,144,107,0.10)" } as React.CSSProperties}
+          />
+        </div>
 
         {/* ACT 1a: threads race in from the screen edges */}
         {dims && (
@@ -260,16 +265,21 @@ export default function MembershipCeremony({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* prize rays, slowly turning behind the medal */}
+        {/* prize rays, slowly turning behind the medal — same parent/child
+            split so the rotation stays perfectly centered */}
         <div
           aria-hidden="true"
-          className="ceremony-rays pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2"
-          style={
-            founder
-              ? undefined
-              : ({ "--ray-color": "rgba(217, 72, 15, 0.28)" } as React.CSSProperties)
-          }
-        />
+          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2"
+        >
+          <div
+            className="ceremony-rays absolute inset-0"
+            style={
+              founder
+                ? undefined
+                : ({ "--ray-color": "rgba(217, 72, 15, 0.28)" } as React.CSSProperties)
+            }
+          />
+        </div>
 
         {/* sparks twinkling around the edges */}
         {SPARKS.map((s, i) => (

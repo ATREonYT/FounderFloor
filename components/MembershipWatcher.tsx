@@ -10,7 +10,8 @@
  */
 
 import { useEffect, useState } from "react";
-import { onCelebration, type CelebrationEvent } from "@/lib/store";
+import { getAuth } from "@/lib/auth";
+import { onCelebration, syncNow, type CelebrationEvent } from "@/lib/store";
 import ConfettiBurst from "@/components/ConfettiBurst";
 import MembershipCeremony from "@/components/MembershipCeremony";
 
@@ -24,6 +25,25 @@ export default function MembershipWatcher() {
   const [burst, setBurst] = useState(0);
 
   useEffect(() => onCelebration(setEvent), []);
+
+  // Heartbeat for signed-in accounts: pull the account state every 45s and
+  // whenever the tab regains focus, so grants, ticket top-ups and purchases
+  // appear live — no refresh needed. Cheap: one GET, and the follow-up push
+  // is hash-guarded to a no-op when nothing changed.
+  useEffect(() => {
+    const tick = () => {
+      if (getAuth()) syncNow();
+    };
+    const iv = window.setInterval(tick, 45_000);
+    const onFocus = () => tick();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.clearInterval(iv);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
+  }, []);
 
   if (!event) return <ConfettiBurst burstId={burst} />;
   return (

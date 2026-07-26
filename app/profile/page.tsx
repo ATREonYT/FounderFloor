@@ -311,7 +311,7 @@ function SectionCard({
   aside?: React.ReactNode;
 }) {
   return (
-    <section id={id} aria-label={title} className="panel scroll-mt-6 p-6">
+    <section id={id} aria-label={title} className="panel scroll-mt-20 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-xl">{title}</h2>
         {aside}
@@ -386,13 +386,19 @@ export default function ProfilePage() {
     if (!el) return;
     // Scroll once the section exists, then re-check after the editors above
     // finish seeding: only correct if the layout actually shifted the target
-    // away from the top — otherwise a second scrollIntoView is a visible
-    // double-jump for no reason.
+    // away from its resting spot — the sections carry scroll-mt-20 (80px,
+    // clearing the 56px sticky nav), so THAT is the expected offset. The old
+    // check compared against 0 and therefore double-scrolled every time.
+    const REST = 80;
     requestAnimationFrame(() => el.scrollIntoView());
+    // the correction is an INSTANT micro-nudge, not a second smooth glide —
+    // a ~25px snap is imperceptible, a second animation reads as a stutter
     const settle = window.setTimeout(() => {
       const top = el.getBoundingClientRect().top;
-      if (Math.abs(top) > 8) el.scrollIntoView();
-    }, 450);
+      if (Math.abs(top - REST) > 12) {
+        window.scrollBy({ top: top - REST, behavior: "instant" as ScrollBehavior });
+      }
+    }, 700);
     return () => window.clearTimeout(settle);
   }, [ready]);
 

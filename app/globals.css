@@ -321,7 +321,15 @@
      The one screen that's allowed to show off: rotating prize rays, a
      medal that drops in on a spring and then breathes, a foil sheen
      sweeping the headline, and sparks twinkling around the card. */
+  /* Explicit from AND to: a lone `to{rotate}` on an element that also
+     carries a translate utility interpolates through mismatched transform
+     lists (matrix decomposition), which visibly drifts the whole element
+     off-center each cycle. The rays now live in a plain child (parent does
+     the centering) and only ever rotate. */
   @keyframes ceremony-spin {
+    from {
+      transform: rotate(0deg);
+    }
     to {
       transform: rotate(360deg);
     }
