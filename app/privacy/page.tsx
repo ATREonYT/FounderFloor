@@ -22,7 +22,7 @@ export default function PrivacyPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <header>
-        <p className="micro text-muted">EFFECTIVE 21 JULY 2026</p>
+        <p className="micro text-muted">EFFECTIVE 26 JULY 2026</p>
         <h1 className="mt-1 font-display text-3xl">Privacy Policy</h1>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
           This is the formal version of what the{" "}
@@ -37,8 +37,12 @@ export default function PrivacyPage() {
 
       <Section title="1. Who is responsible">
         <p>
-          FounderFloor is operated by its founder (the &ldquo;operator&rdquo;),
-          who acts as the data controller for the personal data described
+          FounderFloor is operated by its founder (the &ldquo;operator&rdquo;,
+          identified in the{" "}
+          <Link href="/imprint" className="text-accent hover:underline">
+            Legal Notice
+          </Link>
+          ), who acts as the data controller for the personal data described
           below. Contact for anything in this policy, including deletion
           requests:{" "}
           <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
@@ -71,17 +75,25 @@ export default function PrivacyPage() {
           not stored.
         </p>
         <p>
-          <strong>Feedback and abuse reports:</strong> stored on the server
-          and forwarded to the operator&rsquo;s inbox so they can be acted
-          on. Legal basis: legitimate interest in running and moderating the
-          service.
+          <strong>Feedback, abuse reports, and moderation records:</strong>{" "}
+          reports are stored on the server and forwarded to the
+          operator&rsquo;s inbox so they can be acted on. Messages are
+          filtered automatically for slurs and profanity before delivery.
+          When an account or identity is suspended, the identifier, the
+          reason, and the date are kept for as long as the suspension stands
+          so it can be enforced (and reviewed on appeal). Legal basis:
+          legitimate interest in running and moderating the service.
         </p>
         <p>
           <strong>Technical data:</strong> IP addresses are used transiently
           for rate limiting and abuse prevention (for example, limiting
           sign-in attempts). They are not written into your profile and are
-          not used for tracking or profiling. Legal basis: legitimate
-          interest in keeping the service secure.
+          not used for tracking or profiling. Like almost every website, the
+          hosting providers in section 5 keep short-lived server and access
+          logs (IP address, requested page, timestamp) for security and
+          operations, and the floor server writes operational logs to its
+          system journal. Legal basis: legitimate interest in keeping the
+          service secure.
         </p>
         <p>
           <strong>What we do not collect:</strong> no analytics scripts, no
@@ -93,8 +105,10 @@ export default function PrivacyPage() {
       <Section title="3. Storage in your browser">
         <p>
           The site keeps your display name, avatar, booth design, quests,
-          badges, notes, and (if signed in) a session token in your
-          browser&rsquo;s localStorage. This storage is strictly necessary
+          badges, notes, (if signed in) a session token, and the last email
+          you signed in with — so the sign-in form can be prefilled next
+          time — in your browser&rsquo;s localStorage. This storage is
+          strictly necessary
           for the site to function — it is not used for tracking, which is
           why there is no cookie banner. Clearing site data in your browser
           removes it from that device.
@@ -123,9 +137,13 @@ export default function PrivacyPage() {
           pages. <strong>Resend</strong> (USA) delivers the transactional
           emails above and is the only third party that ever sees your email
           address. <strong>Cloudflare Inc.</strong> (USA) provides DNS for
-          the domain. If paid memberships go live, payments will be handled
+          the domain. <strong>UptimeRobot</strong> (Malta) pings a public
+          health endpoint to alert the operator when the server is down; it
+          sees no personal data. Payments are handled
           by <strong>Stripe</strong>, which processes card details itself —
-          card numbers never touch our servers.
+          card numbers never touch our servers. Stripe tells the floor server
+          the email address used at checkout and what was bought, so the
+          purchase can be credited to your account.
         </p>
         <p>
           Where a provider is outside the EU/EEA, transfers rely on that
@@ -138,8 +156,13 @@ export default function PrivacyPage() {
         <p>
           Sessions expire after 30 days of disuse. Synced progress is deleted
           after 180 days of inactivity. A stand stays up for 7 days after you
-          were last seen, then the spot frees up. Direct-message threads keep
-          only the latest 100 messages. The server keeps 3 daily rotating
+          were last seen, then the spot frees up — its guestbook goes with
+          it. Direct-message threads keep only the latest 100 messages.
+          Feedback, content reports, and cancellation requests are kept as a
+          rolling log (oldest entries drop off) for as long as they may be
+          needed to handle the matter. Suspension records are kept while the
+          suspension stands. Records of purchases are kept as long as tax
+          and commercial law require. The server keeps 3 daily rotating
           backups of its data file, so deleted data leaves the backups within
           3 days. Account data is kept for as long as the account exists and
           deleted with it.

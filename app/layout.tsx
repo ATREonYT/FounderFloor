@@ -13,7 +13,7 @@ import Messenger from "@/components/Messenger";
 export const metadata: Metadata = {
   title: "FounderFloor — a walkable expo for startups",
   description:
-    "A 2D trade-show floor that never tears down. Walk in, talk to founders, connect. Ranks come from verified revenue (simulated in this demo).",
+    "A 2D trade-show floor that never tears down. Walk in, talk to founders, connect. Ranks reflect self-reported revenue in this beta.",
 };
 
 export default function RootLayout({
@@ -109,8 +109,17 @@ export default function RootLayout({
                   <Link href="/terms" className="text-muted hover:text-ink hover:underline">
                     Terms of Service
                   </Link>
+                  <Link href="/imprint" className="text-muted hover:text-ink hover:underline">
+                    Legal Notice
+                  </Link>
                   <Link href="/privacy" className="text-muted hover:text-ink hover:underline">
                     Privacy Policy
+                  </Link>
+                  <Link href="/cancel" className="text-muted hover:text-ink hover:underline">
+                    Cancel membership
+                  </Link>
+                  <Link href="/report" className="text-muted hover:text-ink hover:underline">
+                    Report content
                   </Link>
                   <Link href="/about#feedback" className="text-muted hover:text-ink hover:underline">
                     Send feedback
@@ -121,8 +130,8 @@ export default function RootLayout({
             <div className="mt-8 flex flex-col gap-1 border-t border-line pt-4 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
               <p>&copy; {new Date().getFullYear()} FounderFloor. All rights reserved.</p>
               <p>
-                Revenue ranks are verified &mdash; simulated in this build. Egos
-                are not.
+                Revenue ranks are self-reported in this beta &mdash; treat them
+                as claims. Egos need no verification.
               </p>
             </div>
           </div>

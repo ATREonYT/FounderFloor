@@ -65,7 +65,7 @@ export default function AboutPage() {
           at the stand, unreviewed. Revenue ranks are labeled
           &ldquo;verified&rdquo; on the floor; in this build verification is{" "}
           <strong>simulated</strong> — founders type a number and the badge
-          follows. Every page that shows a rank says so. Live Stripe-based
+          follows. Every rank badge carries that note. Live Stripe-based
           verification is the plan, not the present.
         </p>
       </Section>
@@ -177,7 +177,7 @@ export default function AboutPage() {
 
       <Section title="Moderation">
         <p>
-          Every player card has a Report option. Reports go straight to the
+          Player chat threads have a Report option, and anything on the floor can be reported through the report page. Reports go straight to the
           operator (stored, and emailed) and are reviewed by hand. Mute is
           instant and local. The operator can remove stands, guestbook
           entries, and accounts that abuse the floor. Be the kind of person

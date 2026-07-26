@@ -49,9 +49,16 @@ const hit = Object.entries(accounts).find(
   ([, a]) => a && typeof a === "object" && (a.email ?? "").toLowerCase() === target,
 );
 if (!hit) {
+  // masked: this runs in a terminal that may be screen-shared or logged —
+  // it should help spot a typo'd domain, not enumerate every user's email
+  const mask = (e) => {
+    const at = e.indexOf("@");
+    return at > 0 ? `${e[0]}•••${e.slice(at)}` : e;
+  };
   const known = Object.values(accounts)
     .map((a) => a?.email)
-    .filter(Boolean);
+    .filter(Boolean)
+    .map(mask);
   console.error(`no account with email ${target}`);
   console.error(`accounts on file: ${known.length ? known.join(", ") : "(none have emails)"}`);
   process.exit(1);

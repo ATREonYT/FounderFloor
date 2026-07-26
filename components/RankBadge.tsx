@@ -25,7 +25,9 @@ export default function RankBadge({
   return (
     <span
       className={`inline-flex items-center gap-1.5 text-ink ${className}`}
-      title={r.blurb}
+      // every rank badge, everywhere, carries the honesty note — the claim
+      // "every page that shows a rank says so" has to actually be true
+      title={`${r.blurb} — revenue is self-reported in this beta; verification is simulated.`}
     >
       <span
         aria-hidden="true"

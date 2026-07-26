@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   emailLive,
   forgotPassword,
@@ -450,6 +451,20 @@ export default function AccountCard({
         {/* A grey button with no reason is a dead end — say what's missing. */}
         {missing.length > 0 && !busy && (
           <p className="text-xs text-muted sm:col-span-2">Still needed: {missing.join(", ")}.</p>
+        )}
+        {mode === "register" && (
+          <p className="text-xs text-muted sm:col-span-2">
+            By creating an account you confirm you are 16 or older and agree
+            to the{" "}
+            <Link href="/terms" className="text-accent hover:underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="text-accent hover:underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
         )}
       </form>
       {error && (

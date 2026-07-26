@@ -517,9 +517,9 @@ function sendEmail(to, subject, html, text, bucket = "critical") {
         // The body says WHY (unverified domain, bad from address, test-mode
         // recipient restriction…) — without it, delivery failures are invisible.
         const detail = await res.text().catch(() => "");
-        console.warn(`[email] resend ${res.status} sending "${subject}" to ${to}: ${detail.slice(0, 300)}`);
+        console.warn(`[email] resend ${res.status} sending "${subject}" to ${maskEmail(to)}: ${detail.slice(0, 300)}`);
       } else {
-        console.log(`[email] sent "${subject}" to ${to}`);
+        console.log(`[email] sent "${subject}" to ${maskEmail(to)}`);
       }
     })
     .catch((err) => console.warn(`[email] send failed: ${err.message}`));
@@ -644,6 +644,74 @@ function sendPasswordChangedEmail(acct) {
     `The password for your FounderFloor account "${acct.name}" was just changed, and all sessions were signed out.\n\nIf this wasn't you, use "Forgot password" at ${SITE_URL}/profile to take the account back.`,
     "notice",
   );
+}
+
+/**
+ * Purchase confirmation on a durable medium (EU consumer-rights directive
+ * Art. 8(7)) — sent to the checkout email whether or not an account exists
+ * yet, and carries the withdrawal/refund terms that apply to what was
+ * bought. Ticket packs restate the immediate-delivery waiver; memberships
+ * restate the 14-day withdrawal right and how to cancel.
+ */
+function sendPurchaseEmail(email, plan, held) {
+  if (!email) return;
+  const what = plan.tickets
+    ? `a pack of ${plan.tickets} tickets`
+    : plan.badge
+      ? "the Founding membership — a year of Founder+ and the founding badge"
+      : plan.tier === "founder"
+        ? "the Founder+ membership"
+        : "the Pro membership";
+  const heldHtml = held
+    ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">There&#39;s no ` +
+      `FounderFloor account under this email yet, so your purchase is parked and ` +
+      `waiting: create an account (or sign in) with <strong>this exact email</strong> ` +
+      `and it lands automatically.</p>`
+    : `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">It&#39;s live on ` +
+      `your account now — no code to redeem, nothing to activate.</p>`;
+  const rightsHtml = plan.tickets
+    ? `<p style="margin:0 0 12px;font-size:13px;color:#6F6A5E;line-height:1.6">Tickets ` +
+      `are digital content delivered immediately. As agreed at checkout, delivery ` +
+      `began right away, which ends the 14-day withdrawal right — ticket purchases ` +
+      `are final and non-refundable. Details in the <a href="${SITE_URL}/terms" ` +
+      `style="color:#6F6A5E">Terms of Service</a>.</p>`
+    : `<p style="margin:0 0 12px;font-size:13px;color:#6F6A5E;line-height:1.6">As a ` +
+      `consumer you can withdraw from this purchase within 14 days without giving a ` +
+      `reason — just reply to this email saying so, and anything already paid is ` +
+      `refunded pro-rata for the unused time. You can also stop a subscription from ` +
+      `renewing any time at <a href="${SITE_URL}/cancel" style="color:#6F6A5E">` +
+      `${SITE_URL.replace(/^https?:\/\//, "")}/cancel</a> or through Stripe&#39;s ` +
+      `billing portal linked from your receipt. Details in the <a href="${SITE_URL}/terms" ` +
+      `style="color:#6F6A5E">Terms of Service</a>.</p>`;
+  const rightsText = plan.tickets
+    ? `Tickets are digital content delivered immediately; as agreed at checkout, delivery began right away, which ends the 14-day withdrawal right — ticket purchases are final and non-refundable. Details: ${SITE_URL}/terms`
+    : `You can withdraw from this purchase within 14 days without giving a reason — reply to this email saying so. You can also cancel future renewals any time at ${SITE_URL}/cancel. Details: ${SITE_URL}/terms`;
+  sendEmail(
+    email,
+    "Your FounderFloor purchase",
+    emailShell(
+      "Thanks — your purchase is confirmed",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">You bought ` +
+        `<strong>${esc(what)}</strong>. Stripe sends your payment receipt separately.</p>` +
+        heldHtml +
+        rightsHtml +
+        emailBtn(SITE_URL + "/profile", held ? "Claim it" : "See it on your profile"),
+    ),
+    `You bought ${what} on FounderFloor. Stripe sends your payment receipt separately.\n\n` +
+      (held
+        ? `There's no account under this email yet — create one (or sign in) with this exact email at ${SITE_URL}/profile and the purchase lands automatically.\n\n`
+        : `It's live on your account now: ${SITE_URL}/profile\n\n`) +
+      rightsText,
+    "notice",
+  );
+}
+
+/** "alex@example.com" -> "a•••@example.com" — logs identify without leaking. */
+function maskEmail(e) {
+  const s = String(e ?? "");
+  const at = s.indexOf("@");
+  if (at <= 0) return s ? `${s[0]}•••` : "(none)";
+  return `${s[0]}•••${s.slice(at)}`;
 }
 
 // Cost params are stored per account so they can be raised later without
@@ -2434,7 +2502,7 @@ const server = createServer((req, res) => {
                 ts: Date.now(),
               });
               fulfilled = true;
-              console.log(`[stripe] ticket pack held for ${email} — no account with that email yet`);
+              console.log(`[stripe] ticket pack held for ${maskEmail(email)} — no account with that email yet`);
             }
           } else {
             const paid = { tier: plan.tier, customer, ts: Date.now() };
@@ -2451,12 +2519,15 @@ const server = createServer((req, res) => {
               const prev = pendingPaid.get(email);
               pendingPaid.set(email, { ...(prev ?? {}), ...paid });
               fulfilled = true;
-              console.log(`[stripe] paid checkout held for ${email} — no account with that email yet`);
+              console.log(`[stripe] paid checkout held for ${maskEmail(email)} — no account with that email yet`);
             }
           }
           if (fulfilled) {
             markSessionProcessed(sessionId);
             scheduleSave();
+            // contract confirmation with the applicable withdrawal terms —
+            // Stripe's receipt covers the payment, not the contract
+            sendPurchaseEmail(email, plan, !acct);
           } else {
             console.warn(`[stripe] PAID checkout dropped (pending store full) — session left unprocessed for retry`);
           }
@@ -2522,6 +2593,50 @@ const server = createServer((req, res) => {
   }
 
   // Beta feedback: free-text notes from anyone, stored for the operator.
+  // Public notice-and-action + contract-cancellation intake. Both work
+  // WITHOUT a login (a rights-holder or authority is usually not a user;
+  // §312k BGB requires cancellation without hurdles), are rate-limited,
+  // stored, and forwarded to the operator immediately.
+  if (req.method === "POST" && (url.pathname === "/report-content" || url.pathname === "/cancel-contract")) {
+    void (async () => {
+      if (authRateLimited(req)) {
+        sendJson(res, { error: "slow down — try again in a minute" });
+        return;
+      }
+      const body = await readJson(req);
+      const isCancel = url.pathname === "/cancel-contract";
+      const text = body ? sanitizeStr(body.text, 1500) : "";
+      const contact = body ? sanitizeStr(body.contact, MAX_EMAIL_LEN) : "";
+      if (!text || (isCancel && !contact)) {
+        sendJson(res, { error: isCancel ? "email and details are required" : "details are required" });
+        return;
+      }
+      const entry = {
+        ts: Date.now(),
+        from: contact || "anonymous",
+        page: isCancel ? "[cancellation]" : "[content report]",
+        text,
+      };
+      feedback.push(entry);
+      if (feedback.length > MAX_FEEDBACK) feedback = feedback.slice(-MAX_FEEDBACK);
+      scheduleSave();
+      sendOperatorEmail(
+        isCancel ? "CANCELLATION request" : "Content report (notice-and-action)",
+        isCancel ? "A user is cancelling a contract" : "Someone reported content",
+        [
+          ["Contact", entry.from],
+          ["Details", entry.text],
+          ["Received", new Date(entry.ts).toISOString()],
+        ],
+        isCancel
+          ? "Confirm receipt to the user and process in Stripe within 14 days."
+          : "Review within a reasonable time; remove if warranted and tell the reporter the outcome.",
+      );
+      sendJson(res, { ok: true, receivedAt: entry.ts });
+    })();
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/feedback") {
     void (async () => {
       if (authRateLimited(req)) {

@@ -1455,8 +1455,9 @@ export default function ProfilePage() {
                   {/* pre-purchase notice, required for the EU withdrawal
                       waiver to hold up: instant delivery => sales are final */}
                   <li className="pt-1 text-[11px] leading-snug text-muted">
-                    Tickets are delivered instantly, so all pack sales are
-                    final — see the{" "}
+                    Prices include VAT where applicable. Tickets are
+                    delivered instantly, so all pack sales are final — see
+                    the{" "}
                     <Link href="/terms" className="underline hover:text-ink">
                       terms
                     </Link>
@@ -1583,19 +1584,27 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* founding member — the beta offer, capped and numbered */}
+        <p className="micro mb-3 text-muted">
+          All prices in USD and inclusive of VAT where applicable. Cancel a
+          membership any time on the{" "}
+          <Link href="/cancel" className="text-accent underline">
+            cancellation page
+          </Link>
+          .
+        </p>
+
+        {/* founding member — the launch offer */}
         <article className="mb-4 rounded-md border border-gold/60 bg-paper/60 p-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="font-display text-base">Founding Member</h3>
             <span className="text-sm text-ink">
               ${FOUNDING_OFFER.price}{" "}
-              <span className="text-xs text-muted">once · first {FOUNDING_OFFER.cap} only</span>
+              <span className="text-xs text-muted">once</span>
             </span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-muted">
-            A year of Founder+, your renewal price locked for life, and a
-            numbered founding badge on your card that never goes away. When
-            they&rsquo;re gone, they&rsquo;re gone.
+            A year of Founder+ and a founding badge on your card that never
+            goes away — the launch offer for the people who showed up first.
           </p>
           {isFounding ? (
             <span className="micro mt-3 inline-block rounded-md border border-gold/60 px-3 py-1.5 text-gold-deep">

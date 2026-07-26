@@ -122,8 +122,9 @@ export default function LandingPage() {
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">
               FounderFloor is a small 2D world where startups keep a stand and
               real founders stand at it. You walk around, you read the signs,
-              you talk to people. Ranks come from verified revenue, so the
-              stand with the gold badge earned it the boring way.
+              you talk to people. Ranks reflect self-reported revenue in this
+              beta (live verification is the roadmap) — the gold badge tells
+              you who claims to have earned it the boring way.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
@@ -338,9 +339,10 @@ export default function LandingPage() {
             The rank ladder
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-paper/60">
-            Ranks are set by verified monthly revenue, read through a read-only
-            Stripe connection &mdash; nobody types their own number. This build
-            simulates the connection; the skepticism is real.
+            The plan: ranks set by verified monthly revenue through a
+            read-only Stripe connection. This beta simulates that &mdash;
+            founders self-report their number and the badge follows. Treat
+            every rank as a claim, not a fact.
           </p>
           <div className="stagger-children mt-10 flex flex-col divide-y divide-paper/10 border-y border-paper/15">
             {RANKS.map((rank) => (
@@ -375,7 +377,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p className="micro mt-6 text-paper/40">
-            GOLD IS EARNED THE BORING WAY &mdash; ONE VERIFIED DOLLAR AT A TIME
+            GOLD IS SELF-REPORTED IN THIS BETA &mdash; VERIFICATION IS THE ROADMAP
           </p>
         </Reveal>
       </section>
@@ -393,22 +395,24 @@ export default function LandingPage() {
             </span>
           </div>
 
-          {/* founding member strip — the launch offer, capped on purpose */}
+          {/* founding member strip — the launch offer. Copy promises ONLY
+              what the system actually delivers (no fake scarcity, no
+              unnumbered "numbered" badges — that way lie consumer-law
+              warning letters). */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gold/60 bg-panel px-4 py-3">
             <p className="text-sm">
               <span className="font-display">Founding Member</span>
               <span className="text-muted">
                 {" "}
-                — ${FOUNDING_OFFER.price} once: a year of Founder+, your price
-                locked for life, a numbered badge. First {FOUNDING_OFFER.cap}{" "}
-                people only.
+                — ${FOUNDING_OFFER.price} once: a year of Founder+ and a
+                founding badge on your card that never goes away.
               </span>
             </p>
             <Link
               href="/profile#membership"
               className="rounded-md border border-ink px-3 py-1.5 text-sm hover:bg-paper"
             >
-              Claim a number
+              Become a founding member
             </Link>
           </div>
 

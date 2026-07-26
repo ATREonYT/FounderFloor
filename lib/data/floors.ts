@@ -86,7 +86,7 @@ export const FLOORS: FloorDef[] = [
     // x = 3 / 12 / 21 -> rightmost zone ends at col 24, walls at 0 and 27.
     id: "ramen-district",
     name: "Ramen District",
-    tagline: "Verified revenue only past this door. The lanterns are decorative; the MRR is not.",
+    tagline: "Revenue-ranked stands past this door. The lanterns are decorative; the MRR is self-reported.",
     tier: "pro",
     width: 28,
     height: 26,

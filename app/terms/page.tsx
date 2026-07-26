@@ -22,7 +22,7 @@ export default function TermsPage() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <header>
-        <p className="micro text-muted">EFFECTIVE 22 JULY 2026</p>
+        <p className="micro text-muted">EFFECTIVE 26 JULY 2026</p>
         <h1 className="mt-1 font-display text-3xl">Terms of Service</h1>
         <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
           These terms are the agreement between you and FounderFloor&rsquo;s
@@ -75,12 +75,21 @@ export default function TermsPage() {
         </p>
         <p>
           You promise your content is yours to publish and doesn&rsquo;t
-          infringe anyone else&rsquo;s rights. If someone&rsquo;s content on
-          the floor infringes yours, report it in-app or email{" "}
+          infringe anyone else&rsquo;s rights.
+        </p>
+        <p>
+          <strong>Reporting content.</strong> If content on the floor
+          infringes your rights or appears illegal, report it in-app or
+          email{" "}
           <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
             ak@founder-floor.com
           </a>{" "}
-          and it will be reviewed and, where warranted, removed.
+          with a link or description of where it appears and why. Reports
+          are reviewed and, where warranted, content is removed and the
+          reporter informed of the outcome. If your content was removed and
+          you believe that was a mistake, reply to the notice and it will be
+          re-reviewed. Accounts that repeatedly publish infringing or
+          illegal content are terminated.
         </p>
       </Section>
 
@@ -134,6 +143,27 @@ export default function TermsPage() {
           subscriptions, except to the extent you consent to immediate
           performance. If billing is not yet live, the membership page says
           so and nothing is charged.
+        </p>
+        <p>
+          <strong>How to withdraw from a subscription.</strong> Within 14
+          days of purchase, email{" "}
+          <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
+            ak@founder-floor.com
+          </a>{" "}
+          with an unambiguous statement that you withdraw — you can use the
+          model wording: &ldquo;I hereby withdraw from my contract for the
+          FounderFloor membership purchased on [date], account email
+          [email].&rdquo; A withdrawal in time is refunded via the original
+          payment method within 14 days, less a proportionate amount for the
+          period already provided where you asked the membership to start
+          immediately. Cancelling for the future (no refund, membership runs
+          out at the end of the paid period) works the same way at any time,
+          through the{" "}
+          <Link href="/cancel" className="text-accent hover:underline">
+            cancellation page
+          </Link>{" "}
+          (no login needed), or through Stripe&rsquo;s billing portal linked
+          from your receipt emails.
         </p>
         <p>
           <strong>Tickets.</strong> Tickets are a virtual in-game currency
@@ -190,9 +220,13 @@ export default function TermsPage() {
 
       <Section title="9. Governing law & changes">
         <p>
-          These terms are governed by the law of the operator&rsquo;s country
-          of residence, without prejudice to mandatory consumer protections
-          of the country you live in. If a court finds part of these terms
+          These terms are governed by the law of the operator&rsquo;s seat
+          (identified in the{" "}
+          <Link href="/imprint" className="text-accent hover:underline">
+            Legal Notice
+          </Link>
+          ), without prejudice to mandatory consumer protections of the
+          country you live in. If a court finds part of these terms
           unenforceable, the rest still stands. When these terms change in a
           way that matters, the effective date above changes and significant
           changes will be flagged on the site; continued use after a change
@@ -213,6 +247,10 @@ export default function TermsPage() {
       <p className="text-xs text-muted">
         <Link href="/privacy" className="text-accent hover:underline">
           Privacy Policy
+        </Link>{" "}
+        &middot;{" "}
+        <Link href="/imprint" className="text-accent hover:underline">
+          Legal Notice
         </Link>{" "}
         &middot;{" "}
         <Link href="/about" className="text-accent hover:underline">
