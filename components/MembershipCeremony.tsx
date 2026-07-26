@@ -65,11 +65,17 @@ export default function MembershipCeremony({
   blurb,
   onClose,
   onBurst,
+  bigText,
+  title,
 }: {
   tier: Exclude<SubTier, "free">;
   blurb: string;
   onClose: () => void;
   onBurst?: () => void;
+  /** Override the intro's giant tier name (default: the tier label). */
+  bigText?: string;
+  /** Override the card headline (default: "You're {tier} now"). */
+  title?: string;
 }) {
   const founder = tier === "founder";
   const [stage, setStage] = useState<"intro" | "exit" | "card">("intro");
@@ -226,7 +232,7 @@ export default function MembershipCeremony({
             className="cine-track-in mt-2 font-display text-[11vmin] leading-none sm:text-7xl"
             style={{ color: "var(--cine)" }}
           >
-            {TIER_LABEL[tier]}
+            {bigText ?? TIER_LABEL[tier]}
           </p>
           <p
             className="cine-fade-up micro mt-6 text-[#F2EFE7]/35"
@@ -296,7 +302,7 @@ export default function MembershipCeremony({
               founder ? "ceremony-title-founder" : "ceremony-title-pro"
             }`}
           >
-            You&rsquo;re {TIER_LABEL[tier]} now
+            {title ?? `You\u2019re ${TIER_LABEL[tier]} now`}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             {blurb} Your tier now shows at the top of every page — and on the

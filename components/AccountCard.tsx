@@ -12,6 +12,7 @@ import {
   emailLive,
   forgotPassword,
   getAuth,
+  getLastEmail,
   login,
   logout,
   register,
@@ -94,6 +95,16 @@ export default function AccountCard({
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<"register" | "login" | "forgot">("register");
   const [email, setEmail] = useState("");
+  // A browser that has signed in before is probably the same person coming
+  // back: open on the sign-in tab with their address prefilled. (Only the
+  // email is remembered — everything else blanks on sign-out.)
+  useEffect(() => {
+    const last = getLastEmail();
+    if (last) {
+      setMode("login");
+      setEmail((cur) => cur || last);
+    }
+  }, []);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);

@@ -2,16 +2,21 @@
 
 /**
  * Operator console — /admin. Works only for accounts whose email is on the
- * server's ADMIN_EMAILS list; everyone else gets the same 404 the server
- * returns for unknown paths, and this page just says "not authorized".
- * Everything here is a thin form over the /admin/* endpoints: grants
- * (tier / founding / tickets), bans, kicks, stand clearing, announcements.
+ * server's ADMIN_EMAILS list. Everyone else — signed out, signed in as a
+ * normal account — gets the site's ordinary 404, so the console does not
+ * exist for them. Everything here is a thin form over the /admin/*
+ * endpoints: grants (tier / founding / tickets), bans, kicks, stand
+ * clearing, announcements. Membership grants replay the full ceremony.
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { notFound } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { httpBase } from "@/lib/net";
 import { syncNow } from "@/lib/store";
+import ConfettiBurst from "@/components/ConfettiBurst";
+import MembershipCeremony from "@/components/MembershipCeremony";
+import { TIER_LABEL } from "@/components/TierTag";
 
 interface Overview {
   floors: { floorId: string; online: number; stands: number }[];
@@ -68,8 +73,15 @@ const BTN = "btn-press h-10 rounded-md bg-ink px-4 text-sm text-paper hover:bg-i
 export default function AdminPage() {
   const [ready, setReady] = useState(false);
   const [overview, setOverview] = useState<Overview | null>(null);
-  const [denied, setDenied] = useState(false);
+  const [gate, setGate] = useState<"checking" | "admin" | "denied">("checking");
   const [log, setLog] = useState<string[]>([]);
+  // membership-grant celebration
+  const [celebrate, setCelebrate] = useState<{
+    tier: "pro" | "founder";
+    founding: boolean;
+    recipient: string; // "" = self
+  } | null>(null);
+  const [burst, setBurst] = useState(0);
   const say = (s: string) => setLog((l) => [`${new Date().toLocaleTimeString()} — ${s}`, ...l].slice(0, 30));
 
   const refresh = useCallback(async () => {
@@ -77,14 +89,18 @@ export default function AdminPage() {
       const o = await adminPost("/admin/overview", {});
       if (o.error) throw new Error(o.error);
       setOverview(o);
-      setDenied(false);
+      setGate("admin");
     } catch {
-      setDenied(true);
+      setGate("denied");
     }
   }, []);
 
   useEffect(() => {
     setReady(true);
+    if (!getAuth()) {
+      setGate("denied"); // no session — nothing to probe
+      return;
+    }
     void refresh();
   }, [refresh]);
 
@@ -106,13 +122,26 @@ export default function AdminPage() {
   const run = async (label: string, path: string, body: Record<string, unknown>) => {
     try {
       const r = await adminPost(path, body);
-      if (r.error) say(`${label}: ${r.error}`);
-      else say(`${label}: ok ${JSON.stringify(r).slice(0, 140)}`);
-      // a grant to the signed-in account applies immediately — pull the
-      // entitlement now so the tier badge and floor access flip live
-      if (path === "/admin/grant" && typeof body.email === "string" && body.email === auth?.email) {
-        syncNow();
-        say("your own entitlement re-synced — floors unlock on your next visit to the lobby");
+      if (r.error) {
+        say(`${label}: ${r.error}`);
+        return;
+      }
+      say(`${label}: ok ${JSON.stringify(r).slice(0, 140)}`);
+      if (path === "/admin/grant") {
+        const self = typeof body.email === "string" && body.email === auth?.email;
+        // a grant to the signed-in account applies immediately — pull the
+        // entitlement now so the tier badge and floor access flip live
+        if (self) syncNow();
+        // a MEMBERSHIP grant deserves the full ceremony (ticket-only
+        // grants stay quiet — the log line is enough)
+        const tier = body.tier === "pro" || body.tier === "founder" ? body.tier : null;
+        if (tier) {
+          setCelebrate({
+            tier,
+            founding: body.badge === "founding",
+            recipient: self ? "" : String(body.email ?? ""),
+          });
+        }
       }
       void refresh();
     } catch (err) {
@@ -132,26 +161,17 @@ export default function AdminPage() {
     });
 
   if (!ready) return null;
-
-  if (!auth) {
-    return (
-      <main className="mx-auto w-full max-w-2xl px-4 py-16 text-center">
-        <h1 className="font-display text-2xl">Operator console</h1>
-        <p className="mt-3 text-sm text-muted">
-          Sign in with the operator account on your profile page first.
-        </p>
-      </main>
-    );
-  }
+  // anyone who isn't the verified operator gets the site's ordinary 404 —
+  // signed out, wrong account, server not answering: the page doesn't exist
+  if (gate === "denied" || !auth) notFound();
+  if (gate === "checking") return null;
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
       <header>
         <h1 className="font-display text-3xl">Operator console</h1>
         <p className="mt-2 text-sm text-muted">
-          Signed in as {auth.email || auth.name}.{" "}
-          {denied &&
-            "This account is not on the server's admin list (or the floor server hasn't been updated) — every action below will be refused."}
+          Signed in as {auth.email || auth.name}.
         </p>
       </header>
 
@@ -180,7 +200,7 @@ export default function AdminPage() {
             </ul>
           </>
         ) : (
-          <p className="mt-2 text-sm text-muted">{denied ? "Not authorized." : "Loading…"}</p>
+          <p className="mt-2 text-sm text-muted">Loading…</p>
         )}
       </section>
 
@@ -336,6 +356,28 @@ export default function AdminPage() {
             ))}
           </ul>
         </section>
+      )}
+
+      <ConfettiBurst burstId={burst} />
+      {celebrate && (
+        <MembershipCeremony
+          tier={celebrate.tier}
+          bigText={celebrate.founding ? "Founding member" : undefined}
+          title={
+            celebrate.recipient
+              ? `${celebrate.recipient} is ${celebrate.founding ? "a Founding member" : TIER_LABEL[celebrate.tier]} now`
+              : celebrate.founding
+                ? "You\u2019re a Founding member now"
+                : undefined
+          }
+          blurb={
+            celebrate.recipient
+              ? "Granted from the operator console — their doors are open the next time they visit the floors."
+              : "Granted from the operator console — your doors are open."
+          }
+          onClose={() => setCelebrate(null)}
+          onBurst={() => setBurst(Date.now())}
+        />
       )}
     </main>
   );

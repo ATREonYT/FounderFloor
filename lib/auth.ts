@@ -39,13 +39,31 @@ export function getAuth(): AuthState | null {
   return null;
 }
 
+const LAST_EMAIL_KEY = "founderfloor:last-email";
+
 function setAuth(a: AuthState | null): void {
   if (typeof window === "undefined") return;
   try {
-    if (a) window.localStorage.setItem(AUTH_KEY, JSON.stringify(a));
-    else window.localStorage.removeItem(AUTH_KEY);
+    if (a) {
+      window.localStorage.setItem(AUTH_KEY, JSON.stringify(a));
+      // remembered independently of the session, so the sign-in form can
+      // prefill the address after a sign-out (which blanks everything else)
+      if (a.email) window.localStorage.setItem(LAST_EMAIL_KEY, a.email);
+    } else {
+      window.localStorage.removeItem(AUTH_KEY);
+    }
   } catch {
     // storage blocked — session-only auth
+  }
+}
+
+/** The last email that successfully signed in on this browser ("" if none). */
+export function getLastEmail(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(LAST_EMAIL_KEY) ?? "";
+  } catch {
+    return "";
   }
 }
 
