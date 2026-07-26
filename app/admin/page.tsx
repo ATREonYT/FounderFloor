@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getAuth } from "@/lib/auth";
 import { httpBase } from "@/lib/net";
+import { syncNow } from "@/lib/store";
 
 interface Overview {
   floors: { floorId: string; online: number; stands: number }[];
@@ -107,6 +108,12 @@ export default function AdminPage() {
       const r = await adminPost(path, body);
       if (r.error) say(`${label}: ${r.error}`);
       else say(`${label}: ok ${JSON.stringify(r).slice(0, 140)}`);
+      // a grant to the signed-in account applies immediately — pull the
+      // entitlement now so the tier badge and floor access flip live
+      if (path === "/admin/grant" && typeof body.email === "string" && body.email === auth?.email) {
+        syncNow();
+        say("your own entitlement re-synced — floors unlock on your next visit to the lobby");
+      }
       void refresh();
     } catch (err) {
       say(`${label}: ${err instanceof Error ? err.message : "failed"}`);

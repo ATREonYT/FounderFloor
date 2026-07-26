@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAppState } from "@/lib/store";
+import { syncNow, useAppState } from "@/lib/store";
 import { FLOORS } from "@/lib/data/floors";
 import { TIER_ORDER, type AvatarLook } from "@/lib/types";
 import AvatarPicker from "@/components/AvatarPicker";
@@ -81,6 +81,13 @@ export default function LobbyPage() {
     if (ready && state.profile.name !== "") actions.recordVisit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, state.profile.name !== ""]);
+
+  // Re-check the account's subscription every time the floor list is
+  // opened: an entitlement granted moments ago (checkout webhook, admin
+  // grant) must unlock the doors on this visit, not after a hard reload.
+  useEffect(() => {
+    if (ready) syncNow();
+  }, [ready]);
 
   if (!ready) {
     return (
