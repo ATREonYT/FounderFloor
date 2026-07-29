@@ -303,8 +303,19 @@ export type NetEvent =
   | { t: "player_leave"; id: string }
   | { t: "booth_set"; ownerId: string; ownerName: string; online: boolean; claim: BoothClaim }
   | { t: "booth_clear"; ownerId: string }
-  /** Sent only to a claimant whose spot was already taken. */
-  | { t: "booth_denied"; spotIndex: number }
+  /**
+   * Sent only to a claimant: the spot was already taken, or (reason
+   * "elsewhere") a join re-raised a stale claim while the founder's one
+   * stand lives on another floor — correct the local claim to the stand's
+   * true location (standFloorId/standSpotIndex), don't relocate.
+   */
+  | {
+      t: "booth_denied";
+      spotIndex: number;
+      reason?: "elsewhere";
+      standFloorId?: string;
+      standSpotIndex?: number;
+    }
   /** A player fired a reaction; also echoed to the sender. */
   | { t: "emote"; id: string; kind: EmoteKind }
   /** A new guestbook entry landed at a booth (broadcast to the floor). */

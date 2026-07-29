@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAppState } from "@/lib/store";
-import { floorById } from "@/lib/data/floors";
+import { floorById, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { STARTUPS, IDLE_LINES, replyFor } from "@/lib/data/startups";
 import { createNetClient } from "@/lib/net";
 import { createGame } from "@/game/engine";
@@ -172,11 +172,17 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const netRef = useRef<NetClient | null>(null);
   const replyTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** The claim held before the last optimistic booth_set (for denial rollback). */
+  /** What was held before the last optimistic booth_set (for denial rollback). */
   // One-shot rollback token for the claim in flight: consumed by the first
   // booth_denied and time-limited, so a denial arriving from a reconnect
   // re-announce (not a fresh claim) can't resurrect a spot abandoned long ago.
-  const prevClaimRef = useRef<{ claim: BoothClaim; ts: number } | null>(null);
+  // `claim` is the previous spot on THIS floor (same-floor move); `otherFloor`
+  // is the stand's previous home when this was a cross-floor move.
+  const prevClaimRef = useRef<{
+    claim: BoothClaim | null;
+    otherFloor: { floorId: string; spotIndex: number } | null;
+    ts: number;
+  } | null>(null);
   // Last NPC booth the player talked at — its thread closes on walk-away
   // regardless of whether the booth card is still open.
   const lastNpcBoothRef = useRef<{ spotIndex: number; startupId: string } | null>(null);
@@ -481,12 +487,19 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       const s = myStartupRef.current;
       if (!floor || !s) return;
       // Remember what we held: if the server denies this spot, the stand
-      // rolls back instead of silently ghosting for everyone else.
+      // rolls back instead of silently ghosting for everyone else. For a
+      // cross-floor move that's the OTHER floor's claim — claimSpot is
+      // about to drop it optimistically, and losing the spot race here
+      // must not cost the stand over there.
       const prevIdx = claimsRef.current[floor.id];
-      prevClaimRef.current =
-        prevIdx !== undefined
-          ? { claim: { spotIndex: prevIdx, startup: s }, ts: Date.now() }
-          : null;
+      const otherEntry = Object.entries(claimsRef.current).find(
+        ([fid]) => fid !== floor.id && fid !== PRACTICE_FLOOR_ID,
+      );
+      prevClaimRef.current = {
+        claim: prevIdx !== undefined ? { spotIndex: prevIdx, startup: s } : null,
+        otherFloor: otherEntry ? { floorId: otherEntry[0], spotIndex: otherEntry[1] } : null,
+        ts: Date.now(),
+      };
       actions.claimSpot(floor.id, b.spotIndex);
       const claim = { spotIndex: b.spotIndex, startup: s };
       handleRef.current?.setMyBooth(claim);
@@ -860,22 +873,65 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         refreshInbox();
       }
       if (ev.t === "booth_denied") {
+        if (ev.reason === "elsewhere") {
+          // Our one stand lives on another floor; the claim this browser
+          // re-raised on walking in was stale. Correct the local claim to
+          // the stand's true location — merely forgetting it would make the
+          // next visit THERE join claim-less and pack the real stand up.
+          prevClaimRef.current = null;
+          handleRef.current?.setMyBooth(null);
+          netRef.current?.sendBoothClear();
+          const home = ev.standFloorId ? floorById(ev.standFloorId) : undefined;
+          if (home && ev.standSpotIndex !== undefined && myStartupRef.current) {
+            // claimSpot's one-stand filter also drops this floor's stale key
+            actions.claimSpot(home.id, ev.standSpotIndex);
+            showToast(`Your stand is over on ${home.name} — claim a spot here to move it.`);
+          } else {
+            actions.unclaimSpot(f.id);
+            showToast("Your stand is on another floor — claim a spot here to move it over.");
+          }
+          return;
+        }
         // Someone else claimed that spot first. If this was a MOVE, the
         // server still holds our previous spot — restore it locally and
         // re-announce so every state (server, net client, room) reconverges
         // instead of leaving a ghost stand behind.
         const prev = prevClaimRef.current;
         prevClaimRef.current = null; // one-shot — a second denial won't loop
-        if (prev && Date.now() - prev.ts < 15_000 && prev.claim.spotIndex !== ev.spotIndex) {
+        const fresh = prev && Date.now() - prev.ts < 15_000;
+        if (fresh && prev.claim && prev.claim.spotIndex !== ev.spotIndex) {
           actions.claimSpot(f.id, prev.claim.spotIndex);
           handleRef.current?.setMyBooth(prev.claim);
           netRef.current?.sendBoothSet(prev.claim);
           showToast("Someone claimed that spot first. Your stand stays put.");
+        } else if (fresh && !prev.claim && prev.otherFloor) {
+          // Cross-floor move that lost the race: the server never touched
+          // the old floor's stand (denial precedes the release), but our
+          // optimistic claimSpot dropped its local claim — put it back or
+          // the next visit there would demolish the real stand.
+          handleRef.current?.setMyBooth(null);
+          netRef.current?.sendBoothClear();
+          actions.claimSpot(prev.otherFloor.floorId, prev.otherFloor.spotIndex);
+          const homeName = floorById(prev.otherFloor.floorId)?.name ?? "its old floor";
+          showToast(`Someone claimed that spot first — your stand stays on ${homeName}.`);
         } else {
           actions.unclaimSpot(f.id);
           handleRef.current?.setMyBooth(null);
           netRef.current?.sendBoothClear();
           showToast("Someone claimed that stand first. Pick another spot.");
+        }
+      }
+      if (ev.t === "booth_clear" && ev.ownerId === profileRef.current.id) {
+        // Our stand on THIS floor was released remotely — the one-stand rule
+        // firing from another device's claim, an admin clear, or expiry. The
+        // engine only tracks REMOTE booths, so without this the session keeps
+        // rendering a stand nobody else sees and a later edit-save would
+        // re-raise it, dragging the stand back across floors.
+        if (claimsRef.current[f.id] !== undefined) {
+          actions.unclaimSpot(f.id);
+          handleRef.current?.setMyBooth(null);
+          netRef.current?.sendBoothClear();
+          showToast("Your stand just moved to another floor.");
         }
       }
     });
@@ -1341,6 +1397,14 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               floorName={floor.name}
               hasStartup={Boolean(myStartup)}
               claimedElsewhere={state.claims[floor.id] !== undefined}
+              claimedOtherFloor={
+                // relocation only applies between real floors — practice
+                // claims in the tutorial hall don't move anything
+                floor.id !== PRACTICE_FLOOR_ID &&
+                Object.keys(state.claims).some(
+                  (fid) => fid !== floor.id && fid !== PRACTICE_FLOOR_ID,
+                )
+              }
               onClaim={() => handleClaim(activeBooth)}
               onClose={() => setActiveBooth(null)}
             />

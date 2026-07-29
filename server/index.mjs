@@ -112,6 +112,15 @@ const guestbooks = new Map();
 const stands = new Map();
 const STAND_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_STANDS_PER_FLOOR = 64;
+/**
+ * A startup has ONE stand: claiming a spot on a floor packs up any stand
+ * the same founder holds elsewhere — the stand moves with them. The
+ * tutorial hall sits outside that rule (a practice claim must not drag
+ * anyone's real stand off its floor) and its stands never reach the
+ * directory. "__inbox" is the Connections pseudo-room, not a floor.
+ */
+const PRACTICE_FLOOR = "tutorial-hall";
+const isRealFloor = (floorId) => floorId !== "__inbox" && floorId !== PRACTICE_FLOOR;
 
 /**
  * profileStates: profileId -> { state, savedAt } — the client's app state
@@ -980,6 +989,31 @@ function loadData() {
       }
       if (map.size) stands.set(floorId.slice(0, MAX_ID_LEN), map);
     }
+    // One-stand rule sweep: data saved before the rule (or written by an
+    // older server) can hold several floors' stands for one founder. Keep
+    // the most recently visited real-floor stand, drop the rest.
+    const bestFloor = new Map(); // ownerId -> { floorId, lastSeen }
+    for (const [floorId, byOwner] of stands) {
+      if (!isRealFloor(floorId)) continue;
+      for (const [ownerId, st] of byOwner) {
+        const best = bestFloor.get(ownerId);
+        if (!best || st.lastSeen > best.lastSeen) {
+          bestFloor.set(ownerId, { floorId, lastSeen: st.lastSeen });
+        }
+      }
+    }
+    let dupes = 0;
+    for (const [floorId, byOwner] of stands) {
+      if (!isRealFloor(floorId)) continue;
+      for (const ownerId of [...byOwner.keys()]) {
+        if (bestFloor.get(ownerId).floorId !== floorId) {
+          byOwner.delete(ownerId);
+          dupes++;
+        }
+      }
+      if (byOwner.size === 0) stands.delete(floorId);
+    }
+    if (dupes) console.log(`[stands] dropped ${dupes} duplicate stand(s) at load — one stand per founder`);
   }
 
   if (parsed.accounts && typeof parsed.accounts === "object") {
@@ -1495,6 +1529,38 @@ function floorBooths(floorId, room, exceptProfileId) {
     out.push({ ownerId, ownerName: st.ownerName, online: ownerOnline(room, ownerId), claim: st.claim });
   }
   return out;
+}
+
+/**
+ * The real floor (not this one) where this profile still has a stand, if
+ * any — with the spot, so a denial can tell the client where its stand
+ * actually lives (the client re-records it locally; without that, its next
+ * visit to that floor would join claim-less and pack the stand up).
+ */
+function standElsewhere(ownerId, exceptFloorId) {
+  for (const [fid, byOwner] of stands) {
+    if (fid === exceptFloorId || !isRealFloor(fid)) continue;
+    const st = byOwner.get(ownerId);
+    if (st) return { floorId: fid, spotIndex: st.claim.spotIndex };
+  }
+  return null;
+}
+
+/**
+ * One stand per founder: enforce it by packing up this profile's stands on
+ * every real floor except the one just claimed, telling each floor's room.
+ */
+function releaseOtherStands(ownerId, keptFloorId) {
+  let released = 0;
+  for (const [fid, byOwner] of stands) {
+    if (fid === keptFloorId || !isRealFloor(fid)) continue;
+    if (!byOwner.delete(ownerId)) continue;
+    released++;
+    if (byOwner.size === 0) stands.delete(fid);
+    const r = rooms.get(fid);
+    if (r) broadcast(r, { t: "booth_clear", ownerId });
+  }
+  return released;
 }
 
 /** Which profile holds this spot (live or away), excluding one profile. */
@@ -2689,7 +2755,8 @@ const server = createServer((req, res) => {
     const out = [];
     const standOwners = new Set();
     for (const [floorId, byOwner] of stands) {
-      if (floorId === "__inbox") continue;
+      // practice stands in the tutorial hall aren't real listings
+      if (!isRealFloor(floorId)) continue;
       const room = rooms.get(floorId);
       for (const [ownerId, st] of byOwner) {
         standOwners.add(ownerId);
@@ -2715,7 +2782,30 @@ const server = createServer((req, res) => {
         startup: entry.startup,
       });
     }
-    sendJson(res, { startups: out });
+    // A directory lists a startup ONCE. The same founder can appear under
+    // several ids (a pre-sign-in guest ghost, a registry entry the stand
+    // superseded under a different id) — a registry-only row whose typed
+    // identity fully matches a claimed stand is that stand's shadow and is
+    // dropped; duplicate registry-only rows keep the freshest. CLAIMED
+    // stands are never collapsed against each other: that would let a
+    // copycat stand hide a real one — dupes of that kind stay visible
+    // (and reportable) instead.
+    const identity = (s) =>
+      [s.name, s.founder, s.oneLiner].map((v) => (v || "").toLowerCase().trim()).join("|");
+    const standIdentities = new Set(
+      out.filter((r) => r.floorId !== null).map((r) => identity(r.startup)),
+    );
+    const bestRegistry = new Map();
+    for (const row of out) {
+      if (row.floorId !== null) continue;
+      const key = identity(row.startup);
+      if (standIdentities.has(key)) continue; // a stand's shadow
+      const prev = bestRegistry.get(key);
+      if (!prev || row.lastSeen > prev.lastSeen) bestRegistry.set(key, row);
+    }
+    sendJson(res, {
+      startups: [...out.filter((r) => r.floorId !== null), ...bestRegistry.values()],
+    });
     return;
   }
 
@@ -2761,6 +2851,10 @@ const server = createServer((req, res) => {
           // the account already has a stand on this floor — it wins
           continue;
         }
+        // rekey the relayed startup id to the new owner, or receivers'
+        // lookups (and the lobby's own-startup filter) keep pointing at the
+        // abandoned guest id
+        st.claim.startup.id = `claim:${toId}`;
         byOwner.set(toId, st);
         moved++;
         if (floorRoom) {
@@ -2773,6 +2867,17 @@ const server = createServer((req, res) => {
           });
         }
       }
+      // The merge can leave the account with stands on two floors (its own
+      // plus the guest's). One stand per founder: keep the freshest.
+      let freshest = null;
+      for (const [fid, byOwner] of stands) {
+        if (!isRealFloor(fid)) continue;
+        const st = byOwner.get(toId);
+        if (st && (!freshest || st.lastSeen > freshest.lastSeen)) {
+          freshest = { floorId: fid, lastSeen: st.lastSeen };
+        }
+      }
+      if (freshest) releaseOtherStands(toId, freshest.floorId);
       // the directory listing follows the same way
       const reg = registry.get(fromId);
       if (reg) {
@@ -3128,7 +3233,15 @@ wss.on("connection", (ws, req) => {
     // owner packed up while away (or wiped their browser) — the client's saved
     // state is the source of truth, so the stand comes down.
     if (msg.claim !== undefined) {
-      handleBoothSet({ claim: msg.claim }, { silentActivity: standFor(rawId) !== null });
+      // claimFresh marks a claim the player made deliberately during this
+      // page-session (e.g. while the socket was reconnecting) — it gets the
+      // full interactive treatment (relocation), not the stale-re-raise
+      // guard. A client lying about it can only relocate its OWN stand,
+      // which the interactive path lets it do anyway.
+      handleBoothSet(
+        { claim: msg.claim },
+        { silentActivity: standFor(rawId) !== null, fromJoin: msg.claimFresh !== true },
+      );
     } else if (standFor(rawId)) {
       removeStand(rawId);
     }
@@ -3150,6 +3263,28 @@ wss.on("connection", (ws, req) => {
   function handleBoothSet(msg, opts = {}) {
     const claim = sanitizeClaim(msg.claim);
     if (!claim) return;
+    // A claim carried in by a JOIN is a saved state re-raising itself, not a
+    // decision. If the founder's one stand meanwhile lives on another real
+    // floor (moved from a different device, or this browser's claim is
+    // stale), walking in here must not silently drag it back — deny with a
+    // reason AND the stand's true location, so the client can correct its
+    // saved claim instead of forgetting it has a stand at all. (A join whose
+    // claim was made deliberately this page-session arrives with claimFresh
+    // and skips this — an offline claim replayed on reconnect is a decision,
+    // not stale state.)
+    if (opts.fromJoin && isRealFloor(floorId)) {
+      const elsewhere = standElsewhere(client.rawId, floorId);
+      if (elsewhere) {
+        send(ws, {
+          t: "booth_denied",
+          spotIndex: claim.spotIndex,
+          reason: "elsewhere",
+          standFloorId: elsewhere.floorId,
+          standSpotIndex: elsewhere.spotIndex,
+        });
+        return;
+      }
+    }
     const holder = spotTakenBy(floorId, claim.spotIndex, client.rawId);
     if (holder) {
       // First claim wins — including stands whose owner is merely away.
@@ -3180,6 +3315,9 @@ wss.on("connection", (ws, req) => {
       return;
     }
     byOwner.set(client.rawId, { claim, ownerName: client.name, lastSeen: Date.now() });
+    // The stand MOVES here: a deliberate claim on a real floor packs up the
+    // founder's stand anywhere else (practice claims in the tutorial don't).
+    if (isRealFloor(floorId)) releaseOtherStands(client.rawId, floorId);
     scheduleSave();
     broadcast(
       room,

@@ -18,6 +18,13 @@
 
 import type { FloorDef } from "@/lib/types";
 
+/**
+ * The practice floor: claims here are rehearsal, exempt from the
+ * one-stand-per-startup rule, and never listed in the directory.
+ * Must match PRACTICE_FLOOR in server/index.mjs.
+ */
+export const PRACTICE_FLOOR_ID = "tutorial-hall";
+
 export const FLOORS: FloorDef[] = [
   {
     // 34x28. Three rows of four stands, all claimable.

@@ -25,7 +25,7 @@ import type {
   Wallet,
 } from "@/lib/types";
 import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
-import { FLOORS } from "@/lib/data/floors";
+import { FLOORS, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { QUESTS } from "@/lib/data/quests";
 import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
@@ -274,8 +274,20 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
   // keep a locally-built booth if the account doesn't already have one
   if (!merged.myStartup && local.myStartup) merged.myStartup = local.myStartup;
 
-  // merge claimed stands, and take the higher streak
+  // Merge claimed stands — then enforce the one-stand invariant, because a
+  // pure union can resurrect a claim another device already moved away
+  // from. Prefer the remote side's real-floor claim (the account's latest
+  // push); a wrong survivor self-heals on the next floor visit via the
+  // server's "elsewhere" denial, which carries the stand's true location.
+  const remoteClaims = merged.claims;
   merged.claims = { ...local.claims, ...merged.claims };
+  const realClaims = Object.keys(merged.claims).filter((fid) => fid !== PRACTICE_FLOOR_ID);
+  if (realClaims.length > 1) {
+    const keep = realClaims.find((fid) => fid in remoteClaims) ?? realClaims[0];
+    for (const fid of realClaims) {
+      if (fid !== keep) delete merged.claims[fid];
+    }
+  }
   merged.visitStreak = Math.max(merged.visitStreak, local.visitStreak);
   merged.bestStreak = Math.max(merged.bestStreak, local.bestStreak);
 
@@ -836,7 +848,16 @@ const ACTIONS: StoreActions = {
     if (!state.myStartup) return; // nothing to put on the stand
     const idx = Math.trunc(numOr(spotIndex, -1));
     if (idx < 0) return;
-    setState({ ...state, claims: { ...state.claims, [floorId]: idx } });
+    let claims: Record<string, number> = { ...state.claims, [floorId]: idx };
+    // One stand per startup: claiming on a real floor releases any claim on
+    // another real floor (the server enforces the same rule; practice claims
+    // in the tutorial hall are exempt in both places).
+    if (floorId !== PRACTICE_FLOOR_ID) {
+      claims = Object.fromEntries(
+        Object.entries(claims).filter(([fid]) => fid === floorId || fid === PRACTICE_FLOOR_ID),
+      );
+    }
+    setState({ ...state, claims });
   },
 
   unclaimSpot(floorId: string): void {

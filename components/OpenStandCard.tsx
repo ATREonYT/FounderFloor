@@ -8,6 +8,8 @@ interface OpenStandCardProps {
   hasStartup: boolean;
   /** Whether they already hold a different stand on this floor (claim moves). */
   claimedElsewhere: boolean;
+  /** Whether their one stand currently lives on ANOTHER floor (claim relocates). */
+  claimedOtherFloor?: boolean;
   onClaim: () => void;
   onClose: () => void;
 }
@@ -17,6 +19,7 @@ export default function OpenStandCard({
   floorName,
   hasStartup,
   claimedElsewhere,
+  claimedOtherFloor = false,
   onClaim,
   onClose,
 }: OpenStandCardProps) {
@@ -45,14 +48,16 @@ export default function OpenStandCard({
             <p className="text-sm leading-relaxed text-muted">
               {claimedElsewhere
                 ? `You already have a stand on ${floorName}. Claiming this one moves it — carpet, banner, and all.`
-                : `Claim it and your booth goes up right here on ${floorName}, visible to everyone on the floor.`}
+                : claimedOtherFloor
+                  ? `Your startup has one stand, and it's on another floor right now. Claiming this spot moves it to ${floorName} — carpet, banner, and all.`
+                  : `Claim it and your booth goes up right here on ${floorName}, visible to everyone on the floor.`}
             </p>
             <button
               type="button"
               onClick={onClaim}
               className="rounded-md bg-accent-strong px-3 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
             >
-              {claimedElsewhere ? "Move your stand here" : "Claim this stand"}
+              {claimedElsewhere || claimedOtherFloor ? "Move your stand here" : "Claim this stand"}
             </button>
           </>
         ) : (

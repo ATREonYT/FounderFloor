@@ -96,6 +96,12 @@ export function createNetClient(wsUrl?: string): NetClient {
   let me: PlayerProfile | null = null;
   let lastMove: MoveState | null = null;
   let myClaim: BoothClaim | null = null; // re-announced with join on reconnect
+  // True when myClaim was set by a deliberate sendBoothSet this page-session
+  // (as opposed to the stored claim passed to connect()). A reconnect join
+  // carries it as claimFresh so the server treats the replay as the decision
+  // it was — without it, a claim made during an outage would be denied as a
+  // stale re-raise and silently undone.
+  let myClaimFresh = false;
   let backoffMs = RECONNECT_DELAY_MS; // doubles per failed retry, capped
   let reconnectAttempt = false; // is the current socket a reconnect attempt?
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -269,6 +275,7 @@ export function createNetClient(wsUrl?: string): NetClient {
             player: me,
             s: lastMove,
             claim: myClaim ?? undefined,
+            claimFresh: (myClaim && myClaimFresh) || undefined,
             token: authTokenFor(me.id),
             gs: guestSecretInline(),
           }),
@@ -331,6 +338,7 @@ export function createNetClient(wsUrl?: string): NetClient {
       me = m;
       lastMove = spawn;
       myClaim = claim ?? null;
+      myClaimFresh = false; // a stored claim re-raises as stale, not fresh
       selfId = m.id; // provisional; the server may suffix it (welcome.selfId)
       reconnectAttempt = false;
       revivedFromDormant = false;
@@ -364,12 +372,14 @@ export function createNetClient(wsUrl?: string): NetClient {
 
     sendBoothSet(claim: BoothClaim): void {
       myClaim = claim; // survives reconnect: join re-announces the stand
+      myClaimFresh = true; // this is a decision, not stored-state replay
       if (phase !== "open" || !ws || ws.readyState !== ws.OPEN) return;
       ws.send(JSON.stringify({ t: "booth_set", claim }));
     },
 
     sendBoothClear(): void {
       myClaim = null;
+      myClaimFresh = false;
       if (phase !== "open" || !ws || ws.readyState !== ws.OPEN) return;
       ws.send(JSON.stringify({ t: "booth_clear" }));
     },
