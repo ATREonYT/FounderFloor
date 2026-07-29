@@ -2784,14 +2784,16 @@ const server = createServer((req, res) => {
     }
     // A directory lists a startup ONCE. The same founder can appear under
     // several ids (a pre-sign-in guest ghost, a registry entry the stand
-    // superseded under a different id) — a registry-only row whose typed
-    // identity fully matches a claimed stand is that stand's shadow and is
-    // dropped; duplicate registry-only rows keep the freshest. CLAIMED
+    // superseded under a different id) — a registry-only row whose identity
+    // matches a claimed stand is that stand's shadow and is dropped;
+    // duplicate registry-only rows keep the freshest. Identity is the
+    // STABLE pair name|founder, deliberately not the pitch text: editing a
+    // one-liner must not resurface a ghost as a "new" listing. CLAIMED
     // stands are never collapsed against each other: that would let a
     // copycat stand hide a real one — dupes of that kind stay visible
     // (and reportable) instead.
     const identity = (s) =>
-      [s.name, s.founder, s.oneLiner].map((v) => (v || "").toLowerCase().trim()).join("|");
+      [s.name, s.founder].map((v) => (v || "").toLowerCase().trim()).join("|");
     const standIdentities = new Set(
       out.filter((r) => r.floorId !== null).map((r) => identity(r.startup)),
     );
@@ -2975,6 +2977,27 @@ const server = createServer((req, res) => {
         // startup "mine", which would collide in directory listings.
         startup.id = `reg:${me}`;
         registry.set(me, { startup, ts: Date.now() });
+        // The stand IS this card: an edit saved on the profile page updates
+        // the founder's stand in place — floor render, hover cards, and the
+        // directory all show the new text at once. Without this the stand
+        // keeps the old text until the founder next walks a floor, and the
+        // directory sees two different-looking cards for one startup.
+        for (const [fid, byOwner] of stands) {
+          if (fid === "__inbox") continue;
+          const st = byOwner.get(me);
+          if (!st) continue;
+          st.claim.startup = { ...startup, id: `claim:${me}` };
+          const r = rooms.get(fid);
+          if (r) {
+            broadcast(r, {
+              t: "booth_set",
+              ownerId: me,
+              ownerName: st.ownerName,
+              online: ownerOnline(r, me),
+              claim: st.claim,
+            });
+          }
+        }
         scheduleSave();
         sendJson(res, { ok: true });
         return;
@@ -3318,6 +3341,14 @@ wss.on("connection", (ws, req) => {
     // The stand MOVES here: a deliberate claim on a real floor packs up the
     // founder's stand anywhere else (practice claims in the tutorial don't).
     if (isRealFloor(floorId)) releaseOtherStands(client.rawId, floorId);
+    // ...and the founder's directory registration follows the stand's card,
+    // so an on-floor edit can't fork the two into separate listings.
+    if (isRealFloor(floorId) && registry.has(client.rawId)) {
+      registry.set(client.rawId, {
+        startup: { ...claim.startup, id: `reg:${client.rawId}` },
+        ts: Date.now(),
+      });
+    }
     scheduleSave();
     broadcast(
       room,
