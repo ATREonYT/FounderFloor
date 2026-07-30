@@ -15,9 +15,11 @@ import { onCelebration, syncNow, type CelebrationEvent } from "@/lib/store";
 import ConfettiBurst from "@/components/ConfettiBurst";
 import MembershipCeremony from "@/components/MembershipCeremony";
 
+// Describes what the tier does today. While only the Main Hall is open
+// (FOCUS MODE in lib/data/floors.ts) these must not promise extra floors.
 const BLURB: Record<"pro" | "founder", string> = {
-  pro: "Everything in Free, plus the quieter floors — open for you now.",
-  founder: "Every floor, velvet rope included — open for you now.",
+  pro: "Your stand gets found first now — priority placement wherever it's listed.",
+  founder: "Top of every list, gold trim on your stand — live from now on.",
 };
 
 export default function MembershipWatcher() {

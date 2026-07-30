@@ -78,6 +78,9 @@ function FirstVisitPanel({
   );
 }
 
+/** The advertised floors — FOCUS MODE (lib/data/floors.ts) hides the rest. */
+const openFloors = FLOORS.filter((f) => !f.hidden);
+
 export default function LobbyPage() {
   const [state, actions] = useAppState();
   const [ready, setReady] = useState(false);
@@ -126,7 +129,9 @@ export default function LobbyPage() {
     <main className="mx-auto w-full max-w-5xl px-4 py-12 pb-24 sm:pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-display text-3xl">Pick a floor</h1>
+          <h1 className="font-display text-3xl">
+            {openFloors.length > 1 ? "Pick a floor" : "The floor"}
+          </h1>
           <EventPill />
           {state.visitStreak >= 2 && (
             <span className="micro rounded-sm border border-verify/40 px-1.5 py-0.5 text-verify">
@@ -194,10 +199,15 @@ export default function LobbyPage() {
           a door while it's live, an email box the rest of the week. */}
       <DemoNightCard />
 
-      {/* 2x2 on all sizes >= sm: four floors read as a balanced square, not
-          a row of three plus an orphan */}
-      <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2">
-        {FLOORS.filter((f) => !f.hidden).map((floor) => {
+      {/* 2x2 from sm up when there are several floors — but a lone floor in
+          a two-column grid sits in half the width with a hole beside it, so
+          it goes full-width instead and reads as THE room. */}
+      <div
+        className={`stagger-children mt-8 grid gap-4 ${
+          openFloors.length > 1 ? "sm:grid-cols-2" : ""
+        }`}
+      >
+        {openFloors.map((floor) => {
           const locked = TIER_ORDER[state.sub] < TIER_ORDER[floor.tier];
           return (
             <article

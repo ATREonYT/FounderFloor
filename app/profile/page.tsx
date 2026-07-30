@@ -66,10 +66,12 @@ const PATTERNS: { id: CarpetPattern; label: string }[] = [
   { id: "stripes", label: "Stripes" },
 ];
 
+// Matches the landing page. While FOCUS MODE keeps one floor open
+// (lib/data/floors.ts) these sell placement and presentation, not floors.
 const TIER_BLURB: Record<SubTier, string> = {
-  free: "The public floors. Plenty to see.",
-  pro: "Everything in Free, plus the quieter floors.",
-  founder: "Every floor, velvet rope included.",
+  free: "The whole floor, every social feature. Plenty to see.",
+  pro: "Everything in Free, and your stand gets found first.",
+  founder: "Top of every list, and a gold-trimmed stand people notice.",
 };
 
 /**
@@ -1671,14 +1673,17 @@ export default function ProfilePage() {
                   {TIER_BLURB[tier]}
                 </p>
                 <ul className="mt-3 flex-1 space-y-1">
-                  {unlocked.map((f) => (
-                    <li key={f.id} className="flex items-baseline gap-1.5 text-xs">
-                      <span aria-hidden="true" className="text-verify">
-                        ·
-                      </span>
-                      {f.name}
-                    </li>
-                  ))}
+                  {/* Only worth listing when the tiers actually differ by
+                      floor — see FOCUS MODE in lib/data/floors.ts. */}
+                  {FLOORS.filter((f) => !f.hidden).length > 1 &&
+                    unlocked.map((f) => (
+                      <li key={f.id} className="flex items-baseline gap-1.5 text-xs">
+                        <span aria-hidden="true" className="text-verify">
+                          ·
+                        </span>
+                        {f.name}
+                      </li>
+                    ))}
                   {TIER_PERKS[tier].map((perk) => (
                     <li key={perk} className="flex items-baseline gap-1.5 text-xs text-muted">
                       <span aria-hidden="true" className={tier === "founder" ? "text-gold-deep" : "text-accent"}>

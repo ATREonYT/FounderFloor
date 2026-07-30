@@ -129,8 +129,10 @@ export default function DirectoryPage() {
       <p className="mt-2 text-sm leading-relaxed text-muted">
         Every startup on the floors, all founder-made —{" "}
         {communityCount > 0
-          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${PUBLIC_FLOOR_COUNT} floors so far`
-          : `the floors just opened across ${PUBLIC_FLOOR_COUNT} halls`}
+          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${PUBLIC_FLOOR_COUNT} ${PUBLIC_FLOOR_COUNT === 1 ? "floor" : "floors"} so far`
+          : PUBLIC_FLOOR_COUNT === 1
+            ? "the floor just opened — the first stands go up now"
+            : `the floors just opened across ${PUBLIC_FLOOR_COUNT} halls`}
         . Set up a stand and yours appears here on its own, under whatever
         category you give it.
       </p>

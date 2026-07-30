@@ -25,6 +25,27 @@ import type { FloorDef } from "@/lib/types";
  */
 export const PRACTICE_FLOOR_ID = "tutorial-hall";
 
+/**
+ * ─── FOCUS MODE ───────────────────────────────────────────────────────
+ * Only the Main Hall is open right now. Ten people spread over four
+ * floors reads as four empty rooms; the same ten in one room reads as a
+ * busy one — and an empty room is the single biggest reason a first-time
+ * visitor never comes back. The other floors are built, tested and
+ * finished; they are only un-advertised.
+ *
+ * `hidden: true` removes a floor from the lobby, the landing page, the
+ * "floors open" counter and the membership grid. It stays reachable by
+ * direct link (that is how the Tutorial Hall works), so nobody's stand is
+ * stranded and nothing breaks.
+ *
+ * TO RE-OPEN ONE: delete its `hidden: true` line and redeploy. Suggested
+ * order as the Main Hall fills up — Indie Alley once the Main Hall's 12
+ * spots are mostly taken, then the paid floors when there are enough
+ * paying members to make them feel occupied. Re-check the tier blurbs in
+ * app/page.tsx and components/MembershipWatcher.tsx when the paid floors
+ * come back: they no longer promise floor access.
+ * ──────────────────────────────────────────────────────────────────────
+ */
 export const FLOORS: FloorDef[] = [
   {
     // 34x28. Three rows of four stands, all claimable.
@@ -67,6 +88,7 @@ export const FLOORS: FloorDef[] = [
     name: "Indie Alley",
     tagline: "Folding tables, real users, no adult supervision.",
     tier: "free",
+    hidden: true, // FOCUS MODE — see the note above FLOORS
     width: 26,
     height: 26,
     theme: {
@@ -95,6 +117,7 @@ export const FLOORS: FloorDef[] = [
     name: "Ramen District",
     tagline: "Revenue-ranked stands past this door. The lanterns are decorative; the MRR is self-reported.",
     tier: "pro",
+    hidden: true, // FOCUS MODE — see the note above FLOORS
     width: 28,
     height: 26,
     theme: {
@@ -121,6 +144,7 @@ export const FLOORS: FloorDef[] = [
     name: "Co-founder Row",
     tagline: "Everyone on this floor is looking for the other half of their cap table. Yes, everyone.",
     tier: "founder",
+    hidden: true, // FOCUS MODE — see the note above FLOORS
     width: 28,
     height: 26,
     theme: {

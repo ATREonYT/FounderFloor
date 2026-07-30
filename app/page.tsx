@@ -11,6 +11,14 @@ import Reveal from "@/components/Reveal";
 import FloorThumb from "@/components/FloorThumb";
 import EmailCapture from "@/components/EmailCapture";
 
+/**
+ * The advertised floors. FOCUS MODE (lib/data/floors.ts) currently hides
+ * all but the Main Hall, so anything that counts or lists floors reads off
+ * this and adapts automatically when a floor is re-opened.
+ */
+const PUBLIC_FLOORS = FLOORS.filter((f) => !f.hidden);
+const MANY_FLOORS = PUBLIC_FLOORS.length > 1;
+
 const TICKER_ITEMS = [
   "WALK IN",
   "TALK TO FOUNDERS",
@@ -68,15 +76,18 @@ const STEPS: { title: string; body: string; glyph: GlyphId }[] = [
   },
 ];
 
+// While only the Main Hall is open (see FOCUS MODE in lib/data/floors.ts),
+// the paid tiers sell what they actually deliver today — placement, tags
+// and a gold stand — not floor access.
 const PRICING: { tier: SubTier; blurb: string }[] = [
-  { tier: "free", blurb: "The public floors. Plenty to see." },
+  { tier: "free", blurb: "The whole floor, every social feature. Plenty to see." },
   {
     tier: "pro",
-    blurb: "Everything in Free, plus the floors where deals get quieter.",
+    blurb: "Everything in Free, and your stand gets found first.",
   },
   {
     tier: "founder",
-    blurb: "Every floor, including the ones with a velvet rope.",
+    blurb: "Top of every list, and a gold-trimmed stand people notice.",
   },
 ];
 
@@ -281,15 +292,26 @@ export default function LandingPage() {
           <Eyebrow n="03">The halls</Eyebrow>
           <div className="mt-2 flex items-baseline justify-between gap-4">
             <h2 id="floors-heading" className="font-display text-3xl sm:text-4xl">
-              The floors
+              {MANY_FLOORS ? "The floors" : "The floor"}
             </h2>
             <Link href="/lobby" className="text-sm text-accent hover:underline">
               Enter the lobby
             </Link>
           </div>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
-            Four halls, four temperaments. Each one is a real map with real
-            booths; the miniatures below are to scale.
+            {MANY_FLOORS ? (
+              <>
+                {PUBLIC_FLOORS.length} halls, {PUBLIC_FLOORS.length}{" "}
+                temperaments. Each one is a real map with real booths; the
+                miniatures below are to scale.
+              </>
+            ) : (
+              <>
+                One hall, open to everyone, and everyone is in it — a young
+                floor fills up faster than four empty ones. It&rsquo;s a real
+                map with real booths; the miniature below is to scale.
+              </>
+            )}
           </p>
           <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2">
             {FLOORS.filter((f) => !f.hidden).map((floor) => {
@@ -456,12 +478,16 @@ export default function LandingPage() {
                   )}
                   <p className="mt-3 text-sm leading-relaxed text-muted">{blurb}</p>
                   <ul className="mt-4 flex-1 space-y-1.5">
-                    {unlocked.map((f) => (
-                      <li key={f.id} className="flex items-center gap-2 text-sm">
-                        <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 bg-verify" />
-                        {f.name}
-                      </li>
-                    ))}
+                    {/* With one floor open every tier would list the same
+                        hall — noise. The bullets return on their own once a
+                        second floor is un-hidden. */}
+                    {MANY_FLOORS &&
+                      unlocked.map((f) => (
+                        <li key={f.id} className="flex items-center gap-2 text-sm">
+                          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 bg-verify" />
+                          {f.name}
+                        </li>
+                      ))}
                     {TIER_PERKS[tier].map((perk) => (
                       <li key={perk} className="flex items-center gap-2 text-sm text-muted">
                         <span
