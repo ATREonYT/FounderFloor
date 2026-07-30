@@ -21,8 +21,10 @@ const SITE_URL =
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://founderfloor.net");
 
 const TITLE = "FounderFloor — a walkable expo for startups";
+// Kept under 125 characters: past that, X and most previews truncate it
+// mid-sentence on phones.
 const DESCRIPTION =
-  "A 2D trade-show floor that never tears down. Walk in, talk to real founders, claim a stand, connect. Free, nothing to install.";
+  "A 2D trade-show floor that never tears down. Walk in, talk to founders, claim a stand, connect. Free, no install.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
