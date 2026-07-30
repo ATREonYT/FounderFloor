@@ -12,8 +12,10 @@ import Link from "next/link";
 import { getAuth } from "@/lib/auth";
 import { useAppState } from "@/lib/store";
 
+// Mirrors the server's ADMIN_EMAILS default: both addresses while the
+// operator account moves from founder-floor.com to founderfloor.net.
 const ADMIN_EMAILS = new Set(
-  (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "ak@founder-floor.com")
+  (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "ak@founderfloor.net,ak@founder-floor.com")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),

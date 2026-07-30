@@ -14,6 +14,7 @@
 
 import { useState } from "react";
 import { httpBase } from "@/lib/net";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export default function EmailCapture({
   variant = "list",
@@ -89,8 +90,8 @@ export default function EmailCapture({
           <span className="text-accent">
             Couldn&rsquo;t reach the floor server — try again in a minute, or
             email{" "}
-            <a href="mailto:ak@founder-floor.com" className="underline">
-              ak@founder-floor.com
+            <a href={CONTACT_MAILTO} className="underline">
+              {CONTACT_EMAIL}
             </a>
             .
           </span>

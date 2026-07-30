@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Terms of Service — FounderFloor",
@@ -81,8 +82,8 @@ export default function TermsPage() {
           <strong>Reporting content.</strong> If content on the floor
           infringes your rights or appears illegal, report it in-app or
           email{" "}
-          <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
-            ak@founder-floor.com
+          <a href={CONTACT_MAILTO} className="text-accent hover:underline">
+            {CONTACT_EMAIL}
           </a>{" "}
           with a link or description of where it appears and why. Reports
           are reviewed and, where warranted, content is removed and the
@@ -147,8 +148,8 @@ export default function TermsPage() {
         <p>
           <strong>How to withdraw from a subscription.</strong> Within 14
           days of purchase, email{" "}
-          <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
-            ak@founder-floor.com
+          <a href={CONTACT_MAILTO} className="text-accent hover:underline">
+            {CONTACT_EMAIL}
           </a>{" "}
           with an unambiguous statement that you withdraw — you can use the
           model wording: &ldquo;I hereby withdraw from my contract for the
@@ -237,8 +238,8 @@ export default function TermsPage() {
       <Section title="10. Contact">
         <p>
           Questions about these terms:{" "}
-          <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
-            ak@founder-floor.com
+          <a href={CONTACT_MAILTO} className="text-accent hover:underline">
+            {CONTACT_EMAIL}
           </a>{" "}
           or the in-app feedback box.
         </p>

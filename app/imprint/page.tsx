@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Legal Notice — FounderFloor",
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
  *   NEXT_PUBLIC_LEGAL_NAME     e.g. "Jane Doe"
  *   NEXT_PUBLIC_LEGAL_ADDRESS  e.g. "Musterstraße 1, 12345 Berlin, Germany"
  *                              (use "\n" or ", " between lines)
- *   NEXT_PUBLIC_LEGAL_EMAIL    defaults to ak@founder-floor.com
+ *   NEXT_PUBLIC_LEGAL_EMAIL    defaults to CONTACT_EMAIL (lib/contact.ts)
  *   NEXT_PUBLIC_LEGAL_VATID    optional, e.g. "DE123456789"
  *
  * Set them in Vercel and redeploy. Until they are set, the page says the
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 
 const NAME = process.env.NEXT_PUBLIC_LEGAL_NAME || "";
 const ADDRESS = process.env.NEXT_PUBLIC_LEGAL_ADDRESS || "";
-const EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL || "ak@founder-floor.com";
+const EMAIL = process.env.NEXT_PUBLIC_LEGAL_EMAIL || CONTACT_EMAIL;
 const VATID = process.env.NEXT_PUBLIC_LEGAL_VATID || "";
 
 export default function ImprintPage() {

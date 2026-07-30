@@ -11,6 +11,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { httpBase } from "@/lib/net";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export default function CancelPage() {
   const [email, setEmail] = useState("");
@@ -58,8 +59,8 @@ export default function CancelPage() {
           end of the current period. You can also cancel any time through
           Stripe&rsquo;s billing portal linked from your receipt emails, or by
           emailing{" "}
-          <a href="mailto:ak@founder-floor.com" className="underline">
-            ak@founder-floor.com
+          <a href={CONTACT_MAILTO} className="underline">
+            {CONTACT_EMAIL}
           </a>
           .
         </p>
@@ -116,8 +117,8 @@ export default function CancelPage() {
           {state === "error" && (
             <p className="text-sm text-accent">
               Couldn&rsquo;t send right now — try again in a minute, or email{" "}
-              <a href="mailto:ak@founder-floor.com" className="underline">
-                ak@founder-floor.com
+              <a href={CONTACT_MAILTO} className="underline">
+                {CONTACT_EMAIL}
               </a>{" "}
               with &ldquo;Cancellation&rdquo; in the subject; that counts just
               the same.

@@ -144,7 +144,8 @@ and exposes it at `/debug/emails`) — never set it in production.
    the address that owns the Resend account), or `EMAIL_FROM` uses a
    domain other than the verified one.
 3. Spam folder — especially for addresses on a different domain than the
-   sender (e.g. mail from `founderfloor.net` to `founder-floor.com`).
+   sender. Keeping the contact address on the sending domain
+   (`founderfloor.net`) avoids this — see `lib/contact.ts`.
 
 ### Locked out (operator password rescue)
 
@@ -153,7 +154,7 @@ directly on the VPS — no email involved:
 
 ```
 sudo systemctl stop founderfloor       # the server saves over the file while running
-node server/tools/set-password.mjs ak@founder-floor.com 'new-password-here'
+node server/tools/set-password.mjs ak@founderfloor.net 'new-password-here'
 sudo systemctl start founderfloor
 ```
 
@@ -162,7 +163,9 @@ of that account.
 
 ### Operator console
 
-`ADMIN_EMAILS` (comma-separated, default `ak@founder-floor.com`) names the
+`ADMIN_EMAILS` (comma-separated, default
+`ak@founderfloor.net,ak@founder-floor.com` — both while the operator
+account moves domains) names the
 accounts allowed to use `/admin` on the site: grants (membership, founding
 badge, tickets), bans/unbans (by email or profile id — bans kick live
 sessions, clear stands, and block both login and floor joins), kicks,

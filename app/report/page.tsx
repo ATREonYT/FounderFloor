@@ -10,6 +10,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { httpBase } from "@/lib/net";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export default function ReportPage() {
   const [text, setText] = useState("");
@@ -102,8 +103,8 @@ export default function ReportPage() {
           {state === "error" && (
             <p className="text-sm text-accent">
               Couldn&rsquo;t send right now — try again in a minute, or email{" "}
-              <a href="mailto:ak@founder-floor.com" className="underline">
-                ak@founder-floor.com
+              <a href={CONTACT_MAILTO} className="underline">
+                {CONTACT_EMAIL}
               </a>
               .
             </p>

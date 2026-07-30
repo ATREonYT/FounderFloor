@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — FounderFloor",
@@ -45,8 +46,8 @@ export default function PrivacyPage() {
           ), who acts as the data controller for the personal data described
           below. Contact for anything in this policy, including deletion
           requests:{" "}
-          <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
-            ak@founder-floor.com
+          <a href={CONTACT_MAILTO} className="text-accent hover:underline">
+            {CONTACT_EMAIL}
           </a>
           .
         </p>
@@ -185,8 +186,8 @@ export default function PrivacyPage() {
           You can ask for access to the data we hold about you, correction of
           anything wrong, deletion of everything, a portable copy, or
           restriction of processing — by emailing{" "}
-          <a href="mailto:ak@founder-floor.com" className="text-accent hover:underline">
-            ak@founder-floor.com
+          <a href={CONTACT_MAILTO} className="text-accent hover:underline">
+            {CONTACT_EMAIL}
           </a>{" "}
           or using the in-app feedback box. Deletion requests are honored in
           full. If you are in the EU/EEA or UK, you also have the right to

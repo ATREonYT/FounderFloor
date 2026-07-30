@@ -196,8 +196,13 @@ const tokens = new Map();
  * session token whose account email is on this list — so admin rights ride
  * on ordinary sign-in, no second credential to leak. Comma-separated env.
  */
+// Both the new address and the old one during the founder-floor.com ->
+// founderfloor.net move: admin rights ride on the ACCOUNT's email, so
+// dropping the old one before the account is renamed would lock the
+// operator out of /admin. Remove the old address once the account has
+// been switched over (Profile -> Account -> change email).
 const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS || "ak@founder-floor.com")
+  (process.env.ADMIN_EMAILS || "ak@founderfloor.net,ak@founder-floor.com")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
