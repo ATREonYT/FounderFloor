@@ -35,6 +35,7 @@ import EmoteBar from "@/components/EmoteBar";
 import HoverCard from "@/components/HoverCard";
 import TutorialCoach from "@/components/TutorialCoach";
 import GraduationCeremony from "@/components/GraduationCeremony";
+import QuietFloorCard from "@/components/QuietFloorCard";
 import QuestPanel from "@/components/QuestPanel";
 import MemberBadge from "@/components/MemberBadge";
 import TicketIcon from "@/components/TicketIcon";
@@ -165,6 +166,13 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   /** Incremented on each quest completion — triggers the confetti burst. */
   const [burst, setBurst] = useState(0);
   const [gradPanel, setGradPanel] = useState(false);
+  /**
+   * "Nobody else is here" nudge. Held back for a few seconds so it never
+   * flashes during the walk-in (presence starts at 1 before the server
+   * answers), and dismissible for the session.
+   */
+  const [quietShown, setQuietShown] = useState(false);
+  const [quietDismissed, setQuietDismissed] = useState(false);
 
   // ---- refs (stable across the game's lifetime) ----
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -679,6 +687,21 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       }
     }
   }, [ready, state.onboarding, state.tutorialDone, actions, showToast, floor?.id]);
+
+  // The empty-room moment: once the tour is done and the server has had a
+  // few seconds to report the room, a visitor standing alone gets told so —
+  // with the three things still worth doing — instead of being left to
+  // conclude the whole place is dead. Someone walking in resets the timer.
+  useEffect(() => {
+    if (!ready || quietDismissed || !state.tutorialDone) return;
+    if (floor?.id === PRACTICE_FLOOR_ID) return; // the tutorial is meant to be quiet
+    if (!presence.online || presence.count > 1) {
+      setQuietShown(false);
+      return;
+    }
+    const t = window.setTimeout(() => setQuietShown(true), 6000);
+    return () => window.clearTimeout(t);
+  }, [ready, quietDismissed, state.tutorialDone, floor?.id, presence.online, presence.count]);
 
   // Quest deed: floors visited.
   useEffect(() => {
@@ -1412,6 +1435,18 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
+      {/* alone in the hall — the one screen that decides whether a first
+          visit becomes a second one */}
+      {quietShown && !quietDismissed && floor && (
+        <div className="pointer-events-none absolute bottom-44 left-1/2 flex -translate-x-1/2 justify-center sm:bottom-20 sm:left-3 sm:translate-x-0 sm:justify-start">
+          <QuietFloorCard
+            floorName={floor.name}
+            hasStand={Object.keys(state.claims).length > 0}
+            onClose={() => setQuietDismissed(true)}
+          />
+        </div>
+      )}
+
       {/* tutorial coach — one instruction at a time, above the bottom HUD */}
       {!state.tutorialDone && (
         <div className="pointer-events-none absolute bottom-44 left-1/2 flex -translate-x-1/2 justify-center sm:bottom-20">
@@ -1423,8 +1458,12 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* bottom HUD: chat (left), emotes (center), help (right) */}
-      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-center gap-2 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+      {/* bottom HUD: chat (left), emotes (center), help (right).
+          w-full + items-stretch on phones: the reaction row plus the map
+          toggle is wider than a 390px screen, and a centred row that wide
+          hangs off BOTH edges — stretching it to the container instead lets
+          the bar scroll inside its own width. */}
+      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-stretch gap-2 sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-end">
         <div className="order-3 flex w-full justify-start sm:order-none sm:w-auto">
           <ChatPanel
             tab={tab}
@@ -1443,7 +1482,10 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             ticker={activity.length ? activity[activity.length - 1].text : undefined}
           />
         </div>
-        <div className="order-2 flex items-stretch gap-2 sm:order-none">
+        {/* min-w-0 + the bar's own horizontal scroll: eight 44px reaction
+            buttons plus the map toggle are wider than a 390px phone, and
+            without this the row was silently clipped at the left edge */}
+        <div className="order-2 flex min-w-0 items-stretch gap-2 sm:order-none">
           <EmoteBar onEmote={handleEmote} unlocked={emotes} />
           {coarse && (
             <button

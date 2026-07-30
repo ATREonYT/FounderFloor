@@ -9,8 +9,15 @@ import AvatarPicker from "@/components/AvatarPicker";
 import TierTag, { TIER_LABEL } from "@/components/TierTag";
 import EventPill from "@/components/EventPill";
 import LobbyPulse from "@/components/LobbyPulse";
+import DemoNightCard from "@/components/DemoNightCard";
 import { usePresence } from "@/components/usePresence";
 
+/**
+ * First visit: a name is offered, never demanded. Making a stranger fill in
+ * a form before they have seen anything is where most of them leave — so
+ * the button works empty ("Just show me around"), walks them in as a
+ * Visitor, and the name gets asked for later, when it actually matters.
+ */
 function FirstVisitPanel({
   onDone,
 }: {
@@ -22,22 +29,21 @@ function FirstVisitPanel({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim().slice(0, 24);
-    if (!trimmed) return;
-    onDone(trimmed, look);
+    onDone(trimmed || `Visitor ${1 + Math.floor(Math.random() * 8999)}`, look);
   };
 
   return (
     <div className="mx-auto max-w-xl py-14">
-      <h1 className="font-display text-3xl">Before you walk in</h1>
+      <h1 className="font-display text-3xl">Come on in.</h1>
       <p className="mt-3 text-sm leading-relaxed text-muted">
-        Pick a name and a face. Both are stored on this device and nowhere
-        else, which is either a feature or a warning depending on your browser
-        habits.
+        Nothing to sign up for. Put a name on your badge if you want one — or
+        walk in as a visitor and sort it out later. Either way it&rsquo;s
+        stored on this device, not on a server.
       </p>
       <form onSubmit={submit} className="panel mt-8 flex flex-col gap-6 p-6">
         <div>
           <label htmlFor="lobby-name" className="micro mb-1.5 block text-muted">
-            Your name
+            Your name <span className="normal-case text-muted/60">(optional)</span>
           </label>
           <input
             id="lobby-name"
@@ -47,20 +53,26 @@ function FirstVisitPanel({
             onChange={(e) => setName(e.target.value)}
             placeholder="Ada Byron"
             autoComplete="name"
-            className="w-full rounded-md border border-line px-3 py-2 text-sm placeholder:text-muted/70"
+            className="min-h-[44px] w-full rounded-md border border-line px-3 py-2 text-sm placeholder:text-muted/70"
           />
         </div>
         <div>
           <span className="micro mb-2 block text-muted">Your look</span>
           <AvatarPicker look={look} onChange={setLook} />
         </div>
-        <button
-          type="submit"
-          disabled={!name.trim()}
-          className="self-start rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-strong/90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Enter the lobby
-        </button>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <button
+            type="submit"
+            className="btn-press min-h-[44px] rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+          >
+            {name.trim() ? "Enter the lobby →" : "Just show me around →"}
+          </button>
+          {!name.trim() && (
+            <span className="text-xs text-muted">
+              You&rsquo;ll walk in as a visitor — change it any time.
+            </span>
+          )}
+        </div>
       </form>
     </div>
   );
@@ -178,6 +190,10 @@ export default function LobbyPage() {
         </p>
       )}
 
+      {/* The weekly moment that makes a quiet building worth returning to —
+          a door while it's live, an email box the rest of the week. */}
+      <DemoNightCard />
+
       {/* 2x2 on all sizes >= sm: four floors read as a balanced square, not
           a row of three plus an orphan */}
       <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2">
@@ -201,15 +217,26 @@ export default function LobbyPage() {
               <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">
                 {floor.tagline}
               </p>
+              {/* Say how busy it is either way. Hiding a zero doesn't make a
+                  floor feel full — it just makes the walk in a surprise, and
+                  "quiet right now" sets an honest expectation instead. */}
               <p className="micro mt-4 flex items-center gap-3 text-muted">
                 <span>{floor.boothSpots.length} booths</span>
-                {(presence[floor.id] ?? 0) > 0 && (
+                {(presence[floor.id] ?? 0) > 0 ? (
                   <span className="flex items-center gap-1.5 text-verify">
                     <span
                       aria-hidden="true"
                       className="inline-block h-2 w-2 rounded-full bg-verify"
                     />
                     {presence[floor.id]} here now
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-muted/70">
+                    <span
+                      aria-hidden="true"
+                      className="inline-block h-2 w-2 rounded-full bg-muted/40"
+                    />
+                    quiet right now
                   </span>
                 )}
               </p>

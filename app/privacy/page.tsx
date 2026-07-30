@@ -75,6 +75,16 @@ export default function PrivacyPage() {
           not stored.
         </p>
         <p>
+          <strong>The keep-in-touch list</strong> (only if you type your email
+          into one of the &ldquo;keep me posted&rdquo; or &ldquo;remind me
+          before Demo Night&rdquo; boxes): your email address, which of the two
+          you asked for, and the date. Used for nothing except the occasional
+          note it promises — no newsletter, no sharing, no profiling. Legal
+          basis: your consent, which you can withdraw at any time by replying
+          &ldquo;unsubscribe&rdquo; to any of them or emailing the address
+          below; the entry is then deleted.
+        </p>
+        <p>
           <strong>Feedback, abuse reports, and moderation records:</strong>{" "}
           reports are stored on the server and forwarded to the
           operator&rsquo;s inbox so they can be acted on. Messages are
@@ -161,8 +171,9 @@ export default function PrivacyPage() {
           Feedback, content reports, and cancellation requests are kept as a
           rolling log (oldest entries drop off) for as long as they may be
           needed to handle the matter. Suspension records are kept while the
-          suspension stands. Records of purchases are kept as long as tax
-          and commercial law require. The server keeps 3 daily rotating
+          suspension stands. Keep-in-touch entries are kept until you ask to
+          come off the list, and deleted when you do. Records of purchases
+          are kept as long as tax and commercial law require. The server keeps 3 daily rotating
           backups of its data file, so deleted data leaves the backups within
           3 days. Account data is kept for as long as the account exists and
           deleted with it.

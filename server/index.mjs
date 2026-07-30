@@ -163,6 +163,17 @@ let feedback = [];
 const MAX_FEEDBACK = 500;
 
 /**
+ * subscribers: emailLower -> { email, source, ts, demoNight }
+ *
+ * The people who liked the place but weren't ready to set up a stand — the
+ * only way to reach them again. `source` records where they signed up
+ * ("landing", "demo-night", "floor") and `demoNight` marks an RSVP, so the
+ * operator can mail just the people who asked to be reminded.
+ */
+const subscribers = new Map();
+const MAX_SUBSCRIBERS = 20000;
+
+/**
  * accounts: nameLower -> { id: "acct_<uuid>", name, email, salt, hash, kdf,
  * devices, created } (scrypt). Email is the login identifier for new accounts
  * (legacy accounts may have email "" and still sign in by name — the profile
@@ -715,6 +726,56 @@ function sendPurchaseEmail(email, plan, held) {
   );
 }
 
+/**
+ * The next Demo Night window, in words, for the RSVP confirmation. Mirrors
+ * lib/data/events.ts: Thursday 19:00-20:00 UTC, weekly. 1970-01-01 was a
+ * Thursday, so every start is a fixed offset into the epoch week.
+ */
+function nextEventInfo(nowMs = Date.now()) {
+  const HOUR = 3_600_000;
+  const WEEK = 7 * 86_400_000;
+  const FIRST_START = 19 * HOUR;
+  const sinceStart = (((nowMs - FIRST_START) % WEEK) + WEEK) % WEEK;
+  const live = sinceStart < HOUR;
+  const startMs = nowMs - sinceStart + (live ? 0 : WEEK);
+  return new Date(startMs).toUTCString().replace(" GMT", " UTC");
+}
+
+/**
+ * Confirmation for someone who left their email — either to hear when the
+ * floor gets busy, or to be reminded before the next Demo Night. Every one
+ * carries a one-line way out, because a list you can't leave is a list
+ * nobody should be on.
+ */
+function sendSubscribeEmail(email, demoNight, eventWhen) {
+  if (!email) return;
+  const when = eventWhen ? esc(eventWhen) : "";
+  sendEmail(
+    email,
+    demoNight ? "You're on the list for Demo Night" : "You're on the FounderFloor list",
+    emailShell(
+      demoNight ? "See you at Demo Night" : "You're on the list",
+      (demoNight
+        ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">We'll send you one short ` +
+          `reminder before the next Demo Night${when ? ` (${when})` : ""} — the one hour a week the ` +
+          `floors are busy on purpose. Bring a stand or just walk around and listen.</p>`
+        : `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Thanks for leaving your ` +
+          `address. You'll hear from us when there's something worth walking in for — a busy ` +
+          `Demo Night, a new floor — and not otherwise.</p>`) +
+        `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">You don't need an account to ` +
+        `look around. The doors are open right now:</p>` +
+        emailBtn(SITE_URL + "/lobby", "Walk the floor") +
+        `<p style="margin:0;font-size:13px;color:#6F6A5E;line-height:1.6">Want off the list? ` +
+        `Reply with "unsubscribe" and you're off — no forms.</p>`,
+    ),
+    (demoNight
+      ? `You're on the list for the next FounderFloor Demo Night${eventWhen ? ` (${eventWhen})` : ""}. We'll send one short reminder before it starts.`
+      : `You're on the FounderFloor list. You'll hear from us when there's something worth walking in for, and not otherwise.`) +
+      `\n\nWalk the floor any time: ${SITE_URL}/lobby\n\nWant off the list? Reply with "unsubscribe".`,
+    "courtesy",
+  );
+}
+
 /** "alex@example.com" -> "a•••@example.com" — logs identify without leaking. */
 function maskEmail(e) {
   const s = String(e ?? "");
@@ -1155,6 +1216,21 @@ function loadData() {
       .slice(-MAX_FEEDBACK);
   }
 
+  if (parsed.subscribers && typeof parsed.subscribers === "object") {
+    for (const [key, s] of Object.entries(parsed.subscribers)) {
+      if (subscribers.size >= MAX_SUBSCRIBERS) break;
+      if (!s || typeof s !== "object" || typeof s.ts !== "number") continue;
+      const email = normalizeEmail(s.email ?? key);
+      if (!email) continue;
+      subscribers.set(email, {
+        email,
+        source: typeof s.source === "string" ? s.source.slice(0, 24) : "landing",
+        ts: s.ts,
+        demoNight: s.demoNight === true,
+      });
+    }
+  }
+
   if (parsed.activity && typeof parsed.activity === "object") {
     for (const [floorId, items] of Object.entries(parsed.activity)) {
       if (!Array.isArray(items)) continue;
@@ -1195,6 +1271,7 @@ function saveNow() {
     ),
     reports,
     feedback,
+    subscribers: Object.fromEntries(subscribers),
     social: Object.fromEntries(social),
     dms: Object.fromEntries(dms),
     accounts: Object.fromEntries(accounts),
@@ -2223,6 +2300,25 @@ async function handleAdminPost(req, res, pathname) {
         banned: [...banned].map(([key, v]) => ({ key, ...v })),
         emailLive: !!RESEND_API_KEY && !EMAIL_ECHO,
         uptimeSec: Math.round(process.uptime()),
+        subscribers: subscribers.size,
+        demoNightRsvps: [...subscribers.values()].filter((s) => s.demoNight).length,
+      });
+      return;
+    }
+
+    // The mailing list, newest first — so the operator can actually send the
+    // Demo Night reminder the RSVP promised. `demoNightOnly` narrows it to
+    // the people who asked for exactly that.
+    if (pathname === "/admin/subscribers") {
+      const onlyRsvp = body.demoNightOnly === true;
+      const list = [...subscribers.values()]
+        .filter((s) => !onlyRsvp || s.demoNight)
+        .sort((a, b) => b.ts - a.ts);
+      sendJson(res, {
+        total: subscribers.size,
+        returned: list.length,
+        emails: list.map((s) => s.email).join(", "),
+        subscribers: list,
       });
       return;
     }
@@ -2663,6 +2759,63 @@ const server = createServer((req, res) => {
   // WITHOUT a login (a rights-holder or authority is usually not a user;
   // §312k BGB requires cancellation without hurdles), are rate-limited,
   // stored, and forwarded to the operator immediately.
+  // Keep-in-touch list: the only way to reach a visitor who liked the place
+  // but wasn't ready to build a stand today. No login, rate-limited,
+  // idempotent (signing up twice just refreshes the entry, and an RSVP
+  // upgrades an existing plain subscription rather than duplicating it).
+  if (req.method === "POST" && url.pathname === "/subscribe") {
+    void (async () => {
+      if (authRateLimited(req)) {
+        sendJson(res, { error: "slow down — try again in a minute" });
+        return;
+      }
+      const body = await readJson(req);
+      const email = body ? normalizeEmail(body.email) : "";
+      // normalizeEmail lowercases and length-caps; require a plausible address
+      if (!email || !email.includes("@") || !/^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email)) {
+        sendJson(res, { error: "that doesn't look like an email address" });
+        return;
+      }
+      const demoNight = body?.demoNight === true;
+      const source = typeof body?.source === "string" ? body.source.slice(0, 24) : "landing";
+      const existing = subscribers.get(email);
+      if (!existing && subscribers.size >= MAX_SUBSCRIBERS) {
+        sendJson(res, { error: "the list is full right now — email the operator instead" });
+        return;
+      }
+      // Only mail on a genuinely new signup or a new RSVP, so a double-tap
+      // on the button can't send someone two identical letters.
+      const isNew = !existing;
+      const newRsvp = demoNight && !existing?.demoNight;
+      subscribers.set(email, {
+        email,
+        source: existing?.source ?? source,
+        ts: existing?.ts ?? Date.now(),
+        demoNight: demoNight || existing?.demoNight === true,
+      });
+      scheduleSave();
+      if (isNew || newRsvp) {
+        const ev = nextEventInfo();
+        sendSubscribeEmail(email, demoNight, ev);
+        sendOperatorEmail(
+          demoNight ? "Demo Night RSVP" : "New subscriber",
+          demoNight ? "Someone RSVP'd for Demo Night" : "Someone joined the list",
+          [
+            ["Email", email],
+            ["Source", source],
+            ["Total on list", String(subscribers.size)],
+          ],
+          "They asked to hear from you — the list lives in floor-data.json under \"subscribers\".",
+        );
+      }
+      console.log(
+        `[subscribe] ${maskEmail(email)} source=${source} rsvp=${demoNight} total=${subscribers.size}`,
+      );
+      sendJson(res, { ok: true, already: !isNew && !newRsvp, demoNight });
+    })();
+    return;
+  }
+
   if (req.method === "POST" && (url.pathname === "/report-content" || url.pathname === "/cancel-contract")) {
     void (async () => {
       if (authRateLimited(req)) {

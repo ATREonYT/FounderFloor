@@ -1,0 +1,95 @@
+"use client";
+
+/**
+ * The lobby's answer to an empty building.
+ *
+ * A floor that is quiet most of the week only fills up if everybody agrees
+ * on WHEN — so Demo Night is given real estate, not just a countdown pill.
+ * While it's live the card is a door. While it isn't, it collects an email
+ * so the visitor can be pulled back for the one hour that will be busy.
+ */
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { nextEvent, fmtCountdown, type EventInfo } from "@/lib/data/events";
+import { floorById } from "@/lib/data/floors";
+import EmailCapture from "@/components/EmailCapture";
+
+export default function DemoNightCard() {
+  const [view, setView] = useState<{ ev: EventInfo; label: string; when: string } | null>(null);
+
+  useEffect(() => {
+    const tick = () => {
+      const now = Date.now();
+      const ev = nextEvent(now);
+      setView({
+        ev,
+        label: ev.live ? "live now" : fmtCountdown(ev.startMs - now),
+        // the visitor's own timezone — a UTC time in a reminder is a time
+        // half of them will get wrong
+        when: new Date(ev.startMs).toLocaleString(undefined, {
+          weekday: "long",
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      });
+    };
+    tick();
+    const t = setInterval(tick, 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!view) return null;
+  const floorName = floorById(view.ev.floorId)?.name ?? "the Main Hall";
+
+  if (view.ev.live) {
+    return (
+      <section
+        aria-label="Demo Night is live"
+        className="panel mt-6 flex flex-wrap items-center justify-between gap-4 border-accent bg-accent-soft/40 p-5"
+      >
+        <div>
+          <p className="micro flex items-center gap-2 text-accent">
+            <span aria-hidden="true" className="pulse-dot inline-block h-2 w-2 rounded-full bg-accent" />
+            DEMO NIGHT · LIVE NOW
+          </p>
+          <h2 className="mt-1 font-display text-lg">
+            Everyone&rsquo;s at {floorName} right now.
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            This is the hour the floor is busy on purpose. Walk in — being in
+            the room earns you a badge.
+          </p>
+        </div>
+        <Link
+          href={`/floor/${view.ev.floorId}`}
+          className="btn-press min-h-[44px] rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+        >
+          Go to {floorName} →
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-label="Demo Night"
+      className="panel mt-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <div className="sm:max-w-sm">
+        <p className="micro text-muted">NEXT DEMO NIGHT · {view.label}</p>
+        <h2 className="mt-1 font-display text-lg">
+          The floors fill up on {view.when.split(" ")[0]}s.
+        </h2>
+        <p className="mt-1 text-sm leading-relaxed text-muted">
+          One hour a week, everyone shows up at {floorName} at the same time —
+          it&rsquo;s the difference between a quiet hall and a room full of
+          founders. Next one starts {view.when}.
+        </p>
+      </div>
+      <div className="sm:w-[19rem] sm:shrink-0">
+        <EmailCapture variant="rsvp" source="demo-night" />
+      </div>
+    </section>
+  );
+}

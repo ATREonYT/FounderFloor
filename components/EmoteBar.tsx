@@ -52,7 +52,7 @@ export default function EmoteBar({
     <div
       role="toolbar"
       aria-label="Reactions"
-      className="glass pointer-events-auto flex gap-0.5 p-1 shadow-float"
+      className="glass no-scrollbar pointer-events-auto flex max-w-full gap-0.5 overflow-x-auto p-1 shadow-float"
     >
       {EMOTES.map((em) => {
         const open = unlocked.includes(em.kind);
@@ -65,7 +65,7 @@ export default function EmoteBar({
               disabled
               aria-label={`${em.label} — locked`}
               title={quest ? `Locked — finish "${quest.title}" (${quest.blurb})` : "Locked"}
-              className="flex h-10 w-10 cursor-help flex-col items-center justify-center rounded-sm opacity-40"
+              className="flex h-11 w-11 shrink-0 cursor-help flex-col items-center justify-center rounded-sm opacity-40"
             >
               <PixelEmote kind={em.kind} dim />
               <span aria-hidden="true" className="micro mt-0.5 leading-none text-muted">
@@ -81,7 +81,7 @@ export default function EmoteBar({
             onClick={() => onEmote(em.kind)}
             aria-label={`${em.label} (key ${em.key})`}
             title={`${em.label} — ${em.key}`}
-            className="flex h-10 w-10 flex-col items-center justify-center rounded-sm hover:bg-paper active:bg-accent-soft"
+            className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-sm hover:bg-paper active:bg-accent-soft"
           >
             <PixelEmote kind={em.kind} />
             <span aria-hidden="true" className="micro mt-0.5 leading-none text-muted">

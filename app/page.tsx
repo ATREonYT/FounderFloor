@@ -9,6 +9,7 @@ import HeroScene from "@/components/HeroScene";
 import LiveStats from "@/components/LiveStats";
 import Reveal from "@/components/Reveal";
 import FloorThumb from "@/components/FloorThumb";
+import EmailCapture from "@/components/EmailCapture";
 
 const TICKER_ITEMS = [
   "WALK IN",
@@ -623,6 +624,20 @@ export default function LandingPage() {
           >
             Walk the floor →
           </Link>
+
+          {/* Not everyone is ready today. Without this the visit ends here
+              and there is no second one — the list is the only way back. */}
+          <div className="mx-auto mt-12 max-w-md border-t border-paper/15 pt-8 text-left">
+            <p className="micro text-gold">OR COME BACK WHEN IT&rsquo;S BUSY</p>
+            <p className="mt-2 text-sm leading-relaxed text-paper/70">
+              The floors fill up on Thursdays. Leave an address and we&rsquo;ll
+              tell you when it&rsquo;s worth walking in — no newsletter, no
+              drip campaign.
+            </p>
+            <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/40 [&_p]:text-paper/50">
+              <EmailCapture variant="list" source="landing" />
+            </div>
+          </div>
         </div>
       </section>
     </main>
