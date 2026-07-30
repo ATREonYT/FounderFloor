@@ -109,21 +109,26 @@ export default function LandingPage() {
           phrase gets a sweeping accent underline, and the scene floats
           gently inside a framed panel */}
       <section className="border-b border-line">
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-12">
+        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12">
           <div className="stagger-children">
             <p className="micro flex items-center gap-2 text-muted">
               <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-accent" />
               A walkable expo for startups
             </p>
-            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-[3.4rem] sm:leading-[1.08]">
+            {/* the key phrase is glued with NBSPs and the headline is
+                balance-wrapped, so it breaks as two even lines ("A trade-show
+                floor / that never tears down.") instead of stranding a stumpy
+                "that never" in the middle; the lg size is picked so the
+                second line fits the copy column in one piece */}
+            <h1 className="mt-4 text-balance font-display text-4xl leading-tight sm:text-[3.4rem] sm:leading-[1.08] lg:text-[3.05rem]">
               A trade-show floor that{" "}
-              <span className="sweep-underline">never tears{"\u00A0"}down</span>.
+              <span className="sweep-underline">never{"\u00A0"}tears{"\u00A0"}down</span>.
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-muted">
+            <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted">
               FounderFloor is a small 2D world where startups keep a stand and
               real founders stand at it. You walk around, you read the signs,
               you talk to people. Ranks reflect self-reported revenue in this
-              beta (live verification is the roadmap) — the gold badge tells
+              beta — verification is on the roadmap — and the gold badge tells
               you who claims to have earned it the boring way.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
