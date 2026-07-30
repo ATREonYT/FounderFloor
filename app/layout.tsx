@@ -10,10 +10,46 @@ import NavAdmin from "@/components/NavAdmin";
 import MembershipWatcher from "@/components/MembershipWatcher";
 import Messenger from "@/components/Messenger";
 
+/**
+ * Site URL for absolute metadata URLs. Vercel sets VERCEL_URL on preview
+ * deploys; NEXT_PUBLIC_SITE_URL wins when set, so a custom domain stays
+ * canonical. Without a metadataBase, Next can't build absolute og:image
+ * URLs and social previews silently fall back to a bare link.
+ */
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://founderfloor.net");
+
+const TITLE = "FounderFloor — a walkable expo for startups";
+const DESCRIPTION =
+  "A 2D trade-show floor that never tears down. Walk in, talk to real founders, claim a stand, connect. Free, nothing to install.";
+
 export const metadata: Metadata = {
-  title: "FounderFloor — a walkable expo for startups",
-  description:
-    "A 2D trade-show floor that never tears down. Walk in, talk to founders, connect. Ranks reflect self-reported revenue in this beta.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s — FounderFloor" },
+  description: DESCRIPTION,
+  applicationName: "FounderFloor",
+  keywords: [
+    "startups", "founders", "co-founder", "virtual expo", "trade show",
+    "startup directory", "networking", "indie hackers",
+  ],
+  alternates: { canonical: "/" },
+  // app/opengraph-image.png and app/twitter-image.png are picked up
+  // automatically by the app router and turned into absolute URLs.
+  openGraph: {
+    type: "website",
+    siteName: "FounderFloor",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
