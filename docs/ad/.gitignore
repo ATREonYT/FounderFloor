@@ -1,0 +1,8 @@
+# Shoot and build working files — regenerate with shoot.mjs / build.mjs.
+raw/
+cut/
+qc/
+out/
+beats.json
+squareframe.png
+node_modules/

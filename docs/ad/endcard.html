@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FounderFloor</title>
+<style>
+  :root{
+    --paper:#F2EFE7; --ink:#23201A; --muted:#6F6A5E; --line:#E4DFD3;
+    --accent:#D9480F; --gold:#B08D2E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1920px;height:1080px;overflow:hidden}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    position:relative;
+  }
+  /* the site's ticker strip, top and bottom */
+  .ticker{
+    position:absolute; left:0; right:0; height:52px; display:flex; align-items:center;
+    justify-content:center; gap:34px; background:rgba(255,255,255,.55);
+    border-block:1px solid var(--line);
+    font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted);
+    white-space:nowrap; overflow:hidden;
+  }
+  .ticker.t{top:0} .ticker.b{bottom:0}
+  .ticker i{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.7}
+
+  .stack{display:flex;flex-direction:column;align-items:center;text-align:center}
+
+  .mark{display:flex;align-items:center;gap:20px}
+  .mark svg{width:76px;height:76px;image-rendering:pixelated}
+  .word{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+        font-size:60px;letter-spacing:-.015em}
+
+  .rule{width:0;height:1px;background:var(--line);margin:42px 0 40px}
+
+  h1{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+     font-size:104px;line-height:1.02;letter-spacing:-.025em;font-weight:400}
+  h1 em{font-style:normal;position:relative;white-space:nowrap}
+  h1 em::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:6px;
+               background:var(--accent);opacity:.85;border-radius:3px}
+
+  .url{margin-top:44px;font-size:46px;letter-spacing:.01em;color:var(--accent);font-weight:500}
+  .sub{margin-top:20px;font-size:22px;color:var(--muted);letter-spacing:.02em}
+
+  /* every animated element gets its own wrapper so nothing shares a transform */
+  .rise{opacity:0;transform:translateY(18px);
+        animation:rise .74s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:translateY(0)}}
+  .grow{animation:grow .8s cubic-bezier(.2,.7,.2,1) .55s forwards}
+  @keyframes grow{to{width:340px}}
+  .d1{animation-delay:.10s} .d2{animation-delay:.42s}
+  .d3{animation-delay:.92s} .d4{animation-delay:1.18s}
+  .fadein{opacity:0;animation:fadein .9s ease .05s forwards}
+  @keyframes fadein{to{opacity:1}}
+</style>
+</head>
+<body>
+  <div class="ticker t fadein">
+    <span>TALK TO FOUNDERS</span><i></i><span>CLAIM A STAND</span><i></i>
+    <span>SIGN GUESTBOOKS</span><i></i><span>EARN BADGES</span><i></i>
+    <span>FIND A CO-FOUNDER</span><i></i><span>NO CALENDAR INVITE</span>
+  </div>
+
+  <div class="stack">
+    <div class="rise d1">
+      <div class="mark">
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+          <rect x="1" y="1" width="14" height="1" fill="#23201A"/>
+          <rect x="1" y="2" width="14" height="3" fill="#D9480F"/>
+          <rect x="3" y="2" width="2" height="3" fill="#F2EFE7"/>
+          <rect x="7" y="2" width="2" height="3" fill="#F2EFE7"/>
+          <rect x="11" y="2" width="2" height="3" fill="#F2EFE7"/>
+          <rect x="2" y="5" width="2" height="1" fill="#D9480F"/>
+          <rect x="6" y="5" width="2" height="1" fill="#D9480F"/>
+          <rect x="10" y="5" width="2" height="1" fill="#D9480F"/>
+          <rect x="1" y="5" width="1" height="9" fill="#23201A"/>
+          <rect x="14" y="5" width="1" height="9" fill="#23201A"/>
+          <rect x="3" y="9" width="10" height="5" fill="#23201A"/>
+          <rect x="4" y="10" width="8" height="3" fill="#F2EFE7"/>
+          <rect x="5" y="11" width="3" height="1" fill="#B08D2E"/>
+          <rect x="9" y="11" width="2" height="1" fill="#B08D2E"/>
+        </svg>
+        <span class="word">FounderFloor</span>
+      </div>
+    </div>
+
+    <div class="rule grow"></div>
+
+    <div class="rise d2"><h1>Claim your <em>stand</em>.</h1></div>
+    <div class="rise d3"><div class="url">founderfloor.net</div></div>
+    <div class="rise d4"><div class="sub">Free &middot; runs in your browser &middot; nothing to install</div></div>
+  </div>
+
+  <div class="ticker b fadein">
+    <span>MAIN HALL IS OPEN</span><i></i><span>DEMO NIGHT EVERY THURSDAY</span><i></i>
+    <span>A STAND STAYS UP WHILE YOU SLEEP</span>
+  </div>
+</body>
+</html>
