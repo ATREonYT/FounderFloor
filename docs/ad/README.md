@@ -16,7 +16,7 @@ There are three cuts, from the same footage:
   blur, and a synthesised sound-design bed. Built from *clean plates* —
   the same shoot run with `FF_NOCAPS=1` so cut 2 can lay down its own
   typography.
-- **Cut 3** (`v3/`) — 39s, and the one to use. Everything cut 2 does, plus
+- **Cut 3** (`v3/`) — 31s, and the one to use. Everything cut 2 does, plus
   the two things it got wrong.
 
 **What cut 3 fixes.** Cut 2 juddered, and the cause was arithmetic: the
@@ -43,9 +43,15 @@ for brand moments with a heavy sans for the feature beats.
 to a control and presses it, with a ripple and a click in the mix — and each
 one is timed to a click that genuinely happens in the footage, so the effect
 on screen follows the press. The times come from the waits in `shoot.mjs`:
-the Send button at 14.90s, a carpet swatch at 21.70s (the preview redraws),
-and *Claim this stand* at 24.20s (the stand goes up). The chat line is still
+the Send button at 11.90s, a carpet swatch at 17.36s (the preview redraws),
+and *Claim this stand* at 19.67s (the stand goes up). The chat line is still
 being typed as its shot opens, so those keystrokes get taps too.
+
+**Pace.** Shots run 2.45–3.0s, not the 3.2s of the first attempt, and the
+sub-lines were cut down to still read at that tempo. Thirty-one seconds is
+about where this category sits; the earlier 39 dragged. `timing.json` is
+regenerated from the scene on every change, and `audio.mjs` reads it, so
+retiming the picture retimes the sound with no manual bookkeeping.
 
 **No noise anywhere in the sound.** The first pass built its transitions out
 of filtered white noise, which is precisely what "electric static" sounds
@@ -141,7 +147,7 @@ cd v3
 node extract.mjs          # plates -> PNG sequences (~1.1 GB, once)
 node timing.mjs && node audio.mjs
 node stills.mjs 0.7 4.6 11.4 22.7   # check a change in seconds, not an hour
-node render.mjs           # 1080p50 master, ~60 min
+node render.mjs           # 1080p50 master, ~45 min
 node build3.mjs           # 16:9, 1:1, 9:16, webm, poster
 ```
 

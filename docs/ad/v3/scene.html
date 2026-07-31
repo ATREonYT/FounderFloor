@@ -199,70 +199,70 @@ const PLATES = window.PLATES || {};
 // mood: which background this shot plays against. Alternating bright and
 // dark is most of the perceived energy.
 const SHOTS = [
-  { key: "walk",      at:  0.00, len: 2.62, srcIn: 0.30, layout: "defocus", mood: "paper", trans: "none" },
-  { key: "walk",      at:  2.80, len: 3.68, srcIn: 2.55, layout: "hero",  mood: "ember", trans: "mask",
+  { key: "walk",      at:  0.00, len: 2.10, srcIn: 0.30, layout: "defocus", mood: "paper", trans: "none" },
+  { key: "walk",      at:  2.24, len: 3.00, srcIn: 2.55, layout: "hero",  mood: "ember", trans: "mask",
     url: "/floor/main-hall", cam: [1.10, 1.00] },
-  { key: "walk",      at:  6.86, len: 3.16, srcIn: 5.00, layout: "right", mood: "paper", trans: "zoom",
-    crop: { sx: 180, sy: 90, sw: 1560 }, url: "/floor/main-hall", cam: [1.00, 1.06] },
-  { key: "stand",     at:  9.90, len: 3.26, srcIn: 0.60, layout: "left",  mood: "ember", trans: "push",
-    crop: { sx: 700, sy: 30, sw: 1220 }, url: "/floor/main-hall", cam: [1.06, 1.00],
-    ann: { x: 69.5, y: 3.5, w: 29.5, h: 81, label: "their pitch", at: 1.05 } },
-  { key: "chat",      at: 13.56, len: 3.26, srcIn: 1.00, layout: "right", mood: "paper", trans: "zoom",
-    crop: { sx: 0, sy: 430, sw: 1180 }, url: "/floor/main-hall", cam: [0.99, 1.05],
-    ann: { x: 0.6, y: 53, w: 29, h: 44, label: "floor chat", at: 1.25 },
-    cursor: { from: [62, 38], to: [24.7, 91.9], t0: 0.55, t1: 1.26, click: 1.34 } },
-  { key: "directory", at: 16.76, len: 2.96, srcIn: 0.70, layout: "left",  mood: "ember", trans: "zoom",
-    crop: { sx: 520, sy: 95, sw: 900 }, url: "/directory", cam: [1.05, 1.00],
-    ann: { x: 75.5, y: 72, w: 15, h: 8.5, label: "walk there", at: 1.0 } },
-  { key: "designer",  at: 19.60, len: 2.96, srcIn: 0.60, layout: "right", mood: "paper", trans: "push",
-    crop: { sx: 260, sy: 20, sw: 1160 }, url: "/profile", cam: [1.00, 1.05],
-    ann: { x: 70.5, y: 5, w: 26, h: 40, label: "live preview", at: 1.0 },
-    cursor: { from: [28, 58], to: [64.9, 88.7], t0: 0.60, t1: 2.02, click: 2.10 } },
-  { key: "claim",     at: 22.90, len: 4.44, srcIn: 1.30, layout: "hero",  mood: "ember", trans: "zoom",
-    url: "/floor/main-hall", cam: [1.07, 1.00],
-    ann: { x: 75.5, y: 55, w: 15, h: 28, label: "your stand", at: 2.95 },
+  { key: "walk",      at:  5.40, len: 2.55, srcIn: 5.00, layout: "right", mood: "paper", trans: "zoom",
+    crop: { sx: 180, sy: 90, sw: 1560 }, url: "/floor/main-hall", cam: [1.00, 1.07] },
+  { key: "stand",     at:  7.65, len: 2.75, srcIn: 0.60, layout: "left",  mood: "ember", trans: "push",
+    crop: { sx: 700, sy: 30, sw: 1220 }, url: "/floor/main-hall", cam: [1.07, 1.00],
+    ann: { x: 69.5, y: 3.5, w: 29.5, h: 81, label: "their pitch", at: 0.95 } },
+  { key: "chat",      at: 10.56, len: 2.85, srcIn: 1.00, layout: "right", mood: "paper", trans: "zoom",
+    crop: { sx: 0, sy: 430, sw: 1180 }, url: "/floor/main-hall", cam: [0.98, 1.06],
+    ann: { x: 0.6, y: 53, w: 29, h: 44, label: "floor chat", at: 1.20 },
+    cursor: { from: [62, 38], to: [24.7, 91.9], t0: 0.45, t1: 1.26, click: 1.34 } },
+  { key: "directory", at: 13.11, len: 2.45, srcIn: 0.70, layout: "left",  mood: "ember", trans: "zoom",
+    crop: { sx: 520, sy: 95, sw: 900 }, url: "/directory", cam: [1.06, 1.00],
+    ann: { x: 75.5, y: 72, w: 15, h: 8.5, label: "walk there", at: 0.90 } },
+  { key: "designer",  at: 15.26, len: 2.95, srcIn: 0.60, layout: "right", mood: "paper", trans: "push",
+    crop: { sx: 260, sy: 20, sw: 1160 }, url: "/profile", cam: [1.00, 1.06],
+    ann: { x: 70.5, y: 5, w: 26, h: 40, label: "live preview", at: 0.95 },
+    cursor: { from: [28, 58], to: [64.9, 88.7], t0: 0.55, t1: 2.02, click: 2.10 } },
+  { key: "claim",     at: 18.37, len: 3.70, srcIn: 1.30, layout: "hero",  mood: "ember", trans: "zoom",
+    url: "/floor/main-hall", cam: [1.08, 1.00],
+    ann: { x: 75.5, y: 55, w: 15, h: 28, label: "your stand", at: 2.55 },
     cursor: { from: [56, 60], to: [89.6, 24.4], t0: 0.45, t1: 1.22, click: 1.30 } },
-  { key: "demonight", at: 27.28, len: 3.02, srcIn: 0.40, layout: "left",  mood: "paper", trans: "push",
-    crop: { sx: 200, sy: 330, sw: 1320 }, url: "/lobby", cam: [1.04, 1.00],
-    ann: { x: 79, y: 50, w: 18, h: 8, label: "remind me", at: 1.05 } },
+  { key: "demonight", at: 21.77, len: 2.50, srcIn: 0.40, layout: "left",  mood: "paper", trans: "push",
+    crop: { sx: 200, sy: 330, sw: 1320 }, url: "/lobby", cam: [1.05, 1.00],
+    ann: { x: 79, y: 50, w: 18, h: 8, label: "remind me", at: 0.90 } },
 ];
 
 // full-bleed colour cards, one word, as punctuation between acts
 const PUNCH = [
-  { at:  2.32, len: 0.52, word: "so we built a room", color: "var(--accent)", size: 118 },
-  { at:  6.40, len: 0.50, word: "walk in",            color: "#E8C766", ink: true, size: 190 },
-  { at: 13.08, len: 0.50, word: "talk",               color: "var(--teal)",   size: 200 },
-  { at: 22.44, len: 0.50, word: "claim it",           color: "var(--berry)",  size: 190 },
+  { at:  1.88, len: 0.48, word: "so we built a room", color: "var(--accent)", size: 118 },
+  { at:  5.06, len: 0.44, word: "walk in",            color: "#E8C766", ink: true, size: 190 },
+  { at: 10.22, len: 0.44, word: "talk",               color: "var(--teal)",   size: 200 },
+  { at: 18.03, len: 0.44, word: "claim it",           color: "var(--berry)",  size: 190 },
 ];
 
 const LAST_OUT = SHOTS[SHOTS.length - 1].at + SHOTS[SHOTS.length - 1].len;
 const CLOSE_AT = LAST_OUT - TR;
-const PAPER_AT = CLOSE_AT + 3.30;
-const TOTAL    = PAPER_AT + 5.40;
+const PAPER_AT = CLOSE_AT + 2.70;
+const TOTAL    = PAPER_AT + 4.70;
 
 const TEXT = [
-  { at: 0.12, out: 1.20, pos: "centre", face: "serif", dark: false, size: 108,
+  { at: 0.10, out: 1.04, pos: "centre", face: "serif", dark: false, size: 108,
     lines: ["Everyone is building."] },
-  { at: 1.24, out: 2.32, pos: "centre", face: "serif", dark: false, size: 108,
+  { at: 1.06, out: 1.90, pos: "centre", face: "serif", dark: false, size: 108,
     lines: ["Nobody is in the same room."] },
-  { at: 3.42, out: 6.42, pos: "centre", face: "serif", dark: true, size: 100, eb: "FounderFloor",
+  { at: 2.74, out: 5.16, pos: "centre", face: "serif", dark: true, size: 100, eb: "FounderFloor",
     lines: ["A trade-show floor", "that never tears down."], uline: 1 },
-  { at: 7.22, out: 10.00, pos: "left",  face: "sans", dark: false, size: 96, eb: "01 — the hall",
-    lines: ["Walk in."], sub: "Twelve stands. A real founder behind each one." },
-  { at: 10.32, out: 13.14, pos: "right", face: "sans", dark: true, size: 88, eb: "02 — the stand",
-    lines: ["Read", "the pitch."], sub: "What they build. What they need. Who they are." },
-  { at: 13.98, out: 16.80, pos: "left", face: "sans", dark: false, size: 88, eb: "03 — the room",
+  { at: 5.84, out: 7.90, pos: "left",  face: "sans", dark: false, size: 96, eb: "01 — the hall",
+    lines: ["Walk in."], sub: "Twelve stands. A founder behind each one." },
+  { at: 8.12, out: 10.34, pos: "right", face: "sans", dark: true, size: 88, eb: "02 — the stand",
+    lines: ["Read", "the pitch."], sub: "What they build. What they need." },
+  { at: 10.98, out: 13.35, pos: "left", face: "sans", dark: false, size: 88, eb: "03 — the room",
     lines: ["Say", "something."], sub: "That is the whole introduction." },
-  { at: 17.14, out: 19.64, pos: "right", face: "sans", dark: true, size: 88, eb: "04 — the directory",
+  { at: 13.52, out: 15.50, pos: "right", face: "sans", dark: true, size: 88, eb: "04 — the directory",
     lines: ["Find", "anyone."], sub: "Every startup on the floor, searchable." },
-  { at: 19.98, out: 22.46, pos: "left", face: "sans", dark: false, size: 88, eb: "05 — your stand",
+  { at: 15.68, out: 18.15, pos: "left", face: "sans", dark: false, size: 88, eb: "05 — your stand",
     lines: ["Make", "it yours."], sub: "Sign, colors, props — pixel for pixel." },
-  { at: 23.44, out: 25.62, pos: "left", face: "sans", dark: true, size: 100, eb: "06 — the spot",
+  { at: 18.82, out: 20.76, pos: "left", face: "sans", dark: true, size: 100, eb: "06 — the spot",
     lines: ["Claim it."] },
-  { at: 25.74, out: 27.32, pos: "left", face: "sans", dark: true, size: 60,
+  { at: 20.86, out: 22.00, pos: "left", face: "sans", dark: true, size: 60,
     lines: ["It stays up while you sleep."] },
-  { at: 27.74, out: 30.28, pos: "right", face: "sans", dark: false, size: 88, eb: "every thursday",
-    lines: ["Demo", "Night."], sub: "One hour a week. The whole floor turns up." },
+  { at: 22.18, out: 24.21, pos: "right", face: "sans", dark: false, size: 88, eb: "every thursday",
+    lines: ["Demo", "Night."], sub: "One hour. The whole floor turns up." },
 ];
 
 // ------------------------------------------------------------------ build
@@ -712,7 +712,7 @@ function frame(t) {
 // ------------------------------------------------------------ renderer API
 window.__total = TOTAL;
 const KEYSTROKES = [];
-for (let k = 13.62; k < 14.46; k += 0.088) KEYSTROKES.push(Number(k.toFixed(3)));
+for (let k = 10.62; k < 11.46; k += 0.088) KEYSTROKES.push(Number(k.toFixed(3)));
 
 window.__timing = {
   TOTAL, CLOSE_AT, PAPER_AT, TR,
