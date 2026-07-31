@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FounderFloor — cut 3</title>
+<style>
+  :root{
+    /* the palette is lifted off the booths in the game, so the colour is
+       loud but never foreign to the product */
+    --paper:#F2EFE7; --paper-lit:#FAF8F3; --ink:#23201A; --muted:#6F6A5E;
+    --accent:#D9480F; --ember:#F0906B; --gold:#B08D2E;
+    --teal:#2F5D50; --leaf:#4B7A2E; --steel:#3B4C7A; --berry:#A8384A;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;
+         perspective:1800px;font-family:var(--sans);background:#0E0C0A}
+
+  /* ---------------- moods ---------------- */
+  .mood{position:absolute;inset:0;will-change:opacity}
+  #mEmber{background:radial-gradient(125% 100% at 50% 34%, #40270F 0%, #1F1409 58%, #0D0906 100%)}
+  #mPaper{background:radial-gradient(120% 100% at 50% 40%, #FBF9F4 0%, #F1EDE3 62%, #E7E1D3 100%)}
+  .blob{position:absolute;border-radius:50%;filter:blur(130px);will-change:transform}
+  #bA{width:1020px;height:1020px;background:#D9480F;opacity:.56}
+  #bB{width:860px;height:860px;background:#A8384A;opacity:.42}
+  #bC{width:900px;height:900px;background:#C79A2E;opacity:.36}
+  #pA{width:1000px;height:1000px;background:#F0906B;opacity:.62}
+  #pB{width:860px;height:860px;background:#7FB05A;opacity:.42}
+  #pC{width:820px;height:820px;background:#E8C766;opacity:.50}
+  #grid{position:absolute;inset:-140px;opacity:.05;will-change:transform;
+    background-image:linear-gradient(#F2EFE7 1px,transparent 1px),
+                     linear-gradient(90deg,#F2EFE7 1px,transparent 1px);
+    background-size:80px 80px}
+  #vign{position:absolute;inset:0;pointer-events:none;will-change:opacity;
+    background:radial-gradient(128% 96% at 50% 45%,transparent 63%,rgba(0,0,0,.28) 100%)}
+  #grain{position:absolute;inset:0;opacity:.045;pointer-events:none;mix-blend-mode:overlay}
+
+  /* ---------------- product ---------------- */
+  .shot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+        transform-style:preserve-3d;will-change:transform,opacity}
+  /* the screen throws its own colour onto the background — rendered from a
+     deliberately small bitmap so the blur is cheap enough to run every frame */
+  .amb{position:absolute;width:420px;left:50%;top:50%;margin:-118px 0 0 -210px;
+       filter:blur(26px) saturate(1.9) brightness(1.12);opacity:.62;
+       will-change:transform;pointer-events:none}
+  .win{position:relative;border-radius:20px;overflow:hidden;background:#0b0a09;
+       will-change:transform}
+  .win.chrome{border:1px solid rgba(242,239,231,.20)}
+  .bar{height:42px;background:linear-gradient(#2e2a23,#242019);
+       border-bottom:1px solid rgba(242,239,231,.10);
+       display:flex;align-items:center;gap:10px;padding:0 20px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .dot.a{background:#C0410C}.dot.b{background:#B08D2E}.dot.c{background:#4B7A2E}
+  .url{margin-left:16px;flex:1;height:25px;border-radius:13px;background:rgba(242,239,231,.09);
+       display:flex;align-items:center;justify-content:center;
+       font-family:var(--mono);font-size:13px;letter-spacing:.05em;color:rgba(242,239,231,.55)}
+  .clip{position:relative;overflow:hidden;background:#EDEAE1}
+  .clip img{position:absolute;left:0;top:0;display:block;
+           filter:saturate(1.16) contrast(1.05) brightness(1.02)}
+  .sheen{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(158deg,rgba(255,255,255,.13) 0%,transparent 32%)}
+
+  /* ---------------- annotations ---------------- */
+  .ann{position:absolute;pointer-events:none;will-change:opacity,transform}
+  .annBox{position:absolute;inset:0;border:3px solid var(--accent);border-radius:10px;
+          box-shadow:0 0 0 6px rgba(217,72,15,.18), 0 8px 28px -8px rgba(217,72,15,.5)}
+  .annChip{position:absolute;left:50%;top:-19px;transform:translate(-50%,-100%);
+           background:var(--accent);color:#FFF6F1;border-radius:999px;
+           padding:9px 18px;font-size:19px;font-weight:700;letter-spacing:.04em;
+           white-space:nowrap;box-shadow:0 10px 26px -8px rgba(217,72,15,.7)}
+  .annChip::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;
+                  background:var(--accent);transform:translateX(-50%) rotate(45deg);border-radius:2px}
+  .annChip.below::after{bottom:auto;top:-6px}
+
+  /* ---------------- type ---------------- */
+  #scrim{position:absolute;inset:0;pointer-events:none;opacity:0}
+  #type{position:absolute;inset:0;pointer-events:none}
+  .blk{position:absolute;will-change:transform,opacity}
+  .eb{font-size:16px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;
+      margin-bottom:22px;display:flex;align-items:center;gap:14px}
+  .eb i{display:block;height:3px;border-radius:2px;background:var(--accent)}
+  .hl{letter-spacing:-.03em;line-height:1.0}
+  .hl.serif{font-family:var(--serif);letter-spacing:-.024em;line-height:1.05}
+  .hl.sans{font-family:var(--sans);font-weight:700}
+  .sub{font-size:25px;line-height:1.4;margin-top:24px}
+  .w{display:inline-block;white-space:pre;will-change:transform,opacity,filter}
+  .uline{position:absolute;left:0;bottom:-.06em;height:8px;border-radius:4px;
+         background:var(--accent);width:0;will-change:width}
+
+  /* ---------------- punch cards ---------------- */
+  #punch{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+         opacity:0;will-change:opacity}
+  #punchWord{font-family:var(--sans);font-weight:700;font-size:180px;letter-spacing:-.035em;
+             color:var(--paper);text-transform:uppercase;will-change:transform;
+             text-shadow:0 10px 60px rgba(0,0,0,.25)}
+
+  /* ---------------- watermark + end ---------------- */
+  #mark{position:absolute;right:60px;bottom:46px;display:flex;align-items:center;gap:12px;
+        opacity:0;pointer-events:none;font-size:18px;font-weight:600;letter-spacing:.06em}
+  #mark svg{width:24px;height:24px;image-rendering:pixelated}
+  #paperSweep{position:absolute;left:50%;top:50%;width:2900px;height:2900px;border-radius:50%;
+              background:var(--paper);transform:translate(-50%,-50%) scale(0);will-change:transform}
+  #end{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;
+       align-items:center;justify-content:center;color:var(--ink)}
+  #end .mk{display:flex;align-items:center;gap:22px}
+  #end .mk svg{width:78px;height:78px;image-rendering:pixelated}
+  #end .word{font-family:var(--serif);font-size:60px;letter-spacing:-.015em}
+  #end .rule{width:0;height:1px;background:#E4DFD3;margin:42px 0 40px}
+  #end h1{font-family:var(--serif);font-size:112px;line-height:1;letter-spacing:-.03em;font-weight:400}
+  #end .u{position:relative;white-space:nowrap}
+  #end .u::after{content:"";position:absolute;left:0;bottom:.05em;height:8px;border-radius:4px;
+                 background:var(--accent);width:100%}
+  #end .url2{margin-top:46px;font-size:50px;color:var(--accent);font-weight:600}
+  #end .sub2{margin-top:22px;font-size:23px;color:var(--muted);letter-spacing:.02em}
+  #end .tick{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;
+             gap:34px;height:56px;background:rgba(255,255,255,.6);
+             border-block:1px solid #E4DFD3;font-size:13px;letter-spacing:.18em;
+             text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  #end .tick.t{top:0}#end .tick.b{bottom:0}
+  #end .tick i{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.75;display:block}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="mood" id="mEmber"><div class="blob" id="bA"></div><div class="blob" id="bB"></div><div class="blob" id="bC"></div></div>
+  <div class="mood" id="mPaper"><div class="blob" id="pA"></div><div class="blob" id="pB"></div><div class="blob" id="pC"></div></div>
+  <div id="grid"></div>
+  <div id="shots"></div>
+  <div id="vign"></div>
+  <div id="scrim"></div>
+  <div id="grain"></div>
+  <div id="type"></div>
+  <div id="mark">
+    <svg viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="1" y="1" width="14" height="1" fill="currentColor"/><rect x="1" y="2" width="14" height="3" fill="#D9480F"/><rect x="3" y="2" width="2" height="3" fill="currentColor"/><rect x="7" y="2" width="2" height="3" fill="currentColor"/><rect x="11" y="2" width="2" height="3" fill="currentColor"/><rect x="1" y="5" width="1" height="9" fill="currentColor"/><rect x="14" y="5" width="1" height="9" fill="currentColor"/><rect x="3" y="9" width="10" height="5" fill="currentColor"/></svg>
+    <span>founderfloor.net</span>
+  </div>
+  <div id="punch"><div id="punchWord"></div></div>
+  <div id="paperSweep"></div>
+  <div id="end">
+    <div class="tick t"><span>TALK TO FOUNDERS</span><i></i><span>CLAIM A STAND</span><i></i><span>SIGN GUESTBOOKS</span><i></i><span>EARN BADGES</span><i></i><span>FIND A CO-FOUNDER</span><i></i><span>NO CALENDAR INVITE</span></div>
+    <div class="mk">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="1" y="1" width="14" height="1" fill="#23201A"/><rect x="1" y="2" width="14" height="3" fill="#D9480F"/>
+        <rect x="3" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="7" y="2" width="2" height="3" fill="#F2EFE7"/>
+        <rect x="11" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="2" y="5" width="2" height="1" fill="#D9480F"/>
+        <rect x="6" y="5" width="2" height="1" fill="#D9480F"/><rect x="10" y="5" width="2" height="1" fill="#D9480F"/>
+        <rect x="1" y="5" width="1" height="9" fill="#23201A"/><rect x="14" y="5" width="1" height="9" fill="#23201A"/>
+        <rect x="3" y="9" width="10" height="5" fill="#23201A"/><rect x="4" y="10" width="8" height="3" fill="#F2EFE7"/>
+        <rect x="5" y="11" width="3" height="1" fill="#B08D2E"/><rect x="9" y="11" width="2" height="1" fill="#B08D2E"/>
+      </svg>
+      <span class="word">FounderFloor</span>
+    </div>
+    <div class="rule"></div>
+    <h1>Claim your <span class="u">stand</span>.</h1>
+    <div class="url2">founderfloor.net</div>
+    <div class="sub2">Free &middot; runs in your browser &middot; nothing to install</div>
+    <div class="tick b"><span>MAIN HALL IS OPEN</span><i></i><span>DEMO NIGHT EVERY THURSDAY</span><i></i><span>A STAND STAYS UP WHILE YOU SLEEP</span></div>
+  </div>
+</div>
+
+<script>
+// ======================================================================
+// Cut 3. Same rule as cut 2 — every property is a pure function of the
+// virtual clock — with two changes that matter:
+//
+//   1. Sources are PNG frame sequences, not <video>. Seeking video by
+//      currentTime lands on whatever frame the decoder chooses; an image
+//      index cannot be approximate. This is what removes the glitching.
+//   2. Output is 50fps against 25fps plates, an exact 2:1 cadence. At 30
+//      the resampler had to repeat frames irregularly, which is what read
+//      as lag. Everything the compositor draws is genuinely 50fps.
+// ======================================================================
+
+const SRC_FPS = 25;
+const TR = 0.30;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, p) => a + (b - a) * p;
+const outCubic = (p) => 1 - Math.pow(1 - p, 3);
+const outExpo  = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -9 * p));
+const inCubic  = (p) => p * p * p;
+const inOut    = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+/** lands past the target and settles — the reason modern type feels alive */
+const backOut  = (p) => { const c = 1.34, q = p - 1; return 1 + (c + 1) * q * q * q + c * q * q; };
+
+const PLATES = window.PLATES || {};
+
+// ---------------------------------------------------------------- the cut
+// mood: which background this shot plays against. Alternating bright and
+// dark is most of the perceived energy.
+const SHOTS = [
+  { key: "walk",      at:  0.00, len: 2.62, srcIn: 0.30, layout: "defocus", mood: "paper", trans: "none" },
+  { key: "walk",      at:  2.80, len: 3.68, srcIn: 2.55, layout: "hero",  mood: "ember", trans: "mask" },
+  { key: "walk",      at:  6.86, len: 3.16, srcIn: 5.00, layout: "right", mood: "paper", trans: "zoom",
+    crop: { sx: 180, sy: 90, sw: 1560 } },
+  { key: "stand",     at:  9.90, len: 3.26, srcIn: 0.60, layout: "left",  mood: "ember", trans: "push",
+    crop: { sx: 700, sy: 30, sw: 1220 },
+    ann: { x: 69.5, y: 3.5, w: 29.5, h: 81, label: "their pitch", at: 1.05 } },
+  { key: "chat",      at: 13.56, len: 3.26, srcIn: 1.00, layout: "right", mood: "paper", trans: "zoom",
+    crop: { sx: 0, sy: 430, sw: 1180 },
+    ann: { x: 0.6, y: 53, w: 29, h: 44, label: "floor chat", at: 1.25 } },
+  { key: "directory", at: 16.76, len: 2.96, srcIn: 0.70, layout: "left",  mood: "ember", trans: "wipe",
+    crop: { sx: 520, sy: 95, sw: 900 },
+    ann: { x: 75.5, y: 72, w: 15, h: 8.5, label: "walk there", at: 1.0 } },
+  { key: "designer",  at: 19.60, len: 2.96, srcIn: 0.60, layout: "right", mood: "paper", trans: "push",
+    crop: { sx: 260, sy: 20, sw: 1160 },
+    ann: { x: 70.5, y: 5, w: 26, h: 40, label: "live preview", at: 1.0 } },
+  { key: "claim",     at: 22.90, len: 4.44, srcIn: 1.30, layout: "hero",  mood: "ember", trans: "zoom",
+    ann: { x: 75.5, y: 55, w: 15, h: 28, label: "your stand", at: 2.95 } },
+  { key: "demonight", at: 27.28, len: 3.02, srcIn: 0.40, layout: "left",  mood: "paper", trans: "push",
+    crop: { sx: 200, sy: 330, sw: 1320 },
+    ann: { x: 79, y: 50, w: 18, h: 8, label: "remind me", at: 1.05 } },
+];
+
+// full-bleed colour cards, one word, as punctuation between acts
+const PUNCH = [
+  { at:  2.32, len: 0.52, word: "so we built a room", color: "var(--accent)", size: 118 },
+  { at:  6.40, len: 0.50, word: "walk in",            color: "#E8C766", ink: true, size: 190 },
+  { at: 13.08, len: 0.50, word: "talk",               color: "var(--teal)",   size: 200 },
+  { at: 22.44, len: 0.50, word: "claim it",           color: "var(--berry)",  size: 190 },
+];
+
+const LAST_OUT = SHOTS[SHOTS.length - 1].at + SHOTS[SHOTS.length - 1].len;
+const CLOSE_AT = LAST_OUT - TR;
+const PAPER_AT = CLOSE_AT + 3.30;
+const TOTAL    = PAPER_AT + 5.40;
+
+const TEXT = [
+  { at: 0.12, out: 1.20, pos: "centre", face: "serif", dark: false, size: 108,
+    lines: ["Everyone is building."] },
+  { at: 1.24, out: 2.32, pos: "centre", face: "serif", dark: false, size: 108,
+    lines: ["Nobody is in the same room."] },
+  { at: 3.42, out: 6.42, pos: "centre", face: "serif", dark: true, size: 100, eb: "FounderFloor",
+    lines: ["A trade-show floor", "that never tears down."], uline: 1 },
+  { at: 7.22, out: 10.00, pos: "left",  face: "sans", dark: false, size: 96, eb: "01 — the hall",
+    lines: ["Walk in."], sub: "Twelve stands. A real founder behind each one." },
+  { at: 10.32, out: 13.14, pos: "right", face: "sans", dark: true, size: 88, eb: "02 — the stand",
+    lines: ["Read", "the pitch."], sub: "What they build. What they need. Who they are." },
+  { at: 13.98, out: 16.80, pos: "left", face: "sans", dark: false, size: 88, eb: "03 — the room",
+    lines: ["Say", "something."], sub: "That is the whole introduction." },
+  { at: 17.14, out: 19.64, pos: "right", face: "sans", dark: true, size: 88, eb: "04 — the directory",
+    lines: ["Find", "anyone."], sub: "Every startup on the floor, searchable." },
+  { at: 19.98, out: 22.46, pos: "left", face: "sans", dark: false, size: 88, eb: "05 — your stand",
+    lines: ["Make", "it yours."], sub: "Sign, colors, props — pixel for pixel." },
+  { at: 23.44, out: 25.62, pos: "left", face: "sans", dark: true, size: 100, eb: "06 — the spot",
+    lines: ["Claim it."] },
+  { at: 25.74, out: 27.32, pos: "left", face: "sans", dark: true, size: 60,
+    lines: ["It stays up while you sleep."] },
+  { at: 27.74, out: 30.28, pos: "right", face: "sans", dark: false, size: 88, eb: "every thursday",
+    lines: ["Demo", "Night."], sub: "One hour a week. The whole floor turns up." },
+];
+
+// ------------------------------------------------------------------ build
+const shotsEl = document.getElementById("shots");
+const typeEl = document.getElementById("type");
+const imgs = {};
+
+const shotNodes = SHOTS.map((s) => {
+  const shot = document.createElement("div");
+  shot.className = "shot";
+  const amb = document.createElement("img");
+  amb.className = "amb";
+  const win = document.createElement("div");
+  win.className = "win";
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  bar.innerHTML = '<span class="dot a"></span><span class="dot b"></span><span class="dot c"></span>' +
+    '<span class="url">founderfloor.net</span>';
+  const clip = document.createElement("div");
+  clip.className = "clip";
+  const img = document.createElement("img");
+  clip.append(img);
+  const sheen = document.createElement("div");
+  sheen.className = "sheen";
+  const ann = document.createElement("div");
+  ann.className = "ann";
+  ann.innerHTML = '<div class="annBox"></div><div class="annChip"></div>';
+  ann.style.display = "none";
+  clip.append(ann);
+  win.append(bar, clip, sheen);
+  shot.append(amb, win);
+  shotsEl.append(shot);
+  imgs[SHOTS.indexOf(s)] = [img, amb];
+  return { shot, win, bar, clip, img, amb, sheen, ann,
+           annChip: ann.querySelector(".annChip") };
+});
+
+const POS = {
+  centre: "left:0;right:0;top:50%;text-align:center;",
+  left:   "left:120px;top:50%;width:610px;text-align:left;",
+  right:  "right:120px;top:50%;width:610px;text-align:right;",
+};
+const textNodes = TEXT.map((b) => {
+  const blk = document.createElement("div");
+  blk.className = "blk";
+  blk.style.cssText = POS[b.pos] || POS.centre;
+  let html = "";
+  if (b.eb) html += `<div class="eb"><i></i>${b.eb}</div>`;
+  html += `<div class="hl ${b.face}" style="font-size:${b.size}px">` +
+    b.lines.map((l, li) =>
+      `<div style="position:relative;display:inline-block">` +
+      l.split(" ").map((w) => `<span class="w">${w}</span>`).join(" ") +
+      (b.uline === li + 1 ? '<span class="uline"></span>' : "") +
+      `</div>`).join("<br>") +
+    `</div>`;
+  if (b.sub) html += `<div class="sub">${b.sub}</div>`;
+  blk.innerHTML = html;
+  const eb = blk.querySelector(".eb");
+  if (eb) {
+    if (b.pos === "right") eb.style.flexDirection = "row-reverse";
+    if (b.pos === "centre") eb.style.justifyContent = "center";
+    eb.style.color = b.dark ? "var(--ember)" : "var(--accent)";
+  }
+  blk.querySelector(".hl").style.color = b.dark ? "var(--paper)" : "var(--ink)";
+  blk.querySelector(".hl").style.textShadow =
+    b.dark ? "0 6px 34px rgba(0,0,0,.6)" : "0 4px 26px rgba(242,239,231,.85)";
+  const sub = blk.querySelector(".sub");
+  if (sub) sub.style.color = b.dark ? "rgba(242,239,231,.70)" : "rgba(35,32,26,.62)";
+  typeEl.append(blk);
+  return { blk, words: [...blk.querySelectorAll(".w")], eb,
+           sub, uline: blk.querySelector(".uline") };
+});
+
+const closeBlk = document.createElement("div");
+closeBlk.className = "blk";
+closeBlk.style.cssText = "left:0;right:0;top:50%;text-align:center;";
+closeBlk.innerHTML = ["Free.", "Runs in your browser.", "Nothing to install."]
+  .map((s) => `<div class="cl" style="font-family:var(--serif);font-size:92px;color:var(--paper);letter-spacing:-.024em;line-height:1.22;text-shadow:0 6px 34px rgba(0,0,0,.55)">${s}</div>`)
+  .join("");
+typeEl.append(closeBlk);
+const closeLines = [...closeBlk.querySelectorAll(".cl")];
+
+const mEmber = document.getElementById("mEmber");
+const mPaper = document.getElementById("mPaper");
+const gridEl = document.getElementById("grid");
+const vignEl = document.getElementById("vign");
+const grainEl = document.getElementById("grain");
+const scrimEl = document.getElementById("scrim");
+const markEl = document.getElementById("mark");
+const punchEl = document.getElementById("punch");
+const punchWord = document.getElementById("punchWord");
+const sweepEl = document.getElementById("paperSweep");
+const endEl = document.getElementById("end");
+const blobs = ["bA", "bB", "bC", "pA", "pB", "pC"].map((id) => document.getElementById(id));
+
+grainEl.style.backgroundImage = `url(${(() => {
+  const c = document.createElement("canvas");
+  c.width = c.height = 200;
+  const g = c.getContext("2d");
+  const im = g.createImageData(200, 200);
+  let sd = 11;
+  for (let i = 0; i < im.data.length; i += 4) {
+    sd = (sd * 1103515245 + 12345) & 0x7fffffff;
+    const v = 100 + (sd % 104);
+    im.data[i] = im.data[i + 1] = im.data[i + 2] = v;
+    im.data[i + 3] = 255;
+  }
+  g.putImageData(im, 0, 0);
+  return c.toDataURL();
+})()})`;
+grainEl.style.backgroundRepeat = "repeat";
+
+function layoutOf(name) {
+  switch (name) {
+    case "hero":    return { w: 1820, x: 0, rotY: 0, rotX: 0, chrome: false };
+    case "defocus": return { w: 2300, x: 0, rotY: 0, rotX: 0, chrome: false };
+    case "left":    return { w: 1040, x: -330, rotY: 11,  rotX: -3, chrome: true };
+    case "right":   return { w: 1040, x: 330,  rotY: -11, rotX: -3, chrome: true };
+    default:        return { w: 1500, x: 0, rotY: 0, rotX: 0, chrome: true };
+  }
+}
+
+/** Which PNG a shot wants at time t. Integer index, never a seek. */
+function frameOf(s, t) {
+  const plate = PLATES[s.key] || { start: 0, frames: 1 };
+  const src = (plate.start || 0) + s.srcIn + (t - s.at);
+  const i = Math.round(src * SRC_FPS) + 1;              // ffmpeg numbers from 1
+  return Math.max(1, Math.min(plate.frames || 99999, i));
+}
+const pad = (n) => String(n).padStart(5, "0");
+
+// ------------------------------------------------------------ per frame
+function renderShot(i, t) {
+  const s = SHOTS[i];
+  const n = shotNodes[i];
+  const live = t > s.at - 0.02 && t < s.at + s.len + 0.02;
+  if (!live) { n.shot.style.display = "none"; return null; }
+  n.shot.style.display = "flex";
+
+  const L = layoutOf(s.layout);
+  const vidH = Math.round((L.w * 9) / 16);
+  const barH = L.chrome ? 42 : 0;
+  n.bar.style.display = L.chrome ? "flex" : "none";
+  n.win.classList.toggle("chrome", L.chrome);
+  n.win.style.width = L.w + "px";
+  n.win.style.height = vidH + barH + "px";
+  n.win.style.borderRadius = L.chrome ? "20px" : "16px";
+  n.clip.style.width = L.w + "px";
+  n.clip.style.height = vidH + "px";
+
+  const c = s.crop;
+  const k = c ? L.w / c.sw : L.w / 1920;
+  n.img.style.width = 1920 * k + "px";
+  n.img.style.height = 1080 * k + "px";
+  n.img.style.left = (c ? -c.sx * k : 0) + "px";
+  n.img.style.top = (c ? -c.sy * k : 0) + "px";
+
+  const src = `frames/${s.key}/${pad(frameOf(s, t))}.png`;
+
+  if (s.layout === "defocus") {
+    const up = clamp((t - s.at) / 0.6);
+    const down = 1 - clamp((t - (s.at + s.len - 0.7)) / 0.7);
+    n.shot.style.opacity = String(0.58 * Math.min(up, down));
+    n.win.style.transform = `scale(${lerp(1.08, 1.0, clamp((t - s.at) / s.len))})`;
+    n.win.style.filter = "blur(46px) saturate(1.8) brightness(1.04)";
+    n.win.style.boxShadow = "none";
+    n.amb.style.display = "none";
+    n.ann.style.display = "none";
+    return src;
+  }
+  n.win.style.filter = "none";
+  n.amb.style.display = "block";
+
+  const inT = clamp((t - s.at) / TR);
+  const outT = clamp((t - (s.at + s.len - TR)) / TR);
+  const dx = Math.sin((t - s.at) * 0.48) * 9;
+  const dy = Math.cos((t - s.at) * 0.36) * 7;
+  // a slow push through the shot: nothing is ever still
+  const push = lerp(1.0, 1.035, clamp((t - s.at) / s.len));
+
+  let op = 1, sc = push, tx = L.x, blur = 0, ry = L.rotY;
+  if (inT < 1) {
+    const e = outExpo(inT);
+    switch (s.trans) {
+      case "zoom": sc = push * lerp(1.14, 1, e); op = clamp(inT / 0.13); blur = (1 - e) * 12; break;
+      case "push": tx = L.x + lerp(700, 0, e); op = clamp(inT / 0.18); break;
+      case "wipe": op = inT > 0.3 ? 1 : 0; sc = push * lerp(1.05, 1, e); break;
+      case "mask": sc = push * lerp(1.18, 1, outCubic(inT)); op = clamp(inT / 0.28); break;
+      default: op = e;
+    }
+    ry = lerp(L.rotY * 1.7, L.rotY, e);
+  }
+  if (outT > 0) {
+    const kind = SHOTS[i + 1] ? SHOTS[i + 1].trans : "zoom";
+    const e = inCubic(outT);
+    if (kind === "zoom") { sc = push * lerp(1, 1.12, e); op = 1 - e; blur = e * 14; }
+    else if (kind === "push") { tx = L.x + lerp(0, -700, e); op = 1 - clamp(outT / 0.7); }
+    else if (kind === "wipe") { op = outT > 0.5 ? 0 : 1; }
+    else { op = 1 - e; sc = push * lerp(1, 1.1, e); }
+  }
+
+  n.shot.style.opacity = String(clamp(op));
+  n.win.style.transform =
+    `translate3d(${tx + dx}px, ${dy}px, 0) rotateY(${ry}deg) rotateX(${L.rotX}deg) scale(${sc})`;
+  n.win.style.filter = blur > 0.2 ? `blur(${blur.toFixed(2)}px)` : "none";
+  n.win.style.boxShadow = s.mood === "paper"
+    ? "0 60px 120px -40px rgba(90,50,20,.42), 0 18px 44px -18px rgba(90,50,20,.28)"
+    : "0 60px 140px -36px rgba(0,0,0,.92), 0 14px 40px -14px rgba(0,0,0,.7)";
+  // ambilight rides with the window, a touch larger and softer
+  n.amb.style.transform =
+    `translate3d(${(tx + dx) / 4.6}px, ${dy / 4.6}px, 0) scale(${4.9 * sc})`;
+  n.amb.style.opacity = String(clamp(op) * (s.mood === "paper" ? 0.38 : 0.74));
+
+  // annotation
+  if (s.ann) {
+    const a = s.ann;
+    const p = clamp((t - s.at - a.at) / 0.46);
+    const gone = clamp((t - (s.at + s.len - TR - 0.1)) / 0.3);
+    if (p <= 0 || gone >= 1) {
+      n.ann.style.display = "none";
+    } else {
+      n.ann.style.display = "block";
+      n.ann.style.left = a.x + "%";
+      n.ann.style.top = a.y + "%";
+      n.ann.style.width = a.w + "%";
+      n.ann.style.height = a.h + "%";
+      const e = backOut(p);
+      n.ann.style.opacity = String(clamp(p / 0.25) * (1 - gone));
+      n.ann.style.transform = `scale(${lerp(0.86, 1, e)})`;
+      n.annChip.textContent = a.label;
+      const below = a.y < 14;                     // no room above: hang it under
+      n.annChip.style.top = below ? "calc(100% + 19px)" : "-19px";
+      n.annChip.classList.toggle("below", below);
+      const cp = clamp((t - s.at - a.at - 0.12) / 0.4);
+      n.annChip.style.opacity = String(outExpo(cp));
+      const slide = (1 - outExpo(cp)) * (below ? -12 : 12);
+      n.annChip.style.transform =
+        `translate(-50%, ${below ? "0" : "-100%"}) translateY(${slide}px)`;
+    }
+  }
+  return src;
+}
+
+function moodAt(t) {
+  // crossfade between the two backgrounds on the shot that owns this moment
+  let paper = 0;
+  for (const s of SHOTS) {
+    if (t < s.at - TR || t > s.at + s.len) continue;
+    const w = clamp((t - (s.at - TR)) / TR) * (1 - clamp((t - (s.at + s.len - TR)) / TR));
+    if (s.mood === "paper") paper = Math.max(paper, w);
+  }
+  if (t > CLOSE_AT - TR) paper = 0;
+  return paper;
+}
+
+function renderBg(t) {
+  const paper = moodAt(t);
+  mPaper.style.opacity = String(paper);
+  mEmber.style.opacity = String(1 - paper);
+  vignEl.style.opacity = String(1 - paper * 0.75);
+  gridEl.style.opacity = String(0.05 * (1 - paper) + 0.035 * paper);
+  gridEl.style.transform = `translate3d(${-((t * 11) % 80)}px, ${-((t * 7) % 80)}px, 0)`;
+  const P = [
+    [-40, 120, 0.19, 0.15, 300, 210], [1180, -80, 0.15, 0.23, 330, 190],
+    [700, 620, 0.22, 0.13, 280, 240], [-60, 60, 0.17, 0.21, 320, 200],
+    [1200, 520, 0.13, 0.18, 300, 230], [520, -120, 0.20, 0.14, 340, 180],
+  ];
+  blobs.forEach((b, i) => {
+    const [x, y, fx, fy, ax, ay] = P[i];
+    b.style.transform =
+      `translate3d(${x + Math.sin(t * fx) * ax}px, ${y + Math.cos(t * fy) * ay}px, 0)`;
+  });
+  const f = Math.round(t * 25);
+  grainEl.style.backgroundPosition = `${(f * 41) % 200}px ${(f * 67) % 200}px`;
+}
+
+function renderScrim(t) {
+  let dir = null, amt = 0, dark = true;
+  for (const b of TEXT) {
+    if (t < b.at - 0.3 || t > b.out + 0.2) continue;
+    const w = Math.min(clamp((t - (b.at - 0.3)) / 0.5), 1 - clamp((t - (b.out - 0.3)) / 0.4));
+    if (w > amt) { amt = w; dir = b.pos; dark = b.dark; }
+  }
+  if (t > CLOSE_AT - 0.3 && t < PAPER_AT) { amt = 1; dir = "centre"; dark = true; }
+  scrimEl.style.opacity = String(amt);
+  const c = dark ? "9,8,7" : "250,248,243";
+  const a = dark ? [0.9, 0.7, 0.14] : [0.94, 0.8, 0.2];
+  scrimEl.style.background =
+    dir === "left"
+      ? `linear-gradient(90deg, rgba(${c},${a[0]}) 0%, rgba(${c},${a[1]}) 26%, rgba(${c},${a[2]}) 44%, transparent 56%)`
+      : dir === "right"
+        ? `linear-gradient(270deg, rgba(${c},${a[0]}) 0%, rgba(${c},${a[1]}) 26%, rgba(${c},${a[2]}) 44%, transparent 56%)`
+        : `radial-gradient(120% 90% at 50% 50%, rgba(${c},${dark ? 0.68 : 0.8}) 0%, rgba(${c},${dark ? 0.46 : 0.5}) 55%, rgba(${c},${dark ? 0.26 : 0.28}) 100%)`;
+}
+
+function renderText(t) {
+  TEXT.forEach((b, i) => {
+    const n = textNodes[i];
+    const live = t > b.at - 0.05 && t < b.out + 0.05;
+    n.blk.style.display = live ? "block" : "none";
+    if (!live) return;
+    n.blk.style.marginTop = -n.blk.offsetHeight / 2 + "px";
+    const gone = inCubic(clamp((t - (b.out - 0.32)) / 0.32));
+    n.blk.style.opacity = String(1 - gone);
+    n.blk.style.transform = `translateY(${-32 * gone}px)`;
+    n.blk.style.filter = gone > 0.02 ? `blur(${gone * 11}px)` : "none";
+
+    const D = 0.05;
+    n.words.forEach((w, wi) => {
+      const p = clamp((t - b.at - 0.12 - wi * D) / 0.5);
+      const e = backOut(p);
+      w.style.opacity = String(clamp(p / 0.3));
+      w.style.transform = `translateY(${(1 - e) * 42}px) scale(${lerp(0.9, 1, Math.min(1, e))})`;
+      w.style.filter = p < 0.96 ? `blur(${(1 - clamp(p / 0.7)) * 11}px)` : "none";
+    });
+    if (n.eb) {
+      n.eb.style.opacity = String(outExpo(clamp((t - b.at) / 0.4)));
+      const bar = n.eb.querySelector("i");
+      if (bar) bar.style.width = `${34 * outExpo(clamp((t - b.at) / 0.66))}px`;
+    }
+    if (n.sub) {
+      const e = outExpo(clamp((t - b.at - 0.3 - n.words.length * D) / 0.5));
+      n.sub.style.opacity = String(e);
+      n.sub.style.transform = `translateY(${(1 - e) * 20}px)`;
+    }
+    if (n.uline) {
+      const e = outExpo(clamp((t - b.at - 0.55 - n.words.length * D) / 0.62));
+      n.uline.style.width = `${100 * e}%`;
+    }
+  });
+}
+
+function renderPunch(t) {
+  let live = null;
+  for (const p of PUNCH) if (t >= p.at - 0.02 && t <= p.at + p.len + 0.02) live = p;
+  if (!live) { punchEl.style.opacity = "0"; punchEl.style.display = "none"; return; }
+  punchEl.style.display = "flex";
+  punchEl.style.background = live.color;
+  punchWord.style.color = live.ink ? "var(--ink)" : "var(--paper)";
+  punchWord.style.textShadow = live.ink ? "none" : "0 10px 60px rgba(0,0,0,.25)";
+  punchWord.textContent = live.word;
+  punchWord.style.fontSize = live.size + "px";
+  const p = (t - live.at) / live.len;
+  // hard on, hard off — a punctuation mark, not a transition
+  punchEl.style.opacity = String(p < 0.06 ? p / 0.06 : p > 0.9 ? (1 - p) / 0.1 : 1);
+  const e = backOut(clamp(p / 0.42));
+  punchWord.style.transform = `scale(${lerp(0.84, 1, Math.min(1, e))}) translateY(${(1 - e) * 18}px)`;
+}
+
+function renderClose(t) {
+  const live = t > CLOSE_AT - 0.05 && t < PAPER_AT + 0.9;
+  closeBlk.style.display = live ? "block" : "none";
+  if (!live) return;
+  closeBlk.style.marginTop = -closeBlk.offsetHeight / 2 + "px";
+  closeBlk.style.opacity = String(1 - clamp((t - (PAPER_AT + 0.3)) / 0.35));
+  closeLines.forEach((ln, i) => {
+    const p = clamp((t - CLOSE_AT - 0.18 - i * 0.42) / 0.54);
+    const e = backOut(p);
+    ln.style.opacity = String(clamp(p / 0.3));
+    ln.style.transform = `translateY(${(1 - e) * 46}px) scale(${lerp(0.92, 1, Math.min(1, e))})`;
+    ln.style.filter = p < 0.96 ? `blur(${(1 - clamp(p / 0.7)) * 12}px)` : "none";
+  });
+}
+
+function renderMark(t) {
+  const on = clamp((t - 6.9) / 0.6) * (1 - clamp((t - (PAPER_AT - 0.5)) / 0.5));
+  markEl.style.opacity = String(on * 0.66);
+  const paper = moodAt(t);
+  markEl.style.color = paper > 0.5 ? "rgba(35,32,26,.62)" : "rgba(242,239,231,.66)";
+  markEl.style.textShadow = paper > 0.5 ? "none" : "0 2px 14px rgba(0,0,0,.7)";
+}
+
+function renderEnd(t) {
+  const p = clamp((t - PAPER_AT) / 0.6);
+  sweepEl.style.display = p <= 0 ? "none" : "block";
+  sweepEl.style.transform = `translate(-50%,-50%) scale(${lerp(0.06, 1.02, outCubic(p))})`;
+  endEl.style.opacity = String(outExpo(clamp((t - PAPER_AT - 0.28) / 0.6)));
+  const rows = [
+    [endEl.querySelector(".mk"), 0.0],
+    [endEl.querySelector("h1"), 0.22],
+    [endEl.querySelector(".url2"), 0.42],
+    [endEl.querySelector(".sub2"), 0.54],
+  ];
+  for (const [el, d] of rows) {
+    const q = outExpo(clamp((t - PAPER_AT - 0.38 - d) / 0.64));
+    el.style.opacity = String(q);
+    el.style.transform = `translateY(${(1 - q) * 30}px)`;
+  }
+  endEl.querySelector(".rule").style.width =
+    `${340 * outExpo(clamp((t - PAPER_AT - 0.5) / 0.78))}px`;
+  const tick = outExpo(clamp((t - PAPER_AT - 0.26) / 0.7));
+  for (const tk of endEl.querySelectorAll(".tick")) tk.style.opacity = String(tick);
+}
+
+function frame(t) {
+  renderBg(t);
+  const want = [];
+  for (let i = 0; i < SHOTS.length; i++) {
+    const src = renderShot(i, t);
+    if (src) want.push([i, src]);
+  }
+  renderScrim(t);
+  renderMark(t);
+  renderText(t);
+  renderPunch(t);
+  renderClose(t);
+  renderEnd(t);
+  return want;
+}
+
+// ------------------------------------------------------------ renderer API
+window.__total = TOTAL;
+window.__timing = {
+  TOTAL, CLOSE_AT, PAPER_AT, TR,
+  shots: SHOTS.map((s) => ({ key: s.key, at: s.at, len: s.len, trans: s.trans, layout: s.layout, mood: s.mood })),
+  punch: PUNCH.map((p) => ({ at: p.at, len: p.len, word: p.word })),
+  text: TEXT.map((b) => ({ at: b.at, out: b.out, words: b.lines.join(" ").split(" ").length })),
+};
+window.__ready = async () => Object.keys(PLATES).map((k) => `${k}:${PLATES[k].frames}`);
+window.__seek = async function (t) {
+  const want = frame(t);
+  await Promise.all(
+    want.map(async ([i, src]) => {
+      const [img, amb] = imgs[i];
+      if (img.getAttribute("src") !== src) {
+        img.setAttribute("src", src);
+        if (amb) amb.setAttribute("src", src);
+        try { await img.decode(); } catch {}
+        if (amb) { try { await amb.decode(); } catch {} }
+      }
+    }),
+  );
+  frame(t);
+  return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+};
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ they render in the site's own type and palette and get captured in-camera.
 That means the ad can never drift from the product: re-run it after a design
 change and the new design is what you see.
 
-There are two cuts, from the same footage:
+There are three cuts, from the same footage:
 
 - **Cut 1** (`shoot.mjs` + `build.mjs`) — 47s, calm, captions burned in
   while filming. Straight product film, paper-and-ink.
@@ -16,6 +16,28 @@ There are two cuts, from the same footage:
   blur, and a synthesised sound-design bed. Built from *clean plates* —
   the same shoot run with `FF_NOCAPS=1` so cut 2 can lay down its own
   typography.
+- **Cut 3** (`v3/`) — 39s, and the one to use. Everything cut 2 does, plus
+  the two things it got wrong.
+
+**What cut 3 fixes.** Cut 2 juddered, and the cause was arithmetic: the
+plates are 25fps and it rendered at 30, so the resampler had to repeat
+source frames in an irregular 1‑2‑1‑2‑1‑1 pattern. On top of that it drove
+`<video>` elements by setting `currentTime`, and a VP8 seek lands on
+whichever frame the decoder picks — occasionally the wrong one, occasionally
+the same one twice. Cut 3 renders at **50fps**, exactly twice the source, so
+every plate frame occupies exactly two output frames; and it reads **PNG
+frame sequences off disk** (`extract.mjs`), so a frame index can never be
+approximate. Everything the compositor itself draws — type, transitions,
+drift, glows — is genuinely 50fps.
+
+**What cut 3 adds.** Colour, mostly. The backgrounds alternate between a
+bright cream mood and a saturated ember one, so the ad breathes instead of
+sitting in one register. Behind every window is an *ambilight* — a blurred,
+saturated copy of the frame itself, throwing the product's own colour across
+the background. Full-bleed colour cards punctuate the acts. Annotations
+(an accent box plus a labelled chip) point at the thing each line is talking
+about. The footage carries a light grade, and the type mixes the brand serif
+for brand moments with a heavy sans for the feature beats.
 
 `HOW-THESE-ADS-ARE-MADE.md` is the field guide: what the ads you're
 comparing against actually cost, which tools produce them, and which of it
@@ -40,6 +62,9 @@ docs/ad/
     audio.mjs       synthesises the sound bed against those hit points
     frames.html     branded bands for the 1:1 and 9:16 cuts
     build2.mjs      wraps the master into every delivery format
+  v3/               same shape, plus:
+    extract.mjs     explodes the plates into PNG frame sequences
+    plates-lib.mjs  plate metadata + how many frames each sequence has
 ```
 
 The finished 720p copy also lives at `public/ad/founderfloor-ad.mp4` with
@@ -84,9 +109,30 @@ node render.mjs           # 1080p master, ~35 min
 node build2.mjs           # 16:9, 1:1, 9:16, webm, poster
 ```
 
+```bash
+# cut 3 — the one to use
+cd v3
+node extract.mjs          # plates -> PNG sequences (~1.1 GB, once)
+node timing.mjs && node audio.mjs
+node stills.mjs 0.7 4.6 11.4 22.7   # check a change in seconds, not an hour
+node render.mjs           # 1080p50 master, ~60 min
+node build3.mjs           # 16:9, 1:1, 9:16, webm, poster
+```
+
 `render.mjs` is slow *on purpose*: it steps the compositor frame by frame
 rather than capturing in real time, so a heavy blur costs render minutes
-instead of dropped frames. Iterate with `stills.mjs`, not with renders.
+instead of dropped frames. Iterate with `stills.mjs`, not with renders — a
+still takes about a second and answers most questions.
+
+Two rules the compositor depends on, if you edit `scene.html`:
+
+- **No CSS animations or transitions.** Every property must be a pure
+  function of the virtual clock `t`. Anything time-driven drifts against a
+  frame-stepped capture.
+- **Never share a transform between an animation and a layout offset.** An
+  element centred with `translate(-50%,-50%)` cannot also be animated on
+  another transform channel — the matrices interpolate and it drifts. Wrap
+  it and animate the child.
 
 `shoot.mjs` takes beat names as arguments (`node shoot.mjs walk claim`) so a
 single shot can be re-taken without re-filming the whole thing. Reset the
