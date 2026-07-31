@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FounderFloor — cut 2</title>
+<style>
+  :root{
+    --paper:#F2EFE7; --ink:#23201A; --muted:#6F6A5E; --line:#E4DFD3;
+    --accent:#D9480F; --ember:#F0906B; --gold:#B08D2E;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:#000}
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;
+         background:#100E0C;perspective:1700px;font-family:var(--sans)}
+
+  /* ---------- background ---------- */
+  #bg{position:absolute;inset:0;
+      background:radial-gradient(130% 100% at 50% 36%, #26221B 0%, #14120E 60%, #0A0908 100%)}
+  .blob{position:absolute;border-radius:50%;filter:blur(150px);will-change:transform}
+  #blobA{width:1250px;height:1250px;background:#A04A16;opacity:.34}
+  #blobB{width:1050px;height:1050px;background:#33463A;opacity:.28}
+  #grid{position:absolute;inset:-120px;opacity:.05;
+    background-image:linear-gradient(#F2EFE7 1px,transparent 1px),
+                     linear-gradient(90deg,#F2EFE7 1px,transparent 1px);
+    background-size:72px 72px;will-change:transform}
+  #vign{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(125% 95% at 50% 45%,transparent 62%,rgba(0,0,0,.28) 100%)}
+  #grain{position:absolute;inset:0;opacity:.05;pointer-events:none;mix-blend-mode:overlay}
+  #mark{position:absolute;right:56px;bottom:44px;display:flex;align-items:center;gap:11px;
+        opacity:0;pointer-events:none;font-size:17px;letter-spacing:.06em;
+        color:rgba(242,239,231,.62);text-shadow:0 2px 14px rgba(0,0,0,.7)}
+  #mark svg{width:22px;height:22px;image-rendering:pixelated}
+
+  /* ---------- product window ---------- */
+  .shot{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+        transform-style:preserve-3d;will-change:transform,opacity}
+  .glow{position:absolute;border-radius:60px;background:var(--accent);
+        filter:blur(95px);opacity:.38;will-change:transform}
+  .win{position:relative;border-radius:18px;overflow:hidden;background:#0b0a09;
+       border:1px solid rgba(242,239,231,.18);
+       box-shadow:0 50px 130px -34px rgba(0,0,0,.9), 0 10px 34px -12px rgba(0,0,0,.65);
+       will-change:transform}
+  .bar{height:40px;background:linear-gradient(#2c2822,#232019);
+       border-bottom:1px solid rgba(242,239,231,.10);
+       display:flex;align-items:center;gap:9px;padding:0 18px}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.a{background:#8A4A34}.dot.b{background:#8A7A34}.dot.c{background:#4A7A44}
+  .url{margin-left:16px;flex:1;height:24px;border-radius:12px;background:rgba(242,239,231,.07);
+       display:flex;align-items:center;justify-content:center;
+       font-family:var(--mono);font-size:13px;letter-spacing:.04em;color:rgba(242,239,231,.52)}
+  .clip{position:relative;overflow:hidden;background:#EDEAE1}
+  .clip video{position:absolute;left:0;top:0;display:block}
+  /* a soft light across the glass, so the window reads as a solid object */
+  .sheen{position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(160deg,rgba(255,255,255,.10) 0%,transparent 34%)}
+
+  /* ---------- type ---------- */
+  #scrim{position:absolute;inset:0;pointer-events:none;opacity:0}
+  #type{position:absolute;inset:0;pointer-events:none}
+  .blk{position:absolute;will-change:transform,opacity}
+  .eb{font-size:15px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+      color:var(--ember);margin-bottom:20px;display:flex;align-items:center;gap:13px}
+  .eb i{display:block;height:2px;background:var(--accent);border-radius:1px}
+  .hl{font-family:var(--serif);color:var(--paper);letter-spacing:-.024em;line-height:1.03;
+      text-shadow:0 4px 30px rgba(0,0,0,.55)}
+  .sub{font-size:24px;line-height:1.42;color:rgba(242,239,231,.66);margin-top:22px}
+  .w{display:inline-block;white-space:pre;will-change:transform,opacity,filter}
+
+  /* ---------- transitions ---------- */
+  #wipe{position:absolute;inset:-10%;pointer-events:none;opacity:0;will-change:transform;
+        background:linear-gradient(102deg,transparent 44%,var(--accent) 49%,var(--ember) 52%,transparent 57%)}
+  #paper{position:absolute;left:50%;top:50%;width:2800px;height:2800px;border-radius:50%;
+         background:var(--paper);transform:translate(-50%,-50%) scale(0);will-change:transform}
+
+  /* ---------- end card ---------- */
+  #end{position:absolute;inset:0;opacity:0;display:flex;flex-direction:column;
+       align-items:center;justify-content:center;color:var(--ink)}
+  #end .mark{display:flex;align-items:center;gap:20px}
+  #end .mark svg{width:74px;height:74px;image-rendering:pixelated}
+  #end .word{font-family:var(--serif);font-size:58px;letter-spacing:-.015em}
+  #end .rule{width:0;height:1px;background:var(--line);margin:40px 0 38px}
+  #end h1{font-family:var(--serif);font-size:108px;line-height:1;letter-spacing:-.028em;font-weight:400}
+  #end .u{position:relative;white-space:nowrap}
+  #end .u::after{content:"";position:absolute;left:0;bottom:.05em;height:7px;border-radius:4px;
+                 background:var(--accent);width:100%}
+  #end .url2{margin-top:44px;font-size:47px;color:var(--accent);font-weight:500}
+  #end .sub2{margin-top:20px;font-size:22px;color:var(--muted);letter-spacing:.02em}
+  #end .tick{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;
+             gap:32px;height:54px;background:rgba(255,255,255,.55);
+             border-block:1px solid var(--line);font-size:13px;letter-spacing:.18em;
+             text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  #end .tick.t{top:0}#end .tick.b{bottom:0}
+  #end .tick i{width:5px;height:5px;border-radius:50%;background:var(--accent);opacity:.7;display:block}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"><div class="blob" id="blobA"></div><div class="blob" id="blobB"></div><div id="grid"></div></div>
+  <div id="shots"></div>
+  <div id="vign"></div>
+  <div id="scrim"></div>
+  <div id="grain"></div>
+  <div id="type"></div>
+  <div id="mark">
+    <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+      <rect x="1" y="1" width="14" height="1" fill="#F2EFE7"/><rect x="1" y="2" width="14" height="3" fill="#D9480F"/>
+      <rect x="3" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="7" y="2" width="2" height="3" fill="#F2EFE7"/>
+      <rect x="11" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="1" y="5" width="1" height="9" fill="#F2EFE7"/>
+      <rect x="14" y="5" width="1" height="9" fill="#F2EFE7"/><rect x="3" y="9" width="10" height="5" fill="#F2EFE7"/>
+      <rect x="4" y="10" width="8" height="3" fill="#23201A"/>
+    </svg>
+    <span>founderfloor.net</span>
+  </div>
+  <div id="wipe"></div>
+  <div id="paper"></div>
+  <div id="end">
+    <div class="tick t"><span>TALK TO FOUNDERS</span><i></i><span>CLAIM A STAND</span><i></i><span>SIGN GUESTBOOKS</span><i></i><span>EARN BADGES</span><i></i><span>FIND A CO-FOUNDER</span><i></i><span>NO CALENDAR INVITE</span></div>
+    <div class="mark">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges">
+        <rect x="1" y="1" width="14" height="1" fill="#23201A"/><rect x="1" y="2" width="14" height="3" fill="#D9480F"/>
+        <rect x="3" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="7" y="2" width="2" height="3" fill="#F2EFE7"/>
+        <rect x="11" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="2" y="5" width="2" height="1" fill="#D9480F"/>
+        <rect x="6" y="5" width="2" height="1" fill="#D9480F"/><rect x="10" y="5" width="2" height="1" fill="#D9480F"/>
+        <rect x="1" y="5" width="1" height="9" fill="#23201A"/><rect x="14" y="5" width="1" height="9" fill="#23201A"/>
+        <rect x="3" y="9" width="10" height="5" fill="#23201A"/><rect x="4" y="10" width="8" height="3" fill="#F2EFE7"/>
+        <rect x="5" y="11" width="3" height="1" fill="#B08D2E"/><rect x="9" y="11" width="2" height="1" fill="#B08D2E"/>
+      </svg>
+      <span class="word">FounderFloor</span>
+    </div>
+    <div class="rule"></div>
+    <h1>Claim your <span class="u">stand</span>.</h1>
+    <div class="url2">founderfloor.net</div>
+    <div class="sub2">Free &middot; runs in your browser &middot; nothing to install</div>
+    <div class="tick b"><span>MAIN HALL IS OPEN</span><i></i><span>DEMO NIGHT EVERY THURSDAY</span><i></i><span>A STAND STAYS UP WHILE YOU SLEEP</span></div>
+  </div>
+</div>
+
+<script>
+// ====================================================================
+// A deterministic motion-graphics engine. Nothing is time-driven: every
+// property is a pure function of the virtual clock `t`, so the renderer
+// steps frame by frame and two runs are identical. CSS animations would
+// drift against a frame-stepped capture; this cannot.
+// ====================================================================
+
+const TR = 0.34;                                   // shot cross-transition
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, p) => a + (b - a) * p;
+const outCubic = (p) => 1 - Math.pow(1 - p, 3);
+const outExpo  = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -9 * p));
+const inCubic  = (p) => p * p * p;
+const inOut    = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+
+const PLATES = window.PLATES || {};   // injected by render.mjs from plates.json
+
+// --------------------------------------------------------------------
+// The cut. `at` is when a shot starts arriving, `len` its visible length;
+// consecutive shots overlap by TR so a transition has two things to work
+// with. `crop` is a region of the 1920x1080 plate (sx, sy, sw) blown up to
+// fill the window — without it, a web page shown 960px wide is unreadable.
+// --------------------------------------------------------------------
+const SHOTS = [
+  { key: "walk",      at:  0.00, len: 2.80, srcIn: 0.30, layout: "defocus", trans: "none" },
+  { key: "walk",      at:  2.40, len: 4.10, srcIn: 0.30, layout: "hero",  trans: "mask" },
+  { key: "walk",      at:  6.16, len: 3.20, srcIn: 4.70, layout: "right", trans: "zoom",
+    crop: { sx: 180, sy: 90, sw: 1560 } },
+  { key: "stand",     at:  9.02, len: 3.30, srcIn: 0.60, layout: "left",  trans: "push",
+    crop: { sx: 700, sy: 30, sw: 1220 } },
+  { key: "chat",      at: 11.98, len: 3.30, srcIn: 1.00, layout: "right", trans: "zoom",
+    crop: { sx: 0, sy: 430, sw: 1180 } },
+  { key: "directory", at: 14.94, len: 3.00, srcIn: 0.75, layout: "left",  trans: "wipe",
+    crop: { sx: 520, sy: 95, sw: 900 } },
+  { key: "designer",  at: 17.60, len: 3.00, srcIn: 0.60, layout: "right", trans: "push",
+    crop: { sx: 260, sy: 20, sw: 1160 } },
+  { key: "claim",     at: 20.26, len: 4.60, srcIn: 1.30, layout: "hero",  trans: "zoom" },
+  { key: "demonight", at: 24.52, len: 3.10, srcIn: 0.40, layout: "left",  trans: "push",
+    crop: { sx: 200, sy: 330, sw: 1320 } },
+];
+const LAST_OUT = SHOTS[SHOTS.length - 1].at + SHOTS[SHOTS.length - 1].len;
+const CLOSE_AT = LAST_OUT - TR;
+const PAPER_AT = CLOSE_AT + 3.20;
+const TOTAL    = PAPER_AT + 5.70;
+
+const TEXT = [
+  { at: 0.12, out: 1.34, pos: "centre", size: 112, lines: ["Everyone is building."] },
+  { at: 1.36, out: 2.44, pos: "centre", size: 112, lines: ["Nobody is in the same room."] },
+  { at: 3.30, out: 6.24, pos: "centre", size: 104, eb: "FounderFloor",
+    lines: ["A trade-show floor", "that never tears down."] },
+  { at: 6.60, out: 9.10, pos: "left",  size: 88, eb: "01 — the hall", lines: ["Walk in."],
+    sub: "Twelve stands. A real founder behind each one." },
+  { at: 9.44, out: 12.06, pos: "right", size: 84, eb: "02 — the stand", lines: ["Read", "the pitch."],
+    sub: "What they build. What they need. Who they are." },
+  { at: 12.40, out: 15.02, pos: "left", size: 84, eb: "03 — the room", lines: ["Say", "something."],
+    sub: "That is the whole introduction." },
+  { at: 15.36, out: 17.68, pos: "right", size: 84, eb: "04 — the directory", lines: ["Find", "anyone."],
+    sub: "Every startup on the floor, searchable." },
+  { at: 18.02, out: 20.34, pos: "left", size: 84, eb: "05 — your stand", lines: ["Make", "it yours."],
+    sub: "Sign, colors, props — pixel for pixel." },
+  { at: 20.84, out: 22.70, pos: "left", size: 96, eb: "06 — the spot", lines: ["Claim it."] },
+  { at: 22.86, out: 24.60, pos: "left", size: 62, lines: ["It stays up while you sleep."] },
+  { at: 25.00, out: 27.62, pos: "right", size: 84, eb: "every thursday", lines: ["Demo", "Night."],
+    sub: "One hour a week. The whole floor turns up." },
+];
+
+// ---------- layouts ----------
+// hero  : full-bleed, no chrome, type across the bottom over a scrim
+// left  : window on the RIGHT, type column on the LEFT (and vice versa)
+function layoutOf(name) {
+  switch (name) {
+    case "hero":    return { w: 1740, x: 0, rotY: 0, rotX: 0, chrome: false };
+    case "defocus": return { w: 2280, x: 0, rotY: 0, rotX: 0, chrome: false };
+    // perspective bulges the near edge outward, so keep the window well
+    // inside the frame or it reads as clipped
+    case "left":  return { w: 1040, x: -330, rotY: 11,  rotX: -3, chrome: true };
+    case "right": return { w: 1040, x: 330,  rotY: -11, rotX: -3, chrome: true };
+    default:      return { w: 1500, x: 0, rotY: 0, rotX: 0, chrome: true };
+  }
+}
+
+// ---------- build ----------
+const shotsEl = document.getElementById("shots");
+const typeEl = document.getElementById("type");
+const videos = {};
+const shotNodes = SHOTS.map((s, i) => {
+  const shot = document.createElement("div");
+  shot.className = "shot";
+  const glow = document.createElement("div");
+  glow.className = "glow";
+  const win = document.createElement("div");
+  win.className = "win";
+  const bar = document.createElement("div");
+  bar.className = "bar";
+  bar.innerHTML = '<span class="dot a"></span><span class="dot b"></span><span class="dot c"></span>' +
+    '<span class="url">founderfloor.net</span>';
+  const clip = document.createElement("div");
+  clip.className = "clip";
+  const v = document.createElement("video");
+  v.src = `../${(PLATES[s.key] || {}).file || "plates/" + s.key + ".webm"}`;
+  v.muted = true; v.preload = "auto"; v.playsInline = true;
+  videos[i] = v;
+  clip.append(v);
+  const sheen = document.createElement("div");
+  sheen.className = "sheen";
+  win.append(bar, clip, sheen);
+  shot.append(glow, win);
+  shotsEl.append(shot);
+  return { shot, win, bar, clip, v, glow };
+});
+
+const POS = {
+  centre: "left:0;right:0;top:50%;text-align:center;",
+  left:   "left:120px;top:50%;width:600px;text-align:left;",
+  right:  "right:120px;top:50%;width:600px;text-align:right;",
+};
+const textNodes = TEXT.map((b) => {
+  const blk = document.createElement("div");
+  blk.className = "blk";
+  blk.style.cssText = POS[b.pos] || POS.centre;
+  let html = "";
+  if (b.eb) html += `<div class="eb"><i></i>${b.eb}</div>`;
+  html += `<div class="hl" style="font-size:${b.size}px">` +
+    b.lines.map((l) => `<div>${l.split(" ").map((w) => `<span class="w">${w}</span>`).join(" ")}</div>`).join("") +
+    `</div>`;
+  if (b.sub) html += `<div class="sub">${b.sub}</div>`;
+  blk.innerHTML = html;
+  const eb0 = blk.querySelector(".eb");
+  if (eb0) {
+    if (b.pos === "right") eb0.style.flexDirection = "row-reverse";
+    if (b.pos === "centre") eb0.style.justifyContent = "center";
+  }
+  typeEl.append(blk);
+  return { blk, words: [...blk.querySelectorAll(".w")], eb: blk.querySelector(".eb"), sub: blk.querySelector(".sub") };
+});
+
+const closeBlk = document.createElement("div");
+closeBlk.className = "blk";
+closeBlk.style.cssText = "left:0;right:0;top:50%;text-align:center;";
+closeBlk.innerHTML = ["Free.", "Runs in your browser.", "Nothing to install."]
+  .map((s) => `<div class="cl" style="font-family:var(--serif);font-size:88px;color:var(--paper);letter-spacing:-.022em;line-height:1.24;text-shadow:0 4px 30px rgba(0,0,0,.5)">${s}</div>`)
+  .join("");
+typeEl.append(closeBlk);
+const closeLines = [...closeBlk.querySelectorAll(".cl")];
+
+const endEl = document.getElementById("end");
+const paperEl = document.getElementById("paper");
+const wipeEl = document.getElementById("wipe");
+const grainEl = document.getElementById("grain");
+const scrimEl = document.getElementById("scrim");
+const blobA = document.getElementById("blobA");
+const blobB = document.getElementById("blobB");
+const gridEl = document.getElementById("grid");
+const bgEl = document.getElementById("bg");
+
+// film grain: one deterministic tile, jittered per frame so it crawls
+grainEl.style.backgroundImage = `url(${(() => {
+  const c = document.createElement("canvas");
+  c.width = c.height = 200;
+  const g = c.getContext("2d");
+  const img = g.createImageData(200, 200);
+  let seed = 7;
+  for (let i = 0; i < img.data.length; i += 4) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const v = 96 + (seed % 112);
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+    img.data[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c.toDataURL();
+})()})`;
+
+// ---------- per-frame ----------
+function renderShot(i, t) {
+  const s = SHOTS[i];
+  const n = shotNodes[i];
+  const live = t > s.at - 0.02 && t < s.at + s.len + 0.02;
+  if (!live) { n.shot.style.display = "none"; return null; }
+  n.shot.style.display = "flex";
+
+  const L = layoutOf(s.layout);
+  const winW = L.w;
+  const vidH = Math.round((winW * 9) / 16);
+  const barH = L.chrome ? 40 : 0;
+  n.bar.style.display = L.chrome ? "flex" : "none";
+  n.win.style.width = winW + "px";
+  n.win.style.height = vidH + barH + "px";
+  n.win.style.borderRadius = L.chrome ? "18px" : "14px";
+  n.clip.style.width = winW + "px";
+  n.clip.style.height = vidH + "px";
+
+  // crop: blow a region of the plate up to fill the window
+  const c = s.crop;
+  const k = c ? winW / c.sw : winW / 1920;
+  n.v.style.width = 1920 * k + "px";
+  n.v.style.height = 1080 * k + "px";
+  n.v.style.left = (c ? -c.sx * k : 0) + "px";
+  n.v.style.top = (c ? -c.sy * k : 0) + "px";
+
+  n.glow.style.width = winW * 0.9 + "px";
+  n.glow.style.height = vidH * 0.8 + "px";
+
+  // the out-of-focus backdrop plays by its own rules
+  if (s.layout === "defocus") {
+    const up = clamp((t - s.at) / 0.6);
+    const down = 1 - clamp((t - (s.at + s.len - 0.7)) / 0.7);
+    n.shot.style.opacity = String(0.42 * Math.min(up, down));
+    n.win.style.transform = `translate3d(0,0,0) scale(${lerp(1.06, 1.0, clamp((t - s.at) / s.len))})`;
+    n.win.style.filter = "blur(34px)";
+    n.win.style.boxShadow = "none";
+    n.win.style.border = "none";
+    n.glow.style.opacity = "0";
+    return (PLATES[s.key]?.start || 0) + s.srcIn + (t - s.at);
+  }
+
+  const inT = clamp((t - s.at) / TR);
+  const outT = clamp((t - (s.at + s.len - TR)) / TR);
+  const drift = Math.sin((t - s.at) * 0.5) * 8;
+  const driftY = Math.cos((t - s.at) * 0.38) * 6;
+
+  let op = 1, sc = 1, tx = L.x, ty = 0, blur = 0, ry = L.rotY;
+
+  if (inT < 1) {
+    const e = outExpo(inT);
+    switch (s.trans) {
+      case "zoom": sc = lerp(1.15, 1, e); op = clamp(inT / 0.14); blur = (1 - e) * 13; break;
+      case "push": tx = L.x + lerp(680, 0, e); op = clamp(inT / 0.2); break;
+      case "wipe": op = inT > 0.34 ? 1 : 0; sc = lerp(1.05, 1, e); break;
+      case "mask": sc = lerp(1.20, 1, outCubic(inT)); op = clamp(inT / 0.3); break;
+      default: op = e;
+    }
+    ry = lerp(L.rotY * 1.8, L.rotY, e);
+  }
+  if (outT > 0) {
+    const kind = SHOTS[i + 1] ? SHOTS[i + 1].trans : "zoom";
+    const e = inCubic(outT);
+    if (kind === "zoom") { sc = lerp(1, 1.13, e); op = 1 - e; blur = e * 15; }
+    else if (kind === "push") { tx = L.x + lerp(0, -680, e); op = 1 - clamp(outT / 0.72); }
+    else if (kind === "wipe") { op = outT > 0.54 ? 0 : 1; }
+    else { op = 1 - e; sc = lerp(1, 1.1, e); }
+  }
+
+  n.shot.style.opacity = String(clamp(op));
+  const xf = `translate3d(${tx + drift}px, ${ty + driftY}px, 0) rotateY(${ry}deg) rotateX(${L.rotX}deg) scale(${sc})`;
+  n.win.style.transform = xf;
+  n.glow.style.transform = `translate3d(${tx + drift}px, ${ty + driftY + 40}px, 0) scale(${sc})`;
+  n.win.style.filter = blur > 0.2 ? `blur(${blur.toFixed(2)}px)` : "none";
+  return (PLATES[s.key]?.start || 0) + s.srcIn + (t - s.at);
+}
+
+/** The type never sits on bare footage: a stage-wide gradient rides under it
+ *  on whichever side the words are, so contrast is guaranteed. */
+function renderScrim(t) {
+  let dir = null, amt = 0;
+  for (const b of TEXT) {
+    if (t < b.at - 0.3 || t > b.out + 0.2) continue;
+    const rise = clamp((t - (b.at - 0.3)) / 0.5);
+    const fall = 1 - clamp((t - (b.out - 0.3)) / 0.4);
+    amt = Math.max(amt, Math.min(rise, fall));
+    dir = b.pos;
+  }
+  for (let i = 0; i < closeLines.length; i++) {
+    if (t > CLOSE_AT - 0.3 && t < PAPER_AT) { amt = 1; dir = "centre"; }
+  }
+  scrimEl.style.opacity = String(amt);
+  scrimEl.style.background =
+    dir === "left"
+      ? "linear-gradient(90deg, rgba(9,8,7,.88) 0%, rgba(9,8,7,.66) 24%, rgba(9,8,7,.10) 40%, transparent 50%)"
+      : dir === "right"
+        ? "linear-gradient(270deg, rgba(9,8,7,.88) 0%, rgba(9,8,7,.66) 24%, rgba(9,8,7,.10) 40%, transparent 50%)"
+        : "radial-gradient(120% 90% at 50% 50%, rgba(10,9,8,.66) 0%, rgba(10,9,8,.46) 55%, rgba(10,9,8,.28) 100%)";
+}
+
+function renderText(t) {
+  TEXT.forEach((b, i) => {
+    const n = textNodes[i];
+    const live = t > b.at - 0.05 && t < b.out + 0.05;
+    n.blk.style.display = live ? "block" : "none";
+    if (!live) return;
+    n.blk.style.marginTop = -n.blk.offsetHeight / 2 + "px";
+
+    const gone = inCubic(clamp((t - (b.out - 0.34)) / 0.34));
+    n.blk.style.opacity = String(1 - gone);
+    n.blk.style.transform = `translateY(${-30 * gone}px)`;
+    n.blk.style.filter = gone > 0.02 ? `blur(${gone * 10}px)` : "none";
+
+    const D = 0.055;
+    n.words.forEach((w, wi) => {
+      const e = outExpo(clamp((t - b.at - 0.14 - wi * D) / 0.48));
+      w.style.opacity = String(e);
+      w.style.transform = `translateY(${(1 - e) * 38}px) scale(${lerp(0.93, 1, e)})`;
+      w.style.filter = e < 0.985 ? `blur(${(1 - e) * 10}px)` : "none";
+    });
+    if (n.eb) {
+      n.eb.style.opacity = String(outExpo(clamp((t - b.at) / 0.42)));
+      const bar = n.eb.querySelector("i");
+      if (bar) bar.style.width = `${30 * outExpo(clamp((t - b.at) / 0.7))}px`;
+    }
+    if (n.sub) {
+      const e = outExpo(clamp((t - b.at - 0.32 - n.words.length * D) / 0.52));
+      n.sub.style.opacity = String(e * 0.96);
+      n.sub.style.transform = `translateY(${(1 - e) * 18}px)`;
+    }
+  });
+}
+
+function renderClose(t) {
+  const live = t > CLOSE_AT - 0.05 && t < PAPER_AT + 0.9;
+  closeBlk.style.display = live ? "block" : "none";
+  if (!live) return;
+  closeBlk.style.marginTop = -closeBlk.offsetHeight / 2 + "px";
+  closeBlk.style.opacity = String(1 - clamp((t - (PAPER_AT + 0.3)) / 0.35));
+  closeLines.forEach((ln, i) => {
+    const e = outExpo(clamp((t - CLOSE_AT - 0.2 - i * 0.44) / 0.52));
+    ln.style.opacity = String(e);
+    ln.style.transform = `translateY(${(1 - e) * 44}px) scale(${lerp(0.94, 1, e)})`;
+    ln.style.filter = e < 0.985 ? `blur(${(1 - e) * 11}px)` : "none";
+  });
+}
+
+function renderEnd(t) {
+  const p = clamp((t - PAPER_AT) / 0.62);
+  // before its cue the disc must not exist at all — a scaled-down circle
+  // still paints a paper dot in the middle of every earlier frame
+  paperEl.style.display = p <= 0 ? "none" : "block";
+  paperEl.style.transform = `translate(-50%,-50%) scale(${lerp(0.06, 1.02, outCubic(p))})`;
+  endEl.style.opacity = String(outExpo(clamp((t - PAPER_AT - 0.30) / 0.6)));
+  const rows = [
+    [endEl.querySelector(".mark"), 0.0],
+    [endEl.querySelector("h1"), 0.24],
+    [endEl.querySelector(".url2"), 0.44],
+    [endEl.querySelector(".sub2"), 0.56],
+  ];
+  for (const [el, d] of rows) {
+    const q = outExpo(clamp((t - PAPER_AT - 0.40 - d) / 0.64));
+    el.style.opacity = String(q);
+    el.style.transform = `translateY(${(1 - q) * 28}px)`;
+  }
+  endEl.querySelector(".rule").style.width =
+    `${340 * outExpo(clamp((t - PAPER_AT - 0.52) / 0.78))}px`;
+  const tick = outExpo(clamp((t - PAPER_AT - 0.28) / 0.7));
+  for (const tk of endEl.querySelectorAll(".tick")) tk.style.opacity = String(tick);
+}
+
+function renderBg(t) {
+  blobA.style.transform = `translate3d(${240 + Math.sin(t * 0.20) * 280}px, ${90 + Math.cos(t * 0.16) * 190}px,0)`;
+  blobB.style.transform = `translate3d(${1120 + Math.cos(t * 0.14) * 320}px, ${380 + Math.sin(t * 0.22) * 210}px,0)`;
+  gridEl.style.transform = `translate3d(${-((t * 10) % 72)}px, ${-((t * 6) % 72)}px, 0)`;
+  const f = Math.round(t * 30);
+  grainEl.style.backgroundPosition = `${(f * 37) % 200}px ${(f * 61) % 200}px`;
+  bgEl.style.filter = `saturate(${lerp(1, 0.72, clamp((t - CLOSE_AT) / 1.3))})`;
+}
+
+const markEl = document.getElementById("mark");
+/** The watermark rides the whole cut except the opening cards and the end
+ *  card, which carry the brand themselves. */
+function renderMark(t) {
+  const on = clamp((t - 2.9) / 0.7) * (1 - clamp((t - (PAPER_AT - 0.5)) / 0.5));
+  markEl.style.opacity = String(on * 0.62);
+}
+
+function renderWipe(t) {
+  let o = 0;
+  for (const s of SHOTS) {
+    if (s.trans !== "wipe") continue;
+    const p = clamp((t - (s.at - 0.08)) / (TR + 0.2));
+    if (p > 0 && p < 1) {
+      o = Math.sin(p * Math.PI);
+      wipeEl.style.transform = `translateX(${lerp(-115, 115, p)}%)`;
+    }
+  }
+  wipeEl.style.opacity = String(o * 0.62);
+}
+
+function frame(t) {
+  renderBg(t);
+  const seeks = [];
+  for (let i = 0; i < SHOTS.length; i++) {
+    const want = renderShot(i, t);
+    if (want !== null) seeks.push([videos[i], want]);
+  }
+  renderScrim(t);
+  renderMark(t);
+  renderText(t);
+  renderClose(t);
+  renderWipe(t);
+  renderEnd(t);
+  return seeks;
+}
+
+window.__total = TOTAL;
+/** The cut's structure, for anything that has to line up with it — the
+ *  sound design reads its hit points from here rather than duplicating them. */
+window.__timing = {
+  TOTAL, CLOSE_AT, PAPER_AT, TR,
+  shots: SHOTS.map((s) => ({ key: s.key, at: s.at, len: s.len, trans: s.trans, layout: s.layout })),
+  text: TEXT.map((b) => ({ at: b.at, out: b.out, words: b.lines.join(" ").split(" ").length })),
+};
+window.__ready = async function () {
+  await Promise.all(
+    Object.values(videos).map(
+      (v) =>
+        new Promise((res) => {
+          if (v.readyState >= 2) return res();
+          v.addEventListener("loadeddata", res, { once: true });
+          v.addEventListener("error", res, { once: true });
+        }),
+    ),
+  );
+  return Object.entries(videos).map(([i, v]) => `${SHOTS[i].key}:${v.readyState}:${(v.duration || 0).toFixed(1)}`);
+};
+window.__seek = async function (t) {
+  const seeks = frame(t);
+  await Promise.all(
+    seeks.map(([v, time]) => {
+      const target = Math.max(0, Math.min(time, (v.duration || 1) - 0.02));
+      if (Math.abs(v.currentTime - target) < 0.008) return Promise.resolve();
+      return new Promise((res) => {
+        v.addEventListener("seeked", res, { once: true });
+        v.currentTime = target;
+        setTimeout(res, 500); // never hang the render on a stubborn seek
+      });
+    }),
+  );
+  frame(t);
+  return new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+};
+</script>
+</body>
+</html>

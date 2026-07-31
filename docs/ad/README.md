@@ -6,6 +6,21 @@ they render in the site's own type and palette and get captured in-camera.
 That means the ad can never drift from the product: re-run it after a design
 change and the new design is what you see.
 
+There are two cuts, from the same footage:
+
+- **Cut 1** (`shoot.mjs` + `build.mjs`) — 47s, calm, captions burned in
+  while filming. Straight product film, paper-and-ink.
+- **Cut 2** (`v2/`) — 36s, the modern app-ad treatment: the product in
+  3D-tilted browser windows on a dark stage, cropped so the UI is legible at
+  phone size, per-word kinetic type, push/zoom/wipe transitions with motion
+  blur, and a synthesised sound-design bed. Built from *clean plates* —
+  the same shoot run with `FF_NOCAPS=1` so cut 2 can lay down its own
+  typography.
+
+`HOW-THESE-ADS-ARE-MADE.md` is the field guide: what the ads you're
+comparing against actually cost, which tools produce them, and which of it
+this repo can and cannot do.
+
 Everything here is reproducible from a clean checkout.
 
 ```
@@ -17,6 +32,14 @@ docs/ad/
   endcard.html      the closing card
   squareframe.html  wordmark + URL for the square cut's paper bands
   render-frame.mjs  renders squareframe.html to a transparent PNG
+  v2/
+    scene.html      the compositor: a deterministic motion-graphics engine
+    render.mjs      frame-steps scene.html straight into ffmpeg
+    stills.mjs      shoot chosen moments as stills, to check a change fast
+    timing.mjs      dumps the cut's hit points to timing.json
+    audio.mjs       synthesises the sound bed against those hit points
+    frames.html     branded bands for the 1:1 and 9:16 cuts
+    build2.mjs      wraps the master into every delivery format
 ```
 
 The finished 720p copy also lives at `public/ad/founderfloor-ad.mp4` with
@@ -45,11 +68,25 @@ cd docs/ad
 node seed-floor.mjs &     # 11 stands, 6 people walking, ambient chat
 node sign-books.mjs       # guestbook entries, once the seed is up
 
-# then
+# then — cut 1
 node render-frame.mjs     # once — the square cut's branded overlay
 node shoot.mjs            # ~5 min; writes raw/ and beats.json
 node build.mjs            # writes out/
+
+# and cut 2 — clean plates, then composite
+FF_RAW=plates FF_BEATS=plates.json FF_NOCAPS=1 node shoot.mjs
+cd v2
+node timing.mjs           # timing.json, the cut's hit points
+node audio.mjs            # out/bed.wav, synced to them
+node stills.mjs 4 12 21   # eyeball a few moments before paying for a render
+node render.mjs --preview # 540p draft, ~10 min
+node render.mjs           # 1080p master, ~35 min
+node build2.mjs           # 16:9, 1:1, 9:16, webm, poster
 ```
+
+`render.mjs` is slow *on purpose*: it steps the compositor frame by frame
+rather than capturing in real time, so a heavy blur costs render minutes
+instead of dropped frames. Iterate with `stills.mjs`, not with renders.
 
 `shoot.mjs` takes beat names as arguments (`node shoot.mjs walk claim`) so a
 single shot can be re-taken without re-filming the whole thing. Reset the

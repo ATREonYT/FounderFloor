@@ -13,7 +13,11 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 
 const BASE = process.env.FF_BASE || "http://127.0.0.1:3200";
-const RAW = "raw";
+/** FF_RAW picks the output folder; FF_NOCAPS=1 films clean plates with no
+ * captions, for a cut that adds its own typography in post. */
+const RAW = process.env.FF_RAW || "raw";
+const BEATS = process.env.FF_BEATS || "beats.json";
+const CAPTIONS = process.env.FF_NOCAPS !== "1";
 const VIEW = { width: 1920, height: 1080 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -102,6 +106,7 @@ const CAPTION_CSS = `
 `;
 
 async function captionIn(page, eyebrow, head) {
+  if (!CAPTIONS) return;
   await page.evaluate(
     ([css, eb, hd]) => {
       if (!document.getElementById("ffad-style")) {
@@ -130,6 +135,7 @@ async function captionIn(page, eyebrow, head) {
 }
 
 async function captionOut(page) {
+  if (!CAPTIONS) return;
   await page.evaluate(() => {
     const el = document.getElementById("ffad-cap");
     if (el) el.classList.remove("on");
@@ -344,10 +350,10 @@ await film("endcard", async (page, start) => {
 });
 
 // merge with any earlier take so single beats can be re-shot
-const prev = existsSync("beats.json") ? JSON.parse(readFileSync("beats.json", "utf8")) : [];
+const prev = existsSync(BEATS) ? JSON.parse(readFileSync(BEATS, "utf8")) : [];
 const byName = new Map(prev.map((b) => [b.name, b]));
 for (const b of beats) byName.set(b.name, b);
 const merged = ORDER.map((n) => byName.get(n)).filter(Boolean);
-writeFileSync("beats.json", JSON.stringify(merged, null, 2));
+writeFileSync(BEATS, JSON.stringify(merged, null, 2));
 await browser.close();
 console.log("\n[shoot] done —", beats.length, "beat(s) filmed,", merged.length, "in the cut");

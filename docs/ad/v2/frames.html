@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>social frames</title>
+<style>
+  /* Transparent overlays for the square and vertical cuts: the 16:9 frame
+     sits in the middle, these brand the dead space above and below. Dark,
+     to match cut 2 rather than the paper end card. */
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:transparent;overflow:hidden}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       color:#F2EFE7}
+  .frame{position:relative;display:none}
+  .frame.on{display:block}
+  #sq{width:1080px;height:1080px}
+  #vt{width:1080px;height:1920px}
+  .top,.bot{position:absolute;left:0;right:0;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;gap:14px}
+  .mark{display:flex;align-items:center;gap:14px}
+  .mark svg{image-rendering:pixelated}
+  .word{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;letter-spacing:-.012em}
+  .url{color:#F0906B;font-weight:500;letter-spacing:.01em}
+  .sub{color:rgba(242,239,231,.5);letter-spacing:.04em}
+  .rule{height:1px;background:rgba(242,239,231,.14)}
+
+  #sq .top{top:0;height:236px}
+  #sq .bot{bottom:0;height:236px}
+  #sq .mark svg{width:38px;height:38px}
+  #sq .word{font-size:36px}
+  #sq .url{font-size:32px}
+  #sq .sub{font-size:16px}
+  #sq .rule{width:180px}
+
+  #vt .top{top:0;height:656px;justify-content:flex-end;padding-bottom:80px;gap:20px}
+  #vt .bot{bottom:0;height:656px;justify-content:flex-start;padding-top:80px;gap:20px}
+  #vt .mark svg{width:52px;height:52px}
+  #vt .word{font-size:50px}
+  #vt .url{font-size:44px}
+  #vt .sub{font-size:22px}
+  #vt .rule{width:240px}
+  #vt .claim{font-family:"Iowan Old Style",Palatino,Georgia,serif;font-size:62px;
+             letter-spacing:-.02em;text-align:center;line-height:1.12}
+</style>
+</head>
+<body>
+  <div class="frame" id="sq">
+    <div class="top">
+      <div class="mark">
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="1" y="1" width="14" height="1" fill="#F2EFE7"/><rect x="1" y="2" width="14" height="3" fill="#D9480F"/><rect x="3" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="7" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="11" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="1" y="5" width="1" height="9" fill="#F2EFE7"/><rect x="14" y="5" width="1" height="9" fill="#F2EFE7"/><rect x="3" y="9" width="10" height="5" fill="#F2EFE7"/><rect x="4" y="10" width="8" height="3" fill="#23201A"/></svg>
+        <span class="word">FounderFloor</span>
+      </div>
+    </div>
+    <div class="bot">
+      <div class="rule"></div>
+      <div class="url">founderfloor.net</div>
+      <div class="sub">FREE &middot; RUNS IN YOUR BROWSER</div>
+    </div>
+  </div>
+
+  <div class="frame" id="vt">
+    <div class="top">
+      <div class="mark">
+        <svg viewBox="0 0 16 16" shape-rendering="crispEdges"><rect x="1" y="1" width="14" height="1" fill="#F2EFE7"/><rect x="1" y="2" width="14" height="3" fill="#D9480F"/><rect x="3" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="7" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="11" y="2" width="2" height="3" fill="#F2EFE7"/><rect x="1" y="5" width="1" height="9" fill="#F2EFE7"/><rect x="14" y="5" width="1" height="9" fill="#F2EFE7"/><rect x="3" y="9" width="10" height="5" fill="#F2EFE7"/><rect x="4" y="10" width="8" height="3" fill="#23201A"/></svg>
+        <span class="word">FounderFloor</span>
+      </div>
+      <div class="claim">A trade-show floor<br>that never tears down.</div>
+    </div>
+    <div class="bot">
+      <div class="rule"></div>
+      <div class="url">founderfloor.net</div>
+      <div class="sub">FREE &middot; RUNS IN YOUR BROWSER &middot; NOTHING TO INSTALL</div>
+    </div>
+  </div>
+</body>
+</html>
