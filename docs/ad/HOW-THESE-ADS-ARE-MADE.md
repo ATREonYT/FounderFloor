@@ -52,8 +52,16 @@ is not cheating; it is what most of the market does.
   before you show a logo. Nobody has earned your logo yet.
 - **Text lands on the cut.** If the word appears half a second after the
   shot changes, the whole thing feels loose.
-- **Whoosh in, thump down.** A short noise sweep on each transition and a
-  low thump when type arrives. Free, and it doubles the perceived budget.
+- **Whoosh in, thump down.** Something on each transition and a low thump
+  when type arrives. Free, and it doubles the perceived budget. Reach for a
+  *pitched* sweep rather than filtered noise: noise-based whooshes read as
+  electrical hiss on small speakers, which is the cheapest sound in the
+  world. A stack of sines gliding up an octave reads as air moving.
+- **Click what gets clicked.** A cursor that travels to a control, presses
+  it, and is heard doing so — with the effect following on the next frame —
+  is worth more than any amount of glow. It only works if the click is real:
+  a click sound over footage where nothing was clicked reads as fake
+  immediately.
 - **Speed ramps.** Fast into a cut, slow on the payoff shot. Ramps read as
   intent; constant speed reads as a slideshow.
 - **Crop hard.** If a viewer has to squint, the shot is wasted. Show the

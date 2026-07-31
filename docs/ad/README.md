@@ -39,6 +39,32 @@ the background. Full-bleed colour cards punctuate the acts. Annotations
 about. The footage carries a light grade, and the type mixes the brand serif
 for brand moments with a heavy sans for the feature beats.
 
+**A cursor that actually clicks.** Three shots carry a pointer that travels
+to a control and presses it, with a ripple and a click in the mix — and each
+one is timed to a click that genuinely happens in the footage, so the effect
+on screen follows the press. The times come from the waits in `shoot.mjs`:
+the Send button at 14.90s, a carpet swatch at 21.70s (the preview redraws),
+and *Claim this stand* at 24.20s (the stand goes up). The chat line is still
+being typed as its shot opens, so those keystrokes get taps too.
+
+**No noise anywhere in the sound.** The first pass built its transitions out
+of filtered white noise, which is precisely what "electric static" sounds
+like — a one-pole filter leaves plenty of hiss above 4 kHz and no envelope
+hides it. `audio.mjs` now contains no random generator at all: whooshes are
+pitch-gliding sine stacks, impacts are sines with a frequency envelope, and
+the clicks are short additive transients, which is what a UI click is anyway
+(two high partials decaying fast over a small low body). The build prints an
+`hf` figure — frame-to-frame high-frequency energy, a crude hiss meter —
+which should stay near −50 dBFS.
+
+**Deliberate camera moves.** Every shot has a `cam: [from, to]` scale: push
+in on the reveal, pull back off the stand, settle on the claim. Alternating
+them is what makes the cut breathe, and it replaced an undirected drift that
+read as aimless. There are no floating blurred blobs in the background any
+more either — a mesh of drifting coloured circles is the most generic thing
+in machine-made design. What is left is one anchored key light that leans
+toward whichever side the window is on.
+
 `HOW-THESE-ADS-ARE-MADE.md` is the field guide: what the ads you're
 comparing against actually cost, which tools produce them, and which of it
 this repo can and cannot do.

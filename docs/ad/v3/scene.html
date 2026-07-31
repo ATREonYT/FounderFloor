@@ -23,13 +23,11 @@
   .mood{position:absolute;inset:0;will-change:opacity}
   #mEmber{background:radial-gradient(125% 100% at 50% 34%, #40270F 0%, #1F1409 58%, #0D0906 100%)}
   #mPaper{background:radial-gradient(120% 100% at 50% 40%, #FBF9F4 0%, #F1EDE3 62%, #E7E1D3 100%)}
-  .blob{position:absolute;border-radius:50%;filter:blur(130px);will-change:transform}
-  #bA{width:1020px;height:1020px;background:#D9480F;opacity:.56}
-  #bB{width:860px;height:860px;background:#A8384A;opacity:.42}
-  #bC{width:900px;height:900px;background:#C79A2E;opacity:.36}
-  #pA{width:1000px;height:1000px;background:#F0906B;opacity:.62}
-  #pB{width:860px;height:860px;background:#7FB05A;opacity:.42}
-  #pC{width:820px;height:820px;background:#E8C766;opacity:.50}
+  .key{position:absolute;left:50%;top:50%;width:1900px;height:1220px;
+       margin:-610px 0 0 -950px;border-radius:50%;filter:blur(110px);
+       will-change:transform}
+  #kEmber{background:radial-gradient(closest-side, rgba(217,72,15,.52), rgba(168,56,74,.24) 55%, transparent 76%)}
+  #kPaper{background:radial-gradient(closest-side, rgba(240,144,107,.58), rgba(232,199,102,.36) 52%, transparent 78%)}
   #grid{position:absolute;inset:-140px;opacity:.05;will-change:transform;
     background-image:linear-gradient(#F2EFE7 1px,transparent 1px),
                      linear-gradient(90deg,#F2EFE7 1px,transparent 1px);
@@ -74,6 +72,16 @@
   .annChip::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;
                   background:var(--accent);transform:translateX(-50%) rotate(45deg);border-radius:2px}
   .annChip.below::after{bottom:auto;top:-6px}
+
+  /* ---------------- cursor ---------------- */
+  /* A real pointer that travels to the thing being clicked and presses it.
+     Lives inside .clip, so it inherits the window's perspective for free. */
+  .cur{position:absolute;width:32px;height:42px;margin:-3px 0 0 -4px;
+       pointer-events:none;opacity:0;will-change:transform,opacity,left,top;
+       filter:drop-shadow(0 5px 12px rgba(0,0,0,.5))}
+  .rip{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;
+       border-radius:50%;border:3px solid var(--accent);pointer-events:none;
+       opacity:0;will-change:transform,opacity}
 
   /* ---------------- type ---------------- */
   #scrim{position:absolute;inset:0;pointer-events:none;opacity:0}
@@ -125,8 +133,8 @@
 </head>
 <body>
 <div id="stage">
-  <div class="mood" id="mEmber"><div class="blob" id="bA"></div><div class="blob" id="bB"></div><div class="blob" id="bC"></div></div>
-  <div class="mood" id="mPaper"><div class="blob" id="pA"></div><div class="blob" id="pB"></div><div class="blob" id="pC"></div></div>
+  <div class="mood" id="mEmber"><div class="key" id="kEmber"></div></div>
+  <div class="mood" id="mPaper"><div class="key" id="kPaper"></div></div>
   <div id="grid"></div>
   <div id="shots"></div>
   <div id="vign"></div>
@@ -192,25 +200,30 @@ const PLATES = window.PLATES || {};
 // dark is most of the perceived energy.
 const SHOTS = [
   { key: "walk",      at:  0.00, len: 2.62, srcIn: 0.30, layout: "defocus", mood: "paper", trans: "none" },
-  { key: "walk",      at:  2.80, len: 3.68, srcIn: 2.55, layout: "hero",  mood: "ember", trans: "mask" },
+  { key: "walk",      at:  2.80, len: 3.68, srcIn: 2.55, layout: "hero",  mood: "ember", trans: "mask",
+    url: "/floor/main-hall", cam: [1.10, 1.00] },
   { key: "walk",      at:  6.86, len: 3.16, srcIn: 5.00, layout: "right", mood: "paper", trans: "zoom",
-    crop: { sx: 180, sy: 90, sw: 1560 } },
+    crop: { sx: 180, sy: 90, sw: 1560 }, url: "/floor/main-hall", cam: [1.00, 1.06] },
   { key: "stand",     at:  9.90, len: 3.26, srcIn: 0.60, layout: "left",  mood: "ember", trans: "push",
-    crop: { sx: 700, sy: 30, sw: 1220 },
+    crop: { sx: 700, sy: 30, sw: 1220 }, url: "/floor/main-hall", cam: [1.06, 1.00],
     ann: { x: 69.5, y: 3.5, w: 29.5, h: 81, label: "their pitch", at: 1.05 } },
   { key: "chat",      at: 13.56, len: 3.26, srcIn: 1.00, layout: "right", mood: "paper", trans: "zoom",
-    crop: { sx: 0, sy: 430, sw: 1180 },
-    ann: { x: 0.6, y: 53, w: 29, h: 44, label: "floor chat", at: 1.25 } },
-  { key: "directory", at: 16.76, len: 2.96, srcIn: 0.70, layout: "left",  mood: "ember", trans: "wipe",
-    crop: { sx: 520, sy: 95, sw: 900 },
+    crop: { sx: 0, sy: 430, sw: 1180 }, url: "/floor/main-hall", cam: [0.99, 1.05],
+    ann: { x: 0.6, y: 53, w: 29, h: 44, label: "floor chat", at: 1.25 },
+    cursor: { from: [62, 38], to: [24.7, 91.9], t0: 0.55, t1: 1.26, click: 1.34 } },
+  { key: "directory", at: 16.76, len: 2.96, srcIn: 0.70, layout: "left",  mood: "ember", trans: "zoom",
+    crop: { sx: 520, sy: 95, sw: 900 }, url: "/directory", cam: [1.05, 1.00],
     ann: { x: 75.5, y: 72, w: 15, h: 8.5, label: "walk there", at: 1.0 } },
   { key: "designer",  at: 19.60, len: 2.96, srcIn: 0.60, layout: "right", mood: "paper", trans: "push",
-    crop: { sx: 260, sy: 20, sw: 1160 },
-    ann: { x: 70.5, y: 5, w: 26, h: 40, label: "live preview", at: 1.0 } },
+    crop: { sx: 260, sy: 20, sw: 1160 }, url: "/profile", cam: [1.00, 1.05],
+    ann: { x: 70.5, y: 5, w: 26, h: 40, label: "live preview", at: 1.0 },
+    cursor: { from: [28, 58], to: [64.9, 88.7], t0: 0.60, t1: 2.02, click: 2.10 } },
   { key: "claim",     at: 22.90, len: 4.44, srcIn: 1.30, layout: "hero",  mood: "ember", trans: "zoom",
-    ann: { x: 75.5, y: 55, w: 15, h: 28, label: "your stand", at: 2.95 } },
+    url: "/floor/main-hall", cam: [1.07, 1.00],
+    ann: { x: 75.5, y: 55, w: 15, h: 28, label: "your stand", at: 2.95 },
+    cursor: { from: [56, 60], to: [89.6, 24.4], t0: 0.45, t1: 1.22, click: 1.30 } },
   { key: "demonight", at: 27.28, len: 3.02, srcIn: 0.40, layout: "left",  mood: "paper", trans: "push",
-    crop: { sx: 200, sy: 330, sw: 1320 },
+    crop: { sx: 200, sy: 330, sw: 1320 }, url: "/lobby", cam: [1.04, 1.00],
     ann: { x: 79, y: 50, w: 18, h: 8, label: "remind me", at: 1.05 } },
 ];
 
@@ -274,17 +287,25 @@ const shotNodes = SHOTS.map((s) => {
   clip.append(img);
   const sheen = document.createElement("div");
   sheen.className = "sheen";
+  const rip = document.createElement("div");
+  rip.className = "rip";
+  const cur = document.createElement("div");
+  cur.className = "cur";
+  cur.innerHTML =
+    '<svg viewBox="0 0 24 32"><path d="M3 2 L3 25.5 L9.6 19.4 L13.6 28.8 L17.8 26.8 L13.8 17.8 L21.2 17.4 Z"' +
+    ' fill="#FFFFFF" stroke="#23201A" stroke-width="1.9" stroke-linejoin="round"/></svg>';
   const ann = document.createElement("div");
   ann.className = "ann";
   ann.innerHTML = '<div class="annBox"></div><div class="annChip"></div>';
   ann.style.display = "none";
-  clip.append(ann);
+  clip.append(ann, rip, cur);
   win.append(bar, clip, sheen);
   shot.append(amb, win);
   shotsEl.append(shot);
   imgs[SHOTS.indexOf(s)] = [img, amb];
-  return { shot, win, bar, clip, img, amb, sheen, ann,
-           annChip: ann.querySelector(".annChip") };
+  return { shot, win, bar, clip, img, amb, sheen, ann, rip, cur,
+           annChip: ann.querySelector(".annChip"),
+           urlEl: bar.querySelector(".url") };
 });
 
 const POS = {
@@ -343,7 +364,7 @@ const punchEl = document.getElementById("punch");
 const punchWord = document.getElementById("punchWord");
 const sweepEl = document.getElementById("paperSweep");
 const endEl = document.getElementById("end");
-const blobs = ["bA", "bB", "bC", "pA", "pB", "pC"].map((id) => document.getElementById(id));
+const keyLights = ["kEmber", "kPaper"].map((id) => document.getElementById(id));
 
 grainEl.style.backgroundImage = `url(${(() => {
   const c = document.createElement("canvas");
@@ -393,6 +414,7 @@ function renderShot(i, t) {
   const vidH = Math.round((L.w * 9) / 16);
   const barH = L.chrome ? 42 : 0;
   n.bar.style.display = L.chrome ? "flex" : "none";
+  if (n.urlEl) n.urlEl.textContent = "founderfloor.net" + (s.url || "");
   n.win.classList.toggle("chrome", L.chrome);
   n.win.style.width = L.w + "px";
   n.win.style.height = vidH + barH + "px";
@@ -427,8 +449,11 @@ function renderShot(i, t) {
   const outT = clamp((t - (s.at + s.len - TR)) / TR);
   const dx = Math.sin((t - s.at) * 0.48) * 9;
   const dy = Math.cos((t - s.at) * 0.36) * 7;
-  // a slow push through the shot: nothing is ever still
-  const push = lerp(1.0, 1.035, clamp((t - s.at) / s.len));
+  // a deliberate camera move per shot — push in, pull out, or settle —
+  // rather than an undirected creep. Alternating them gives the cut breath.
+  const camA = s.cam ? s.cam[0] : 1.0;
+  const camB = s.cam ? s.cam[1] : 1.035;
+  const push = lerp(camA, camB, inOut(clamp((t - s.at) / s.len)));
 
   let op = 1, sc = push, tx = L.x, blur = 0, ry = L.rotY;
   if (inT < 1) {
@@ -490,6 +515,26 @@ function renderShot(i, t) {
         `translate(-50%, ${below ? "0" : "-100%"}) translateY(${slide}px)`;
     }
   }
+
+  // cursor: travel, press, ripple — timed to a click that really happens
+  if (s.cursor) {
+    const c = s.cursor;
+    const rel = t - s.at;
+    const showP = clamp((rel - (c.t0 - 0.28)) / 0.28);
+    const hideP = clamp((rel - (s.len - TR - 0.05)) / 0.28);
+    const e = inOut(clamp((rel - c.t0) / (c.t1 - c.t0)));
+    n.cur.style.left = lerp(c.from[0], c.to[0], e) + "%";
+    n.cur.style.top = lerp(c.from[1], c.to[1], e) + "%";
+    const pr = clamp((rel - c.click) / 0.14);
+    const press = pr > 0 && pr < 1 ? Math.sin(pr * Math.PI) : 0;
+    n.cur.style.transform = `scale(${1 - press * 0.2})`;
+    n.cur.style.opacity = String(showP * (1 - hideP));
+    const rp = clamp((rel - c.click) / 0.5);
+    n.rip.style.left = c.to[0] + "%";
+    n.rip.style.top = c.to[1] + "%";
+    n.rip.style.opacity = String(rp > 0 && rp < 1 ? (1 - rp) * 0.85 : 0);
+    n.rip.style.transform = `scale(${1 + outCubic(rp) * 5.5})`;
+  }
   return src;
 }
 
@@ -512,16 +557,20 @@ function renderBg(t) {
   vignEl.style.opacity = String(1 - paper * 0.75);
   gridEl.style.opacity = String(0.05 * (1 - paper) + 0.035 * paper);
   gridEl.style.transform = `translate3d(${-((t * 11) % 80)}px, ${-((t * 7) % 80)}px, 0)`;
-  const P = [
-    [-40, 120, 0.19, 0.15, 300, 210], [1180, -80, 0.15, 0.23, 330, 190],
-    [700, 620, 0.22, 0.13, 280, 240], [-60, 60, 0.17, 0.21, 320, 200],
-    [1200, 520, 0.13, 0.18, 300, 230], [520, -120, 0.20, 0.14, 340, 180],
-  ];
-  blobs.forEach((b, i) => {
-    const [x, y, fx, fy, ax, ay] = P[i];
-    b.style.transform =
-      `translate3d(${x + Math.sin(t * fx) * ax}px, ${y + Math.cos(t * fy) * ay}px, 0)`;
-  });
+  // the key light breathes and leans toward whichever side the window is on.
+  // Pure function of t — an accumulator would make the render depend on how
+  // many frames had been drawn.
+  const breathe = 1 + Math.sin(t * 0.42) * 0.045;
+  let lean = 0, leanW = 0;
+  for (const sh of SHOTS) {
+    if (t < sh.at - TR || t > sh.at + sh.len) continue;
+    const w = clamp((t - (sh.at - TR)) / TR) * (1 - clamp((t - (sh.at + sh.len - TR)) / TR));
+    const dir = sh.layout === "left" ? -260 : sh.layout === "right" ? 260 : 0;
+    lean += dir * w;
+    leanW += w;
+  }
+  if (leanW > 1) lean /= leanW;
+  for (const k of keyLights) k.style.transform = `translate3d(${lean}px,0,0) scale(${breathe})`;
   const f = Math.round(t * 25);
   grainEl.style.backgroundPosition = `${(f * 41) % 200}px ${(f * 67) % 200}px`;
 }
@@ -662,9 +711,19 @@ function frame(t) {
 
 // ------------------------------------------------------------ renderer API
 window.__total = TOTAL;
+const KEYSTROKES = [];
+for (let k = 13.62; k < 14.46; k += 0.088) KEYSTROKES.push(Number(k.toFixed(3)));
+
 window.__timing = {
   TOTAL, CLOSE_AT, PAPER_AT, TR,
-  shots: SHOTS.map((s) => ({ key: s.key, at: s.at, len: s.len, trans: s.trans, layout: s.layout, mood: s.mood })),
+  shots: SHOTS.map((s) => ({
+    key: s.key, at: s.at, len: s.len, trans: s.trans, layout: s.layout,
+    mood: s.mood, annAt: s.ann ? s.ann.at : null,
+  })),
+  clicks: SHOTS.filter((s) => s.cursor).map((s) => ({
+    at: Number((s.at + s.cursor.click).toFixed(3)), key: s.key,
+  })),
+  keys: KEYSTROKES,
   punch: PUNCH.map((p) => ({ at: p.at, len: p.len, word: p.word })),
   text: TEXT.map((b) => ({ at: b.at, out: b.out, words: b.lines.join(" ").split(" ").length })),
 };
