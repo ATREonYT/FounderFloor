@@ -10,6 +10,9 @@ import LiveStats from "@/components/LiveStats";
 import Reveal from "@/components/Reveal";
 import FloorThumb from "@/components/FloorThumb";
 import EmailCapture from "@/components/EmailCapture";
+import CountUp from "@/components/CountUp";
+import Parallax from "@/components/Parallax";
+import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
 
 /**
  * The landing page, set as a printed trade-show programme.
@@ -44,10 +47,6 @@ const TICKER_ITEMS = [
   "FIND A CO-FOUNDER",
   "NO CALENDAR INVITE",
 ];
-
-function money(n: number): string {
-  return `$${n.toLocaleString("en-US")}`;
-}
 
 /* ------------------------------------------------------------------ parts */
 
@@ -127,7 +126,9 @@ function Section({
               </span>
               <span
                 aria-hidden="true"
-                className={`dash-x h-px flex-1 ${dark ? "[--dash-c:rgba(242,239,231,0.3)]" : ""}`}
+                className={`dash-x draw-x h-px flex-1 ${
+                  dark ? "[--dash-c:rgba(242,239,231,0.3)]" : ""
+                }`}
               />
             </div>
             <Spec className={`mt-4 block ${dark ? "text-gold" : "text-accent"}`}>{kicker}</Spec>
@@ -164,7 +165,7 @@ const STOPS: { title: string; body: string; glyph: GlyphId }[] = [
   {
     title: "Walk in",
     glyph: "bolt",
-    body: "Pick a name, pick a face, pick a floor. Arrow keys — or just tap where you want to go. No calendar invite, no badge scanner.",
+    body: "Pick a name, pick a face, pick a floor. Arrow keys, or just tap where you want to go. No calendar invite, no badge scanner.",
   },
   {
     title: "Talk to founders",
@@ -210,7 +211,7 @@ const INDEX_ROWS: {
     href: "/profile",
     glyph: "bolt",
     name: "Profile",
-    blurb: "Your name, your stand, your quests and badges — and an account if you want one.",
+    blurb: "Your name, your stand, your quests and badges. And an account, if you want one.",
     action: "Set yourself up",
   },
 ];
@@ -224,41 +225,55 @@ const PRICING: { tier: SubTier; blurb: string }[] = [
 ];
 
 const SHIPPED = [
-  ["A directory that grows itself", "every startup someone creates shows up, with its category as a new filter, the moment they save it."],
-  ["Chats that follow you", "message a connection from anywhere; they get a pixel-mail ping whether they're on a floor or in a menu."],
-  ["Your own banner logo", "any image, shrunk to a 16×16 mark on your stand."],
-  ["Your progress, everywhere", "stand, quests, badges and streaks follow your account across devices."],
-  ["Smooth on any machine", "the floor tunes its render resolution to your hardware."],
-  ["Real email accounts", "sign in with your email, reset a forgotten password, get an alert on a new sign-in."],
+  ["A directory that grows itself", "Every startup someone creates shows up the moment they save it, and its category becomes a new filter."],
+  ["Chats that follow you", "Message a connection from anywhere. They get a pixel-mail ping whether they're on a floor or in a menu."],
+  ["Your own banner logo", "Upload any image and it is shrunk to a 16×16 mark on your stand."],
+  ["Your progress, everywhere", "Stand, quests, badges and streaks now follow your account across devices."],
+  ["Smooth on any machine", "The floor measures your hardware and picks its render resolution to match."],
+  ["Real email accounts", "Sign in with an address, reset a forgotten password, and get an alert if the account signs in somewhere new."],
 ];
 
 const IN_THE_SHOP = [
-  ["Real revenue verification", "a read-only Stripe connection, so the gold badges stop being simulated and start being earned."],
+  ["Real revenue verification", "A read-only Stripe connection, so the gold badges stop being simulated and start being earned."],
   ["A real events calendar", "Demo Night gets siblings: pitch hours, category meetups, co-founder speed-walking."],
-  ["Bigger halls", "new floors open as the existing ones fill with real stands."],
+  ["Bigger halls", "New floors open as the existing ones fill with real stands."],
 ];
 
 const FAQ = [
   {
     q: "Is it actually free?",
-    a: "Walking the floors, talking, connecting, and keeping a stand — free, permanently. Paid memberships buy visibility (priority in the directory, gold trim on your stand), never access.",
+    a: "Walking the floors, talking, connecting, and keeping a stand: free, permanently. Paid memberships buy visibility (priority in the directory, gold trim on your stand), never access.",
   },
   {
     q: "Are the people real?",
-    a: "Yes — every stand is set up by a real founder and every avatar is a live visitor. The one exception is Pixel, the clearly-labeled tutorial robot, who never leaves the practice hall.",
+    a: "Yes. Every stand is set up by a real founder and every avatar is a live visitor. The one exception is Pixel, the clearly-labeled tutorial robot, who never leaves the practice hall.",
   },
   {
     q: "What happens to my stand when I close the tab?",
-    a: "It stays up for 7 days while you're away — collecting guestbook notes and connection requests. Come back within the week and the clock resets.",
+    a: "It stays up for 7 days while you're away, collecting guestbook notes and connection requests. Come back within the week and the clock resets.",
   },
   {
     q: "Do I need an account?",
-    a: "No — you can walk in as a guest with just a name. An account (free) makes your progress follow you across devices and lets you reset a forgotten password by email.",
+    a: "No. You can walk in as a guest with just a name. An account (free) makes your progress follow you across devices and lets you reset a forgotten password by email.",
   },
   {
     q: "What are the ranks on the stands?",
-    a: "Monthly revenue tiers. They're labeled honestly: in this beta, verification is simulated — founders type a number. Read-only Stripe verification is the first post-beta feature.",
+    a: "Monthly revenue tiers. They're labeled honestly: in this beta, verification is simulated: founders type a number. Read-only Stripe verification is the first post-beta feature.",
   },
+];
+
+/**
+ * The running head, pinned in the left margin above 1380px. Kept next to the
+ * sections it points at so the two cannot drift apart.
+ */
+const PROGRAMME: IndexEntry[] = [
+  { id: "route", n: "01", label: "Three stops, one lap" },
+  { id: "index", n: "02", label: "Find your way around" },
+  { id: "halls", n: "03", label: "The floor" },
+  { id: "ranks", n: "04", label: "The rank ladder" },
+  { id: "admission", n: "05", label: "Admission" },
+  { id: "roadmap", n: "06", label: "The floor keeps changing" },
+  { id: "faq", n: "07", label: "Fair questions" },
 ];
 
 /* ------------------------------------------------------------------ page */
@@ -268,6 +283,7 @@ export default function LandingPage() {
 
   return (
     <main>
+      <ProgrammeIndex entries={PROGRAMME} />
       {/* HALL BOARD — the lit sign over the doors. A fixed status chip, then
           the programme running past it. */}
       <div className="flex items-stretch border-b border-line bg-ink text-paper">
@@ -299,7 +315,7 @@ export default function LandingPage() {
             <Spec className="text-muted">FounderFloor · Programme 2026</Spec>
             <Spec className="flex items-center gap-2 text-muted">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verify" />
-              Main Hall — open now
+              Main Hall, open now
             </Spec>
             <Spec className="text-muted">Admission free · nothing to install</Spec>
           </div>
@@ -320,7 +336,7 @@ export default function LandingPage() {
               FounderFloor is a small 2D world where startups keep a stand and
               real founders stand at it. You walk around, you read the signs,
               you talk to people. Ranks reflect self-reported revenue in this
-              beta — verification is on the roadmap — and the gold badge tells
+              beta (verification is on the roadmap), and the gold badge tells
               you who claims to have earned it the boring way.
             </p>
             <div className="lg:border-l lg:border-line lg:pl-10">
@@ -354,23 +370,28 @@ export default function LandingPage() {
         {/* PLATE — the artwork runs wider than the text and carries crop
             marks and a caption, the way a plate does in a printed programme */}
         <div className={`${WIDE} mt-12 sm:mt-16`}>
-          <figure className="anim-in relative">
-            <CropMarks />
-            <div className="relative overflow-hidden border border-line bg-panel">
-              <HeroScene bare className="h-[300px] sm:h-[420px] lg:h-[520px]" />
-              <span className="absolute left-4 top-4 border border-ink/15 bg-paper/85 px-2.5 py-1.5 backdrop-blur-[2px]">
-                <Spec className="text-muted">Main Hall — ambient view</Spec>
-              </span>
-              <span className="absolute right-4 top-4 flex items-center gap-2 border border-ink/15 bg-paper/85 px-2.5 py-1.5 backdrop-blur-[2px]">
-                <span aria-hidden="true" className="pulse-dot h-1.5 w-1.5 rounded-full bg-verify" />
-                <Spec className="text-muted">Rendered live</Spec>
-              </span>
-            </div>
-            <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1">
-              <Spec className="text-muted">Plate 01 — the hall, drawn at its own scale</Spec>
-              <Spec className="text-muted">WASD · arrow keys · or tap</Spec>
-            </figcaption>
-          </figure>
+          {/* the plate drifts a little against the type as it passes, so the
+              page has a foreground and a background rather than one plane */}
+          <Parallax amount={14}>
+            <figure className="anim-in relative">
+              <CropMarks />
+              <div className="relative overflow-hidden border border-line bg-panel">
+                <HeroScene bare className="h-[300px] sm:h-[420px] lg:h-[520px]" />
+                {/* labels are printed ON the plate: solid stock, no blur */}
+                <span className="absolute left-4 top-4 border border-ink/15 bg-paper px-2.5 py-1.5">
+                  <Spec className="text-muted">Main Hall, ambient view</Spec>
+                </span>
+                <span className="absolute right-4 top-4 flex items-center gap-2 border border-ink/15 bg-paper px-2.5 py-1.5">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rotate-45 bg-accent" />
+                  <Spec className="text-muted">Drawn on load</Spec>
+                </span>
+              </div>
+              <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1">
+                <Spec className="text-muted">Plate 01. The hall, drawn at its own scale</Spec>
+                <Spec className="text-muted">WASD · arrow keys · or tap</Spec>
+              </figcaption>
+            </figure>
+          </Parallax>
         </div>
 
         {/* the numbers, posted on a rule instead of sat in four white boxes */}
@@ -390,9 +411,11 @@ export default function LandingPage() {
         <div className="relative">
           {/* the walking route: a dotted path the stops sit on. It runs off
               both edges — the hall continues past what's on this page. */}
+          {/* the path draws itself in, then the dashes keep crawling: a
+              route that is being walked shouldn't sit still */}
           <span
             aria-hidden="true"
-            className="dash-x edge-fade-x absolute left-0 top-6 hidden h-px w-full sm:block"
+            className="dash-x march edge-fade-x absolute left-0 top-6 hidden h-px w-full sm:block"
           />
           <ol className="grid gap-11 sm:grid-cols-3 sm:gap-8">
             {STOPS.map((stop, i) => (
@@ -404,7 +427,11 @@ export default function LandingPage() {
                     className="dash-y absolute left-6 top-12 h-[calc(100%+2.75rem-3rem)] w-px sm:hidden"
                   />
                 )}
-                <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper">
+                {/* each stop lands as the path reaches it */}
+                <span
+                  className="stop-pop relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper"
+                  style={{ animationDelay: `${180 + i * 190}ms` }}
+                >
                   <PixelGlyph glyph={stop.glyph} size={18} color="#D9480F" />
                 </span>
                 <div className="min-w-0 sm:mt-7">
@@ -435,7 +462,7 @@ export default function LandingPage() {
         lede="Four places, each with one job. Everything you do in one shows up in the others."
         tone="panel"
       >
-        <ul className="border-t border-line">
+        <ul className="stagger-children border-t border-line">
           {INDEX_ROWS.map((row, i) => (
             <li key={row.href}>
               <Link
@@ -475,7 +502,7 @@ export default function LandingPage() {
             </>
           ) : (
             <>
-              One hall, open to everyone, and everyone is in it — a young floor
+              One hall, open to everyone, and everyone is in it. A young floor
               fills up faster than four empty ones. The miniature is to scale.
             </>
           )
@@ -512,7 +539,7 @@ export default function LandingPage() {
                   <dl className="mt-5 max-w-md text-sm">
                     {[
                       ["Booths", String(floor.boothSpots.length)],
-                      ["Admission", locked ? `${TIER_LABEL[floor.tier]} — ${TIER_PRICE[floor.tier]}` : "Free"],
+                      ["Admission", locked ? `${TIER_LABEL[floor.tier]}, ${TIER_PRICE[floor.tier]}` : "Free"],
                       ["Stands held for newcomers", floor.reservedSpot !== undefined ? "One" : "None"],
                       ["Tears down", "Never"],
                     ].map(([k, v]) => (
@@ -546,7 +573,7 @@ export default function LandingPage() {
         lede={
           <>
             The plan: ranks set by verified monthly revenue through a read-only
-            Stripe connection. This beta simulates that — founders self-report
+            Stripe connection. This beta simulates it: founders self-report
             their number and the badge follows. Treat every rank as a claim.
           </>
         }
@@ -558,7 +585,7 @@ export default function LandingPage() {
             <Spec className="text-right text-paper/40 sm:text-left">Monthly revenue</Spec>
             <Spec className="hidden text-paper/40 sm:block">What it means</Spec>
           </div>
-          {RANKS.map((rank) => (
+          {RANKS.map((rank, i) => (
             <div
               key={rank.id}
               className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-paper/10 px-1 py-4 last:border-b-0 sm:grid-cols-[9.5rem_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-x-6"
@@ -572,17 +599,26 @@ export default function LandingPage() {
                 <Spec className="text-paper">{rank.name}</Spec>
               </span>
               <span className="flex items-center gap-3 justify-self-end sm:justify-self-auto">
-                {/* wide enough for "$100,000+" — a narrower column lets the
-                    top rank shove its bar out of line with the others */}
-                <span className="w-[6.75rem] shrink-0 text-right font-display text-lg tabular-nums text-gold sm:text-left">
-                  {money(rank.minRevenue)}+
+                {/* The board totals count up when the section arrives, the
+                    way a hall's tote board does when it refreshes. The column
+                    is wide enough for "$100,000+": any narrower and the top
+                    rank shoves its bar out of line with the others. */}
+                <span className="w-[6.75rem] shrink-0 text-right font-display text-lg text-gold sm:text-left">
+                  <CountUp
+                    value={rank.minRevenue}
+                    prefix="$"
+                    suffix="+"
+                    delay={i * 90}
+                    duration={1000}
+                  />
                 </span>
                 <span className="hidden h-[3px] flex-1 overflow-hidden bg-paper/10 sm:block">
                   <span
-                    className="block h-full"
+                    className="bar-grow block h-full"
                     style={{
                       width: `${Math.max(4, (rank.minRevenue / maxRevenue) * 100)}%`,
                       background: `linear-gradient(90deg, ${rank.color}88, ${rank.color})`,
+                      animationDelay: `${i * 90}ms`,
                     }}
                   />
                 </span>
@@ -594,7 +630,7 @@ export default function LandingPage() {
           ))}
         </div>
         <Spec className="mt-5 block text-paper/40">
-          Gold is self-reported in this beta — verification is the roadmap
+          Gold is self-reported in this beta. Verification is the roadmap
         </Spec>
       </Section>
 
@@ -604,7 +640,7 @@ export default function LandingPage() {
         id="admission"
         kicker="What costs money"
         title="Admission"
-        lede="Walking in is free and stays free. What you can buy is a better position on the floor — never a key to it."
+        lede="Walking in is free and stays free. What you can buy is a better position on the floor, never a key to it."
       >
         {/* the season pass */}
         <div className="mb-10 border-y-2 border-gold bg-ink px-5 py-4 text-paper sm:px-7 sm:py-5">
@@ -636,7 +672,10 @@ export default function LandingPage() {
               // the card by a mask (see .stub), not drawn on top of it.
               <article
                 key={tier}
-                className={`stub relative flex flex-col border bg-panel ${
+                // No card-lift here: that adds a box-shadow, and the stub's
+                // mask would clip it into a hard-edged smear. A plain rise is
+                // the only lift a masked element can wear.
+                className={`stub relative flex flex-col border bg-panel transition-transform duration-200 ease-out hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
                   featured ? "border-accent/50" : "border-line"
                 }`}
               >
@@ -712,7 +751,7 @@ export default function LandingPage() {
           })}
         </div>
         <Spec className="mt-5 block text-muted">
-          Beta — billing goes live at launch
+          Beta. Billing goes live at launch
         </Spec>
       </Section>
 
@@ -733,7 +772,7 @@ export default function LandingPage() {
             <div key={col.label}>
               <div className="flex items-center gap-3 border-b border-line pb-2.5">
                 <Spec className={col.color}>{col.label}</Spec>
-                <span aria-hidden="true" className="dash-x h-px flex-1" />
+                <span aria-hidden="true" className="dash-x draw-x h-px flex-1" />
                 <Spec className="text-muted">{String(col.rows.length).padStart(2, "0")}</Spec>
               </div>
               <ul className="mt-1">
@@ -744,7 +783,7 @@ export default function LandingPage() {
                   >
                     <span aria-hidden="true" className={`mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 ${col.mark}`} />
                     <span>
-                      <span className="text-ink">{head}</span> — {tail}
+                      <span className="text-ink">{head}.</span> {tail}
                     </span>
                   </li>
                 ))}
@@ -790,7 +829,7 @@ export default function LandingPage() {
         <div className={`${SHELL} py-16 sm:py-24`}>
           <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div>
-              <Spec className="text-gold">Closing time — there isn&rsquo;t one</Spec>
+              <Spec className="text-gold">Closing time: there isn&rsquo;t one</Spec>
               <h2
                 id="cta-heading"
                 className="mt-4 max-w-xl font-display text-[2.3rem] leading-[1.1] text-paper sm:text-[3.1rem]"
@@ -816,7 +855,7 @@ export default function LandingPage() {
               <Spec className="text-gold">Or come back when it&rsquo;s busy</Spec>
               <p className="mt-3 text-sm leading-relaxed text-paper/70">
                 The floors fill up on Thursdays. Leave an address and we&rsquo;ll
-                tell you when it&rsquo;s worth walking in — no newsletter, no
+                tell you when it&rsquo;s worth walking in. No newsletter, no
                 drip campaign.
               </p>
               <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/40 [&_p]:text-paper/50">

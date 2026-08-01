@@ -9,6 +9,7 @@ import MemberBadge from "@/components/MemberBadge";
 import NavAdmin from "@/components/NavAdmin";
 import MembershipWatcher from "@/components/MembershipWatcher";
 import Messenger from "@/components/Messenger";
+import ScrollProgress from "@/components/ScrollProgress";
 
 /**
  * Site URL for absolute metadata URLs. Vercel sets VERCEL_URL on preview
@@ -20,7 +21,7 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://founderfloor.net");
 
-const TITLE = "FounderFloor — a walkable expo for startups";
+const TITLE = "FounderFloor: a walkable expo for startups";
 // Kept under 125 characters: past that, X and most previews truncate it
 // mid-sentence on phones.
 const DESCRIPTION =
@@ -28,7 +29,7 @@ const DESCRIPTION =
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: TITLE, template: "%s — FounderFloor" },
+  title: { default: TITLE, template: "%s · FounderFloor" },
   description: DESCRIPTION,
   applicationName: "FounderFloor",
   keywords: [
@@ -67,9 +68,21 @@ export default function RootLayout({
             game is fullscreen with its own chrome, and the route-transition
             opacity animation traps the game's z-index below any positioned
             header — so the nav would otherwise float over the hall. */}
+        {/* Keyboard and screen-reader visitors get past the nav in one key.
+            Invisible until focused, then it lands as a proper control. */}
+        <a
+          href="#content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2.5 focus:text-sm focus:text-paper"
+        >
+          Skip to content
+        </a>
+
+        {/* Solid, ruled chrome. The translucent blurred bar it replaces is
+            the single most-used header treatment on the web right now, and
+            it reads as a template even when everything under it doesn't. */}
         <header
           data-site-nav
-          className="sticky top-0 z-40 border-b border-line/60 bg-panel/80 backdrop-blur-md"
+          className="sticky top-0 z-40 border-b border-line bg-paper"
         >
           <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-5 sm:gap-6 sm:px-8">
             <Link
@@ -107,9 +120,13 @@ export default function RootLayout({
               <NavProfile />
             </nav>
           </div>
+          {/* how far through the page you are, drawn on the header's own rule */}
+          <ScrollProgress />
         </header>
 
-        <div className="flex-1">{children}</div>
+        <div id="content" className="flex-1">
+          {children}
+        </div>
 
         {/* site-wide chats: bubble button bottom-right, mail toasts top-right
             (hides itself on floors — the game has its own chat panel) */}
@@ -183,7 +200,7 @@ export default function RootLayout({
             <div className="mt-10 flex flex-col gap-1 border-t border-line pt-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
               <p>&copy; {new Date().getFullYear()} FounderFloor. All rights reserved.</p>
               <p>
-                Revenue ranks are self-reported in this beta &mdash; treat them
+                Revenue ranks are self-reported in this beta; treat them
                 as claims. Egos need no verification.
               </p>
             </div>

@@ -45,7 +45,7 @@ export const TIER_PERKS: Record<SubTier, string[]> = {
     "“Pro member” title on your hover card",
   ],
   founder: [
-    "Top placement everywhere — above Pro and free",
+    "Top placement everywhere, above Pro and free",
     "Gold-trimmed stand on the floor",
     "FOUNDER+ tag and “Founder+ member” title",
   ],

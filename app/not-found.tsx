@@ -16,8 +16,8 @@ export default function NotFound() {
           There&rsquo;s no hall down here.
         </h1>
         <p className="mt-4 text-base leading-relaxed text-muted">
-          Either the link is old or the stand packed up. Nothing is broken —
-          you&rsquo;re just standing in a corridor. The floors are this way:
+          Either the link is old or the stand packed up. Nothing is broken.
+          You&rsquo;re just standing in a corridor. The floors are this way:
         </p>
       </div>
       <div className="flex flex-wrap gap-3">

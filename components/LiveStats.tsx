@@ -9,7 +9,8 @@
  * static ones still animate. Reduced-motion users get final values instantly.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import CountUp from "@/components/CountUp";
 import { FLOORS } from "@/lib/data/floors";
 import { httpBase } from "@/lib/net";
 
@@ -18,55 +19,6 @@ const FLOORS_OPEN = PUBLIC_FLOORS.length;
 const TOTAL_SPOTS = PUBLIC_FLOORS.reduce((a, f) => a + f.boothSpots.length, 0);
 const BADGES_EARNABLE = 11;
 const REACTIONS = 8;
-
-function CountUp({ value, duration = 1100 }: { value: number | null; duration?: number }) {
-  const [shown, setShown] = useState<number | null>(null);
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || value === null) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(value);
-      return;
-    }
-    const run = () => {
-      if (started.current) return;
-      started.current = true;
-      const t0 = performance.now();
-      const tick = (t: number) => {
-        const p = Math.min(1, (t - t0) / duration);
-        const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
-        setShown(Math.round(value * eased));
-        if (p < 1) requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    };
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        io.disconnect();
-        run();
-      },
-      { threshold: 0.4 },
-    );
-    io.observe(el);
-    // fail open: never leave a stat sitting at 0 because a viewer/browser
-    // didn't fire the observer
-    const failOpen = window.setTimeout(run, 2500);
-    return () => {
-      io.disconnect();
-      window.clearTimeout(failOpen);
-    };
-  }, [value, duration]);
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {value === null ? "—" : (shown ?? 0).toLocaleString("en-US")}
-    </span>
-  );
-}
 
 export default function LiveStats({
   variant = "cards",

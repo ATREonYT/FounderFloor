@@ -715,7 +715,67 @@
     letter-spacing: -0.02em;
   }
 
+  /* ---------------------------------------------- reveal-driven motion
+     Rules and bars draw themselves once their section arrives. Every one
+     of these keys off `.reveal-in`, the class components/Reveal.tsx adds
+     to a section when it scrolls in, so there is no second observer and no
+     extra JavaScript: the section's entrance IS the cue.
+
+     Everything is scaleX on the compositor. Widths and background-position
+     both animate, but only the ones that cannot be done with a transform
+     (the marching dashes) actually use layout-adjacent properties. */
+  .draw-x,
+  .bar-grow {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  .reveal-in .draw-x {
+    animation: draw-x 620ms var(--ease-out) both;
+  }
+  .reveal-in .bar-grow {
+    animation: draw-x 820ms var(--ease-out) both;
+  }
+  @keyframes draw-x {
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* The route path keeps moving after it has drawn: the dashes crawl
+     forward by exactly one dash period, so the loop is seamless. It is the
+     one continuous animation on the page, and it is there because a route
+     that is being walked should not sit still. */
+  .reveal-in .march {
+    animation:
+      draw-x 700ms var(--ease-out) both,
+      march 2.6s linear 700ms infinite;
+  }
+  @keyframes march {
+    from {
+      background-position-x: 0;
+    }
+    to {
+      background-position-x: 10px;
+    }
+  }
+
+  /* A stop on the route lands with a small pop once the path reaches it. */
+  .reveal-in .stop-pop {
+    animation: pop-in 420ms var(--ease-spring) both;
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .draw-x,
+    .bar-grow {
+      transform: none;
+    }
+    .reveal-in .draw-x,
+    .reveal-in .bar-grow,
+    .reveal-in .march,
+    .reveal-in .stop-pop {
+      animation: none;
+      transform: none;
+    }
     .index-row,
     .index-row::after {
       transition: none;
