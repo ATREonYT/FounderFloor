@@ -725,21 +725,23 @@
      both animate, but only the ones that cannot be done with a transform
      (the marching dashes) actually use layout-adjacent properties. */
   .draw-x,
-  .bar-grow {
+  .meter-fill {
     transform: scaleX(0);
     transform-origin: left center;
   }
   .reveal-in .draw-x {
     animation: draw-x 620ms var(--ease-out) both;
   }
-  .reveal-in .bar-grow {
-    animation: draw-x 820ms var(--ease-out) both;
-  }
   @keyframes draw-x {
     to {
       transform: scaleX(1);
     }
   }
+
+  /* The rank-board bars are NOT animated from here. They share a single
+     ramp with the figure above them, written to the node by RankMeter, so
+     the bar's length and the number are the same quantity drawn twice. All
+     this rule does is hold them at zero until that ramp starts. */
 
   /* The route path keeps moving after it has drawn: the dashes crawl
      forward by exactly one dash period, so the loop is seamless. It is the
@@ -766,11 +768,10 @@
 
   @media (prefers-reduced-motion: reduce) {
     .draw-x,
-    .bar-grow {
+    .meter-fill {
       transform: none;
     }
     .reveal-in .draw-x,
-    .reveal-in .bar-grow,
     .reveal-in .march,
     .reveal-in .stop-pop {
       animation: none;

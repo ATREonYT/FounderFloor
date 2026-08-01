@@ -72,8 +72,11 @@ export default function RootLayout({
           {/* eslint-disable-next-line react/no-danger */}
           <style
             dangerouslySetInnerHTML={{
+              // !important because these override class rules whose order
+              // in the head is Next's to decide, not ours.
               __html:
-                ".reveal{opacity:1;transform:none}.draw-x,.bar-grow{transform:none}",
+                ".reveal{opacity:1!important;transform:none!important}" +
+                ".draw-x,.meter-fill{transform:none!important}",
             }}
           />
         </noscript>

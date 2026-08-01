@@ -10,7 +10,7 @@ import LiveStats from "@/components/LiveStats";
 import Reveal from "@/components/Reveal";
 import FloorThumb from "@/components/FloorThumb";
 import EmailCapture from "@/components/EmailCapture";
-import CountUp from "@/components/CountUp";
+import RankMeter from "@/components/RankMeter";
 import Parallax from "@/components/Parallax";
 import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
 
@@ -598,31 +598,15 @@ export default function LandingPage() {
                 />
                 <Spec className="text-paper">{rank.name}</Spec>
               </span>
-              <span className="flex items-center gap-3 justify-self-end sm:justify-self-auto">
-                {/* The board totals count up when the section arrives, the
-                    way a hall's tote board does when it refreshes. The column
-                    is wide enough for "$100,000+": any narrower and the top
-                    rank shoves its bar out of line with the others. */}
-                <span className="w-[6.75rem] shrink-0 text-right font-display text-lg text-gold sm:text-left">
-                  <CountUp
-                    value={rank.minRevenue}
-                    prefix="$"
-                    suffix="+"
-                    delay={i * 90}
-                    duration={1000}
-                  />
-                </span>
-                <span className="hidden h-[3px] flex-1 overflow-hidden bg-paper/10 sm:block">
-                  <span
-                    className="bar-grow block h-full"
-                    style={{
-                      width: `${Math.max(4, (rank.minRevenue / maxRevenue) * 100)}%`,
-                      background: `linear-gradient(90deg, ${rank.color}88, ${rank.color})`,
-                      animationDelay: `${i * 90}ms`,
-                    }}
-                  />
-                </span>
-              </span>
+              {/* The board totals count up when the section arrives, the way
+                  a hall's tote board does when it refreshes, and each bar
+                  lengthens on the very same ramp as the figure above it. */}
+              <RankMeter
+                value={rank.minRevenue}
+                max={maxRevenue}
+                color={rank.color}
+                delay={i * 90}
+              />
               <span className="col-span-2 text-sm leading-relaxed text-paper/60 sm:col-span-1">
                 {rank.blurb}
               </span>
