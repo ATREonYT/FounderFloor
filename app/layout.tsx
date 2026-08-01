@@ -62,6 +62,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Scroll reveals and drawn rules start hidden and are switched on
+            by script. Without this, a visitor with JavaScript off would get
+            a page of blank sections. It replaces the old blanket timer that
+            revealed everything a beat after load, whether it was on screen
+            or not. */}
+        <noscript>
+          {/* eslint-disable-next-line react/no-danger */}
+          <style
+            dangerouslySetInnerHTML={{
+              __html:
+                ".reveal{opacity:1;transform:none}.draw-x,.bar-grow{transform:none}",
+            }}
+          />
+        </noscript>
+      </head>
       <body className="flex min-h-screen flex-col bg-paper text-ink">
         {/* sticky translucent chrome — the page scrolls under it. Floor
             pages hide it (body[data-on-floor], set by the floor page): the

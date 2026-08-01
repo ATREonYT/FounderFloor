@@ -4,15 +4,16 @@
  * A figure that counts up to its value the first time it is scrolled into
  * view, on an eased rAF ramp with tabular figures so the width never jitters.
  *
- * Built to fail open, like Reveal: if IntersectionObserver is missing, or the
- * observer never fires (headless capture, an odd embedded browser), a backup
- * timer shows the final value. A stat frozen at zero is a far worse bug than
- * one that never animated.
+ * Built to fail open, like Reveal, but on geometry rather than on a timer:
+ * see lib/inview.ts. A stat frozen at zero is a far worse bug than one that
+ * never animated, and a stat that counted itself out while three thousand
+ * pixels below the fold is a third bug again.
  *
  * Reduced-motion visitors get the final value immediately.
  */
 
 import { useEffect, useRef, useState } from "react";
+import { whenInView } from "@/lib/inview";
 
 export default function CountUp({
   value,
@@ -63,29 +64,14 @@ export default function CountUp({
       }, delay);
     };
 
-    if (typeof IntersectionObserver === "undefined") {
-      finish();
-      return;
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            run();
-            io.disconnect();
-          }
-        }
-      },
-      { threshold: 0.1 },
-    );
-    io.observe(el);
-    const failOpen = window.setTimeout(run, 2500);
+    // No top margin here: a figure should count when you are looking at it,
+    // not when it happens to be somewhere above.
+    const stop = whenInView(el, run, { threshold: 0.1, rootMargin: "0px 0px 10% 0px" });
 
     return () => {
-      io.disconnect();
+      stop();
       cancelAnimationFrame(raf);
       window.clearTimeout(timer);
-      window.clearTimeout(failOpen);
     };
   }, [value, duration, delay]);
 

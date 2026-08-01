@@ -2,13 +2,21 @@
 
 /**
  * Scroll reveal: children fade-rise in when they approach the viewport
- * (once). Built to fail OPEN — a section that never reveals is a much worse
- * bug than one that never animates, so on top of the IntersectionObserver
- * there's a hard fallback timer that shows everything a beat after mount,
- * and IO-less browsers reveal instantly.
+ * (once). The class it adds, `reveal-in`, is also the cue for every drawing
+ * animation inside the section (see the EXHIBITION LAYER block in
+ * globals.css), so it has to land when the section is genuinely arriving
+ * and not a moment before.
+ *
+ * The safety net lives in lib/inview.ts and checks geometry rather than
+ * just waiting out a timer. The bare timer this used to carry revealed
+ * every section 2.5s after load, including ones still three thousand
+ * pixels below the fold, which quietly played all their entrances to an
+ * empty room. A `<noscript>` rule in the layout covers the case where none
+ * of this runs at all.
  */
 
 import { useEffect, useRef } from "react";
+import { whenInView } from "@/lib/inview";
 
 export default function Reveal({
   children,
@@ -25,34 +33,20 @@ export default function Reveal({
     const el = ref.current;
     if (!el) return;
     const show = () => el.classList.add("reveal-in");
-    if (
-      typeof IntersectionObserver === "undefined" ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       show();
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          // huge top rootMargin: anything at or above the viewport counts as
-          // seen; positive bottom margin starts the entrance just BEFORE the
-          // section scrolls in, so it's already moving when the eye lands
-          if (entry.isIntersecting) {
-            window.setTimeout(show, delayMs);
-            io.disconnect();
-          }
-        }
-      },
-      { threshold: 0, rootMargin: "10000px 0px 15% 0px" },
-    );
-    io.observe(el);
-    // Fail-open: whatever happens (headless capture, quirky embedded
-    // browser, an IO edge case), nothing stays invisible for long.
-    const failOpen = window.setTimeout(show, 2500 + delayMs);
+
+    let timer = 0;
+    const stop = whenInView(el, () => {
+      if (delayMs > 0) timer = window.setTimeout(show, delayMs);
+      else show();
+    });
     return () => {
-      io.disconnect();
-      window.clearTimeout(failOpen);
+      stop();
+      window.clearTimeout(timer);
     };
   }, [delayMs]);
 
