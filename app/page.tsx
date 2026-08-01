@@ -12,12 +12,28 @@ import FloorThumb from "@/components/FloorThumb";
 import EmailCapture from "@/components/EmailCapture";
 
 /**
- * The advertised floors. FOCUS MODE (lib/data/floors.ts) currently hides
- * all but the Main Hall, so anything that counts or lists floors reads off
- * this and adapts automatically when a floor is re-opened.
+ * The landing page, set as a printed trade-show programme.
+ *
+ * The layout grammar matters as much as the content here. Sections hang off
+ * a margin rail (number, title and standfirst in a narrow left column
+ * against a hairline) instead of stacking centred blocks; the walkthrough is
+ * a route with stops on a dotted path instead of three icon cards; the site
+ * map is an index with rules and leaders instead of a four-card grid; and
+ * the plans are perforated admission stubs instead of pricing boxes. The
+ * previous design is archived — see docs/design/README.md.
+ *
+ * Colours, fonts and components are unchanged from that design; only the
+ * arrangement is new.
  */
+
+/** The advertised floors — FOCUS MODE in lib/data/floors.ts hides the rest. */
 const PUBLIC_FLOORS = FLOORS.filter((f) => !f.hidden);
 const MANY_FLOORS = PUBLIC_FLOORS.length > 1;
+
+/** Content column. Deliberately wider than the old max-w-5xl. */
+const SHELL = "mx-auto w-full max-w-6xl px-5 sm:px-8";
+/** Full-bleed column for artwork, so the picture outruns the text. */
+const WIDE = "mx-auto w-full px-5 sm:px-8";
 
 const TICKER_ITEMS = [
   "WALK IN",
@@ -29,36 +45,122 @@ const TICKER_ITEMS = [
   "NO CALENDAR INVITE",
 ];
 
-/** Expo-signage ticker: the item list rendered twice for a seamless loop. */
-function Ticker() {
-  const row = (key: string, hidden: boolean) => (
-    <span key={key} aria-hidden={hidden || undefined} className="flex shrink-0 items-center">
-      {TICKER_ITEMS.map((item) => (
-        <span key={item} className="micro flex items-center text-muted">
-          <span className="px-5">{item}</span>
-          <span aria-hidden="true" className="h-1 w-1 rounded-full bg-accent/60" />
-        </span>
-      ))}
-    </span>
-  );
-  return (
-    <div
-      aria-hidden="true"
-      className="marquee edge-fade-x overflow-hidden border-b border-line/60 bg-panel py-2"
-    >
-      <div className="marquee-track flex w-max">
-        {row("a", false)}
-        {row("b", true)}
-      </div>
-    </div>
-  );
-}
-
 function money(n: number): string {
   return `$${n.toLocaleString("en-US")}`;
 }
 
-const STEPS: { title: string; body: string; glyph: GlyphId }[] = [
+/* ------------------------------------------------------------------ parts */
+
+/** Mono micro-label — the programme's specification type. */
+function Spec({ className = "", children }: { className?: string; children: React.ReactNode }) {
+  return <span className={`micro font-mono text-[10px] ${className}`}>{children}</span>;
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="rounded-sm border border-line bg-panel px-1.5 py-0.5 font-mono text-[11px] text-ink">
+      {children}
+    </kbd>
+  );
+}
+
+/** Printer's crop marks around the artwork. Purely a mark of the trade. */
+function CropMarks({ tone = "ink" }: { tone?: "ink" | "paper" }) {
+  const c = tone === "ink" ? "border-ink/30" : "border-paper/30";
+  const b = `pointer-events-none absolute h-3.5 w-3.5 ${c}`;
+  return (
+    <span aria-hidden="true">
+      <span className={`${b} -left-2 -top-2 border-l border-t`} />
+      <span className={`${b} -right-2 -top-2 border-r border-t`} />
+      <span className={`${b} -bottom-2 -left-2 border-b border-l`} />
+      <span className={`${b} -bottom-2 -right-2 border-b border-r`} />
+    </span>
+  );
+}
+
+/**
+ * A programme section: the number, title and standfirst live in a sticky
+ * margin rail; the content runs in the wide column beside it, separated by
+ * a hairline. This asymmetry is the single biggest departure from the
+ * previous design, where every section was a centred stack of equal width.
+ */
+function Section({
+  n,
+  kicker,
+  title,
+  lede,
+  children,
+  id,
+  tone = "paper",
+  className = "",
+}: {
+  n: string;
+  kicker: string;
+  title: string;
+  lede?: React.ReactNode;
+  children: React.ReactNode;
+  id?: string;
+  tone?: "paper" | "ink" | "panel";
+  className?: string;
+}) {
+  const dark = tone === "ink";
+  const headingId = `${id ?? n}-heading`;
+  return (
+    <section
+      id={id}
+      aria-labelledby={headingId}
+      className={`scroll-mt-16 border-b border-line ${
+        dark ? "bg-ink" : tone === "panel" ? "bg-panel" : ""
+      } ${className}`}
+    >
+      <Reveal className={`${SHELL} py-14 sm:py-20`}>
+        <div className="grid gap-y-8 lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] lg:gap-x-14">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="flex items-center gap-3">
+              <span
+                aria-hidden="true"
+                className={`numeral text-[2.75rem] leading-none ${
+                  dark ? "text-paper/20" : "text-ink/15"
+                }`}
+              >
+                {n}
+              </span>
+              <span
+                aria-hidden="true"
+                className={`dash-x h-px flex-1 ${dark ? "[--dash-c:rgba(242,239,231,0.3)]" : ""}`}
+              />
+            </div>
+            <Spec className={`mt-4 block ${dark ? "text-gold" : "text-accent"}`}>{kicker}</Spec>
+            <h2
+              id={headingId}
+              className={`mt-2 font-display text-3xl leading-tight sm:text-[2.1rem] ${
+                dark ? "text-paper" : ""
+              }`}
+            >
+              {title}
+            </h2>
+            {lede && (
+              <p
+                className={`mt-3 max-w-sm text-sm leading-relaxed ${
+                  dark ? "text-paper/60" : "text-muted"
+                }`}
+              >
+                {lede}
+              </p>
+            )}
+          </div>
+          <div className={`min-w-0 lg:border-l lg:pl-14 ${dark ? "lg:border-paper/15" : "lg:border-line"}`}>
+            {children}
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ data */
+
+const STOPS: { title: string; body: string; glyph: GlyphId }[] = [
   {
     title: "Walk in",
     glyph: "bolt",
@@ -76,592 +178,650 @@ const STEPS: { title: string; body: string; glyph: GlyphId }[] = [
   },
 ];
 
-// While only the Main Hall is open (see FOCUS MODE in lib/data/floors.ts),
-// the paid tiers sell what they actually deliver today — placement, tags
-// and a gold stand — not floor access.
-const PRICING: { tier: SubTier; blurb: string }[] = [
-  { tier: "free", blurb: "The whole floor, every social feature. Plenty to see." },
+const INDEX_ROWS: {
+  href: string;
+  glyph: GlyphId;
+  name: string;
+  blurb: string;
+  action: string;
+}[] = [
   {
-    tier: "pro",
-    blurb: "Everything in Free, and your stand gets found first.",
+    href: "/lobby",
+    glyph: "cube",
+    name: "Floors",
+    blurb: "The halls themselves. Walk in, browse stands, talk to whoever's there.",
+    action: "Walk a floor",
   },
   {
-    tier: "founder",
-    blurb: "Top of every list, and a gold-trimmed stand people notice.",
+    href: "/directory",
+    glyph: "star",
+    name: "Directory",
+    blurb: "Every startup on every floor, searchable. One click walks you to their booth.",
+    action: "Search startups",
+  },
+  {
+    href: "/connections",
+    glyph: "heart",
+    name: "Connections",
+    blurb: "The people you've met. Requests, accepts, and chats that work from anywhere.",
+    action: "Open your rolodex",
+  },
+  {
+    href: "/profile",
+    glyph: "bolt",
+    name: "Profile",
+    blurb: "Your name, your stand, your quests and badges — and an account if you want one.",
+    action: "Set yourself up",
   },
 ];
 
-function Eyebrow({ n, children, dark = false }: { n: string; children: React.ReactNode; dark?: boolean }) {
-  return (
-    <p className={`micro flex items-center gap-2 ${dark ? "text-gold" : "text-accent"}`}>
-      <span className={`inline-block h-px w-6 ${dark ? "bg-gold/60" : "bg-accent/50"}`} />
-      {n} · {children}
-    </p>
-  );
-}
+// While only the Main Hall is open, the paid tiers sell what they actually
+// deliver today — placement, tags and a gold stand — not floor access.
+const PRICING: { tier: SubTier; blurb: string }[] = [
+  { tier: "free", blurb: "The whole floor, every social feature. Plenty to see." },
+  { tier: "pro", blurb: "Everything in Free, and your stand gets found first." },
+  { tier: "founder", blurb: "Top of every list, and a gold-trimmed stand people notice." },
+];
 
-function Kbd({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="rounded-sm border border-line bg-panel px-1.5 py-0.5 font-mono text-xs text-ink">
-      {children}
-    </kbd>
-  );
-}
+const SHIPPED = [
+  ["A directory that grows itself", "every startup someone creates shows up, with its category as a new filter, the moment they save it."],
+  ["Chats that follow you", "message a connection from anywhere; they get a pixel-mail ping whether they're on a floor or in a menu."],
+  ["Your own banner logo", "any image, shrunk to a 16×16 mark on your stand."],
+  ["Your progress, everywhere", "stand, quests, badges and streaks follow your account across devices."],
+  ["Smooth on any machine", "the floor tunes its render resolution to your hardware."],
+  ["Real email accounts", "sign in with your email, reset a forgotten password, get an alert on a new sign-in."],
+];
+
+const IN_THE_SHOP = [
+  ["Real revenue verification", "a read-only Stripe connection, so the gold badges stop being simulated and start being earned."],
+  ["A real events calendar", "Demo Night gets siblings: pitch hours, category meetups, co-founder speed-walking."],
+  ["Bigger halls", "new floors open as the existing ones fill with real stands."],
+];
+
+const FAQ = [
+  {
+    q: "Is it actually free?",
+    a: "Walking the floors, talking, connecting, and keeping a stand — free, permanently. Paid memberships buy visibility (priority in the directory, gold trim on your stand), never access.",
+  },
+  {
+    q: "Are the people real?",
+    a: "Yes — every stand is set up by a real founder and every avatar is a live visitor. The one exception is Pixel, the clearly-labeled tutorial robot, who never leaves the practice hall.",
+  },
+  {
+    q: "What happens to my stand when I close the tab?",
+    a: "It stays up for 7 days while you're away — collecting guestbook notes and connection requests. Come back within the week and the clock resets.",
+  },
+  {
+    q: "Do I need an account?",
+    a: "No — you can walk in as a guest with just a name. An account (free) makes your progress follow you across devices and lets you reset a forgotten password by email.",
+  },
+  {
+    q: "What are the ranks on the stands?",
+    a: "Monthly revenue tiers. They're labeled honestly: in this beta, verification is simulated — founders type a number. Read-only Stripe verification is the first post-beta feature.",
+  },
+];
+
+/* ------------------------------------------------------------------ page */
 
 export default function LandingPage() {
   const maxRevenue = Math.max(...RANKS.map((r) => r.minRevenue), 1);
 
   return (
     <main>
-      {/* expo signage: a slow ticker sets the tone before a word is read */}
-      <Ticker />
+      {/* HALL BOARD — the lit sign over the doors. A fixed status chip, then
+          the programme running past it. */}
+      <div className="flex items-stretch border-b border-line bg-ink text-paper">
+        <span className="flex shrink-0 items-center gap-2 border-r border-paper/15 px-4 py-2">
+          <span aria-hidden="true" className="pulse-dot h-1.5 w-1.5 rounded-full bg-verify" />
+          <Spec className="text-paper">Open</Spec>
+        </span>
+        <div aria-hidden="true" className="marquee edge-fade-x min-w-0 flex-1 overflow-hidden py-2">
+          <div className="marquee-track flex w-max">
+            {["a", "b"].map((k) => (
+              <span key={k} className="flex shrink-0 items-center">
+                {TICKER_ITEMS.map((item) => (
+                  <span key={item} className="flex items-center">
+                    <Spec className="px-5 text-paper/55">{item}</Spec>
+                    <span aria-hidden="true" className="h-1 w-1 rotate-45 bg-gold/70" />
+                  </span>
+                ))}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {/* hero — two columns on desktop so the pixel scene fills the space
-          beside the copy; the copy column staggers in, the headline's key
-          phrase gets a sweeping accent underline, and the scene floats
-          gently inside a framed panel */}
+      {/* ================================================ HERO — the poster */}
       <section className="border-b border-line">
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12">
-          <div className="stagger-children">
-            <p className="micro flex items-center gap-2 text-muted">
-              <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-accent" />
-              A walkable expo for startups
-            </p>
-            {/* the key phrase is glued with NBSPs and the headline is
-                balance-wrapped, so it breaks as two even lines ("A trade-show
-                floor / that never tears down.") instead of stranding a stumpy
-                "that never" in the middle; the lg size is picked so the
-                second line fits the copy column in one piece */}
-            <h1 className="mt-4 text-balance font-display text-4xl leading-tight sm:text-[3.4rem] sm:leading-[1.08] lg:text-[3.05rem]">
-              A trade-show floor that{" "}
-              <span className="sweep-underline">never{"\u00A0"}tears{"\u00A0"}down</span>.
-            </h1>
-            <p className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-muted">
+        <div className={`${SHELL} pt-8 sm:pt-12`}>
+          {/* dateline: the masthead line off a printed programme */}
+          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-line py-2.5">
+            <Spec className="text-muted">FounderFloor · Programme 2026</Spec>
+            <Spec className="flex items-center gap-2 text-muted">
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verify" />
+              Main Hall — open now
+            </Spec>
+            <Spec className="text-muted">Admission free · nothing to install</Spec>
+          </div>
+
+          {/* the headline runs the full measure, poster-scale, and breaks
+              where we say it breaks rather than wherever the box ends */}
+          <h1 className="stagger-children mt-10 font-display text-[2.5rem] leading-[1.06] tracking-[-0.015em] sm:mt-12 sm:text-[4.1rem] lg:text-[5.1rem]">
+            <span className="block">A trade-show floor</span>
+            <span className="block">
+              that <span className="sweep-underline">never{" "}tears{" "}down</span>.
+            </span>
+          </h1>
+
+          {/* asymmetric split under the headline: the argument on the left,
+              the doors on the right */}
+          <div className="mt-10 grid gap-x-12 gap-y-8 sm:mt-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-end">
+            <p className="max-w-xl text-pretty text-[0.975rem] leading-[1.75] text-muted">
               FounderFloor is a small 2D world where startups keep a stand and
               real founders stand at it. You walk around, you read the signs,
               you talk to people. Ranks reflect self-reported revenue in this
               beta — verification is on the roadmap — and the gold badge tells
               you who claims to have earned it the boring way.
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                href="/lobby"
-                className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
-              >
-                Walk the floor →
-              </Link>
-              <Link
-                href="/profile#booth"
-                className="btn-press rounded-md border border-ink px-6 py-3 text-sm font-medium text-ink hover:bg-panel"
-              >
-                Set up a stand
-              </Link>
-            </div>
-            <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
-              <span className="hidden items-center gap-1.5 sm:flex">
-                <Kbd>W A S D</Kbd> walk
-              </span>
-              <span className="hidden items-center gap-1.5 sm:flex">
-                <Kbd>E</Kbd> talk
-              </span>
-              <span>Nothing to install. Free to walk in.</span>
-            </p>
-          </div>
-          <div className="anim-in">
-            <div className="float-slow">
-              {/* single clean frame — HeroScene draws its own rounded-md
-                  border, so the wrapper only adds the shadow (no second
-                  hairline, matching radius) */}
-              <div className="relative overflow-hidden rounded-md shadow-[0_2px_6px_rgba(35,32,26,0.08),0_18px_40px_rgba(35,32,26,0.12)]">
-                <HeroScene className="lg:h-[400px]" />
-                <span className="micro absolute left-3 top-3 rounded-sm border border-ink/15 bg-paper/85 px-2 py-1 text-muted backdrop-blur-[2px]">
-                  MAIN HALL · AMBIENT VIEW
-                </span>
+            <div className="lg:border-l lg:border-line lg:pl-10">
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/lobby"
+                  className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+                >
+                  Walk the floor →
+                </Link>
+                <Link
+                  href="/profile#booth"
+                  className="btn-press rounded-md border border-ink px-6 py-3 text-sm font-medium text-ink hover:bg-panel"
+                >
+                  Set up a stand
+                </Link>
               </div>
+              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+                <span className="hidden items-center gap-1.5 sm:flex">
+                  <Kbd>W A S D</Kbd> walk
+                </span>
+                <span className="hidden items-center gap-1.5 sm:flex">
+                  <Kbd>E</Kbd> talk
+                </span>
+                <span className="sm:hidden">Tap where you want to go.</span>
+              </p>
             </div>
-            <p className="micro mt-3 text-muted">
-              The real one takes WASD, arrow keys, or taps.
-            </p>
           </div>
         </div>
 
-        {/* live pulse: real numbers from the floor server, counting up */}
-        <div className="mx-auto w-full max-w-5xl px-4 pb-12">
-          <LiveStats />
+        {/* PLATE — the artwork runs wider than the text and carries crop
+            marks and a caption, the way a plate does in a printed programme */}
+        <div className={`${WIDE} mt-12 sm:mt-16`}>
+          <figure className="anim-in relative">
+            <CropMarks />
+            <div className="relative overflow-hidden border border-line bg-panel">
+              <HeroScene bare className="h-[300px] sm:h-[420px] lg:h-[520px]" />
+              <span className="absolute left-4 top-4 border border-ink/15 bg-paper/85 px-2.5 py-1.5 backdrop-blur-[2px]">
+                <Spec className="text-muted">Main Hall — ambient view</Spec>
+              </span>
+              <span className="absolute right-4 top-4 flex items-center gap-2 border border-ink/15 bg-paper/85 px-2.5 py-1.5 backdrop-blur-[2px]">
+                <span aria-hidden="true" className="pulse-dot h-1.5 w-1.5 rounded-full bg-verify" />
+                <Spec className="text-muted">Rendered live</Spec>
+              </span>
+            </div>
+            <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1">
+              <Spec className="text-muted">Plate 01 — the hall, drawn at its own scale</Spec>
+              <Spec className="text-muted">WASD · arrow keys · or tap</Spec>
+            </figcaption>
+          </figure>
+        </div>
+
+        {/* the numbers, posted on a rule instead of sat in four white boxes */}
+        <div className={`${SHELL} mt-14 pb-14 sm:mt-16 sm:pb-16`}>
+          <LiveStats variant="rail" />
         </div>
       </section>
 
-      {/* how it works */}
-      <section aria-labelledby="how-heading" className="border-b border-line bg-panel">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
-          <Eyebrow n="01">The whole idea</Eyebrow>
-          <h2 id="how-heading" className="mt-2 font-display text-3xl sm:text-4xl">
-            How it works
-          </h2>
-          <ol className="stagger-children mt-10 grid gap-4 sm:grid-cols-3 sm:gap-6">
-            {STEPS.map((step, i) => (
-              <li
-                key={step.title}
-                className="card-lift relative overflow-hidden rounded-md border border-line bg-paper p-6"
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-2 -top-6 select-none font-display text-[88px] leading-none text-ink/[0.05]"
-                >
-                  {String(i + 1).padStart(2, "0")}
+      {/* ============================================ 01 — THE ROUTE */}
+      <Section
+        n="01"
+        id="route"
+        kicker="The whole idea"
+        title={"Three stops, one lap"}
+        lede="Nothing to learn. The route from the door to a conversation you'd have had at a real hall is about ninety seconds long."
+      >
+        <div className="relative">
+          {/* the walking route: a dotted path the stops sit on. It runs off
+              both edges — the hall continues past what's on this page. */}
+          <span
+            aria-hidden="true"
+            className="dash-x edge-fade-x absolute left-0 top-6 hidden h-px w-full sm:block"
+          />
+          <ol className="grid gap-11 sm:grid-cols-3 sm:gap-8">
+            {STOPS.map((stop, i) => (
+              <li key={stop.title} className="relative flex gap-5 sm:block">
+                {/* on phones the path turns vertical and runs down the gutter */}
+                {i < STOPS.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    className="dash-y absolute left-6 top-12 h-[calc(100%+2.75rem-3rem)] w-px sm:hidden"
+                  />
+                )}
+                <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper">
+                  <PixelGlyph glyph={stop.glyph} size={18} color="#D9480F" />
                 </span>
-                <span className="flex h-10 w-10 items-center justify-center rounded-md border border-accent/25 bg-accent-soft">
-                  <PixelGlyph glyph={step.glyph} size={18} color="#D9480F" />
-                </span>
-                <h3 className="mt-5 font-display text-xl">{step.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{step.body}</p>
+                <div className="min-w-0 sm:mt-7">
+                  <Spec className="text-muted">Stop {String(i + 1).padStart(2, "0")}</Spec>
+                  <h3 className="mt-1.5 font-display text-xl">{stop.title}</h3>
+                  <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">{stop.body}</p>
+                </div>
               </li>
             ))}
           </ol>
-        </Reveal>
-      </section>
+        </div>
+        <p className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-5 text-sm text-muted">
+          <span className="flex items-center gap-1.5">
+            <Kbd>W A S D</Kbd> or <Kbd>↑ ↓ ← →</Kbd> to walk
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Kbd>E</Kbd> to talk to whoever you're standing in front of
+          </span>
+        </p>
+      </Section>
 
-      {/* the map of the site — four surfaces, one sentence each */}
-      <section aria-labelledby="around-heading" className="border-b border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
-          <Eyebrow n="02">The map</Eyebrow>
-          <h2 id="around-heading" className="mt-2 font-display text-3xl sm:text-4xl">
-            Find your way around
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Four places, each with one job. Everything you do in one shows up
-            in the others.
-          </p>
-          <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                href: "/lobby",
-                glyph: "cube" as const,
-                name: "Floors",
-                blurb: "The halls themselves. Walk in, browse stands, talk to whoever's there.",
-                action: "Walk a floor",
-              },
-              {
-                href: "/directory",
-                glyph: "star" as const,
-                name: "Directory",
-                blurb: "Every startup on every floor, searchable. One click walks you to their booth.",
-                action: "Search startups",
-              },
-              {
-                href: "/connections",
-                glyph: "heart" as const,
-                name: "Connections",
-                blurb: "The people you've met. Requests, accepts, and chats that work from anywhere.",
-                action: "Open your rolodex",
-              },
-              {
-                href: "/profile",
-                glyph: "bolt" as const,
-                name: "Profile",
-                blurb: "Your name, your stand, your quests and badges — and an account if you want one.",
-                action: "Set yourself up",
-              },
-            ].map((s) => (
+      {/* ============================================ 02 — THE INDEX */}
+      <Section
+        n="02"
+        id="index"
+        kicker="The map"
+        title="Find your way around"
+        lede="Four places, each with one job. Everything you do in one shows up in the others."
+        tone="panel"
+      >
+        <ul className="border-t border-line">
+          {INDEX_ROWS.map((row, i) => (
+            <li key={row.href}>
               <Link
-                key={s.href}
-                href={s.href}
-                className="panel card-lift group flex flex-col p-5"
+                href={row.href}
+                className="index-row relative grid grid-cols-[2.25rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[2.5rem_8.5rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
               >
-                <div className="flex items-center justify-between">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md border border-line bg-paper">
-                    <PixelGlyph glyph={s.glyph} size={16} color="#D9480F" />
-                  </span>
-                  <span className="micro text-muted">{s.name}</span>
-                </div>
-                <p className="mt-4 flex-1 text-sm leading-relaxed text-muted">
-                  {s.blurb}
-                </p>
-                <span className="mt-4 text-sm text-accent group-hover:underline">
-                  {s.action} →
+                <span aria-hidden="true" className="numeral text-base text-ink/30">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="flex items-center gap-2.5 font-display text-xl leading-none">
+                  <PixelGlyph glyph={row.glyph} size={14} color="#D9480F" />
+                  {row.name}
+                </span>
+                <span className="col-start-2 text-sm leading-relaxed text-muted sm:col-start-3">
+                  {row.blurb}
+                </span>
+                <span className="col-start-2 whitespace-nowrap text-sm text-accent sm:col-start-4">
+                  {row.action} →
                 </span>
               </Link>
-            ))}
-          </div>
-        </Reveal>
-      </section>
+            </li>
+          ))}
+        </ul>
+      </Section>
 
-      {/* floors */}
-      <section aria-labelledby="floors-heading" className="border-b border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
-          <Eyebrow n="03">The halls</Eyebrow>
-          <div className="mt-2 flex items-baseline justify-between gap-4">
-            <h2 id="floors-heading" className="font-display text-3xl sm:text-4xl">
-              {MANY_FLOORS ? "The floors" : "The floor"}
-            </h2>
-            <Link href="/lobby" className="text-sm text-accent hover:underline">
-              Enter the lobby
-            </Link>
-          </div>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
-            {MANY_FLOORS ? (
-              <>
-                {PUBLIC_FLOORS.length} halls, {PUBLIC_FLOORS.length}{" "}
-                temperaments. Each one is a real map with real booths; the
-                miniatures below are to scale.
-              </>
-            ) : (
-              <>
-                One hall, open to everyone, and everyone is in it — a young
-                floor fills up faster than four empty ones. It&rsquo;s a real
-                map with real booths; the miniature below is to scale.
-              </>
-            )}
-          </p>
-          <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2">
-            {FLOORS.filter((f) => !f.hidden).map((floor) => {
-              const locked = TIER_ORDER[floor.tier] > TIER_ORDER.free;
-              return (
-                <article
-                  key={floor.id}
-                  className={`panel card-lift flex flex-col gap-4 p-5 sm:flex-row sm:gap-5 ${
-                    locked ? "bg-paper/50" : ""
-                  }`}
-                >
+      {/* ============================================ 03 — THE HALL */}
+      <Section
+        n="03"
+        id="halls"
+        kicker="The venue"
+        title={MANY_FLOORS ? "The floors" : "The floor"}
+        lede={
+          MANY_FLOORS ? (
+            <>
+              {PUBLIC_FLOORS.length} halls, {PUBLIC_FLOORS.length} temperaments.
+              Each is a real map with real booths; the miniatures are to scale.
+            </>
+          ) : (
+            <>
+              One hall, open to everyone, and everyone is in it — a young floor
+              fills up faster than four empty ones. The miniature is to scale.
+            </>
+          )
+        }
+      >
+        <div className="border-t border-line">
+          {PUBLIC_FLOORS.map((floor) => {
+            const locked = TIER_ORDER[floor.tier] > TIER_ORDER.free;
+            return (
+              <article
+                key={floor.id}
+                className="flex flex-col gap-6 border-b border-line py-7 sm:flex-row sm:gap-8"
+              >
+                <div className="relative shrink-0 self-start">
+                  <CropMarks />
                   <FloorThumb
                     floor={floor}
-                    className={`self-start rounded-sm border border-line ${
-                      locked ? "opacity-70" : ""
-                    }`}
+                    className={`border border-line ${locked ? "opacity-70" : ""}`}
                   />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3
-                        className={`font-display text-lg leading-snug ${
-                          locked ? "text-muted" : ""
-                        }`}
-                      >
-                        {floor.name}
-                      </h3>
-                      <TierTag tier={floor.tier} />
-                    </div>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                      {floor.tagline}
-                    </p>
-                    <p className="micro mt-3 text-muted">
-                      {floor.boothSpots.length} booths
-                      {floor.reservedSpot !== undefined ? " · one left open for newcomers" : ""}
-                      {locked
-                        ? ` · requires ${TIER_LABEL[floor.tier]}, ${TIER_PRICE[floor.tier]}`
-                        : ""}
-                    </p>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className={`font-display text-2xl ${locked ? "text-muted" : ""}`}>
+                      {floor.name}
+                    </h3>
+                    <TierTag tier={floor.tier} />
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        </Reveal>
-      </section>
+                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted">
+                    {floor.tagline}
+                  </p>
 
-      {/* rank ladder — the soul of the product, staged as a dark revenue
-          board: gold on ink, like the tote board at the back of a real hall */}
-      <section aria-labelledby="ranks-heading" className="border-b border-line bg-ink">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
-          <Eyebrow n="04" dark>The board</Eyebrow>
-          <h2 id="ranks-heading" className="mt-2 font-display text-3xl text-paper sm:text-4xl">
-            The rank ladder
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-paper/60">
-            The plan: ranks set by verified monthly revenue through a
-            read-only Stripe connection. This beta simulates that &mdash;
-            founders self-report their number and the badge follows. Treat
-            every rank as a claim, not a fact.
-          </p>
-          <div className="stagger-children mt-10 flex flex-col divide-y divide-paper/10 border-y border-paper/15">
-            {RANKS.map((rank) => (
-              <div
-                key={rank.id}
-                className="grid items-center gap-x-6 gap-y-2 py-4 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.2fr)]"
-              >
-                <span className="inline-flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="inline-block h-2.5 w-2.5 rounded-sm"
-                    style={{ backgroundColor: rank.color, boxShadow: `0 0 10px ${rank.color}66` }}
-                  />
-                  <span className="micro text-paper">{rank.name}</span>
-                </span>
-                <span className="flex items-center gap-3">
-                  <span className="w-24 shrink-0 font-display text-lg tabular-nums text-gold">
-                    {money(rank.minRevenue)}+
-                  </span>
-                  <span className="block h-1.5 flex-1 overflow-hidden rounded-full bg-paper/10">
-                    <span
-                      className="block h-full rounded-full"
-                      style={{
-                        width: `${Math.max(4, (rank.minRevenue / maxRevenue) * 100)}%`,
-                        background: `linear-gradient(90deg, ${rank.color}88, ${rank.color})`,
-                      }}
-                    />
-                  </span>
-                </span>
-                <span className="text-sm leading-relaxed text-paper/60">{rank.blurb}</span>
-              </div>
-            ))}
-          </div>
-          <p className="micro mt-6 text-paper/40">
-            GOLD IS SELF-REPORTED IN THIS BETA &mdash; VERIFICATION IS THE ROADMAP
-          </p>
-        </Reveal>
-      </section>
+                  {/* catalogue specification, with the leaders a programme
+                      would print between the entry and its value */}
+                  <dl className="mt-5 max-w-md text-sm">
+                    {[
+                      ["Booths", String(floor.boothSpots.length)],
+                      ["Admission", locked ? `${TIER_LABEL[floor.tier]} — ${TIER_PRICE[floor.tier]}` : "Free"],
+                      ["Stands held for newcomers", floor.reservedSpot !== undefined ? "One" : "None"],
+                      ["Tears down", "Never"],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex items-baseline gap-2 py-1.5">
+                        <dt className="shrink-0 text-muted">{k}</dt>
+                        <span aria-hidden="true" className="leader dash-x" />
+                        <dd className="shrink-0 tabular-nums text-ink">{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
 
-      {/* pricing */}
-      <section aria-labelledby="pricing-heading" className="border-b border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
-          <Eyebrow n="05">What costs money</Eyebrow>
-          <div className="mt-2 flex flex-wrap items-baseline gap-3">
-            <h2 id="pricing-heading" className="font-display text-3xl sm:text-4xl">
-              Membership
-            </h2>
-            <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">
-              beta &mdash; billing goes live at launch
-            </span>
-          </div>
+                  <Link
+                    href={`/floor/${floor.id}`}
+                    className="mt-5 inline-block text-sm text-accent hover:underline"
+                  >
+                    Walk into {floor.name} →
+                  </Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </Section>
 
-          {/* founding member strip — the launch offer. Copy promises ONLY
-              what the system actually delivers (no fake scarcity, no
-              unnumbered "numbered" badges — that way lie consumer-law
-              warning letters). */}
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gold/60 bg-panel px-4 py-3">
-            <p className="text-sm">
-              <span className="font-display">Founding Member</span>
-              <span className="text-muted">
-                {" "}
-                — ${FOUNDING_OFFER.price} once: a year of Founder+ and a
-                founding badge on your card that never goes away.
+      {/* ============================================ 04 — THE BOARD */}
+      <Section
+        n="04"
+        id="ranks"
+        kicker="The board"
+        title="The rank ladder"
+        lede={
+          <>
+            The plan: ranks set by verified monthly revenue through a read-only
+            Stripe connection. This beta simulates that — founders self-report
+            their number and the badge follows. Treat every rank as a claim.
+          </>
+        }
+        tone="ink"
+      >
+        <div className="blueprint border-y border-paper/15">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 border-b border-paper/15 px-1 py-2.5 sm:grid-cols-[9.5rem_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-6">
+            <Spec className="text-paper/40">Rank</Spec>
+            <Spec className="text-right text-paper/40 sm:text-left">Monthly revenue</Spec>
+            <Spec className="hidden text-paper/40 sm:block">What it means</Spec>
+          </div>
+          {RANKS.map((rank) => (
+            <div
+              key={rank.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-b border-paper/10 px-1 py-4 last:border-b-0 sm:grid-cols-[9.5rem_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-x-6"
+            >
+              <span className="inline-flex items-center gap-2.5">
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-2.5 w-2.5 rotate-45"
+                  style={{ backgroundColor: rank.color, boxShadow: `0 0 10px ${rank.color}66` }}
+                />
+                <Spec className="text-paper">{rank.name}</Spec>
               </span>
-            </p>
+              <span className="flex items-center gap-3 justify-self-end sm:justify-self-auto">
+                {/* wide enough for "$100,000+" — a narrower column lets the
+                    top rank shove its bar out of line with the others */}
+                <span className="w-[6.75rem] shrink-0 text-right font-display text-lg tabular-nums text-gold sm:text-left">
+                  {money(rank.minRevenue)}+
+                </span>
+                <span className="hidden h-[3px] flex-1 overflow-hidden bg-paper/10 sm:block">
+                  <span
+                    className="block h-full"
+                    style={{
+                      width: `${Math.max(4, (rank.minRevenue / maxRevenue) * 100)}%`,
+                      background: `linear-gradient(90deg, ${rank.color}88, ${rank.color})`,
+                    }}
+                  />
+                </span>
+              </span>
+              <span className="col-span-2 text-sm leading-relaxed text-paper/60 sm:col-span-1">
+                {rank.blurb}
+              </span>
+            </div>
+          ))}
+        </div>
+        <Spec className="mt-5 block text-paper/40">
+          Gold is self-reported in this beta — verification is the roadmap
+        </Spec>
+      </Section>
+
+      {/* ============================================ 05 — ADMISSION */}
+      <Section
+        n="05"
+        id="admission"
+        kicker="What costs money"
+        title="Admission"
+        lede="Walking in is free and stays free. What you can buy is a better position on the floor — never a key to it."
+      >
+        {/* the season pass */}
+        <div className="mb-10 border-y-2 border-gold bg-ink px-5 py-4 text-paper sm:px-7 sm:py-5">
+          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
+            <div className="min-w-0">
+              <Spec className="text-gold">Season pass · one payment</Spec>
+              <p className="mt-1.5 font-display text-xl">Founding Member</p>
+              <p className="mt-1 max-w-md text-sm leading-relaxed text-paper/60">
+                ${FOUNDING_OFFER.price} once: a year of Founder+ and a founding
+                badge on your card that never goes away.
+              </p>
+            </div>
             <Link
               href="/profile#membership"
-              className="rounded-md border border-ink px-3 py-1.5 text-sm hover:bg-paper"
+              className="btn-press shrink-0 rounded-md border border-gold px-4 py-2.5 text-sm text-gold hover:bg-gold hover:text-ink"
             >
               Become a founding member
             </Link>
           </div>
+        </div>
 
-          <div className="stagger-children mt-6 grid gap-4 sm:grid-cols-3">
-            {PRICING.map(({ tier, blurb }) => {
-              const unlocked = FLOORS.filter(
-                (f) => !f.hidden && TIER_ORDER[f.tier] <= TIER_ORDER[tier],
-              );
-              const [amount, per] = TIER_PRICE[tier].split("/");
-              return (
-                <article
-                  key={tier}
-                  className={`panel card-lift relative flex flex-col p-5 ${
-                    tier === "pro" ? "border-accent/60 shadow-card ring-1 ring-accent/30" : ""
-                  }`}
-                >
-                  {tier === "pro" && (
-                    <span className="absolute -top-3 left-5 rounded-full bg-accent-strong px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-white shadow-sm">
-                      Recommended
-                    </span>
-                  )}
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h3 className="font-display text-lg">{TIER_LABEL[tier]}</h3>
-                  </div>
-                  <p className="mt-2 font-display text-3xl">
+        <div className="grid gap-5 sm:grid-cols-3">
+          {PRICING.map(({ tier, blurb }) => {
+            const unlocked = PUBLIC_FLOORS.filter((f) => TIER_ORDER[f.tier] <= TIER_ORDER[tier]);
+            const [amount, per] = TIER_PRICE[tier].split("/");
+            const featured = tier === "pro";
+            return (
+              // Admission stub: the notches at the tear line are cut out of
+              // the card by a mask (see .stub), not drawn on top of it.
+              <article
+                key={tier}
+                className={`stub relative flex flex-col border bg-panel ${
+                  featured ? "border-accent/50" : "border-line"
+                }`}
+              >
+                {/* the top edge is drawn on every stub, transparent when
+                    the tier isn't the featured one — otherwise the middle
+                    card's header row sits 3px lower than its neighbours */}
+                <span
+                  aria-hidden="true"
+                  className={`h-[3px] w-full ${featured ? "bg-accent-strong" : "bg-transparent"}`}
+                />
+                <div className="flex items-center justify-between border-b border-line px-5 py-2.5">
+                  <Spec className={featured ? "text-accent" : "text-muted"}>
+                    {featured ? "Most taken" : tier === "founder" ? "The gold one" : "Always free"}
+                  </Spec>
+                  <Spec className="text-muted">{TIER_LABEL[tier]}</Spec>
+                </div>
+
+                <div className="flex flex-1 flex-col px-5 pb-6 pt-5">
+                  <p className="font-display text-[2.6rem] leading-none tabular-nums">
                     {amount}
-                    {per ? (
-                      <span className="ml-1 font-body text-sm text-muted">/ {per}</span>
-                    ) : null}
+                    {per ? <span className="ml-1 font-body text-sm text-muted">/ {per}</span> : null}
                   </p>
-                  {tier !== "free" && (
-                    <p className="micro mt-1 text-muted">
-                      or {TIER_PRICE_ANNUAL[tier]} — {annualFreeMonths(tier)} months free
-                    </p>
+                  {tier !== "free" ? (
+                    <Spec className="mt-2 block text-muted">
+                      or {TIER_PRICE_ANNUAL[tier]} · {annualFreeMonths(tier)} mo free
+                    </Spec>
+                  ) : (
+                    <Spec className="mt-2 block text-muted">No card, no expiry</Spec>
                   )}
-                  <p className="mt-3 text-sm leading-relaxed text-muted">{blurb}</p>
-                  <ul className="mt-4 flex-1 space-y-1.5">
+                  <p className="mt-4 text-sm leading-relaxed text-muted">{blurb}</p>
+                  <ul className="mt-4 flex-1 space-y-2 border-t border-line pt-4">
                     {/* With one floor open every tier would list the same
-                        hall — noise. The bullets return on their own once a
+                        hall — noise. The lines return on their own once a
                         second floor is un-hidden. */}
                     {MANY_FLOORS &&
                       unlocked.map((f) => (
-                        <li key={f.id} className="flex items-center gap-2 text-sm">
-                          <span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 bg-verify" />
+                        <li key={f.id} className="flex items-start gap-2.5 text-sm">
+                          <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 bg-verify" />
                           {f.name}
                         </li>
                       ))}
                     {TIER_PERKS[tier].map((perk) => (
-                      <li key={perk} className="flex items-center gap-2 text-sm text-muted">
+                      <li key={perk} className="flex items-start gap-2.5 text-sm leading-relaxed text-muted">
                         <span
                           aria-hidden="true"
-                          className={`h-1.5 w-1.5 shrink-0 ${
-                            tier === "founder" ? "bg-gold" : "bg-accent/60"
+                          className={`mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 ${
+                            tier === "founder" ? "bg-gold" : "bg-accent/70"
                           }`}
                         />
                         {perk}
                       </li>
                     ))}
                   </ul>
+                </div>
+
+                {/* the tear-off */}
+                <span aria-hidden="true" className="stub-perf dash-x" />
+                <div className="flex h-[104px] flex-col justify-center gap-3 px-5">
+                  <Spec className="text-muted">Admit one · {TIER_LABEL[tier]}</Spec>
                   <Link
                     href="/profile#membership"
-                    className={`btn-press mt-5 rounded-md px-4 py-2.5 text-center text-sm font-medium ${
-                      tier === "pro"
+                    className={`btn-press rounded-md px-4 py-2.5 text-center text-sm font-medium ${
+                      featured
                         ? "bg-accent-strong text-white hover:bg-accent-strong/90"
                         : "border border-ink hover:bg-paper"
                     }`}
                   >
                     Choose {TIER_LABEL[tier]}
                   </Link>
-                </article>
-              );
-            })}
-          </div>
-        </Reveal>
-      </section>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+        <Spec className="mt-5 block text-muted">
+          Beta — billing goes live at launch
+        </Spec>
+      </Section>
 
-      {/* what's next — the build is alive; give people a reason to check back */}
-      <section id="roadmap" aria-labelledby="next-heading" className="scroll-mt-6 border-t border-line">
-        <Reveal className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
-          <Eyebrow n="06">Shipping weekly</Eyebrow>
-          <h2 id="next-heading" className="mt-2 font-display text-3xl sm:text-4xl">
-            The floor keeps changing
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            This place ships weekly. Walk in after a few days away and the
-            lobby will tell you what you missed.
-          </p>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="panel p-6">
-              <p className="micro text-verify">Landed recently</p>
-              <ul className="mt-3 flex flex-col gap-2.5 text-sm leading-relaxed text-muted">
-                <li>
-                  <span className="text-ink">A directory that grows itself</span>{" "}
-                  — every startup someone creates shows up, with its category
-                  as a new filter, the moment they save it.
-                </li>
-                <li>
-                  <span className="text-ink">Chats that follow you</span> —
-                  message a connection from anywhere; they get a pixel-mail
-                  ping whether they&rsquo;re on a floor or in a menu.
-                </li>
-                <li>
-                  <span className="text-ink">Your own banner logo</span> — any
-                  image, shrunk to a 16&times;16 mark on your stand.
-                </li>
-                <li>
-                  <span className="text-ink">Your progress, everywhere</span>{" "}
-                  — stand, quests, badges, and streaks now follow your
-                  account across devices.
-                </li>
-                <li>
-                  <span className="text-ink">Smooth on any machine</span> —
-                  the floor now tunes its render resolution to your hardware.
-                </li>
-                <li>
-                  <span className="text-ink">Real email accounts</span> —
-                  sign in with your email, reset a forgotten password, and
-                  get an alert if your account signs in somewhere new.
-                </li>
-              </ul>
-            </div>
-            <div className="panel p-6">
-              <p className="micro text-accent">Being built</p>
-              <ul className="mt-3 flex flex-col gap-2.5 text-sm leading-relaxed text-muted">
-                <li>
-                  <span className="text-ink">Real revenue verification</span>{" "}
-                  — a read-only Stripe connection, so the gold badges stop
-                  being simulated and start being earned.
-                </li>
-                <li>
-                  <span className="text-ink">A real events calendar</span> —
-                  Demo Night gets siblings: pitch hours, category meetups,
-                  co-founder speed-walking.
-                </li>
-                <li>
-                  <span className="text-ink">Bigger halls</span> — new floors
-                  open as the existing ones fill with real stands.
-                </li>
-              </ul>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* questions people actually have, answered before they have to ask */}
-      <section aria-labelledby="faq-heading" className="border-b border-line bg-panel">
-        <Reveal className="mx-auto w-full max-w-3xl px-4 py-16 sm:py-20">
-          <Eyebrow n="07">Before you ask</Eyebrow>
-          <h2 id="faq-heading" className="mt-2 font-display text-3xl sm:text-4xl">
-            Fair questions
-          </h2>
-          <div className="mt-6 flex flex-col divide-y divide-line border-y border-line">
-            {[
-              {
-                q: "Is it actually free?",
-                a: "Walking the floors, talking, connecting, and keeping a stand — free, permanently. Paid memberships buy visibility (priority in the directory, gold trim on your stand), never access.",
-              },
-              {
-                q: "Are the people real?",
-                a: "Yes — every stand is set up by a real founder and every avatar is a live visitor. The one exception is Pixel, the clearly-labeled tutorial robot, who never leaves the practice hall.",
-              },
-              {
-                q: "What happens to my stand when I close the tab?",
-                a: "It stays up for 7 days while you're away — collecting guestbook notes and connection requests. Come back within the week and the clock resets.",
-              },
-              {
-                q: "Do I need an account?",
-                a: "No — you can walk in as a guest with just a name. An account (free) makes your progress follow you across devices and lets you reset a forgotten password by email.",
-              },
-              {
-                q: "What are the ranks on the stands?",
-                a: "Monthly revenue tiers. They're labeled honestly: in this beta, verification is simulated — founders type a number. Read-only Stripe verification is the first post-beta feature.",
-              },
-            ].map(({ q, a }) => (
-              <details key={q} className="group py-1">
-                <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
-                  {q}
-                  <span
-                    aria-hidden="true"
-                    className="text-lg leading-none text-muted transition-transform duration-200 group-open:rotate-45"
+      {/* ============================================ 06 — THE BUILD LOG */}
+      <Section
+        n="06"
+        id="roadmap"
+        kicker="Shipping weekly"
+        title="The floor keeps changing"
+        lede="Walk in after a few days away and the lobby will tell you what you missed."
+        tone="panel"
+      >
+        <div className="grid gap-10 md:grid-cols-2 md:gap-12">
+          {[
+            { label: "Landed recently", color: "text-verify", mark: "bg-verify", rows: SHIPPED },
+            { label: "In the shop", color: "text-accent", mark: "bg-accent", rows: IN_THE_SHOP },
+          ].map((col) => (
+            <div key={col.label}>
+              <div className="flex items-center gap-3 border-b border-line pb-2.5">
+                <Spec className={col.color}>{col.label}</Spec>
+                <span aria-hidden="true" className="dash-x h-px flex-1" />
+                <Spec className="text-muted">{String(col.rows.length).padStart(2, "0")}</Spec>
+              </div>
+              <ul className="mt-1">
+                {col.rows.map(([head, tail]) => (
+                  <li
+                    key={head}
+                    className="flex gap-3 border-b border-line/60 py-3.5 text-sm leading-relaxed text-muted last:border-b-0"
                   >
-                    +
-                  </span>
-                </summary>
-                <p className="pb-4 pr-8 text-sm leading-relaxed text-muted">{a}</p>
-              </details>
-            ))}
-          </div>
-        </Reveal>
-      </section>
+                    <span aria-hidden="true" className={`mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 ${col.mark}`} />
+                    <span>
+                      <span className="text-ink">{head}</span> — {tail}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </Section>
 
-      {/* final CTA */}
-      <section aria-labelledby="cta-heading" className="bg-ink">
-        <div className="mx-auto w-full max-w-5xl px-4 py-16 text-center sm:py-20">
-          <h2
-            id="cta-heading"
-            className="mx-auto max-w-2xl font-display text-3xl leading-tight text-paper [text-wrap:balance] sm:text-4xl"
-          >
-            The doors are propped open. They stay that way.
-          </h2>
-          <p className="mt-4 text-sm text-paper/70">
-            No badge, no lanyard, no schedule. The founders are at their booths.
-          </p>
-          <Link
-            href="/lobby"
-            className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
-          >
-            Walk the floor →
-          </Link>
+      {/* ============================================ 07 — ENQUIRIES */}
+      <Section
+        n="07"
+        id="faq"
+        kicker="Before you ask"
+        title="Fair questions"
+        lede="The five that come up most, answered without marketing."
+      >
+        <div className="border-t border-line">
+          {FAQ.map((item, i) => (
+            <details key={item.q} className="group border-b border-line">
+              <summary className="flex min-h-[56px] cursor-pointer list-none items-center gap-4 py-4 text-left [&::-webkit-details-marker]:hidden">
+                <span aria-hidden="true" className="numeral w-8 shrink-0 text-sm text-ink/30">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="flex-1 text-[0.95rem] font-medium text-ink">{item.q}</span>
+                <span
+                  aria-hidden="true"
+                  className="shrink-0 text-lg leading-none text-muted transition-transform duration-200 group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="max-w-2xl pb-5 pl-12 pr-8 text-sm leading-relaxed text-muted">
+                {item.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </Section>
 
-          {/* Not everyone is ready today. Without this the visit ends here
-              and there is no second one — the list is the only way back. */}
-          <div className="mx-auto mt-12 max-w-md border-t border-paper/15 pt-8 text-left">
-            <p className="micro text-gold">OR COME BACK WHEN IT&rsquo;S BUSY</p>
-            <p className="mt-2 text-sm leading-relaxed text-paper/70">
-              The floors fill up on Thursdays. Leave an address and we&rsquo;ll
-              tell you when it&rsquo;s worth walking in — no newsletter, no
-              drip campaign.
-            </p>
-            <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/40 [&_p]:text-paper/50">
-              <EmailCapture variant="list" source="landing" />
+      {/* ============================================ CLOSING PLACARD */}
+      <section aria-labelledby="cta-heading" className="blueprint bg-ink">
+        <div className={`${SHELL} py-16 sm:py-24`}>
+          <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+            <div>
+              <Spec className="text-gold">Closing time — there isn&rsquo;t one</Spec>
+              <h2
+                id="cta-heading"
+                className="mt-4 max-w-xl font-display text-[2.3rem] leading-[1.1] text-paper sm:text-[3.1rem]"
+              >
+                The doors are propped open. They stay that way.
+              </h2>
+              <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/60">
+                No badge, no lanyard, no schedule. The founders are at their
+                booths.
+              </p>
+              <Link
+                href="/lobby"
+                className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+              >
+                Walk the floor →
+              </Link>
+            </div>
+
+            {/* Not everyone is ready today. Without this the visit ends here
+                and there is no second one — the list is the only way back. */}
+            <div className="relative self-end border border-paper/20 p-6">
+              <CropMarks tone="paper" />
+              <Spec className="text-gold">Or come back when it&rsquo;s busy</Spec>
+              <p className="mt-3 text-sm leading-relaxed text-paper/70">
+                The floors fill up on Thursdays. Leave an address and we&rsquo;ll
+                tell you when it&rsquo;s worth walking in — no newsletter, no
+                drip campaign.
+              </p>
+              <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/40 [&_p]:text-paper/50">
+                <EmailCapture variant="list" source="landing" />
+              </div>
             </div>
           </div>
         </div>

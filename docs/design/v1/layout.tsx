@@ -71,7 +71,7 @@ export default function RootLayout({
           data-site-nav
           className="sticky top-0 z-40 border-b border-line/60 bg-panel/80 backdrop-blur-md"
         >
-          <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-5 sm:gap-6 sm:px-8">
+          <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4 sm:gap-6">
             <Link
               href="/"
               className="flex shrink-0 items-center gap-2.5"
@@ -85,14 +85,6 @@ export default function RootLayout({
                 FounderFloor
               </span>
             </Link>
-            {/* a hall-board status stamp, in the programme's mono spec type */}
-            <span
-              aria-hidden="true"
-              className="hidden items-center gap-2 border-l border-line pl-4 md:flex"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-verify" />
-              <span className="micro font-mono text-[10px] text-muted">Main Hall open</span>
-            </span>
             <nav
               aria-label="Main"
               className="ml-auto flex min-w-0 items-center gap-3 whitespace-nowrap sm:gap-5"
@@ -122,65 +114,58 @@ export default function RootLayout({
         <footer className="border-t border-line bg-panel">
           {/* pb-20 on phones keeps the fixed chat button from sitting on the
               footer text; desktops have room to spare */}
-          {/* The colophon: a masthead rule, then the sections, then the
-              small print — set like the back page of a programme rather
-              than as a row of link columns. pb-20 on phones keeps the fixed
-              chat button off the text. */}
-          <div className="mx-auto w-full max-w-6xl px-5 pb-20 pt-10 sm:px-8 sm:pb-10">
-            <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 border-b border-line pb-6">
-              <div className="flex items-center gap-3">
-                <PixelLogo size={22} />
-                <span className="font-display text-2xl tracking-tight">FounderFloor</span>
+          <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-8 sm:pb-8">
+            <div className="flex flex-col gap-8 sm:flex-row sm:justify-between">
+              <div className="max-w-xs">
+                <div className="flex items-center gap-2">
+                  <PixelLogo size={18} />
+                  <span className="font-display text-base">FounderFloor</span>
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  A trade-show floor that never tears down. Built by one
+                  person and a robot.
+                </p>
               </div>
-              <span className="micro font-mono text-[10px] text-muted">
-                Est. 2026 · one hall · admission free
-              </span>
-            </div>
-
-            <div className="grid gap-x-10 gap-y-8 pt-8 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
-              <p className="max-w-xs text-sm leading-relaxed text-muted">
-                A trade-show floor that never tears down. Built by one person
-                and a robot, shipped weekly, open to anyone who walks in.
-              </p>
-              <nav aria-label="Explore" className="text-sm">
-                <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
-                  Explore
-                </span>
-                <div className="mt-3 flex flex-col gap-2">
-                  {[
-                    ["/lobby", "Floors"],
-                    ["/directory", "Directory"],
-                    ["/floor/tutorial-hall", "Tutorial"],
-                  ].map(([href, label]) => (
-                    <Link key={href} href={href} className="text-muted hover:text-ink hover:underline">
-                      {label}
-                    </Link>
-                  ))}
+              <nav aria-label="Footer" className="flex gap-12 text-sm">
+                <div className="flex flex-col gap-2">
+                  <span className="micro text-muted">Explore</span>
+                  <Link href="/lobby" className="text-muted hover:text-ink hover:underline">
+                    Floors
+                  </Link>
+                  <Link href="/directory" className="text-muted hover:text-ink hover:underline">
+                    Directory
+                  </Link>
+                  <Link href="/floor/tutorial-hall" className="text-muted hover:text-ink hover:underline">
+                    Tutorial
+                  </Link>
                 </div>
-              </nav>
-              <nav aria-label="The fine print" className="text-sm">
-                <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
-                  The fine print
-                </span>
-                <div className="mt-3 flex flex-col gap-2">
-                  {[
-                    ["/about", "About"],
-                    ["/terms", "Terms of Service"],
-                    ["/imprint", "Legal Notice"],
-                    ["/privacy", "Privacy Policy"],
-                    ["/cancel", "Cancel membership"],
-                    ["/report", "Report content"],
-                    ["/about#feedback", "Send feedback"],
-                  ].map(([href, label]) => (
-                    <Link key={href} href={href} className="text-muted hover:text-ink hover:underline">
-                      {label}
-                    </Link>
-                  ))}
+                <div className="flex flex-col gap-2">
+                  <span className="micro text-muted">The fine print</span>
+                  <Link href="/about" className="text-muted hover:text-ink hover:underline">
+                    About
+                  </Link>
+                  <Link href="/terms" className="text-muted hover:text-ink hover:underline">
+                    Terms of Service
+                  </Link>
+                  <Link href="/imprint" className="text-muted hover:text-ink hover:underline">
+                    Legal Notice
+                  </Link>
+                  <Link href="/privacy" className="text-muted hover:text-ink hover:underline">
+                    Privacy Policy
+                  </Link>
+                  <Link href="/cancel" className="text-muted hover:text-ink hover:underline">
+                    Cancel membership
+                  </Link>
+                  <Link href="/report" className="text-muted hover:text-ink hover:underline">
+                    Report content
+                  </Link>
+                  <Link href="/about#feedback" className="text-muted hover:text-ink hover:underline">
+                    Send feedback
+                  </Link>
                 </div>
               </nav>
             </div>
-
-            <div className="mt-10 flex flex-col gap-1 border-t border-line pt-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-8 flex flex-col gap-1 border-t border-line pt-4 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
               <p>&copy; {new Date().getFullYear()} FounderFloor. All rights reserved.</p>
               <p>
                 Revenue ranks are self-reported in this beta &mdash; treat them

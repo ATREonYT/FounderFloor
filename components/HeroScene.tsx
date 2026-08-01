@@ -125,7 +125,19 @@ interface Plant {
   tall: boolean;
 }
 
-export default function HeroScene({ className = "" }: { className?: string }) {
+export default function HeroScene({
+  className = "",
+  bare = false,
+}: {
+  className?: string;
+  /**
+   * Drops the component's own height, radius and border so the caller can
+   * frame it itself. Two competing `h-*` utilities of equal specificity
+   * resolve by stylesheet order, not by class order in the string — so an
+   * override has to remove the base class rather than sit beside it.
+   */
+  bare?: boolean;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -454,7 +466,9 @@ export default function HeroScene({ className = "" }: { className?: string }) {
     <div
       ref={wrapRef}
       aria-hidden="true"
-      className={`relative h-[320px] w-full overflow-hidden rounded-md border border-line bg-[#D8D2C4] sm:h-[368px] ${className}`}
+      className={`relative w-full overflow-hidden bg-[#D8D2C4] ${
+        bare ? "" : "h-[320px] rounded-md border border-line sm:h-[368px]"
+      } ${className}`}
     >
       <canvas ref={canvasRef} className="pixelated absolute inset-0 h-full w-full" />
     </div>

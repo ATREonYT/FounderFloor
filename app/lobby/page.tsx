@@ -106,7 +106,7 @@ export default function LobbyPage() {
 
   if (!ready) {
     return (
-      <main className="mx-auto w-full max-w-5xl px-4 py-14">
+      <main className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-8">
         <p className="text-sm text-muted">Opening the lobby…</p>
       </main>
     );
@@ -114,7 +114,7 @@ export default function LobbyPage() {
 
   if (state.profile.name === "") {
     return (
-      <main className="mx-auto w-full max-w-5xl px-4">
+      <main className="mx-auto w-full max-w-6xl px-5 sm:px-8">
         <FirstVisitPanel
           onDone={(name, look) => {
             actions.setName(name);
@@ -126,7 +126,7 @@ export default function LobbyPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-12 pb-24 sm:pb-12">
+    <main className="mx-auto w-full max-w-6xl px-5 py-12 pb-24 sm:px-8 sm:pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-display text-3xl">

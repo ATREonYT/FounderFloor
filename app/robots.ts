@@ -13,7 +13,15 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/reset", "/profile", "/connections", "/floor/"],
+      disallow: [
+        "/admin",
+        "/reset",
+        "/profile",
+        "/connections",
+        "/floor/",
+        // the archived landing design, kept live only for comparison
+        "/design-v1",
+      ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

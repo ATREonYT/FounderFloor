@@ -306,16 +306,14 @@
     background-image: linear-gradient(rgba(217, 72, 15, 0.5), rgba(217, 72, 15, 0.5));
     background-repeat: no-repeat;
     background-position: 0 94%;
-    /* 0.075em rather than 0.1em: the headline now runs to 80px on desktop,
-       where a tenth of the em reads as a highlighter stripe */
-    background-size: 0% 0.075em;
+    background-size: 0% 0.1em;
     -webkit-box-decoration-break: clone;
     box-decoration-break: clone;
     animation: sweep 700ms var(--ease-out) 450ms both;
   }
   @keyframes sweep {
     to {
-      background-size: 100% 0.075em;
+      background-size: 100% 0.1em;
     }
   }
 
@@ -587,139 +585,7 @@
     animation: float-slow 5.5s ease-in-out 2.2s infinite;
   }
 
-  /* ==================== EXHIBITION LAYER ====================
-     The landing page is set like a printed trade-show programme rather
-     than like a web template: a margin rail carrying section numbers, a
-     dotted walking route instead of feature cards, dotted leaders in the
-     catalogue entries, perforated admission stubs instead of pricing
-     boxes, and crop marks around the artwork.
-
-     All of it is new class names on the existing colour tokens — nothing
-     here changes how the old design renders, so docs/design/v1 still
-     works with this stylesheet in place. */
-
-  /* Dashed rules, drawn as a gradient so the dash length is ours rather
-     than the browser's (border-style: dashed is 3px-on-3px and reads as a
-     mistake at this scale). --dash-c recolours them per section. */
-  .dash-x {
-    background-repeat: repeat-x;
-    background-image: linear-gradient(
-      to right,
-      var(--dash-c, rgba(35, 32, 26, 0.22)) 0,
-      var(--dash-c, rgba(35, 32, 26, 0.22)) 5px,
-      transparent 5px,
-      transparent 10px
-    );
-    background-size: 10px 1px;
-  }
-  .dash-y {
-    background-image: linear-gradient(
-      to bottom,
-      var(--dash-c, rgba(35, 32, 26, 0.22)) 0,
-      var(--dash-c, rgba(35, 32, 26, 0.22)) 5px,
-      transparent 5px,
-      transparent 10px
-    );
-    background-size: 1px 10px;
-    background-repeat: repeat-y;
-  }
-
-  /* Catalogue leader: the run of dots between an entry and its value, as
-     in a programme's contents page. Sits on the text baseline, so it has
-     to hang slightly above the flex line's bottom. */
-  .leader {
-    flex: 1 1 auto;
-    min-width: 1.25rem;
-    height: 1px;
-    align-self: flex-end;
-    margin-bottom: 0.38em;
-  }
-
-  /* Admission stub: a real perforation. Two circles are subtracted from
-     the card's left and right edges at the tear line, and the notch is a
-     hole in the element rather than a paper-coloured disc drawn on top —
-     so it works over any background. mask-composite is what makes the two
-     holes intersect; browsers without it simply show an un-notched card,
-     which is a perfectly good fallback. */
-  .stub {
-    --perf: 104px; /* distance from the bottom edge to the tear line */
-    --notch: 10px;
-    -webkit-mask-image: radial-gradient(
-        circle var(--notch) at 0 calc(100% - var(--perf)),
-        transparent 98%,
-        #000 100%
-      ),
-      radial-gradient(
-        circle var(--notch) at 100% calc(100% - var(--perf)),
-        transparent 98%,
-        #000 100%
-      );
-    mask-image: radial-gradient(
-        circle var(--notch) at 0 calc(100% - var(--perf)),
-        transparent 98%,
-        #000 100%
-      ),
-      radial-gradient(
-        circle var(--notch) at 100% calc(100% - var(--perf)),
-        transparent 98%,
-        #000 100%
-      );
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-  }
-  /* the tear line itself, positioned off the same variable */
-  .stub-perf {
-    position: absolute;
-    left: var(--notch, 10px);
-    right: var(--notch, 10px);
-    bottom: var(--perf, 104px);
-    height: 1px;
-  }
-
-  /* Drafting grid for the ink placards. 32px is the game's tile size, so
-     the closing panel is literally ruled to the floor's own grid. */
-  .blueprint {
-    background-image: linear-gradient(rgba(242, 239, 231, 0.055) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(242, 239, 231, 0.055) 1px, transparent 1px);
-    background-size: 32px 32px;
-  }
-
-  /* Index row: the whole row is the target, and the rule under it draws
-     itself in from the left on hover — a printed index that answers. */
-  .index-row {
-    transition: background-color 200ms var(--ease-out);
-  }
-  .index-row::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -1px;
-    height: 1px;
-    width: 0;
-    background: theme("colors.accent");
-    transition: width 320ms var(--ease-out);
-  }
-  .index-row:hover {
-    background-color: rgba(217, 72, 15, 0.04);
-  }
-  .index-row:hover::after,
-  .index-row:focus-visible::after {
-    width: 100%;
-  }
-
-  /* Oversized programme numerals: serif, tabular, and optically dropped
-     so they align with the cap height of the text beside them. */
-  .numeral {
-    @apply font-display tabular-nums;
-    font-variant-numeric: tabular-nums lining-nums;
-    letter-spacing: -0.02em;
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .index-row,
-    .index-row::after {
-      transition: none;
-    }
     .btn-press,
     .btn-press:active:not(:disabled),
     .card-lift,
@@ -759,7 +625,7 @@
     }
     .sweep-underline {
       animation: none;
-      background-size: 100% 0.075em;
+      background-size: 100% 0.1em;
     }
     .reveal,
     .reveal.reveal-in {

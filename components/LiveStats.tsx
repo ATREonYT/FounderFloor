@@ -68,7 +68,12 @@ function CountUp({ value, duration = 1100 }: { value: number | null; duration?: 
   );
 }
 
-export default function LiveStats() {
+export default function LiveStats({
+  variant = "cards",
+}: {
+  /** "rail" = hairline scoreboard (current landing); "cards" = the original. */
+  variant?: "cards" | "rail";
+}) {
   const [online, setOnline] = useState<number | null>(null);
   const [stands, setStands] = useState<number | null>(null);
 
@@ -113,6 +118,40 @@ export default function LiveStats() {
     { label: "floors open", value: FLOORS_OPEN },
     { label: "badges to earn", value: BADGES_EARNABLE },
   ];
+
+  // "rail" is the landing page's hairline scoreboard — no boxes, just
+  // figures divided by rules, the way a hall posts its numbers. "cards" is
+  // the original four-panel treatment, kept for the archived design.
+  if (variant === "rail") {
+    return (
+      <dl className="grid grid-cols-2 border-y border-line sm:grid-cols-4">
+        {tiles.map((t, i) => (
+          // Rules are placed per cell rather than with divide-*: in a
+          // two-column grid, divide-x also draws a rule down the left of
+          // the cell that starts the second row.
+          <div
+            key={t.label}
+            className={`flex flex-col gap-1.5 border-line px-5 py-6 sm:border-b-0 ${
+              i % 2 === 1 ? "border-l" : ""
+            } ${i < 2 ? "border-b" : ""} ${i > 0 ? "sm:border-l" : "sm:border-l-0"}`}
+          >
+            <dd className="order-1 flex items-baseline gap-2 font-display text-[2.15rem] leading-none tracking-tight text-ink">
+              <CountUp value={t.value} />
+              {t.live && (
+                <span
+                  aria-hidden="true"
+                  className="pulse-dot inline-block h-1.5 w-1.5 shrink-0 self-center rounded-full bg-verify"
+                />
+              )}
+            </dd>
+            <dt className="micro order-2 font-mono text-[10px] leading-relaxed text-muted">
+              {t.label}
+            </dt>
+          </div>
+        ))}
+      </dl>
+    );
+  }
 
   return (
     <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
