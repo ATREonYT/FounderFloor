@@ -36,12 +36,16 @@ the same pass, in case only the chrome needs reverting.
 
 ## Or go back with git
 
-The commit before the redesign is tagged:
+The last commit of the v1 design is `0f78323` ("Tighten the cut to 31
+seconds") — the redesign is the commit directly after it:
 
 ```bash
-git show design-v1              # what the site looked like
-git checkout design-v1 -- app/  # restore the whole app directory
+git show 0f78323:app/page.tsx     # what the landing page was
+git checkout 0f78323 -- app/      # restore the whole app directory
 ```
+
+Prefer the file copy above if you only want the landing page back: this
+restores the chrome and the lobby widths too.
 
 ## Why v2 looks the way it does
 
