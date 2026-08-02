@@ -2,8 +2,7 @@ import Link from "next/link";
 import { FLOORS } from "@/lib/data/floors";
 import { RANKS } from "@/lib/ranks";
 import { TIER_ORDER, type GlyphId, type SubTier } from "@/lib/types";
-import TierTag, { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
-import { FOUNDING_OFFER, TIER_PERKS, annualFreeMonths } from "@/lib/pricing";
+import TierTag, { TIER_LABEL, TIER_PRICE } from "@/components/TierTag";
 import PixelGlyph from "@/components/PixelGlyph";
 import HeroScene from "@/components/HeroScene";
 import LiveStats from "@/components/LiveStats";
@@ -13,6 +12,8 @@ import EmailCapture from "@/components/EmailCapture";
 import RankMeter from "@/components/RankMeter";
 import Parallax from "@/components/Parallax";
 import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
+import AdmissionStubs from "@/components/AdmissionStubs";
+import Spec from "@/components/Spec";
 
 /**
  * The landing page, set as a printed trade-show programme.
@@ -49,11 +50,6 @@ const TICKER_ITEMS = [
 ];
 
 /* ------------------------------------------------------------------ parts */
-
-/** Mono micro-label — the programme's specification type. */
-function Spec({ className = "", children }: { className?: string; children: React.ReactNode }) {
-  return <span className={`micro font-mono text-[10px] ${className}`}>{children}</span>;
-}
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
@@ -626,114 +622,7 @@ export default function LandingPage() {
         title="Admission"
         lede="Walking in is free and stays free. What you can buy is a better position on the floor, never a key to it."
       >
-        {/* the season pass */}
-        <div className="mb-10 border-y-2 border-gold bg-ink px-5 py-4 text-paper sm:px-7 sm:py-5">
-          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4">
-            <div className="min-w-0">
-              <Spec className="text-gold">Season pass · one payment</Spec>
-              <p className="mt-1.5 font-display text-xl">Founding Member</p>
-              <p className="mt-1 max-w-md text-sm leading-relaxed text-paper/60">
-                ${FOUNDING_OFFER.price} once: a year of Founder+ and a founding
-                badge on your card that never goes away.
-              </p>
-            </div>
-            <Link
-              href="/profile#membership"
-              className="btn-press shrink-0 rounded-md border border-gold px-4 py-2.5 text-sm text-gold hover:bg-gold hover:text-ink"
-            >
-              Become a founding member
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-3">
-          {PRICING.map(({ tier, blurb }) => {
-            const unlocked = PUBLIC_FLOORS.filter((f) => TIER_ORDER[f.tier] <= TIER_ORDER[tier]);
-            const [amount, per] = TIER_PRICE[tier].split("/");
-            const featured = tier === "pro";
-            return (
-              // Admission stub: the notches at the tear line are cut out of
-              // the card by a mask (see .stub), not drawn on top of it.
-              <article
-                key={tier}
-                // No card-lift here: that adds a box-shadow, and the stub's
-                // mask would clip it into a hard-edged smear. A plain rise is
-                // the only lift a masked element can wear.
-                className={`stub relative flex flex-col border bg-panel transition-transform duration-200 ease-out hover:-translate-y-1 motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
-                  featured ? "border-accent/50" : "border-line"
-                }`}
-              >
-                {/* the top edge is drawn on every stub, transparent when
-                    the tier isn't the featured one — otherwise the middle
-                    card's header row sits 3px lower than its neighbours */}
-                <span
-                  aria-hidden="true"
-                  className={`h-[3px] w-full ${featured ? "bg-accent-strong" : "bg-transparent"}`}
-                />
-                <div className="flex items-center justify-between border-b border-line px-5 py-2.5">
-                  <Spec className={featured ? "text-accent" : "text-muted"}>
-                    {featured ? "Most taken" : tier === "founder" ? "The gold one" : "Always free"}
-                  </Spec>
-                  <Spec className="text-muted">{TIER_LABEL[tier]}</Spec>
-                </div>
-
-                <div className="flex flex-1 flex-col px-5 pb-6 pt-5">
-                  <p className="font-display text-[2.6rem] leading-none tabular-nums">
-                    {amount}
-                    {per ? <span className="ml-1 font-body text-sm text-muted">/ {per}</span> : null}
-                  </p>
-                  {tier !== "free" ? (
-                    <Spec className="mt-2 block text-muted">
-                      or {TIER_PRICE_ANNUAL[tier]} · {annualFreeMonths(tier)} mo free
-                    </Spec>
-                  ) : (
-                    <Spec className="mt-2 block text-muted">No card, no expiry</Spec>
-                  )}
-                  <p className="mt-4 text-sm leading-relaxed text-muted">{blurb}</p>
-                  <ul className="mt-4 flex-1 space-y-2 border-t border-line pt-4">
-                    {/* With one floor open every tier would list the same
-                        hall — noise. The lines return on their own once a
-                        second floor is un-hidden. */}
-                    {MANY_FLOORS &&
-                      unlocked.map((f) => (
-                        <li key={f.id} className="flex items-start gap-2.5 text-sm">
-                          <span aria-hidden="true" className="mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 bg-verify" />
-                          {f.name}
-                        </li>
-                      ))}
-                    {TIER_PERKS[tier].map((perk) => (
-                      <li key={perk} className="flex items-start gap-2.5 text-sm leading-relaxed text-muted">
-                        <span
-                          aria-hidden="true"
-                          className={`mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 ${
-                            tier === "founder" ? "bg-gold" : "bg-accent/70"
-                          }`}
-                        />
-                        {perk}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* the tear-off */}
-                <span aria-hidden="true" className="stub-perf dash-x" />
-                <div className="flex h-[104px] flex-col justify-center gap-3 px-5">
-                  <Spec className="text-muted">Admit one · {TIER_LABEL[tier]}</Spec>
-                  <Link
-                    href="/profile#membership"
-                    className={`btn-press rounded-md px-4 py-2.5 text-center text-sm font-medium ${
-                      featured
-                        ? "bg-accent-strong text-white hover:bg-accent-strong/90"
-                        : "border border-ink hover:bg-paper"
-                    }`}
-                  >
-                    Choose {TIER_LABEL[tier]}
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <AdmissionStubs pricing={PRICING} />
         <Spec className="mt-5 block text-muted">
           Beta. Billing goes live at launch
         </Spec>
