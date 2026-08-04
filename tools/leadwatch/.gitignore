@@ -1,0 +1,6 @@
+# Your queries and your Google Alert URLs are yours.
+config.json
+
+# Public posts by named people: personal data. Never commit it.
+data/
+out/

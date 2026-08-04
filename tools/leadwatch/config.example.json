@@ -1,0 +1,55 @@
+{
+  "_comment": [
+    "Copy to config.json and edit. config.json is gitignored.",
+    "Queries are deliberately few and specific: a listener with twenty vague",
+    "queries produces a digest nobody reads, which is the same as no listener."
+  ],
+
+  "siteUrl": "https://founderfloor.net",
+  "demoNight": "Thursday 19:00 CET",
+
+  "minScore": 8,
+  "sinceHours": 48,
+  "maxLeadsPerRun": 12,
+
+  "sources": {
+    "hn": {
+      "enabled": true,
+      "queries": [
+        "co-founder",
+        "founder community",
+        "where do founders",
+        "first users",
+        "virtual coworking"
+      ]
+    },
+
+    "bluesky": {
+      "enabled": true,
+      "queries": ["cofounder", "indie hackers", "solo founder", "buildinpublic feedback"]
+    },
+
+    "reddit": {
+      "enabled": true,
+      "_note": "Works far better with REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET set; see lib/sources/reddit.mjs. Without them it uses search RSS, which Reddit rate-limits hard from a datacenter IP.",
+      "subreddits": [
+        "SideProject",
+        "startups",
+        "indiehackers",
+        "SaaS",
+        "EntrepreneurRideAlong",
+        "cofounder",
+        "alphaandbetausers"
+      ],
+      "queries": ["co-founder", "community", "first users", "feedback"]
+    },
+
+    "rss": {
+      "enabled": false,
+      "_note": "Google Alerts will give you an RSS feed for any query. Create one at google.com/alerts, set Deliver to = RSS feed, and paste the URL here. This is how you cover X, LinkedIn and the long tail without scraping anything.",
+      "feeds": [
+        { "name": "alert-cofounder", "url": "https://www.google.com/alerts/feeds/00000000000000000000/00000000000000000000" }
+      ]
+    }
+  }
+}
