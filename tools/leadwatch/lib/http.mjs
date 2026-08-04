@@ -4,10 +4,16 @@
  * Everything this thing does is read someone else's public server, on a
  * schedule, unattended. That earns a few obligations: identify yourself in
  * the User-Agent with a way to be contacted, never hold more than one
- * connection per host, keep a minimum gap between requests to the same
- * host, obey Retry-After, and back off rather than hammer when a host is
- * unhappy. A listener that gets the operator's IP blocked has cost more
- * than it found.
+ * connection per host, keep a minimum gap between requests to the same host,
+ * obey Retry-After literally rather than negotiating with it, and stop
+ * knocking on a host that has repeatedly refused. A listener that gets the
+ * operator's IP blocked has cost more than it found.
+ *
+ * The body is read INSIDE this function, with the abort timer still armed
+ * and a byte cap enforced as it streams. Reading it in the caller is the
+ * classic version of this bug: the timeout is cleared once headers arrive,
+ * so a server that stalls halfway through the body hangs the process with
+ * nothing left to interrupt it, and an endless body eats the VPS.
  *
  * No dependencies: Node 18+ has fetch, and this has to run on a small VPS
  * without an npm install.
@@ -16,10 +22,16 @@
 const DEFAULT_UA =
   "founderfloor-leadwatch/1.0 (+https://founderfloor.net; ak@founderfloor.net)";
 
-/** Last request time per host, so we can space them out. */
+/** Nothing we read is legitimately large. An RSS feed or a search page is KBs. */
+const MAX_BYTES = 8 * 1024 * 1024;
+/** Refuse to sit in a retry loop longer than this for one request. */
+const MAX_RETRY_WAIT_MS = 60_000;
+/** Consecutive hard refusals before a host is left alone for the rest of the run. */
+const STRIKES_BEFORE_BREAK = 3;
+
 const lastHit = new Map();
-/** In-flight promise per host, so requests to one host queue rather than race. */
 const hostQueue = new Map();
+const strikes = new Map();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -32,17 +44,27 @@ export class HttpError extends Error {
   }
 }
 
+export class TooLarge extends Error {
+  constructor(url, cap) {
+    super(`response from ${url} exceeded ${cap} bytes`);
+    this.url = url;
+  }
+}
+
+export class HostCircuitOpen extends Error {
+  constructor(host) {
+    super(`skipping ${host}: it refused ${STRIKES_BEFORE_BREAK} times this run`);
+    this.host = host;
+  }
+}
+
+/** Reset between runs; exported for tests. */
+export function resetCircuits() {
+  strikes.clear();
+}
+
 /**
- * Fetch with per-host serialisation, spacing, retries and a hard timeout.
- *
- * @param {string} url
- * @param {object} opts
- * @param {number} opts.minGapMs   minimum ms between requests to this host
- * @param {number} opts.timeoutMs
- * @param {number} opts.retries    on 429/5xx/network only — never on 4xx
- * @param {Record<string,string>} opts.headers
- * @param {string} opts.method
- * @param {string} opts.body
+ * @returns {Promise<{status:number, headers:Headers, text:string, url:string}>}
  */
 export async function politeFetch(url, opts = {}) {
   const {
@@ -52,11 +74,13 @@ export async function politeFetch(url, opts = {}) {
     headers = {},
     method = "GET",
     body,
+    maxBytes = MAX_BYTES,
     userAgent = process.env.LEADWATCH_UA || DEFAULT_UA,
   } = opts;
 
   const host = new URL(url).host;
-  // Chain onto whatever is already queued for this host.
+  if ((strikes.get(host) || 0) >= STRIKES_BEFORE_BREAK) throw new HostCircuitOpen(host);
+
   const prior = hostQueue.get(host) || Promise.resolve();
   let release;
   hostQueue.set(
@@ -78,60 +102,100 @@ export async function politeFetch(url, opts = {}) {
 
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), timeoutMs);
-      let res;
       try {
-        res = await fetch(url, {
+        const res = await fetch(url, {
           method,
           body,
           signal: ac.signal,
           redirect: "follow",
           headers: { "user-agent": userAgent, accept: "*/*", ...headers },
         });
+
+        if (res.status === 429 || res.status >= 500) {
+          const wait = retryAfterMs(res.headers.get("retry-after"));
+          // A host that asks for a long wait is asking us to go away for this
+          // run. Honour the number instead of clamping it and knocking again.
+          if (wait !== null && wait > MAX_RETRY_WAIT_MS) {
+            bumpStrike(host);
+            throw new HttpError(res.status, url, `Retry-After ${Math.round(wait / 1000)}s exceeds this run's budget`);
+          }
+          if (attempt > retries) {
+            bumpStrike(host);
+            throw new HttpError(res.status, url, (await readCapped(res, maxBytes, url)).slice(0, 300));
+          }
+          await sleep(wait ?? backoff(attempt));
+          continue;
+        }
+
+        if (res.status === 401 || res.status === 403) bumpStrike(host);
+        if (!res.ok) throw new HttpError(res.status, url, (await readCapped(res, maxBytes, url)).slice(0, 300));
+
+        const declared = Number(res.headers.get("content-length"));
+        if (Number.isFinite(declared) && declared > maxBytes) throw new TooLarge(url, maxBytes);
+
+        // Body read here, timer still armed: a stalled body aborts.
+        const text = await readCapped(res, maxBytes, url);
+        strikes.delete(host);
+        return { status: res.status, headers: res.headers, text, url };
       } catch (err) {
-        clearTimeout(timer);
+        if (err instanceof HttpError || err instanceof TooLarge) throw err;
         if (attempt > retries) throw err;
         await sleep(backoff(attempt));
-        continue;
+      } finally {
+        clearTimeout(timer);
       }
-      clearTimeout(timer);
-
-      if (res.status === 429 || res.status >= 500) {
-        if (attempt > retries) throw new HttpError(res.status, url, await safeText(res));
-        // Retry-After wins over our own guess: the server knows better.
-        const ra = Number(res.headers.get("retry-after"));
-        await sleep(Number.isFinite(ra) && ra > 0 ? Math.min(ra * 1000, 60000) : backoff(attempt));
-        continue;
-      }
-      if (!res.ok) throw new HttpError(res.status, url, await safeText(res));
-      return res;
     }
   } finally {
     release();
-    // Don't let the map grow forever across a long run.
-    if (hostQueue.get(host) && hostQueue.size > 64) hostQueue.delete(host);
+    if (hostQueue.size > 64) hostQueue.delete(host);
   }
 }
 
 export async function getJson(url, opts) {
-  const res = await politeFetch(url, { ...opts, headers: { accept: "application/json", ...(opts?.headers || {}) } });
-  return res.json();
+  const { text } = await politeFetch(url, {
+    ...opts,
+    headers: { accept: "application/json", ...(opts?.headers || {}) },
+  });
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`response from ${url} was not JSON (first 120 chars: ${text.slice(0, 120)})`);
+  }
 }
 
 export async function getText(url, opts) {
-  const res = await politeFetch(url, opts);
-  return res.text();
+  return (await politeFetch(url, opts)).text;
 }
 
-/** 1.5s, 3s, 6s, 12s … with a little jitter so retries don't sync up. */
+/** Streams the body, aborting the moment it goes past the cap. */
+async function readCapped(res, cap, url) {
+  if (!res.body) return "";
+  const dec = new TextDecoder();
+  let out = "";
+  let n = 0;
+  for await (const chunk of res.body) {
+    n += chunk.byteLength ?? chunk.length ?? 0;
+    if (n > cap) throw new TooLarge(url, cap);
+    out += dec.decode(chunk, { stream: true });
+  }
+  return out + dec.decode();
+}
+
+/** Retry-After is seconds OR an HTTP date. Returns ms, or null if absent/unparseable. */
+function retryAfterMs(header) {
+  if (!header) return null;
+  const secs = Number(header);
+  if (Number.isFinite(secs) && secs >= 0) return secs * 1000;
+  const at = Date.parse(header);
+  return Number.isFinite(at) ? Math.max(0, at - Date.now()) : null;
+}
+
+function bumpStrike(host) {
+  strikes.set(host, (strikes.get(host) || 0) + 1);
+}
+
+/** 1.5s, 3s, 6s, 12s … with jitter so retries don't sync up. */
 function backoff(attempt) {
   const base = 1500 * Math.pow(2, attempt - 1);
   return Math.min(base, 30000) + Math.floor(Math.random() * 400);
-}
-
-async function safeText(res) {
-  try {
-    return (await res.text()).slice(0, 500);
-  } catch {
-    return "";
-  }
 }

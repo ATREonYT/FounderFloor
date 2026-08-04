@@ -10,8 +10,8 @@ matched, and a draft reply you have to finish. That's the whole tool.
 ## What it does not do
 
 **It does not message anyone.** There is no send function anywhere in this
-directory, and a test asserts there never is one — nothing here may POST to
-a third party or reference a messaging endpoint.
+directory, and `test/unit.mjs` asserts there never is one: no module may POST
+to a third party or reference a messaging endpoint.
 
 That isn't squeamishness. You asked for an agent that reaches out
 automatically, and three things say don't:
@@ -141,8 +141,22 @@ Twice a day is deliberate. Hourly finds the same posts, mails you more often,
 and trains you to stop reading the mail.
 
 If you'd rather not run it on the VPS, it works unchanged as a GitHub Actions
-cron job — the only thing to add is committing `data/` back to the repo (or
-using an actions cache) so the seen-set survives between runs.
+cron job — persist `data/` with `actions/cache` so the seen-set survives
+between runs. Do **not** commit `data/` to the repo: `leads.jsonl` holds
+other people's posts and handles, which is exactly what the retention policy
+below exists to bound. The seen-set is disposable; losing it only means a few
+old posts are offered once more.
+
+## Tests
+
+```bash
+node test/unit.mjs     # scoring, vetoes, drafts, store, retention, digest escaping
+node test/e2e.mjs      # the real CLI against a fixture feed on 127.0.0.1
+```
+
+No dependencies, no runner. Several cases are marked REGRESSION with the bug
+they guard — including the one where leads past `maxLeadsPerRun` were marked
+seen but never stored, and so were lost permanently.
 
 ## The daily loop
 

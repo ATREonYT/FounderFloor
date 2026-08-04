@@ -20,8 +20,8 @@
  *   node leadwatch.mjs --skip <key>      mark one not worth it
  */
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { Store } from "./lib/store.mjs";
@@ -78,28 +78,37 @@ async function collect(cfg) {
     }
   };
 
+  // Per QUERY, not per source: one flaky request used to discard every
+  // sibling query's already-fetched items. Partial data is the whole design.
+  const eachQuery = async (queries, fn) => {
+    const out = [];
+    const errs = [];
+    for (const q of queries) {
+      try {
+        out.push(...(await fn(q)));
+      } catch (err) {
+        errs.push(`"${q}": ${String(err.message || err).slice(0, 100)}`);
+      }
+    }
+    if (errs.length === queries.length && queries.length) throw new Error(errs.join(" | "));
+    if (errs.length) console.warn(`[leadwatch] some queries failed — ${errs.join(" | ")}`);
+    return out;
+  };
+
   if (S.hn?.enabled) {
-    await run("hn", async () => {
-      const out = [];
-      for (const q of S.hn.queries || []) out.push(...(await fetchHn({ query: q, sinceHours })));
-      return out;
-    });
+    await run("hn", () => eachQuery(S.hn.queries || [], (q) => fetchHn({ query: q, sinceHours })));
   }
   if (S.bluesky?.enabled) {
-    await run("bluesky", async () => {
-      const out = [];
-      for (const q of S.bluesky.queries || []) out.push(...(await fetchBluesky({ query: q, sinceHours })));
-      return out;
-    });
+    await run("bluesky", () =>
+      eachQuery(S.bluesky.queries || [], (q) => fetchBluesky({ query: q, sinceHours })),
+    );
   }
   if (S.reddit?.enabled) {
-    await run("reddit", async () => {
-      const out = [];
-      for (const q of S.reddit.queries || []) {
-        out.push(...(await fetchReddit({ query: q, subreddits: S.reddit.subreddits || [], sinceHours })));
-      }
-      return out;
-    });
+    await run("reddit", () =>
+      eachQuery(S.reddit.queries || [], (q) =>
+        fetchReddit({ query: q, subreddits: S.reddit.subreddits || [], sinceHours }),
+      ),
+    );
   }
   if (S.rss?.enabled) {
     for (const feed of S.rss.feeds || []) {
@@ -141,26 +150,52 @@ async function once(cfg, { dry = false } = {}) {
     fresh.push(item);
   }
 
+  // Scoring first, marking second. Marking inside this loop was a real bug:
+  // every fresh item went into seen.jsonl, but only the first
+  // maxLeadsPerRun were written to leads.jsonl — so anything that qualified
+  // and lost the cap was silently discarded FOREVER, since store.has()
+  // skipped it on every later run and the sources only look back
+  // sinceHours. Worse, leads sort by score, so a dozen crafted max-score
+  // posts would evict every genuine lead found in the same run.
+  //
+  // Now: items that did not qualify are marked seen immediately (we are done
+  // with them), and items that did qualify are marked ONLY if they make the
+  // cut. The overflow stays unseen and is offered again next run.
   const leads = [];
+  const rejected = [];
   for (const item of fresh) {
     const scored = score(item);
-    if (!dry) store.markSeen(item);
-    if (scored.score < (cfg.minScore ?? 8)) continue;
-    const lead = {
+    if (scored.score < (cfg.minScore ?? 8)) {
+      rejected.push(item);
+      continue;
+    }
+    leads.push({
       ...item,
       score: scored.score,
       clusters: scored.clusters,
       why: explain(scored),
-      draft: draftReply(scored, cfg),
-    };
-    leads.push(lead);
+      draft: draftReply(scored, cfg, item.source),
+    });
   }
 
   leads.sort((a, b) => b.score - a.score || new Date(b.createdAt) - new Date(a.createdAt));
   const capped = leads.slice(0, cfg.maxLeadsPerRun ?? 12);
-  if (!dry) for (const l of capped) store.addLead(l);
+  const overflow = leads.length - capped.length;
 
-  const meta = { ranAt, sources: results, stats: store.stats() };
+  if (!dry) {
+    for (const item of rejected) store.markSeen(item);
+    for (const l of capped) {
+      store.markSeen(l);
+      store.addLead(l);
+    }
+  }
+  if (overflow) {
+    console.error(
+      `[leadwatch] ${overflow} lead(s) over maxLeadsPerRun — left unseen, they will be offered again next run`,
+    );
+  }
+
+  const meta = { ranAt, sources: results, stats: store.stats(), overflow };
   const md = markdownDigest(capped, meta);
   const html = htmlDigest(capped, meta);
 
@@ -171,9 +206,15 @@ async function once(cfg, { dry = false } = {}) {
     // overwrote the morning's leads. Seconds because a manual run can land
     // in the same minute as a scheduled one.
     const stamp = ranAt.slice(0, 19).replace(/[:T]/g, "-");
-    writeFileSync(join(OUT_DIR, `digest-${stamp}.md`), md);
-    writeFileSync(join(OUT_DIR, "latest.md"), md);
-    writeFileSync(join(OUT_DIR, "latest.html"), html);
+    const put = (name, contents) => {
+      // tmp + rename: a half-written latest.html is worse than a stale one
+      const target = join(OUT_DIR, name);
+      writeFileSync(`${target}.tmp`, contents);
+      renameSync(`${target}.tmp`, target);
+    };
+    put(`digest-${stamp}.md`, md);
+    put("latest.md", md);
+    put("latest.html", html);
   }
 
   console.log(md);
@@ -181,19 +222,33 @@ async function once(cfg, { dry = false } = {}) {
   const failed = Object.entries(results).filter(([, r]) => !r.ok);
   for (const [name, r] of failed) console.error(`[leadwatch] source ${name} failed: ${r.error}`);
 
-  if (!dry && capped.length) {
-    const mail = await emailDigest({
-      subject: `Leadwatch: ${capped.length} new ${capped.length === 1 ? "lead" : "leads"}`,
-      html,
-      text: md,
-    });
+  // Mail on failures as well as finds: a run where every source is broken
+  // used to send nothing at all, so an outage was invisible until the
+  // operator wondered why it had gone quiet.
+  if (!dry && (capped.length || failed.length)) {
+    const bits = [`${capped.length} new ${capped.length === 1 ? "lead" : "leads"}`];
+    if (failed.length) bits.push(`${failed.length} source${failed.length === 1 ? "" : "s"} FAILED`);
+    let mail = { sent: false, reason: "not attempted" };
+    try {
+      mail = await emailDigest({ subject: `Leadwatch: ${bits.join(", ")}`, html, text: md });
+    } catch (err) {
+      mail = { sent: false, reason: String(err.message || err) };
+    }
     console.error(`[leadwatch] email: ${mail.sent ? mail.reason : "not sent — " + mail.reason}`);
+    // A missing key is the documented no-op. Anything else means leads were
+    // found and nobody was told, which should fail the unit.
+    if (!mail.sent && !/not set$/.test(mail.reason)) process.exitCode = 1;
   }
 
   // Exit non-zero only if EVERY source failed: that is a real outage worth a
   // failed timer unit, whereas one flaky host is just Tuesday.
   const names = Object.keys(results);
-  if (names.length && failed.length === names.length) process.exitCode = 1;
+  if (!names.length) {
+    console.error("[leadwatch] no sources enabled in config — nothing was checked");
+    process.exitCode = 2;
+  } else if (failed.length === names.length) {
+    process.exitCode = 1;
+  }
 }
 
 /* ------------------------------------------------------------- selftest */
@@ -245,11 +300,66 @@ async function selftest(cfg) {
 
 /* ------------------------------------------------------------------ cli */
 
-const cfg = loadConfig();
+const KNOWN = new Set(["--selftest", "--dry", "--queue", "--replied", "--skip", "--help", "-h"]);
 
-if (flag("--selftest")) {
+function usage(code = 0) {
+  console.log(
+    [
+      "leadwatch — find people publicly asking for something FounderFloor does.",
+      "",
+      "  node leadwatch.mjs                 one run: fetch, score, digest, email",
+      "  node leadwatch.mjs --dry           run without writing or sending",
+      "  node leadwatch.mjs --selftest      check every source can be reached",
+      "  node leadwatch.mjs --queue         print the leads still waiting",
+      "  node leadwatch.mjs --replied <key> mark one done",
+      "  node leadwatch.mjs --skip <key>    mark one not worth it",
+      "",
+      "It never messages anyone. See README.md.",
+    ].join("\n"),
+  );
+  process.exit(code);
+}
+
+/**
+ * Parse explicitly. The previous version fell through an if/else chain into
+ * a full live run for ANY unrecognised argument — so a typo, or --replied
+ * with the key left off, silently fetched, wrote to the store and sent mail
+ * instead of telling the operator they had mistyped.
+ */
+function parseArgs() {
+  if (flag("--help") || flag("-h")) usage(0);
+
+  for (const a of argv) {
+    if (a.startsWith("-") && !KNOWN.has(a)) {
+      console.error(`Unknown option: ${a}`);
+      usage(2);
+    }
+  }
+
+  for (const marker of ["--replied", "--skip"]) {
+    if (!flag(marker)) continue;
+    const v = val(marker);
+    if (!v || v.startsWith("-")) {
+      console.error(`${marker} needs a lead key, e.g. ${marker} hn:12345`);
+      console.error(`Run --queue to see the keys.`);
+      process.exit(2);
+    }
+    return { mode: marker === "--replied" ? "replied" : "skipped", key: v };
+  }
+
+  if (flag("--selftest")) return { mode: "selftest" };
+  if (flag("--queue")) return { mode: "queue" };
+  return { mode: "run", dry: flag("--dry") };
+}
+
+const args = parseArgs();
+const cfg = args.mode === "queue" || args.mode === "replied" || args.mode === "skipped"
+  ? null
+  : loadConfig();
+
+if (args.mode === "selftest") {
   await selftest(cfg);
-} else if (flag("--queue")) {
+} else if (args.mode === "queue") {
   const store = new Store(DATA_DIR);
   const pending = store.pending();
   if (!pending.length) console.log("Nothing waiting.");
@@ -259,11 +369,11 @@ if (flag("--selftest")) {
     console.log(`  ${l.url}`);
   }
   console.log(`\n${pending.length} waiting. Mark one: --replied <key>  /  --skip <key>`);
-} else if (val("--replied") || val("--skip")) {
+} else if (args.mode === "replied" || args.mode === "skipped") {
   const store = new Store(DATA_DIR);
-  const key = val("--replied") || val("--skip");
-  const state = val("--replied") ? "replied" : "skipped";
-  console.log(store.setState(key, state) ? `${key} -> ${state}` : `no lead with key ${key}`);
+  const ok = store.setState(args.key, args.mode);
+  console.log(ok ? `${args.key} -> ${args.mode}` : `no lead with key ${args.key}`);
+  if (!ok) process.exitCode = 1;
 } else {
-  await once(cfg, { dry: flag("--dry") });
+  await once(cfg, { dry: args.dry });
 }

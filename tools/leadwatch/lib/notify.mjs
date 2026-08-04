@@ -23,8 +23,13 @@ export async function emailDigest({ subject, html, text }) {
   if (!key) return { sent: false, reason: "RESEND_API_KEY not set" };
   if (!to) return { sent: false, reason: "OPERATOR_EMAIL not set" };
 
-  const res = await fetch(API, {
+  // Never throws: an unreachable mail provider must not crash an unattended
+  // run that has already committed its leads to disk.
+  let res;
+  try {
+    res = await fetch(API, {
     method: "POST",
+    signal: AbortSignal.timeout(20000),
     headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: JSON.stringify({
       from,
@@ -34,7 +39,10 @@ export async function emailDigest({ subject, html, text }) {
       text,
       ...(process.env.EMAIL_REPLY_TO ? { reply_to: process.env.EMAIL_REPLY_TO } : {}),
     }),
-  });
+    });
+  } catch (err) {
+    return { sent: false, reason: `resend unreachable: ${String(err.message || err)}` };
+  }
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");

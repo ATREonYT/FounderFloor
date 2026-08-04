@@ -13,8 +13,21 @@
  * Nothing in this codebase ever moves a lead out of "new" on its own.
  */
 
-import { appendFileSync, mkdirSync, readFileSync, existsSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { appendFileSync, mkdirSync, readFileSync, existsSync, writeFileSync, renameSync } from "node:fs";
+import { join } from "node:path";
+
+/**
+ * Write via a temporary file in the same directory, then rename over the
+ * target. Rename is atomic within a filesystem, so an interruption mid-write
+ * leaves the old file intact instead of a truncated queue. These files are
+ * the only record of who has already been contacted; losing one to a badly
+ * timed restart is not acceptable.
+ */
+function atomicWrite(path, contents) {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, contents);
+  renameSync(tmp, path);
+}
 
 export class Store {
   constructor(dir) {
@@ -62,10 +75,7 @@ export class Store {
       hit = true;
       return { ...l, state, note, stateAt: new Date().toISOString() };
     });
-    if (hit) {
-      mkdirSync(dirname(this.leadsPath), { recursive: true });
-      writeFileSync(this.leadsPath, this.leads.map((l) => JSON.stringify(l)).join("\n") + "\n");
-    }
+    if (hit) atomicWrite(this.leadsPath, this.leads.map((l) => JSON.stringify(l)).join("\n") + "\n");
     return hit;
   }
 
@@ -96,10 +106,7 @@ export class Store {
     const droppedLeads = this.leads.length - keptLeads.length;
     if (droppedLeads) {
       this.leads = keptLeads;
-      writeFileSync(
-        this.leadsPath,
-        keptLeads.length ? keptLeads.map((l) => JSON.stringify(l)).join("\n") + "\n" : "",
-      );
+      atomicWrite(this.leadsPath, keptLeads.length ? keptLeads.map((l) => JSON.stringify(l)).join("\n") + "\n" : "");
     }
 
     const seenRows = readJsonl(this.seenPath);
@@ -109,10 +116,7 @@ export class Store {
     });
     const droppedSeen = seenRows.length - keptSeen.length;
     if (droppedSeen) {
-      writeFileSync(
-        this.seenPath,
-        keptSeen.length ? keptSeen.map((r) => JSON.stringify(r)).join("\n") + "\n" : "",
-      );
+      atomicWrite(this.seenPath, keptSeen.length ? keptSeen.map((r) => JSON.stringify(r)).join("\n") + "\n" : "");
       this.seen = new Set(keptSeen.map((r) => r.key));
     }
 

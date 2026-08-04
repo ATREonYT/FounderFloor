@@ -2,25 +2,43 @@
  * Minimal RSS/Atom reader.
  *
  * There is no XML parser in Node's standard library and this tool takes no
- * dependencies, so this handles the two shapes that matter — Atom <entry>
- * and RSS <item> — and nothing else. It is deliberately small: feeds we
- * cannot parse should fail visibly in the self-test rather than be papered
- * over by a parser that guesses.
+ * dependencies, so this handles the two shapes that matter — Atom <entry> and
+ * RSS <item> — and nothing else. Feeds it cannot parse should fail visibly in
+ * the self-test rather than be papered over by a parser that guesses.
  *
- * This is also the escape hatch for everything without an API. Google
- * Alerts will emit an RSS feed for any query you like, which covers X,
- * LinkedIn posts that get indexed, forums, and the long tail — no scraping,
- * no terms to violate, and Google does the crawling.
+ * This is also the escape hatch for everything without an API. Google Alerts
+ * will emit an RSS feed for any query you like, which covers X, LinkedIn
+ * posts that get indexed, forums and the long tail — no scraping, no terms to
+ * violate, and Google does the crawling.
+ *
+ * Two hardening notes. The block splitter scans with indexOf rather than a
+ * backreferenced lazy regex: the regex form is quadratic on unclosed tags, so
+ * a malformed feed could pin the CPU for hours in a process nobody is
+ * watching. And input is bounded before parsing, because "somebody else's
+ * server decides how much work we do" is not a property worth having.
  */
 
 import { getText } from "../http.mjs";
 
+const MAX_XML = 4 * 1024 * 1024;
+const MAX_BLOCKS = 500;
+
 export async function fetchRss({ url, name = "rss", sinceHours = 48 }) {
   const xml = await getText(url, { minGapMs: 1500 });
   const cutoff = Date.now() - sinceHours * 3.6e6;
-  return parseFeed(xml)
-    .filter((e) => !e.createdAt || new Date(e.createdAt).getTime() >= cutoff)
-    .map((e) => ({
+  const out = [];
+  let undated = 0;
+
+  for (const e of parseFeed(xml)) {
+    if (!e.createdAt) {
+      // An entry with no parsable date used to be stamped "now", which
+      // presented arbitrarily old posts as breaking news and let them past
+      // the cutoff. Skipped, and counted so a broken feed is visible.
+      undated++;
+      continue;
+    }
+    if (new Date(e.createdAt).getTime() < cutoff) continue;
+    out.push({
       source: name,
       id: e.id || e.url || e.title,
       channel: "feed",
@@ -28,14 +46,18 @@ export async function fetchRss({ url, name = "rss", sinceHours = 48 }) {
       body: e.body,
       author: e.author,
       url: e.url,
-      createdAt: e.createdAt || new Date().toISOString(),
-    }));
+      createdAt: e.createdAt,
+    });
+  }
+
+  if (undated) console.warn(`[leadwatch] ${name}: skipped ${undated} entr(ies) with no parsable date`);
+  return out;
 }
 
 /** @returns {Array<{id,title,body,author,url,createdAt}>} */
 export function parseFeed(xml) {
-  const blocks = [...matchAll(xml, /<(entry|item)\b[\s\S]*?<\/\1>/g)].map((m) => m[0]);
-  return blocks.map((b) => ({
+  const src = String(xml || "").slice(0, MAX_XML);
+  return splitBlocks(src).map((b) => ({
     id: tag(b, "id") || tag(b, "guid") || "",
     title: clean(tag(b, "title")),
     body: clean(tag(b, "content") || tag(b, "summary") || tag(b, "description")),
@@ -45,13 +67,20 @@ export function parseFeed(xml) {
   }));
 }
 
-function matchAll(s, rx) {
+/**
+ * Linear scan for <entry>…</entry> / <item>…</item>. An unclosed tag costs one
+ * skipped block, not an exponential backtrack.
+ */
+function splitBlocks(s) {
   const out = [];
+  const open = /<(entry|item)\b/gi;
   let m;
-  const r = new RegExp(rx.source, rx.flags.includes("g") ? rx.flags : rx.flags + "g");
-  while ((m = r.exec(s)) !== null) {
-    out.push(m);
-    if (m.index === r.lastIndex) r.lastIndex++;
+  while ((m = open.exec(s)) !== null && out.length < MAX_BLOCKS) {
+    const name = m[1].toLowerCase();
+    const close = s.toLowerCase().indexOf(`</${name}>`, m.index);
+    if (close === -1) break; // truncated feed: take what we have
+    out.push(s.slice(m.index, close + name.length + 3));
+    open.lastIndex = close;
   }
   return out;
 }
@@ -66,8 +95,7 @@ function tag(block, name) {
 function link(block) {
   const atom = block.match(/<link\b[^>]*\bhref="([^"]+)"/i);
   if (atom) return decode(atom[1]);
-  const rss = tag(block, "link");
-  return decode(clean(rss));
+  return decode(clean(tag(block, "link")));
 }
 
 function clean(s) {

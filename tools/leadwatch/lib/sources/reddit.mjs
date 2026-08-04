@@ -63,10 +63,9 @@ async function getToken() {
     },
   });
 
-  const body = await res.text().catch(() => "");
   let json;
   try {
-    json = JSON.parse(body);
+    json = JSON.parse(res.text);
   } catch {
     throw new Error("reddit token response was not JSON — check the credentials");
   }
@@ -85,16 +84,26 @@ export async function fetchReddit({ query, subreddits = [], sinceHours = 48, lim
   const cutoff = Date.now() - sinceHours * 3.6e6;
   const out = [];
 
+  const failures = [];
   for (const sub of subreddits) {
     const url =
       `https://oauth.reddit.com/r/${encodeURIComponent(sub)}/search` +
-      `?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&t=week&limit=${Math.min(limit, 100)}`;
+      `?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&t=${window(sinceHours)}` +
+      `&limit=${Math.min(limit, 100)}`;
 
-    const data = await getJson(url, {
-      minGapMs: 1200,
-      userAgent: redditUA(),
-      headers: { authorization: `Bearer ${tok}` },
-    });
+    let data;
+    try {
+      data = await getJson(url, {
+        minGapMs: 1200,
+        userAgent: redditUA(),
+        headers: { authorization: `Bearer ${tok}` },
+      });
+    } catch (err) {
+      // One renamed or gone-private subreddit must not take the other six
+      // with it.
+      failures.push(`${sub}: ${String(err.message || err).slice(0, 80)}`);
+      continue;
+    }
 
     for (const c of data?.data?.children || []) {
       const d = c.data || {};
@@ -112,5 +121,18 @@ export async function fetchReddit({ query, subreddits = [], sinceHours = 48, lim
       });
     }
   }
+
+  if (failures.length && failures.length === subreddits.length) {
+    throw new Error(`every subreddit failed — ${failures.join("; ")}`);
+  }
+  if (failures.length) console.warn(`[leadwatch] reddit: skipped ${failures.join("; ")}`);
   return out;
+}
+
+/** Smallest Reddit search window that still covers sinceHours. */
+function window(hours) {
+  if (hours <= 24) return "day";
+  if (hours <= 168) return "week";
+  if (hours <= 744) return "month";
+  return "year";
 }

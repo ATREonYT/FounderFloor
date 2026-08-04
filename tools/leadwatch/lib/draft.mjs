@@ -17,6 +17,10 @@
  *      ask is always the next Demo Night.
  *
  * There is no DM template here and that is deliberate. See README.md.
+ *
+ * Length matters per source: a Bluesky post caps at 300 graphemes, and a
+ * 500-character draft pasted there is simply a draft you cannot send. Short
+ * variants exist for those.
  */
 
 const SLOT = "[[ one line about THEIR post — delete this bracket ]]";
@@ -88,14 +92,37 @@ I'm building ${url} — a 2D trade-show floor where startups keep a stand and
 founders walk around and talk to each other. Free, browser-based, nothing to
 install. It's mine, so weigh that. ${night}`;
 
+/** Sources whose posts are too short for the long form. */
+const SHORT_SOURCES = new Set(["bluesky"]);
+const SHORT_LIMIT = 300;
+
+/** One compact variant, used where 300 characters is the ceiling. */
+function shortForm({ slot, url, night }) {
+  const tail = night ? ` ${night}` : "";
+  return `${slot}\n\nI built ${url} — a 2D floor where founders keep a stand and talk to whoever walks up. Free, browser, mine.${tail}`;
+}
+
 /**
- * @param {{clusters: string[]}} scored
+ * @param {{clusters: string[]}} scored  clusters arrive strongest-first
  * @param {{siteUrl: string, demoNight?: string}} cfg
+ * @param {string} [source]  used only to pick a length that fits
  */
-export function draftReply(scored, cfg) {
+export function draftReply(scored, cfg, source) {
   const night = cfg.demoNight
     ? `Next Demo Night is ${cfg.demoNight} if you'd rather turn up when there are people on it.`
     : "";
+
+  if (SHORT_SOURCES.has(source)) {
+    const short = shortForm({ slot: SLOT, url: cfg.siteUrl, night }).trim();
+    // Drop the Demo Night line rather than hand over something unpostable.
+    return short.length <= SHORT_LIMIT
+      ? short
+      : shortForm({ slot: SLOT, url: cfg.siteUrl, night: "" }).trim();
+  }
+
+  // score() returns clusters sorted by weight, so clusters[0] really is the
+  // dominant signal — this used to take whichever cluster happened to be
+  // declared first in POSITIVE and call it "strongest" in a comment.
   const pick = scored.clusters.find((c) => TEMPLATES[c]);
   const make = pick ? TEMPLATES[pick] : FALLBACK;
   return make({ slot: SLOT, url: cfg.siteUrl, night }).trim();

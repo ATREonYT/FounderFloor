@@ -64,6 +64,12 @@ export function markdownDigest(leads, meta) {
     .map(([k, v]) => `${k} ${v.ok ? `${v.items} items` : `FAILED (${v.error})`}`)
     .join(" · ");
   if (srcLine) L.push(`_Sources: ${srcLine}_`);
+  if (meta.overflow) {
+    L.push(
+      `_${meta.overflow} more cleared the bar than this digest shows (maxLeadsPerRun). ` +
+        `They are NOT lost — they will be offered again next run._`,
+    );
+  }
   L.push(
     `_Queue: ${meta.stats.new} waiting, ${meta.stats.replied} replied, ${meta.stats.skipped} skipped, ${meta.stats.seen} items seen all time._`,
   );
@@ -74,7 +80,7 @@ export function markdownDigest(leads, meta) {
     L.push("");
     L.push(`## ${trim(lead.title, 110) || "(untitled)"}`);
     L.push("");
-    L.push(`- **Link:** ${lead.url}`);
+    L.push(`- **Link:** ${safeUrl(lead.url) || "(no usable link)"}`);
     L.push(`- **Where:** ${lead.source}${lead.channel ? ` · ${lead.channel}` : ""} · ${lead.author || "unknown"} · ${age(lead.createdAt)}`);
     L.push(`- **Why it matched:** ${lead.why}`);
     L.push("");
