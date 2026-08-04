@@ -12,6 +12,9 @@
   "sinceHours": 48,
   "maxLeadsPerRun": 12,
 
+  "_retention": "Enforced in code on every run, not just written down. Leads hold post text and a handle belonging to someone who never contacted you; the seen-set is ids only.",
+  "retention": { "leadDays": 60, "seenDays": 180 },
+
   "sources": {
     "hn": {
       "enabled": true,
@@ -31,7 +34,7 @@
 
     "reddit": {
       "enabled": true,
-      "_note": "Works far better with REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET set; see lib/sources/reddit.mjs. Without them it uses search RSS, which Reddit rate-limits hard from a datacenter IP.",
+      "_note": "REQUIRES REDDIT_CLIENT_ID / REDDIT_CLIENT_SECRET. Reddit's User Agreement permits automated collection only through the Data API, so there is deliberately no scraping fallback: without credentials this source reports that it is unconfigured and the run continues without it.",
       "subreddits": [
         "SideProject",
         "startups",

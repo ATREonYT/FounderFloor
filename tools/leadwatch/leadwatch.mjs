@@ -113,6 +113,19 @@ async function collect(cfg) {
 async function once(cfg, { dry = false } = {}) {
   const ranAt = new Date().toISOString();
   const store = new Store(DATA_DIR);
+
+  // Retention first, so a run that then fails has still done the one thing
+  // that must happen on a schedule regardless of whether anything is found.
+  if (!dry) {
+    const dropped = store.prune({
+      leadDays: cfg.retention?.leadDays ?? 60,
+      seenDays: cfg.retention?.seenDays ?? 180,
+    });
+    if (dropped.leads || dropped.seen) {
+      console.error(`[leadwatch] retention: dropped ${dropped.leads} lead(s), ${dropped.seen} seen id(s)`);
+    }
+  }
+
   const { items, results } = await collect(cfg);
 
   // Dedupe within the run as well as across runs: the same HN comment can

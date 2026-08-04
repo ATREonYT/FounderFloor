@@ -21,11 +21,20 @@ automatically, and three things say don't:
   *domain* — founderfloor.net gets filtered sitewide on Reddit, and you never
   find out; your posts just stop appearing. You lose the channel permanently,
   for a handful of messages nobody read.
-- **In the EU it invites a bill.** Unsolicited electronic advertising to a
-  person without prior consent is actionable under German UWG §7, and there
-  is an established Abmahnung industry built on exactly that. Scraping public
-  posts to build a prospect list also triggers GDPR Art 14 — a duty to notify
-  the people whose data you collected. Neither of these is theoretical.
+- **In the EU it invites a bill.** Unsolicited electronic advertising without
+  prior consent is actionable under German UWG §7(2), and German courts have
+  read platform DMs as *elektronische Post* rather than treating them as
+  something looser (OLG Hamm, 18 U 154/22). There is no B2B carve-out for
+  electronic mail in Germany, and "my product is free" is still Werbung. The
+  realistic downside is not a regulator's fine but a low-four-figure
+  Abmahnung with an undertaking attached that prices every later slip much
+  higher.
+
+  A **public reply to a public question** is the one outreach mode that needs
+  no consent — it is not electronic mail, so §7 and ePrivacy Art 13 do not
+  reach it. It is governed instead by each community's promotion rules, which
+  are stricter than the law and which you follow by hand. That is exactly the
+  mode this tool drafts for.
 - **It converts worse.** You already know this from two conversations ago:
   thirty messages written for thirty specific people beat any automated send.
   The bot version of that is the version that gets ignored.
@@ -47,19 +56,35 @@ node leadwatch.mjs --dry               # a full run that writes and sends nothin
 Node 18+. **No dependencies** — nothing to `npm install`, which is why it can
 sit on the VPS next to the floor server and never break on a deploy.
 
-### Reddit needs credentials to be useful
+### Reddit requires credentials — there is no fallback
 
-Unauthenticated Reddit reads are throttled hard from datacenter IPs, which is
-exactly what a VPS is. Register a script app — <https://www.reddit.com/prefs/apps>,
-"create app", type **script** — and set:
+Reddit's User Agreement permits automated collection **only** through the Data
+API. So there is deliberately no `.json` or `search.rss` fallback here: that
+would be a terms breach, and Reddit enforces at the domain level, silently.
+Losing founderfloor.net sitewide to save a five-minute registration is a bad
+trade. Without credentials this source reports itself unconfigured and the run
+continues with the others.
+
+Register a script app — <https://www.reddit.com/prefs/apps>, "create app",
+type **script** — and set:
 
 ```
 REDDIT_CLIENT_ID=...
 REDDIT_CLIENT_SECRET=...
+REDDIT_USERNAME=...        # optional, lets the User-Agent name you as Reddit asks
 ```
 
-Free, and it's Reddit asking to be used properly rather than scraped. Without
-it the tool falls back to search RSS and tells you it did.
+It uses the `client_credentials` grant, so your account password never lands
+on the VPS.
+
+### Bluesky needs no credentials, but the host matters
+
+`public.api.bsky.app` is the cached front door and has returned 403 for
+`searchPosts` since early 2025. `api.bsky.app` is the same AppView without
+that cache layer and answers unauthenticated — the handler is registered with
+optional auth, so anonymous reads are the design. That is the host this uses,
+and it is why no App Password is needed. Override with `LEADWATCH_BSKY_HOST`
+if that ever changes; `--selftest` will tell you the day it does.
 
 ### Email
 
@@ -149,16 +174,26 @@ Tune by editing the clusters and re-running `--dry`. If the digest is empty
 for a week, lower `minScore` before you add queries; if it's full of noise,
 add a negative cluster rather than raising the bar.
 
-## What it stores
+## What it stores, and for how long
 
-`data/seen.jsonl` (ids only, so nothing is shown twice) and `data/leads.jsonl`
-(the matched posts, with their state). Both are gitignored.
+`data/seen.jsonl` holds ids only — no text, no names — so a post is never
+surfaced twice. `data/leads.jsonl` holds the matched posts with their state.
+Both are gitignored.
 
-These hold public posts by named people, so treat the directory as personal
-data: don't commit it, don't share it, and delete leads once you've acted on
-them. Keeping a permanent private dossier on people who never contacted you
-is the part that turns "reading public posts" into something you'd rather not
-explain.
+**Retention is enforced in code on every run**, not written down and forgotten:
+leads are deleted after 60 days whatever their state, seen ids after 180.
+Change it under `retention` in `config.json`.
+
+That matters because a lead holds post text and a handle belonging to someone
+who never contacted you. A permanent private dossier on those people is the
+thing that turns "reading public posts" into something you would rather not
+have to explain — and under GDPR the storage itself, not just the messaging,
+is what needs a basis.
+
+Two operator to-dos that are yours rather than the code's, if you run this
+regularly: add a short paragraph to `/privacy` naming the sources you monitor
+(Reddit, Hacker News, Bluesky), and keep a suppression list of anyone who asks
+not to be contacted.
 
 ## Files
 

@@ -73,6 +73,52 @@ export class Store {
     return this.leads.filter((l) => l.state === "new");
   }
 
+  /**
+   * Enforce retention in code, because a retention policy that lives only in
+   * a README is not a retention policy.
+   *
+   * Leads hold the post text and the author's handle: that is personal data
+   * about someone who never contacted you, so it goes after `leadDays`
+   * whatever its state. The seen-set holds ids only — no text, no names — and
+   * exists purely so a post is not surfaced twice, so it can live longer, but
+   * it is still bounded rather than growing for the life of the machine.
+   *
+   * @returns {{leads: number, seen: number}} how many records were dropped
+   */
+  prune({ leadDays = 60, seenDays = 180 } = {}) {
+    const leadCut = Date.now() - leadDays * 864e5;
+    const seenCut = Date.now() - seenDays * 864e5;
+
+    const keptLeads = this.leads.filter((l) => {
+      const t = Date.parse(l.foundAt || l.createdAt || "");
+      return !Number.isFinite(t) || t >= leadCut;
+    });
+    const droppedLeads = this.leads.length - keptLeads.length;
+    if (droppedLeads) {
+      this.leads = keptLeads;
+      writeFileSync(
+        this.leadsPath,
+        keptLeads.length ? keptLeads.map((l) => JSON.stringify(l)).join("\n") + "\n" : "",
+      );
+    }
+
+    const seenRows = readJsonl(this.seenPath);
+    const keptSeen = seenRows.filter((r) => {
+      const t = Date.parse(r.at || "");
+      return !Number.isFinite(t) || t >= seenCut;
+    });
+    const droppedSeen = seenRows.length - keptSeen.length;
+    if (droppedSeen) {
+      writeFileSync(
+        this.seenPath,
+        keptSeen.length ? keptSeen.map((r) => JSON.stringify(r)).join("\n") + "\n" : "",
+      );
+      this.seen = new Set(keptSeen.map((r) => r.key));
+    }
+
+    return { leads: droppedLeads, seen: droppedSeen };
+  }
+
   stats() {
     const by = (s) => this.leads.filter((l) => l.state === s).length;
     return {
