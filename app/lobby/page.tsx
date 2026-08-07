@@ -10,6 +10,7 @@ import TierTag, { TIER_LABEL } from "@/components/TierTag";
 import EventPill from "@/components/EventPill";
 import LobbyPulse from "@/components/LobbyPulse";
 import OpenDoorsCard from "@/components/OpenDoorsCard";
+import FoundingSeatsCard from "@/components/FoundingSeatsCard";
 import { usePresence } from "@/components/usePresence";
 
 /**
@@ -194,6 +195,11 @@ export default function LobbyPage() {
           any time.
         </p>
       )}
+
+      {/* The opening offer, above the weekly one: it expires by being taken
+          rather than by a date, and it is the strongest reason a first-time
+          visitor has to make an account instead of staying a guest. */}
+      <FoundingSeatsCard />
 
       {/* The weekly moment that makes a quiet building worth returning to —
           a door while it's live, an email box the rest of the week. */}

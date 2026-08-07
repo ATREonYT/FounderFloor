@@ -13,6 +13,7 @@ import RankMeter from "@/components/RankMeter";
 import Parallax from "@/components/Parallax";
 import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
 import AdmissionStubs from "@/components/AdmissionStubs";
+import FoundingSeatsCard from "@/components/FoundingSeatsCard";
 import Spec from "@/components/Spec";
 
 /**
@@ -622,6 +623,10 @@ export default function LandingPage() {
         title="Admission"
         lede="Walking in is free and stays free. What you can buy is a better position on the floor, never a key to it."
       >
+        {/* The one thing on this page that can run out. It hides itself
+            when the seats are gone or the reader already has one, so the
+            section reads correctly forever without anyone editing it. */}
+        <FoundingSeatsCard />
         <AdmissionStubs pricing={PRICING} />
         <Spec className="mt-5 block text-muted">
           Beta. Billing goes live at launch

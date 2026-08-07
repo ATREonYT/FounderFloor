@@ -92,7 +92,14 @@ const EMOTE_KINDS = new Set([
   "rocket", "fire", "handshake",
 ]);
 
-const DATA_FILE = join(dirname(fileURLToPath(import.meta.url)), "floor-data.json");
+/**
+ * Where the world is persisted. FF_DATA_FILE exists so the tests in
+ * server/test can boot a real server against a scratch file instead of the
+ * live one; leave it unset in production and the path is fixed next to this
+ * module, which is what DEPLOY.md and the backup rotation assume.
+ */
+const DATA_FILE =
+  process.env.FF_DATA_FILE || join(dirname(fileURLToPath(import.meta.url)), "floor-data.json");
 
 /**
  * rooms: floorId -> Map<playerId, client>
@@ -343,6 +350,101 @@ function markSessionProcessed(id) {
       processedSessions.delete(old);
       if (processedSessions.size <= MAX_PROCESSED_SESSIONS) break;
     }
+  }
+}
+
+/**
+ * The founding seats: the first FOUNDING_SEATS accounts to register get
+ * Founder+ and the founding badge, kept for life, for nothing.
+ *
+ * KEYED ON THE ACCOUNT, NOT AN IP. An IP is the wrong unit twice over. It
+ * is not one person — an office, a university, a school and most mobile
+ * carriers put thousands of people behind one address, so an IP cap hands
+ * the seat to whoever in the building clicks first and locks out everyone
+ * else; meanwhile a phone switching from wifi to mobile data is a different
+ * IP a second later, so the same person can take several. And an IP is
+ * personal data under the GDPR, so keeping a list of them would need a
+ * lawful basis and an entry in /privacy for no gain. An account is already
+ * the thing that owns an entitlement, and "the first twenty people to join"
+ * means the first twenty accounts. Registration needs a working email
+ * address, which is a far better proof of a distinct person than an IP.
+ *
+ * The seat number lives on the account (`foundingSeat`, 1..FOUNDING_SEATS)
+ * rather than in a separate counter, so restoring yesterday's backup cannot
+ * hand out seat 7 twice: whatever the file says is the truth, and the
+ * in-memory tally below is rebuilt from it at load.
+ */
+const FOUNDING_SEATS = (() => {
+  // A garbled env var must close the offer, not open it forever: NaN makes
+  // every `used >= cap` comparison false, which would hand a free lifetime
+  // membership to everyone who ever registers.
+  const n = Number(process.env.FOUNDING_SEATS ?? 20);
+  return Number.isInteger(n) && n >= 0 && n <= 10_000 ? n : 20;
+})();
+/** Cache of how many seats are gone. Rebuilt from the accounts at load. */
+let foundingSeatsUsed = 0;
+
+/** How many seats the accounts on disk have actually taken. */
+function countFoundingSeats() {
+  let n = 0;
+  for (const a of accountsById.values()) if (a.foundingSeat) n++;
+  return n;
+}
+
+/**
+ * Give `acct` a founding seat if any are left. Returns the seat number, or
+ * 0 if the offer is gone or this account already holds one.
+ *
+ * Upgrades rather than replaces: somebody who already paid for Pro and is
+ * also the third person through the door keeps their Stripe customer
+ * reference and gets moved up, instead of being punished for having paid.
+ * There is deliberately no expiry field — an entitlement here has none, so
+ * "for life" is what the absence of one already means.
+ *
+ * MUST NOT AWAIT between the check and the write. Node is single-threaded,
+ * so with no await in between two simultaneous registrations cannot both
+ * read the same tally and both take seat 20.
+ */
+function grantFoundingSeat(acct) {
+  if (acct.foundingSeat || acct.paid?.badge === "founding") return 0;
+  if (foundingSeatsUsed >= FOUNDING_SEATS) return 0;
+  const seat = foundingSeatsUsed + 1;
+  acct.foundingSeat = seat;
+  acct.paid = {
+    tier: "founder",
+    customer: acct.paid?.customer || `founding-seat-${seat}`,
+    ts: acct.paid?.ts || Date.now(),
+    badge: "founding",
+  };
+  foundingSeatsUsed = seat;
+  return seat;
+}
+
+/**
+ * Hand seats to accounts that existed before the offer did, oldest first.
+ *
+ * Without this the offer says "the first twenty people to join" and then
+ * gives nothing to the people who actually joined first, because their
+ * accounts were created before the code that grants a seat. Runs once at
+ * load; after the seats are gone it is a no-op forever.
+ *
+ * Ordered by `created`, with the id as a tiebreak so two accounts made in
+ * the same millisecond get a stable order across restarts rather than
+ * whatever order the JSON happened to be written in.
+ */
+function backfillFoundingSeats() {
+  if (foundingSeatsUsed >= FOUNDING_SEATS) return;
+  const waiting = [...accountsById.values()]
+    .filter((a) => !a.foundingSeat && a.paid?.badge !== "founding")
+    .sort((a, b) => a.created - b.created || (a.id < b.id ? -1 : 1));
+  let given = 0;
+  for (const acct of waiting) {
+    if (!grantFoundingSeat(acct)) break;
+    given++;
+  }
+  if (given) {
+    console.log(`[founding] backfilled ${given} seat(s) to the earliest accounts`);
+    scheduleSave();
   }
 }
 
@@ -1109,9 +1211,16 @@ function loadData() {
       if (paid) acct.paid = paid;
       const tp = Number(a.ticketsPurchased);
       if (Number.isFinite(tp) && tp > 0) acct.ticketsPurchased = Math.min(100_000_000, Math.trunc(tp));
+      const seat = Number(a.foundingSeat);
+      if (Number.isInteger(seat) && seat >= 1 && seat <= FOUNDING_SEATS) acct.foundingSeat = seat;
       accounts.set(nameLower.slice(0, MAX_NAME_LEN), acct);
       indexAccount(acct);
     }
+    // The file is the truth about who holds a seat, so the tally is rebuilt
+    // from it rather than persisted separately and trusted.
+    foundingSeatsUsed = countFoundingSeats();
+    backfillFoundingSeats();
+    if (foundingSeatsUsed) console.log(`[founding] ${foundingSeatsUsed}/${FOUNDING_SEATS} seats taken`);
   }
   if (parsed.pendingPaid && typeof parsed.pendingPaid === "object") {
     for (const [email, p] of Object.entries(parsed.pendingPaid)) {
@@ -1971,12 +2080,24 @@ async function handleAuthPost(req, res, pathname) {
     accounts.set(key, acct);
     indexAccount(acct);
     applyPendingPaid(acct); // a checkout that paid with this email first
+    // ...and only then the founding seat, so it upgrades whatever they
+    // already had rather than being overwritten by it.
+    const seat = grantFoundingSeat(acct);
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
     scheduleSave();
-    console.log(`[auth] register name="${name}" id=${acct.id}`);
+    console.log(
+      `[auth] register name="${name}" id=${acct.id}` +
+        (seat ? ` founding-seat=${seat}/${FOUNDING_SEATS}` : ""),
+    );
     sendWelcomeEmail(acct);
-    sendJson(res, { id: acct.id, name: acct.name, email: acct.email, token });
+    sendJson(res, {
+      id: acct.id,
+      name: acct.name,
+      email: acct.email,
+      token,
+      foundingSeat: seat || undefined,
+    });
     return;
   }
 
@@ -2903,7 +3024,12 @@ const server = createServer((req, res) => {
   if (req.method === "GET" && url.pathname === "/presence") {
     const floors = {};
     for (const [floorId, room] of rooms) floors[floorId] = room.size;
-    sendJson(res, { floors });
+    // The founding-seat counter rides along on a poll the lobby already
+    // makes. It is a cached integer, not a scan, so this stays O(1).
+    sendJson(res, {
+      floors,
+      founding: { total: FOUNDING_SEATS, left: Math.max(0, FOUNDING_SEATS - foundingSeatsUsed) },
+    });
     return;
   }
 

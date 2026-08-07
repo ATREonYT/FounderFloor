@@ -58,6 +58,12 @@ Environment=OPERATOR_EMAIL=you@yourworkmail.com
 Environment=TRUST_PROXY=1
 # Optional: lock the API's CORS to your site instead of "*".
 Environment=ALLOWED_ORIGIN=https://founderfloor.net
+# Optional: how many free lifetime Founder+ memberships the first accounts
+# get. Defaults to 20. Anything unparseable falls back to 20 rather than
+# opening the offer to everyone, but do not rely on that — set it or leave
+# it out. Lowering it after seats are taken does NOT revoke them; the seat
+# lives on the account.
+Environment=FOUNDING_SEATS=20
 Restart=always
 RestartSec=3
 
@@ -160,6 +166,22 @@ sudo systemctl start founderfloor
 
 The tool backs up the data file first and signs out every existing session
 of that account.
+
+### Founding seats
+
+The first `FOUNDING_SEATS` accounts (20 by default) get Founder+ and the
+founding badge, kept for life, free. Seats are handed out on registration
+and backfilled to the oldest existing accounts the first time the server
+boots with the feature, so the people who joined earliest are the ones who
+get them.
+
+    curl https://your-host/presence     # {"founding":{"total":20,"left":13}}
+
+The seat number lives on the account (`foundingSeat` in floor-data.json),
+not in a counter, so restoring a backup cannot hand out the same seat
+twice. To reopen the offer after it closes, raise `FOUNDING_SEATS` and
+restart; the next boot backfills the difference to the oldest accounts that
+do not already hold one.
 
 ### Operator console
 
