@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { nextEvent, fmtCountdown, type EventInfo } from "@/lib/data/events";
+import { EVENT_LABEL, EVENT_TZ } from "@/lib/data/event-window.mjs";
 import { floorById } from "@/lib/data/floors";
 import EmailCapture from "@/components/EmailCapture";
 
@@ -19,31 +20,33 @@ export default function OpenDoorsCard() {
   const [view, setView] = useState<{
     ev: EventInfo;
     label: string;
-    when: string;
-    weekday: string;
+    /** The visitor's own local time. Empty if they are already on Berlin time. */
+    local: string;
   } | null>(null);
 
   useEffect(() => {
     const tick = () => {
       const now = Date.now();
       const ev = nextEvent(now);
+      // Someone already on Berlin time would read "18:00 CET, which is
+      // 18:00 CEST where you are", and that looks like a bug. Drop the echo.
+      const here = Intl.DateTimeFormat().resolvedOptions().timeZone;
       setView({
         ev,
         label: ev.live ? "live now" : fmtCountdown(ev.startMs - now),
-        // The visitor's own timezone, with the zone named. The event is
-        // anchored to 18:00 Berlin, so this reads "Sunday 18:00 CEST" in
-        // Germany and "Sunday 12:00 EDT" in New York — nobody has to work
-        // out an offset, and nobody is shown a time that isn't theirs.
-        when: new Date(ev.startMs).toLocaleString(undefined, {
-          weekday: "long",
-          hour: "numeric",
-          minute: "2-digit",
-          timeZoneName: "short",
-        }),
-        // Its own formatter, not `when.split(" ")[0]`: that took the comma
-        // toLocaleString puts after the weekday and rendered "Sunday,s" —
-        // and "Sonntag,s" for a German visitor.
-        weekday: new Date(ev.startMs).toLocaleDateString(undefined, { weekday: "long" }),
+        // The advertised label is fixed so the event can be quoted; this is
+        // the same instant in the visitor's own zone, with the zone named,
+        // so nobody has to work out an offset and nobody is shown a time
+        // that is not theirs.
+        local:
+          here === EVENT_TZ
+            ? ""
+            : new Date(ev.startMs).toLocaleString(undefined, {
+                weekday: "long",
+                hour: "numeric",
+                minute: "2-digit",
+                timeZoneName: "short",
+              }),
       });
     };
     tick();
@@ -90,13 +93,12 @@ export default function OpenDoorsCard() {
     >
       <div className="sm:max-w-sm">
         <p className="micro text-muted">NEXT OPEN DOORS · {view.label}</p>
-        <h2 className="mt-1 font-display text-lg">
-          The floors fill up on {view.weekday}s.
-        </h2>
+        <h2 className="mt-1 font-display text-lg">Next: {EVENT_LABEL}.</h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
           Three hours a week, everyone shows up at {floorName} at the same
           time. It&rsquo;s the difference between a quiet hall and a room full
-          of founders. Next one starts {view.when}.
+          of founders.
+          {view.local ? <> That&rsquo;s {view.local} where you are.</> : null}
         </p>
       </div>
       <div className="sm:w-[19rem] sm:shrink-0">

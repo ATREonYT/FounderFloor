@@ -17,7 +17,7 @@
  * foreign time in a reminder is a time half of them will get wrong.
  */
 
-import { nextWindow } from "./event-window.mjs";
+import { EVENT_LABEL, nextWindow } from "./event-window.mjs";
 
 export interface EventInfo {
   name: string;
@@ -41,7 +41,9 @@ export function nextEvent(nowMs: number): EventInfo {
   return {
     name: "Open Doors",
     blurb:
-      "Sunday evening in Europe, Sunday midday in the Americas: three hours where everyone is on the Main Hall at once. Walk in, look around, talk to whoever is at a stand. Be in the room and there's a badge in it for you.",
+      `${EVENT_LABEL}: three hours where everyone is on the Main Hall at once. ` +
+      "Sunday evening in Europe, Sunday midday in the Americas. Walk in, look around, " +
+      "talk to whoever is at a stand. Be in the room and there's a badge in it for you.",
     floorId: "main-hall",
     startMs,
     endMs,

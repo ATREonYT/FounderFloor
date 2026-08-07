@@ -727,10 +727,9 @@ export default function LandingPage() {
               <CropMarks tone="paper" />
               <Spec className="text-gold">Or come back when it&rsquo;s busy</Spec>
               <p className="mt-3 text-sm leading-relaxed text-paper/70">
-                The floors fill up on Sunday evenings. Leave an address and
-                we&rsquo;ll
-                tell you when it&rsquo;s worth walking in. No newsletter, no
-                drip campaign.
+                The floors fill up every Sunday at 18:00 CET. Leave an
+                address and we&rsquo;ll tell you when it&rsquo;s worth walking
+                in. No newsletter, no drip campaign.
               </p>
               <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/40 [&_p]:text-paper/50">
                 <EmailCapture variant="list" source="landing" />
