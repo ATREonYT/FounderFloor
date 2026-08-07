@@ -125,6 +125,6 @@ mid-range voice, slightly slower than default) or read it yourself.
 >
 > Claim a spot, and it stays up while you sleep.
 >
-> Demo Night, every Thursday. One hour. The whole floor turns up.
+> Open Doors, every Saturday. Three hours. The whole floor turns up.
 >
 > Free. Runs in your browser. Nothing to install. FounderFloor dot net.

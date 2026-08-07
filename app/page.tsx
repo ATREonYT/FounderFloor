@@ -231,7 +231,7 @@ const SHIPPED = [
 
 const IN_THE_SHOP = [
   ["Real revenue verification", "A read-only Stripe connection, so the gold badges stop being simulated and start being earned."],
-  ["A real events calendar", "Demo Night gets siblings: pitch hours, category meetups, co-founder speed-walking."],
+  ["A real events calendar", "Open Doors gets siblings: pitch hours, category meetups, co-founder speed-walking."],
   ["Bigger halls", "New floors open as the existing ones fill with real stands."],
 ];
 
@@ -727,7 +727,8 @@ export default function LandingPage() {
               <CropMarks tone="paper" />
               <Spec className="text-gold">Or come back when it&rsquo;s busy</Spec>
               <p className="mt-3 text-sm leading-relaxed text-paper/70">
-                The floors fill up on Thursdays. Leave an address and we&rsquo;ll
+                The floors fill up on Saturday afternoons. Leave an address and
+                we&rsquo;ll
                 tell you when it&rsquo;s worth walking in. No newsletter, no
                 drip campaign.
               </p>

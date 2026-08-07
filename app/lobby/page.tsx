@@ -9,7 +9,7 @@ import AvatarPicker from "@/components/AvatarPicker";
 import TierTag, { TIER_LABEL } from "@/components/TierTag";
 import EventPill from "@/components/EventPill";
 import LobbyPulse from "@/components/LobbyPulse";
-import DemoNightCard from "@/components/DemoNightCard";
+import OpenDoorsCard from "@/components/OpenDoorsCard";
 import { usePresence } from "@/components/usePresence";
 
 /**
@@ -197,7 +197,7 @@ export default function LobbyPage() {
 
       {/* The weekly moment that makes a quiet building worth returning to —
           a door while it's live, an email box the rest of the week. */}
-      <DemoNightCard />
+      <OpenDoorsCard />
 
       {/* 2x2 from sm up when there are several floors — but a lone floor in
           a two-column grid sits in half the width with a hole beside it, so

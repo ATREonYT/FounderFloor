@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * The weekly event pill. Normally "Demo Night · 2d 4h"; during the window it
- * turns accent-tinted "DEMO NIGHT · live now". When mounted on the event's
+ * The weekly event pill. Normally "Open Doors · 2d 4h"; during the window it
+ * turns accent-tinted "OPEN DOORS · live now". When mounted on the event's
  * own floor, onLiveHere fires (repeatedly while live — the caller dedupes).
  */
 

@@ -111,11 +111,8 @@ function Kbd({ children }: { children: React.ReactNode }) {
 
 /**
  * ARCHIVE — the landing page as it stood before the exhibition-programme
- * redesign, kept live at /design-v1 so the two can be compared side by side
- * and so there is a working copy to fall back on. Not indexed, not in the
- * sitemap. If this design wins, copy this file over app/page.tsx (drop the
- * metadata export and the banner) and delete the directory.
- * See docs/design/README.md.
+ * redesign, kept live at /design-v1 so the two can be compared side by side.
+ * Not indexed, not in the sitemap. See docs/design/README.md.
  */
 export const metadata: Metadata = {
   title: "Design v1 (archived)",
@@ -594,7 +591,7 @@ export default function LandingPageV1() {
                 </li>
                 <li>
                   <span className="text-ink">A real events calendar</span> —
-                  Demo Night gets siblings: pitch hours, category meetups,
+                  Open Doors gets siblings: pitch hours, category meetups,
                   co-founder speed-walking.
                 </li>
                 <li>
@@ -678,7 +675,8 @@ export default function LandingPageV1() {
           <div className="mx-auto mt-12 max-w-md border-t border-paper/15 pt-8 text-left">
             <p className="micro text-gold">OR COME BACK WHEN IT&rsquo;S BUSY</p>
             <p className="mt-2 text-sm leading-relaxed text-paper/70">
-              The floors fill up on Thursdays. Leave an address and we&rsquo;ll
+              The floors fill up on Saturday afternoons. Leave an address and
+              we&rsquo;ll
               tell you when it&rsquo;s worth walking in — no newsletter, no
               drip campaign.
             </p>

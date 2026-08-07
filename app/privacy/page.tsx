@@ -78,7 +78,7 @@ export default function PrivacyPage() {
         <p>
           <strong>The keep-in-touch list</strong> (only if you type your email
           into one of the &ldquo;keep me posted&rdquo; or &ldquo;remind me
-          before Demo Night&rdquo; boxes): your email address, which of the two
+          before Open Doors&rdquo; boxes): your email address, which of the two
           you asked for, and the date. Used for nothing except the occasional
           note it promises — no newsletter, no sharing, no profiling. Legal
           basis: your consent, which you can withdraw at any time by replying

@@ -57,7 +57,7 @@ function serveFeed(bodyFn) {
 function makeConfig(dir, port, over = {}) {
   const cfg = {
     siteUrl: "https://founderfloor.net",
-    demoNight: "Thursday 19:00 CET",
+    openDoors: "Saturday 17:00-20:00 CEST",
     minScore: 8,
     sinceHours: 48,
     maxLeadsPerRun: 12,

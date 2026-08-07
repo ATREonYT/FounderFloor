@@ -165,6 +165,11 @@ const MAX_FEEDBACK = 500;
 /**
  * subscribers: emailLower -> { email, source, ts, demoNight }
  *
+ * `demoNight` is the stored name for "RSVP'd to the weekly event". The event
+ * is called Open Doors now; the FIELD keeps its old name deliberately, so
+ * that everyone who already RSVP'd stays on the list instead of being
+ * orphaned by a rename.
+ *
  * The people who liked the place but weren't ready to set up a stand — the
  * only way to reach them again. `source` records where they signed up
  * ("landing", "demo-night", "floor") and `demoNight` marks an RSVP, so the
@@ -732,23 +737,27 @@ function sendPurchaseEmail(email, plan, held) {
 }
 
 /**
- * The next Demo Night window, in words, for the RSVP confirmation. Mirrors
- * lib/data/events.ts: Thursday 19:00-20:00 UTC, weekly. 1970-01-01 was a
- * Thursday, so every start is a fixed offset into the epoch week.
+ * The next Open Doors window, in words, for the RSVP confirmation.
+ *
+ * KEEP IN SYNC with lib/data/events.ts: Saturday 15:00-18:00 UTC, weekly.
+ * 1970-01-01 was a Thursday, so Saturday is two days into the epoch week and
+ * every start is a fixed offset from there.
  */
 function nextEventInfo(nowMs = Date.now()) {
   const HOUR = 3_600_000;
-  const WEEK = 7 * 86_400_000;
-  const FIRST_START = 19 * HOUR;
+  const DAY = 86_400_000;
+  const WEEK = 7 * DAY;
+  const FIRST_START = 2 * DAY + 15 * HOUR;
+  const DURATION = 3 * HOUR;
   const sinceStart = (((nowMs - FIRST_START) % WEEK) + WEEK) % WEEK;
-  const live = sinceStart < HOUR;
+  const live = sinceStart < DURATION;
   const startMs = nowMs - sinceStart + (live ? 0 : WEEK);
   return new Date(startMs).toUTCString().replace(" GMT", " UTC");
 }
 
 /**
  * Confirmation for someone who left their email — either to hear when the
- * floor gets busy, or to be reminded before the next Demo Night. Every one
+ * floor gets busy, or to be reminded before the next Open Doors. Every one
  * carries a one-line way out, because a list you can't leave is a list
  * nobody should be on.
  */
@@ -757,16 +766,16 @@ function sendSubscribeEmail(email, demoNight, eventWhen) {
   const when = eventWhen ? esc(eventWhen) : "";
   sendEmail(
     email,
-    demoNight ? "You're on the list for Demo Night" : "You're on the FounderFloor list",
+    demoNight ? "You're on the list for Open Doors" : "You're on the FounderFloor list",
     emailShell(
-      demoNight ? "See you at Demo Night" : "You're on the list",
+      demoNight ? "See you at Open Doors" : "You're on the list",
       (demoNight
         ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">We'll send you one short ` +
-          `reminder before the next Demo Night${when ? ` (${when})` : ""} — the one hour a week the ` +
+          `reminder before the next Open Doors${when ? ` (${when})` : ""} — the three hours a week the ` +
           `floors are busy on purpose. Bring a stand or just walk around and listen.</p>`
         : `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Thanks for leaving your ` +
           `address. You'll hear from us when there's something worth walking in for — a busy ` +
-          `Demo Night, a new floor — and not otherwise.</p>`) +
+          `Open Doors, a new floor — and not otherwise.</p>`) +
         `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">You don't need an account to ` +
         `look around. The doors are open right now:</p>` +
         emailBtn(SITE_URL + "/lobby", "Walk the floor") +
@@ -774,7 +783,7 @@ function sendSubscribeEmail(email, demoNight, eventWhen) {
         `Reply with "unsubscribe" and you're off — no forms.</p>`,
     ),
     (demoNight
-      ? `You're on the list for the next FounderFloor Demo Night${eventWhen ? ` (${eventWhen})` : ""}. We'll send one short reminder before it starts.`
+      ? `You're on the list for the next FounderFloor Open Doors${eventWhen ? ` (${eventWhen})` : ""}. We'll send one short reminder before it starts.`
       : `You're on the FounderFloor list. You'll hear from us when there's something worth walking in for, and not otherwise.`) +
       `\n\nWalk the floor any time: ${SITE_URL}/lobby\n\nWant off the list? Reply with "unsubscribe".`,
     "courtesy",
@@ -2312,7 +2321,7 @@ async function handleAdminPost(req, res, pathname) {
     }
 
     // The mailing list, newest first — so the operator can actually send the
-    // Demo Night reminder the RSVP promised. `demoNightOnly` narrows it to
+    // Open Doors reminder the RSVP promised. `demoNightOnly` narrows it to
     // the people who asked for exactly that.
     if (pathname === "/admin/subscribers") {
       const onlyRsvp = body.demoNightOnly === true;
@@ -2803,8 +2812,8 @@ const server = createServer((req, res) => {
         const ev = nextEventInfo();
         sendSubscribeEmail(email, demoNight, ev);
         sendOperatorEmail(
-          demoNight ? "Demo Night RSVP" : "New subscriber",
-          demoNight ? "Someone RSVP'd for Demo Night" : "Someone joined the list",
+          demoNight ? "Open Doors RSVP" : "New subscriber",
+          demoNight ? "Someone RSVP'd for Open Doors" : "Someone joined the list",
           [
             ["Email", email],
             ["Source", source],

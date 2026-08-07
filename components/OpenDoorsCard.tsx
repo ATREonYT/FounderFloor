@@ -4,9 +4,9 @@
  * The lobby's answer to an empty building.
  *
  * A floor that is quiet most of the week only fills up if everybody agrees
- * on WHEN — so Demo Night is given real estate, not just a countdown pill.
+ * on WHEN — so Open Doors is given real estate, not just a countdown pill.
  * While it's live the card is a door. While it isn't, it collects an email
- * so the visitor can be pulled back for the one hour that will be busy.
+ * so the visitor can be pulled back for the hours that will be busy.
  */
 
 import { useEffect, useState } from "react";
@@ -15,7 +15,7 @@ import { nextEvent, fmtCountdown, type EventInfo } from "@/lib/data/events";
 import { floorById } from "@/lib/data/floors";
 import EmailCapture from "@/components/EmailCapture";
 
-export default function DemoNightCard() {
+export default function OpenDoorsCard() {
   const [view, setView] = useState<{ ev: EventInfo; label: string; when: string } | null>(null);
 
   useEffect(() => {
@@ -45,13 +45,13 @@ export default function DemoNightCard() {
   if (view.ev.live) {
     return (
       <section
-        aria-label="Demo Night is live"
+        aria-label="Open Doors is live"
         className="panel mt-6 flex flex-wrap items-center justify-between gap-4 border-accent bg-accent-soft/40 p-5"
       >
         <div>
           <p className="micro flex items-center gap-2 text-accent">
             <span aria-hidden="true" className="pulse-dot inline-block h-2 w-2 rounded-full bg-accent" />
-            DEMO NIGHT · LIVE NOW
+            OPEN DOORS · LIVE NOW
           </p>
           <h2 className="mt-1 font-display text-lg">
             Everyone&rsquo;s at {floorName} right now.
@@ -73,11 +73,11 @@ export default function DemoNightCard() {
 
   return (
     <section
-      aria-label="Demo Night"
+      aria-label="Open Doors"
       className="panel mt-6 flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between"
     >
       <div className="sm:max-w-sm">
-        <p className="micro text-muted">NEXT DEMO NIGHT · {view.label}</p>
+        <p className="micro text-muted">NEXT OPEN DOORS · {view.label}</p>
         <h2 className="mt-1 font-display text-lg">
           The floors fill up on {view.when.split(" ")[0]}s.
         </h2>

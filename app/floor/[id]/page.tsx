@@ -665,11 +665,12 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     [actions],
   );
 
-  // Demo Night badge — granted once, while the event is live on this floor.
+  // Open Doors badge — granted once, while the event is live on this floor.
+  // The badge ID stays "demo-night": people already hold it.
   const handleEventLive = useCallback(() => {
     if (badgesRef.current.includes("demo-night")) return;
     actions.grantBadge("demo-night");
-    showToast("Demo Night, live, and you're in the room. Badge earned.");
+    showToast("Open Doors, live, and you're in the room. Badge earned.");
   }, [actions, showToast]);
 
   // Tour finishes itself when the last step lands. Completing it earns the

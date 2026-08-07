@@ -14,7 +14,7 @@
  *      name two places that are not yours before you name yours.
  *   2. Disclose. "I built this" every time, no exceptions.
  *   3. Invite to a time, not a URL. An empty room converts nobody, so the
- *      ask is always the next Demo Night.
+ *      ask is always the next Open Doors.
  *
  * There is no DM template here and that is deliberate. See README.md.
  *
@@ -69,7 +69,7 @@ other: ${url}. It's mine and it's free. ${night}`,
   "feedback-wanted": ({ slot, url, night }) => `${slot}
 
 If you want feedback from people who'll actually try it rather than skim the
-landing page, I run a Demo Night on a 2D floor where founders show each other
+landing page, I run an Open Doors day on a 2D floor where founders show each other
 what they've built: ${url}. Mine, free, no install. ${night}`,
 
   "virtual-space": ({ slot, url, night }) => `${slot}
@@ -104,17 +104,17 @@ function shortForm({ slot, url, night }) {
 
 /**
  * @param {{clusters: string[]}} scored  clusters arrive strongest-first
- * @param {{siteUrl: string, demoNight?: string}} cfg
+ * @param {{siteUrl: string, openDoors?: string}} cfg
  * @param {string} [source]  used only to pick a length that fits
  */
 export function draftReply(scored, cfg, source) {
-  const night = cfg.demoNight
-    ? `Next Demo Night is ${cfg.demoNight} if you'd rather turn up when there are people on it.`
+  const night = cfg.openDoors
+    ? `Next Open Doors is ${cfg.openDoors} if you'd rather turn up when there are people on it.`
     : "";
 
   if (SHORT_SOURCES.has(source)) {
     const short = shortForm({ slot: SLOT, url: cfg.siteUrl, night }).trim();
-    // Drop the Demo Night line rather than hand over something unpostable.
+    // Drop the Open Doors line rather than hand over something unpostable.
     return short.length <= SHORT_LIMIT
       ? short
       : shortForm({ slot: SLOT, url: cfg.siteUrl, night: "" }).trim();

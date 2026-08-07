@@ -5,7 +5,7 @@
  * build a stand today. Two shapes:
  *
  *   variant="list"  — "tell me when it's busy" (landing page)
- *   variant="rsvp"  — "remind me before Demo Night" (lobby)
+ *   variant="rsvp"  — "remind me before Open Doors" (lobby)
  *
  * Deliberately one field and one button: an email box that asks for a name
  * too is a form, and forms get abandoned. Failure never blocks — if the
@@ -39,6 +39,9 @@ export default function EmailCapture({
       const res = await fetch(`${httpBase()}/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // `demoNight` is the wire name for "RSVP'd to the weekly event".
+        // The event is Open Doors now; the field keeps its old name so
+        // existing RSVPs on the server are not orphaned by a rename.
         body: JSON.stringify({ email: email.trim(), demoNight: rsvp, source }),
       });
       const r = await res.json();
@@ -96,7 +99,7 @@ export default function EmailCapture({
             .
           </span>
         ) : rsvp ? (
-          "One reminder before the next Demo Night. Nothing else, ever. Reply “unsubscribe” to stop."
+          "One reminder before the next Open Doors. Nothing else, ever. Reply “unsubscribe” to stop."
         ) : (
           "No newsletter. We write when the floor is worth walking. Reply “unsubscribe” to stop."
         )}

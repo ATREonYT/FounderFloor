@@ -82,9 +82,9 @@ for everyone.
   under your name label on the floor and in your hover card.
 - **Onboarding checklist** — four first-session steps (walk, talk, react,
   connect). Finishing them earns the First Steps badge.
-- **Badges** — shown on /profile. First Steps for the checklist, Demo Night
+- **Badges** — shown on /profile. First Steps for the checklist, Open Doors
   for being in the hall while the event is live. Earned, not requested.
-- **Demo Night** — every Thursday 19:00–20:00 UTC on the Main Hall. The pill
+- **Open Doors** — every Saturday 15:00–18:00 UTC on the Main Hall. The pill
   in the lobby and the floor HUD counts down to it.
 - **/directory** — all seed startups across all floors on one page: text
   search, category / seeking-co-founder / minimum-rank filters, live "N here"
@@ -167,7 +167,7 @@ in-memory only and vanish on restart.
 | `lib/types.ts` | Every shared contract. All modules compile against this file; it imports nothing. |
 | `lib/data/floors.ts` | The four floor definitions: tile size, theme, 4x3 booth spots (+1-tile apron), tier gates, the reserved spot for your booth. |
 | `lib/data/startups.ts` | 25 seed startups with booth themes, keyword-matched dialogue (`replyFor()`), and per-founder ambient idle lines (`IDLE_LINES`). |
-| `lib/data/events.ts` | The weekly Demo Night window, computed in pure UTC math. |
+| `lib/data/events.ts` | The weekly Open Doors window, computed in pure UTC math. |
 | `lib/ranks.ts` | Revenue → rank table (`Garage` … `Escape Velocity`). |
 | `lib/store.ts` | SSR-safe localStorage store (`useAppState`): profile (+status), tier, connections (+notes), your startup, claims, onboarding steps, badges. |
 | `lib/net.ts` | Browser WebSocket client implementing `NetClient`, plus `httpBase()` for the HTTP routes; silently degrades to offline single-player, 2 reconnect attempts on drops. |

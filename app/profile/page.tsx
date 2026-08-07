@@ -93,9 +93,9 @@ const BADGE_META: Record<string, { name: string; blurb: string; howTo: string; g
     glyph: "star",
   },
   "demo-night": {
-    name: "Demo Night",
+    name: "Open Doors",
     blurb: "In the hall while it was live.",
-    howTo: "Be on a floor during a live Demo Night event.",
+    howTo: "Be on a floor during a live Open Doors event.",
     glyph: "bolt",
   },
   rounds: {

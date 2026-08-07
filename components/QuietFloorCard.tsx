@@ -66,7 +66,7 @@ export default function QuietFloorCard({
           href="/lobby"
           className="btn-press min-h-[44px] rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
         >
-          {ev.live ? "Demo Night is live — join it" : `Demo Night in ${ev.label} — get a reminder`}
+          {ev.live ? "Open Doors is live — join it" : `Open Doors in ${ev.label} — get a reminder`}
         </Link>
         <Link
           href="/directory"
