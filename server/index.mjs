@@ -47,6 +47,7 @@
  */
 
 import { createHash, createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
+import { windowInWords } from "../lib/data/event-window.mjs";
 import { availableParallelism } from "node:os";
 import { closeSync, copyFileSync, fsyncSync, openSync, readFileSync, renameSync, writeSync } from "node:fs";
 import { createServer } from "node:http";
@@ -739,20 +740,13 @@ function sendPurchaseEmail(email, plan, held) {
 /**
  * The next Open Doors window, in words, for the RSVP confirmation.
  *
- * KEEP IN SYNC with lib/data/events.ts: Saturday 15:00-18:00 UTC, weekly.
- * 1970-01-01 was a Thursday, so Saturday is two days into the epoch week and
- * every start is a fixed offset from there.
+ * Delegates to lib/data/event-window.mjs, the same module the web app uses,
+ * so the server and the site can no longer disagree about when the doors
+ * open. This function used to carry its own copy of the arithmetic under a
+ * "KEEP IN SYNC" comment, which is a promise nobody keeps.
  */
 function nextEventInfo(nowMs = Date.now()) {
-  const HOUR = 3_600_000;
-  const DAY = 86_400_000;
-  const WEEK = 7 * DAY;
-  const FIRST_START = 2 * DAY + 15 * HOUR;
-  const DURATION = 3 * HOUR;
-  const sinceStart = (((nowMs - FIRST_START) % WEEK) + WEEK) % WEEK;
-  const live = sinceStart < DURATION;
-  const startMs = nowMs - sinceStart + (live ? 0 : WEEK);
-  return new Date(startMs).toUTCString().replace(" GMT", " UTC");
+  return windowInWords(nowMs);
 }
 
 /**

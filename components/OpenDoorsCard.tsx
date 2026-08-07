@@ -16,7 +16,12 @@ import { floorById } from "@/lib/data/floors";
 import EmailCapture from "@/components/EmailCapture";
 
 export default function OpenDoorsCard() {
-  const [view, setView] = useState<{ ev: EventInfo; label: string; when: string } | null>(null);
+  const [view, setView] = useState<{
+    ev: EventInfo;
+    label: string;
+    when: string;
+    weekday: string;
+  } | null>(null);
 
   useEffect(() => {
     const tick = () => {
@@ -25,13 +30,20 @@ export default function OpenDoorsCard() {
       setView({
         ev,
         label: ev.live ? "live now" : fmtCountdown(ev.startMs - now),
-        // the visitor's own timezone — a UTC time in a reminder is a time
-        // half of them will get wrong
+        // The visitor's own timezone, with the zone named. The event is
+        // anchored to 18:00 Berlin, so this reads "Sunday 18:00 CEST" in
+        // Germany and "Sunday 12:00 EDT" in New York — nobody has to work
+        // out an offset, and nobody is shown a time that isn't theirs.
         when: new Date(ev.startMs).toLocaleString(undefined, {
           weekday: "long",
           hour: "numeric",
           minute: "2-digit",
+          timeZoneName: "short",
         }),
+        // Its own formatter, not `when.split(" ")[0]`: that took the comma
+        // toLocaleString puts after the weekday and rendered "Sunday,s" —
+        // and "Sonntag,s" for a German visitor.
+        weekday: new Date(ev.startMs).toLocaleDateString(undefined, { weekday: "long" }),
       });
     };
     tick();
@@ -57,8 +69,8 @@ export default function OpenDoorsCard() {
             Everyone&rsquo;s at {floorName} right now.
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-muted">
-            This is the hour the floor is busy on purpose. Walk in — being in
-            the room earns you a badge.
+            These are the hours the floor is busy on purpose. Walk in, and
+            being in the room earns you a badge.
           </p>
         </div>
         <Link
@@ -79,15 +91,17 @@ export default function OpenDoorsCard() {
       <div className="sm:max-w-sm">
         <p className="micro text-muted">NEXT OPEN DOORS · {view.label}</p>
         <h2 className="mt-1 font-display text-lg">
-          The floors fill up on {view.when.split(" ")[0]}s.
+          The floors fill up on {view.weekday}s.
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          One hour a week, everyone shows up at {floorName} at the same time —
-          it&rsquo;s the difference between a quiet hall and a room full of
-          founders. Next one starts {view.when}.
+          Three hours a week, everyone shows up at {floorName} at the same
+          time. It&rsquo;s the difference between a quiet hall and a room full
+          of founders. Next one starts {view.when}.
         </p>
       </div>
       <div className="sm:w-[19rem] sm:shrink-0">
+        {/* "demo-night" is the stored analytics source for this box.
+            Kept through the rename so the subscriber stats stay one series. */}
         <EmailCapture variant="rsvp" source="demo-night" />
       </div>
     </section>

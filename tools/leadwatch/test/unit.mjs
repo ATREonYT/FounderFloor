@@ -23,7 +23,7 @@ const check = (ok, msg, extra = "") => {
   if (!ok) bad++;
 };
 const group = (t) => console.log(`\n${t}`);
-const CFG = { siteUrl: "https://founderfloor.net", openDoors: "Saturday 17:00-20:00 CEST" };
+const CFG = { siteUrl: "https://founderfloor.net", openDoors: "Sunday 18:00 CET / 12:00 ET" };
 
 /* ------------------------------------------------------------- matching */
 group("posts that SHOULD become leads");
@@ -101,7 +101,7 @@ group("drafts");
   check(needsEdit(d), "every draft carries an unfilled slot");
   check(d.includes("founderfloor.net"), "the link is present");
   check(/it'?s mine|I built|I'm building|I run/i.test(d), "authorship is disclosed");
-  check(d.includes("Saturday 17:00-20:00 CEST"), "the ask is a time, not just a URL");
+  check(d.includes("Sunday 18:00 CET / 12:00 ET"), "the ask is a time, not just a URL");
   check(draftReply(score(GOOD[3]), CFG) !== d, "different intent, different draft");
 
   // REGRESSION: Bluesky caps at 300 graphemes; the long drafts are ~500 and

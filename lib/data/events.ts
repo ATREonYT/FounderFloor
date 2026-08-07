@@ -1,29 +1,23 @@
 /**
  * FounderFloor — scheduled floor events.
  *
- * There is deliberately ONE recurring event: Open Doors, every Saturday
- * 15:00-18:00 UTC on the main hall. A single well-known weekly moment gives
- * quiet floors a reason to fill up at the same time; a calendar of many
- * events would spread the same visitors thin.
+ * There is deliberately ONE recurring event: Open Doors, every Sunday
+ * 18:00-21:00 Berlin time, on the main hall. A single well-known weekly
+ * moment gives quiet floors a reason to fill up at the same time; a calendar
+ * of many events would spread the same visitors thin.
  *
- * Saturday afternoon, three hours, because an open-doors day that lasts an
- * hour is not an open-doors day. The window is chosen to be the least
- * unreasonable one on both sides of the Atlantic: 17:00-20:00 in Germany,
- * 11:00-14:00 US Eastern, 08:00-11:00 US Pacific.
- *
- * To add more events later: give each one its own anchor offset + period +
- * duration (the same shape as the constants below), compute the
- * current-or-next window for each with the same modulo arithmetic, and have
- * nextEvent() return whichever window starts (or is live) first.
+ * The window itself lives in ./event-window.mjs, which the floor server
+ * imports too, so there is exactly one definition of when the doors open.
+ * That file also explains why the anchor is Berlin rather than UTC, and why
+ * this particular three hours.
  *
  * Everything here is pure: callers pass nowMs (e.g. Date.now()) so the HUD
- * can re-render a countdown on its own clock and tests can pin time. All
- * math is UTC; the UI renders every time in the visitor's own zone, because
- * a UTC time in a reminder is a time half of them will get wrong.
- *
- * KEEP IN SYNC: server/index.mjs has its own copy of FIRST_START and
- * DURATION for the RSVP confirmation email. Change one, change both.
+ * can re-render a countdown on its own clock and tests can pin time. Times
+ * are rendered in each visitor's own zone by the components, because a
+ * foreign time in a reminder is a time half of them will get wrong.
  */
+
+import { nextWindow } from "./event-window.mjs";
 
 export interface EventInfo {
   name: string;
@@ -37,35 +31,20 @@ export interface EventInfo {
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
 const DAY = 86_400_000;
-const WEEK = 7 * DAY;
 
 /**
- * First window start: Saturday 1970-01-03 15:00:00 UTC. 1970-01-01 was a
- * Thursday, so Saturday is two days into the epoch week and every start is
- * FIRST_START + k * WEEK for integer k.
- */
-const FIRST_START = 2 * DAY + 15 * HOUR;
-const DURATION = 3 * HOUR;
-
-/**
- * The current-or-next Open Doors window relative to nowMs.
- * If nowMs falls inside a window ([start, end)), that window returns with
- * live=true; otherwise the next upcoming window returns with live=false.
+ * The current-or-next Open Doors window relative to nowMs. If nowMs falls
+ * inside a window it returns with live=true; otherwise the next one.
  */
 export function nextEvent(nowMs: number): EventInfo {
-  // ms elapsed since the most recent window start (double-mod handles
-  // pre-epoch nowMs, where % in JS is negative).
-  const sinceStart = (((nowMs - FIRST_START) % WEEK) + WEEK) % WEEK;
-  const lastStart = nowMs - sinceStart;
-  const live = sinceStart < DURATION;
-  const startMs = live ? lastStart : lastStart + WEEK;
+  const { startMs, endMs, live } = nextWindow(nowMs);
   return {
     name: "Open Doors",
     blurb:
-      "Saturday afternoon, three hours, everyone on the Main Hall at once. Walk in, look around, talk to whoever is at a stand. Be in the room and there's a badge in it for you.",
+      "Sunday evening in Europe, Sunday midday in the Americas: three hours where everyone is on the Main Hall at once. Walk in, look around, talk to whoever is at a stand. Be in the room and there's a badge in it for you.",
     floorId: "main-hall",
     startMs,
-    endMs: startMs + DURATION,
+    endMs,
     live,
   };
 }

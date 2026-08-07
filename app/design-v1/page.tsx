@@ -675,7 +675,7 @@ export default function LandingPageV1() {
           <div className="mx-auto mt-12 max-w-md border-t border-paper/15 pt-8 text-left">
             <p className="micro text-gold">OR COME BACK WHEN IT&rsquo;S BUSY</p>
             <p className="mt-2 text-sm leading-relaxed text-paper/70">
-              The floors fill up on Saturday afternoons. Leave an address and
+              The floors fill up on Sunday evenings. Leave an address and
               we&rsquo;ll
               tell you when it&rsquo;s worth walking in — no newsletter, no
               drip campaign.

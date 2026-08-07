@@ -84,7 +84,8 @@ for everyone.
   connect). Finishing them earns the First Steps badge.
 - **Badges** — shown on /profile. First Steps for the checklist, Open Doors
   for being in the hall while the event is live. Earned, not requested.
-- **Open Doors** — every Saturday 15:00–18:00 UTC on the Main Hall. The pill
+- **Open Doors** — every Sunday 18:00–21:00 Berlin time (noon in New York)
+  on the Main Hall. The pill
   in the lobby and the floor HUD counts down to it.
 - **/directory** — all seed startups across all floors on one page: text
   search, category / seeking-co-founder / minimum-rank filters, live "N here"
