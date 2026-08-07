@@ -11,7 +11,47 @@
  * stock photograph, no em dashes in the copy, and no claim the product
  * cannot back. Two colours and one accent, as in docs/ad/HOW-THESE-ADS-ARE-MADE.md.
  */
-import { hallPlate } from "./hall.mjs";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { POSTER_FRAME } from "./scene.mjs";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+/**
+ * The plate renderer runs in the page, not here. Both modules are written
+ * as real ES modules so `node --check` and an editor can see them, then
+ * flattened into one classic script for inlining: the sheet is loaded from
+ * a string with `setContent`, and a string has no base URL for a module
+ * import to resolve against.
+ */
+const flatten = (name) =>
+  readFileSync(join(HERE, name), "utf8")
+    .split("\n")
+    .filter((l) => !/^import[ {]/.test(l))
+    .map((l) => l.replace(/^export (?=(const|function|class|let) )/, ""))
+    .join("\n");
+
+const PLATE_SCRIPT = `
+${flatten("sprites.mjs")}
+${flatten("scene.mjs")}
+const __cv = document.getElementById("plate");
+function __paint(f) {
+  const w = __cv.clientWidth;
+  const h = __cv.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+  __cv.width = Math.round(w * dpr);
+  __cv.height = Math.round(h * dpr);
+  drawScene(__cv.getContext("2d"), w, h, dpr, f, { callouts: __cv.dataset.notes !== "off" });
+  __cv.dataset.frame = String(f);
+}
+window.__paint = __paint;
+window.__LOOP = LOOP;
+__paint(Number(__cv.dataset.frame));
+// canvas text is laid out with whatever font is resolved at draw time, so
+// the first paint can land before the face is ready. Paint again once it is.
+document.fonts.ready.then(() => __paint(Number(__cv.dataset.frame)));
+`;
 
 /* ------------------------------------------------------------------ copy */
 
@@ -120,12 +160,13 @@ const footer = () => `
   </footer>`;
 
 const plate = (opts, caption = COPY.plateCaption, spec = COPY.plateSpec) => {
-  const { svg } = hallPlate(opts);
   return `
   <figure class="plate">
     <span class="pcrop tl" aria-hidden="true"></span><span class="pcrop tr" aria-hidden="true"></span>
     <span class="pcrop bl" aria-hidden="true"></span><span class="pcrop br" aria-hidden="true"></span>
-    <div class="plate-box">${svg}</div>
+    <div class="plate-box"><canvas id="plate" data-frame="${POSTER_FRAME}" data-notes="${
+      opts.callouts === false ? "off" : "on"
+    }"></canvas></div>
     <figcaption><span class="spec">${caption}</span>${spec ? `<span class="spec">${spec}</span>` : ""}</figcaption>
   </figure>`;
 };
@@ -181,7 +222,7 @@ const CSS = `
   /* --------------------------------------------------------------- plate */
   .plate { position:relative; }
   .plate-box { position:relative; overflow:hidden; border:1px solid var(--line); background:var(--panel); }
-  .plate-svg { display:block; width:100%; height:100%; }
+  #plate { display:block; width:100%; height:100%; }
   .pcrop { position:absolute; width:14px; height:14px; border-color:rgba(35,32,26,.3); }
   .pcrop.tl { left:-7px; top:-7px; border-left:1px solid; border-top:1px solid; }
   .pcrop.tr { right:-7px; top:-7px; border-right:1px solid; border-top:1px solid; }
@@ -296,7 +337,8 @@ export function posterHtml(format = "tall") {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>FounderFloor ${format}</title>
 <style>${CSS}${LAYOUTS[format]}</style></head>
-<body><div class="sheet" id="sheet">${grain}${cropMarks()}<div class="body">${inner}</div></div></body></html>`;
+<body><div class="sheet" id="sheet">${grain}${cropMarks()}<div class="body">${inner}</div></div>
+<script>${PLATE_SCRIPT}</script></body></html>`;
 }
 
 export { SIZES };
