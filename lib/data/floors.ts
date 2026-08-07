@@ -48,16 +48,28 @@ export const PRACTICE_FLOOR_ID = "tutorial-hall";
  */
 export const FLOORS: FloorDef[] = [
   {
-    // 34x28. Three rows of four stands, all claimable.
-    // Row A: y=3 (zone rows 3-5, apron 6). Row B: y=13 (zone rows 13-15, apron 16).
-    // Row C: y=21 (zone rows 21-23, apron 24), walls at 0 and 27.
-    // x = 3 / 11 / 19 / 27 -> rightmost zone ends at col 30, walls at 0 and 33.
+    // 50x38. Four rows of six stands, all claimable.
+    //
+    // GROWN FROM 34x28 / 12 STANDS, BY APPENDING ONLY. A claim is stored as
+    // an index into boothSpots (ClaimEntry.spotIndex), so moving or
+    // reordering an entry silently moves somebody's stand to a different
+    // part of the hall. The original twelve keep their exact coordinates
+    // AND their positions in this array; everything new is added after them.
+    // Any future growth has to follow the same rule.
+    //
+    // Rows: y=3 / 13 / 21 / 29 (zone rows y..y+2, carpet apron y+3).
+    // Cols: x=3 / 11 / 19 / 27 / 35 / 43 (zones 4 wide, so 4 clear tiles
+    // between them; the rightmost ends at col 46, wall at 49).
+    // The last apron is row 32 and the bottom wall is 37, which leaves four
+    // rows of open floor along the bottom — that band is where players spawn
+    // (engine.ts uses height - 5), and spawning inside a booth alley reads
+    // as being dumped behind somebody's counter.
     id: "main-hall",
     name: "Main Hall",
-    tagline: "The free floor. Twelve stands, first come first served. Everyone starts here.",
+    tagline: "The free floor. Twenty-four stands, first come first served. Everyone starts here.",
     tier: "free",
-    width: 34,
-    height: 28,
+    width: 50,
+    height: 38,
     theme: {
       floorA: "#D8D2C4",
       floorB: "#D1CABA",
@@ -65,6 +77,7 @@ export const FLOORS: FloorDef[] = [
       trim: "#6F6A5E",
     },
     boothSpots: [
+      // --- the original twelve. Do not move, reorder or renumber. ---
       { x: 3, y: 3 },
       { x: 11, y: 3 },
       { x: 19, y: 3 },
@@ -77,6 +90,20 @@ export const FLOORS: FloorDef[] = [
       { x: 11, y: 21 },
       { x: 19, y: 21 },
       { x: 27, y: 21 },
+      // --- added when the hall grew: two more columns on the east side ---
+      { x: 35, y: 3 },
+      { x: 43, y: 3 },
+      { x: 35, y: 13 },
+      { x: 43, y: 13 },
+      { x: 35, y: 21 },
+      { x: 43, y: 21 },
+      // --- and a fourth row across the bottom ---
+      { x: 3, y: 29 },
+      { x: 11, y: 29 },
+      { x: 19, y: 29 },
+      { x: 27, y: 29 },
+      { x: 35, y: 29 },
+      { x: 43, y: 29 },
     ],
     startupIds: [],
   },

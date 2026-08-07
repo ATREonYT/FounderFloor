@@ -115,6 +115,11 @@ mid-range voice, slightly slower than default) or read it yourself.
 >
 > Walk in. Twelve stands, a real founder behind each one.
 >
+> (STALE — the Main Hall now has twenty-four. The line is left as it was
+> recorded so this file still describes the ad that shipped; change the
+> number if you re-cut it, and check lib/data/floors.ts for the count
+> rather than trusting this script.)
+>
 > Walk up to any of them and read the pitch — what they build, what they
 > need, who they are.
 >

@@ -322,7 +322,12 @@ export function buildFloor(
     mark(cart.x + 1, cart.y);
     drawables.push(cartDrawable(cart.x, cart.y));
   }
-  const benchCount = Math.max(1, Math.min(4, Math.floor(area / 200)));
+  // The caps, not the divisors, are what decide density on a large floor:
+  // every one of these was already pinned at its old ceiling when the Main
+  // Hall was 34x28, so growing the hall without raising them would have
+  // spread the same furniture over twice the area and made the bigger room
+  // read as an emptier one. Smaller floors are below the caps and unaffected.
+  const benchCount = Math.max(1, Math.min(8, Math.floor(area / 200)));
   for (let i = 0; i < benchCount; i++) {
     const p = tryPlace(2, 40);
     if (!p) break;
@@ -330,14 +335,14 @@ export function buildFloor(
     mark(p.x + 1, p.y);
     drawables.push(benchDrawable(p.x, p.y));
   }
-  const plantCount = Math.max(3, Math.min(10, Math.floor(area / 90)));
+  const plantCount = Math.max(3, Math.min(18, Math.floor(area / 90)));
   for (let i = 0; i < plantCount; i++) {
     const p = tryPlace(1, 40);
     if (!p) break;
     mark(p.x, p.y);
     drawables.push(plantDrawable(p.x, p.y, rng()));
   }
-  const matCount = Math.max(2, Math.min(5, Math.floor(area / 200)));
+  const matCount = Math.max(2, Math.min(9, Math.floor(area / 200)));
   for (let i = 0; i < matCount; i++) {
     const p = tryPlace(2, 40);
     if (!p) break;
