@@ -28,7 +28,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const flatten = (name) =>
   readFileSync(join(HERE, name), "utf8")
     .split("\n")
-    .filter((l) => !/^import[ {]/.test(l))
+    // drop imports and re-export statements, unwrap exported declarations.
+    // A stray `export { … }` line is a syntax error in a classic script and
+    // takes the whole plate down with a bare "__paint is not a function".
+    .filter((l) => !/^import[ {]/.test(l) && !/^export\s*\{/.test(l))
     .map((l) => l.replace(/^export (?=(const|function|class|let) )/, ""))
     .join("\n");
 

@@ -7,14 +7,18 @@
  * everything. Sorting people into the same paint order as the furniture
  * needs one renderer that owns both, so this file owns both.
  *
- * Rules it depends on, both of which have already been got wrong once:
+ * Rules it depends on, every one of which has already been got wrong once:
  *
  * 1. **The ground is a base layer, not a participant in the depth sort.**
  *    Floor tiles and carpets go down first and stay out of it. Nothing flat
  *    on the ground plane can occlude anything.
- * 2. **Everything standing up is sorted by the `gx + gy` of its far
- *    corner**, people included. Objects must not overlap in grid space, or
- *    no single ordering is correct.
+ * 2. **Everything standing up is sorted by the `gx + gy` of its far corner,
+ *    people included, and nothing standing up is wider than one tile.** The
+ *    walls and desks are emitted as one-tile columns for exactly this
+ *    reason. A whole 3-tile wall sorted as a single object compares its
+ *    far-left corner against a walker who is level with its far RIGHT
+ *    corner, decides the walker is nearer, and paints them straight over
+ *    the panel. That is what "walking through the stands" looked like.
  *
  * Vector work is drawn in viewBox units through `S()`. Sprites are drawn in
  * device pixels with smoothing off, so the app's pixel art stays pixel art.
@@ -39,14 +43,14 @@ const AISLE_ROWS = [4, 5];
 export const VB = { x: -302, y: -54, w: 702, h: 396 };
 export const VB_PLAIN = { x: -300, y: -44, w: 690, h: 380 };
 
-/** 16 seconds at 30fps. Frame 0 and frame LOOP are the same picture. */
-export const LOOP = 480;
+/** 24 seconds at 30fps. Frame 0 and frame LOOP are the same picture. */
+export const LOOP = 720;
 /**
  * The frame the still sheets are printed from. Chosen, not defaulted: at
- * 340 the hall is at its fullest, the one bubble up clears both stand
+ * 550 the hall is at its fullest, the one bubble up clears both stand
  * signs, and the line in it is stop 03 of the route the sheet describes.
  */
-export const POSTER_FRAME = 340;
+export const POSTER_FRAME = 550;
 
 /* -------------------------------------------------------------- colour */
 
@@ -94,96 +98,218 @@ const HOST = { gx: BACK[1].gx + 1.5, gy: BACK_GY + 0.9 };
 /* ------------------------------------------------------ choreography */
 
 /**
- * A closed path: [frame, gx, gy] waypoints that start and end in the same
- * place, so the loop joins without a jump. Repeat a position to stand still.
+ * A closed path: `[frame, gx, gy]` waypoints, walked in order. It must end
+ * where it starts or the loop visibly jumps; repeat a position to stand
+ * still.
+ *
+ * Paths are laid out as a walk down the aisle and then a turn towards a
+ * stand, not as one diagonal from the door to the destination. People in a
+ * hall walk the aisle and then step out of it, and the corner is most of
+ * what makes the movement read as navigation rather than drift.
+ *
+ * The lanes are deliberate. The aisle is grid rows 4 and 5; the back row's
+ * carpets stop at gy 4.0 and the front row's panels start at gy 6.3, so
+ * anything between about 4.15 and 6.2 is clear floor. test.mjs checks every
+ * visitor at every frame against the furniture, so a lane edited into a
+ * desk fails a test instead of shipping.
  */
-const walkIn = [
-  [0, 0.8, 4.7],
-  [24, 0.8, 4.7],
-  [140, 6.0, 4.05],
-  [356, 6.0, 4.05],
-  [472, 0.8, 4.7],
-  [LOOP, 0.8, 4.7],
+const LANE_VISITOR = 4.85;
+const LANE_PAIR_A = 5.5;
+const LANE_PAIR_B = 5.9;
+
+/** The visitor who walks up to stand 02 and has the conversation. */
+const visitorPath = [
+  [0, 0.9, LANE_VISITOR],
+  [30, 0.9, LANE_VISITOR],
+  [152, 6.0, LANE_VISITOR], // down the aisle
+  [178, 6.0, 4.1], // turn, step up to the stand
+  [588, 6.0, 4.1], // the conversation
+  [614, 6.0, LANE_VISITOR], // back into the aisle
+  [716, 0.9, LANE_VISITOR],
+  [LOOP, 0.9, LANE_VISITOR],
 ];
-/** A pair browsing the hall together, out and back. */
-const pairA = [
-  [0, 1.4, 5.35],
-  [20, 1.4, 5.35],
-  [236, 10.6, 5.35],
-  [300, 10.6, 5.35],
-  [462, 1.4, 5.35],
-  [LOOP, 1.4, 5.35],
+/** Two people doing the rounds together, up to stand 03 and back. */
+const pairAPath = [
+  [0, 1.6, LANE_PAIR_A],
+  [40, 1.6, LANE_PAIR_A],
+  [258, 10.4, LANE_PAIR_A],
+  [282, 10.4, 4.45],
+  [430, 10.4, 4.45],
+  [454, 10.4, LANE_PAIR_A],
+  [672, 1.6, LANE_PAIR_A],
+  [LOOP, 1.6, LANE_PAIR_A],
 ];
-const pairB = [
-  [0, 0.7, 5.75],
-  [20, 0.7, 5.75],
-  [236, 9.9, 5.75],
-  [300, 9.9, 5.75],
-  [462, 0.7, 5.75],
-  [LOOP, 0.7, 5.75],
+const pairBPath = [
+  [0, 0.9, LANE_PAIR_B],
+  [40, 0.9, LANE_PAIR_B],
+  [258, 9.7, LANE_PAIR_B],
+  [282, 9.7, 4.85],
+  [430, 9.7, 4.85],
+  [454, 9.7, LANE_PAIR_B],
+  [672, 0.9, LANE_PAIR_B],
+  [LOOP, 0.9, LANE_PAIR_B],
 ];
-/** Someone pacing the far end of the aisle, so the hall is never still. */
-const stroller = [
-  [0, 12.1, 4.45],
-  [30, 12.1, 4.45],
-  [200, 6.4, 4.45],
-  [240, 6.4, 4.45],
-  [430, 12.1, 4.45],
-  [LOOP, 12.1, 4.45],
+/** A slow browser at the far end, so the hall is never completely still. */
+const strollerPath = [
+  [0, 12.2, 4.35],
+  [30, 12.2, 4.35],
+  [260, 7.8, 4.35],
+  [320, 7.8, 4.35],
+  [560, 12.2, 4.35],
+  [LOOP, 12.2, 4.35],
 ];
 
-const VISITORS = [
-  { id: "v3", path: walkIn, look: { skin: 2, outfit: 4, hair: 1 }, facesHost: true },
-  { id: "p1", path: pairA, look: { skin: 5, outfit: 2, hair: 6 }, partner: "p2" },
-  { id: "p2", path: pairB, look: { skin: 0, outfit: 7, hair: 3 }, partner: "p1" },
-  { id: "s1", path: stroller, look: { skin: 3, outfit: 6, hair: 0 } },
+export const VISITORS = [
+  { id: "v3", path: visitorPath, look: { skin: 2, outfit: 4, hair: 1 }, facesHost: true },
+  { id: "p1", path: pairAPath, look: { skin: 5, outfit: 2, hair: 6 }, partner: "p2" },
+  { id: "p2", path: pairBPath, look: { skin: 0, outfit: 7, hair: 3 }, partner: "p1" },
+  { id: "s1", path: strollerPath, look: { skin: 3, outfit: 6, hair: 0 } },
 ];
 
 /**
- * What gets said, and when. Chat is the app's own bubble: paper card,
- * hairline border, ink text, small tail. `to` is who the line is aimed at,
- * which is only used to keep the two speakers facing each other.
+ * What gets said, and when, in the app's own bubble.
+ *
+ * The exchange has to survive a stranger reading it once with the sound
+ * off, so it is a real conversation with a beginning and an end rather
+ * than a slogan: someone walks up, asks what the founder is building, gets
+ * a specific answer, digs once, and connects. Nobody is given a company
+ * name — inventing a customer to put on the poster would be inventing the
+ * product, and the sheet's whole claim is that the people on it are real.
+ *
+ * Windows are spaced so two cards are almost never up at once, and where
+ * they are, the speakers are at opposite ends of the hall. test.mjs checks
+ * that, because two overlapping bubbles read as noise, not as a busy room.
  */
-const SCRIPT = [
-  { from: "v3", at: [150, 188], kind: "prompt", text: "E · talk" },
-  { from: "v3", at: [196, 250], kind: "chat", text: "what are you building?" },
-  { from: "host", at: [258, 314], kind: "chat", text: "invoicing for freelancers" },
-  { from: "v3", at: [320, 352], kind: "chat", text: "nice, let's connect" },
-  // the pair talk in the gaps either side of the stand conversation. Two
-  // bubbles up at once in a 700-unit-wide hall reads as noise, not as a
-  // busy room.
-  { from: "p2", at: [58, 100], kind: "emote", glyph: "wave" },
-  { from: "p1", at: [106, 146], kind: "chat", text: "stand 03 next?" },
-  { from: "p1", at: [382, 424], kind: "emote", glyph: "star" },
+/** Exported so test.mjs can check the bubbles do not collide. */
+export const SCRIPT = [
+  { from: "p1", at: [70, 124], kind: "chat", text: "who should we talk to?" },
+  { from: "p2", at: [130, 178], kind: "chat", text: "03 is hiring, apparently" },
+
+  { from: "v3", at: [186, 222], kind: "prompt", text: "E · talk" },
+  { from: "v3", at: [230, 294], kind: "chat", text: "hey, what are you building?" },
+  { from: "host", at: [300, 368], kind: "chat", text: "invoicing for freelancers" },
+  { from: "v3", at: [376, 430], kind: "chat", text: "who's it for?" },
+  { from: "p1", at: [386, 428], kind: "emote", glyph: "star" },
+  { from: "host", at: [438, 514], kind: "chat", text: "designers who hate chasing payment" },
+  { from: "v3", at: [522, 584], kind: "chat", text: "nice. connecting now" },
+
+  { from: "p2", at: [600, 656], kind: "chat", text: "worth a demo" },
 ];
+
+/** What a person must never be standing inside. Walls and desks; the
+    carpets are floor, and in the real game you can walk on them. */
+export const OBSTACLES = [];
+for (const [row, gy] of [[BACK, BACK_GY], [FRONT, FRONT_GY]])
+  for (const s of row) {
+    OBSTACLES.push({ what: `wall ${s.label}`, x0: s.gx, x1: s.gx + 3, y0: gy - 0.36, y1: gy });
+    if (!s.vacant)
+      OBSTACLES.push({ what: `desk ${s.label}`, x0: s.gx + 0.6, x1: s.gx + 2.4, y0: gy + 2, y1: gy + 2.6 });
+  }
 
 /* ------------------------------------------------------------- helpers */
 
 const lerp = (a, b, t) => a + (b - a) * t;
+const segLen = (a, b) => Math.hypot(b[1] - a[1], b[2] - a[2]);
 
-/** Position and travelled distance along a closed waypoint path. */
+/**
+ * A trapezoidal speed profile over a run of movement: accelerate for the
+ * first `EASE` of it, cruise, decelerate into the stop. Returns the
+ * fraction of the run's DISTANCE covered at progress `p`.
+ *
+ * Linear interpolation was what made the walking look wrong. People do not
+ * reach full speed on the first frame and they do not stop dead on the
+ * last, and at 30fps the eye reads that instantly even when it cannot say
+ * why. Peak speed is 1/(1-e) so the areas still integrate to exactly 1,
+ * which keeps the run arriving on the frame it is supposed to.
+ */
+const EASE = 0.16;
+function speedProfile(p) {
+  const e = EASE;
+  const v = 1 / (1 - e);
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  if (p < e) return (v * p * p) / (2 * e);
+  if (p > 1 - e) {
+    const q = 1 - p;
+    return 1 - (v * q * q) / (2 * e);
+  }
+  return v * (e / 2 + (p - e));
+}
+
+/**
+ * Split a path into runs of continuous movement, with the cumulative
+ * distance at each waypoint. Held positions are the gaps between runs.
+ * Memoised per path: the tables never change, and this is called for every
+ * person on every frame.
+ */
+const runCache = new WeakMap();
+function runsFor(path) {
+  const hit = runCache.get(path);
+  if (hit) return hit;
+  const cum = [0];
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + segLen(path[i - 1], path[i]));
+  const runs = [];
+  let i = 0;
+  while (i < path.length - 1) {
+    if (segLen(path[i], path[i + 1]) < 1e-6) {
+      i++;
+      continue;
+    }
+    const from = i;
+    while (i < path.length - 1 && segLen(path[i], path[i + 1]) > 1e-6) i++;
+    runs.push({ from, to: i, t0: path[from][0], t1: path[i][0], dist: cum[i] - cum[from] });
+  }
+  const table = { cum, runs };
+  runCache.set(path, table);
+  return table;
+}
+
+/** Where someone is on frame `frame`, and how far they have walked. */
 function walk(path, frame) {
   const t = ((frame % LOOP) + LOOP) % LOOP;
-  let dist = 0;
-  for (let i = 0; i < path.length - 1; i++) {
-    const [t0, x0, y0] = path[i];
-    const [t1, x1, y1] = path[i + 1];
-    const seg = Math.hypot(x1 - x0, y1 - y0);
-    if (t >= t0 && t <= t1) {
-      const u = t1 === t0 ? 0 : (t - t0) / (t1 - t0);
+  const { cum, runs } = runsFor(path);
+
+  const run = runs.find((r) => t >= r.t0 && t <= r.t1);
+  if (!run) {
+    // standing: the last waypoint whose time has passed
+    let i = 0;
+    while (i < path.length - 1 && path[i + 1][0] <= t) i++;
+    return { gx: path[i][1], gy: path[i][2], dx: 0, dy: 0, moving: false, dist: cum[i] };
+  }
+
+  const target = cum[run.from] + speedProfile((t - run.t0) / (run.t1 - run.t0)) * run.dist;
+  for (let i = run.from; i < run.to; i++) {
+    if (target <= cum[i + 1] || i === run.to - 1) {
+      const seg = cum[i + 1] - cum[i];
+      const u = seg > 0 ? Math.min(1, (target - cum[i]) / seg) : 0;
       return {
-        gx: lerp(x0, x1, u),
-        gy: lerp(y0, y1, u),
-        dx: x1 - x0,
-        dy: y1 - y0,
-        moving: seg > 0.001,
-        dist: dist + seg * u,
+        gx: lerp(path[i][1], path[i + 1][1], u),
+        gy: lerp(path[i][2], path[i + 1][2], u),
+        dx: path[i + 1][1] - path[i][1],
+        dy: path[i + 1][2] - path[i][2],
+        moving: true,
+        dist: target,
       };
     }
-    dist += seg;
   }
-  const last = path[path.length - 1];
-  return { gx: last[1], gy: last[2], dx: 0, dy: 0, moving: false, dist };
+  const last = path[run.to];
+  return { gx: last[1], gy: last[2], dx: 0, dy: 0, moving: false, dist: cum[run.to] };
+}
+
+/**
+ * The walk cycle, keyed off distance travelled rather than frame count, so
+ * the feet stay in step with the ground while the trapezoid speeds up and
+ * slows down. Four phases, not two: the app's idle pose doubles as the
+ * passing pose between strides, which is what stops the legs looking like
+ * they are scissoring.
+ */
+const CYCLE = [1, 0, 2, 0];
+const STEP = 0.3;
+const walkFrame = (w) => (w.moving ? CYCLE[Math.floor(w.dist / STEP) % 4] : 0);
+
+/** Every visitor's position on a frame. Exported for test.mjs. */
+export function castAt(frame) {
+  return VISITORS.map((v) => ({ id: v.id, ...walk(v.path, frame) }));
 }
 
 /**
@@ -288,11 +414,9 @@ export function drawScene(ctx, cssW, cssH, dpr, frame, opts = {}) {
     const kit = s.vacant ? VACANT : KITS[s.kit];
     const { gx, gy } = s;
 
-    put(gx + gy - 0.3, () => {
-      box(gx, gy - 0.3, 3, 0.3, WALL_H, kit.banner);
-      if (s.gold) box(gx - 0.04, gy - 0.36, 3.08, 0.42, 6, GOLD, { base: WALL_H });
-
-      // the sign, lying on the wall face. 0.5 is TH/TW: the isometric skew.
+    /** The sign, lying on the wall face. 0.5 is TH/TW: the isometric skew
+        of that face. Any other value and it peels off the wall. */
+    const sign = () => {
       const [wx, wy] = S(gx, gy, WALL_H - 12);
       const cw = (3 * TW) / 2 - 20;
       ctx.save();
@@ -324,22 +448,56 @@ export function drawScene(ctx, cssW, cssH, dpr, frame, opts = {}) {
       }
       ctx.restore();
       ctx.textAlign = "start";
-    });
+    };
+
+    /* The wall goes in as three one-tile panels, each sorted on its own
+       column, so someone level with the right-hand panel is not compared
+       against the left-hand one. The seams this leaves are the reason
+       exhibition walls look modular in the first place, so they stay. The
+       sign is drawn whole inside each panel's clip: drawing it once at any
+       single column's depth would put it in front of, or behind, everyone
+       standing at the other end of the same wall. */
+    for (let i = 0; i < 3; i++) {
+      put(gx + i + gy - 0.3, () => {
+        box(gx + i, gy - 0.3, 1, 0.3, WALL_H, kit.banner);
+        if (s.gold) box(gx + i, gy - 0.36, 1, 0.42, 6, GOLD, { base: WALL_H });
+        ctx.save();
+        ctx.beginPath();
+        const e = 0.004; // overlap the clips a hair, or the seams show white
+        [
+          S(gx + i - e, gy, WALL_H),
+          S(gx + i + 1 + e, gy, WALL_H),
+          S(gx + i + 1 + e, gy, -2),
+          S(gx + i - e, gy, -2),
+        ].forEach(([x, y], n) => (n ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.closePath();
+        ctx.clip();
+        sign();
+        ctx.restore();
+      });
+    }
 
     if (s.vacant) continue;
 
-    put(gx + 0.6 + gy + 2, () => {
-      box(gx + 0.6, gy + 2, 1.8, 0.6, DESK_H, WOOD_TOP, { left: WOOD_SIDE, right: WOOD_FRONT });
-      const [dx, dy] = S(gx + 1.5, gy + 2.3, DESK_H);
-      const leaf = (cx, cy) =>
-        poly(
-          [[cx - 11 * k, cy], [cx, cy - 5.5 * k], [cx + 11 * k, cy], [cx, cy + 5.5 * k]],
-          "#FFFFFF",
-          CARD_LINE,
-        );
-      leaf(dx - 19 * k, dy + 4 * k);
-      leaf(dx + 4 * k, dy);
-    });
+    // the desk, likewise in columns
+    for (let j = 0; j < 2; j++) {
+      put(gx + 0.6 + j * 0.9 + gy + 2, () => {
+        box(gx + 0.6 + j * 0.9, gy + 2, 0.9, 0.6, DESK_H, WOOD_TOP, {
+          left: WOOD_SIDE,
+          right: WOOD_FRONT,
+        });
+        if (j === 0) return;
+        const [dx, dy] = S(gx + 1.5, gy + 2.3, DESK_H);
+        const leaf = (cx, cy) =>
+          poly(
+            [[cx - 11 * k, cy], [cx, cy - 5.5 * k], [cx + 11 * k, cy], [cx, cy + 5.5 * k]],
+            "#FFFFFF",
+            CARD_LINE,
+          );
+        leaf(dx - 19 * k, dy + 4 * k);
+        leaf(dx + 4 * k, dy);
+      });
+    }
   }
 
   const plant = (gx, gy) => {
@@ -386,7 +544,6 @@ export function drawScene(ctx, cssW, cssH, dpr, frame, opts = {}) {
 
   // where every visitor is this frame — founders use it to turn and look
   const live = VISITORS.map((v) => ({ v, w: walk(v.path, frame) }));
-  const talking = live.find((l) => l.v.facesHost);
 
   const speakers = {};
   for (const s of SCRIPT)
@@ -401,7 +558,7 @@ export function drawScene(ctx, cssW, cssH, dpr, frame, opts = {}) {
     const isHost = s.gx === BACK[1].gx && s.gy === BACK_GY;
     // a founder looks at whoever is closest, and holds the look while
     // someone is standing at their stand
-    let dir = s.gy === BACK_GY ? "down" : "down";
+    let dir = "down";
     let near = null;
     let best = 3.6;
     for (const { w } of live) {
@@ -425,9 +582,7 @@ export function drawScene(ctx, cssW, cssH, dpr, frame, opts = {}) {
       const p = live.find((l) => l.v.id === v.partner);
       dir = p ? dirFrom(p.w.gx - w.gx, p.w.gy - w.gy) : "down";
     } else dir = "down";
-    // the app steps every 0.45 tiles of travel, so the pace reads as walking
-    const f = w.moving ? 1 + (Math.floor(w.dist / 0.45) % 2) : 0;
-    put(w.gx + w.gy, () => drawPerson(w.gx, w.gy, v.look, dir, f));
+    put(w.gx + w.gy, () => drawPerson(w.gx, w.gy, v.look, dir, walkFrame(w)));
     if (speakers[v.id])
       bubbles.push({ gx: w.gx, gy: w.gy, spec: speakers[v.id], t: frame - speakers[v.id].at[0] });
   }

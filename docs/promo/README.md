@@ -9,12 +9,12 @@ seconds in a feed.
 
 The people in it are not an illustrator's idea of people. They are the app's
 own 20×28 pixel avatars, in the app's own palettes, walking with the app's
-own three-frame cycle and talking through the app's own chat bubble. Whoever
+own walk frames and talking through the app's own chat bubble. Whoever
 clicks through meets the same people they saw on the poster.
 
 | file | size | use |
 | --- | --- | --- |
-| `founderfloor-square.mp4` | 1080×1080, 16s | **subreddits that take video.** Silent, loops seamlessly |
+| `founderfloor-square.mp4` | 1080×1080, 24s | **subreddits that take video.** Silent, loops seamlessly |
 | `founderfloor-tall.png` | 1080×1350 | the still to post: Reddit image posts, LinkedIn, Instagram |
 | `founderfloor-wide.png` | 1200×630 | link previews, the Reddit link card, X, Open Graph |
 | `founderfloor-square.png` | 1080×1080 | feeds that crop to a square |
@@ -32,6 +32,7 @@ node render.mjs              # all three stills
 node render.mjs tall         # just one
 node render.mjs --video      # the animated square
 node render.mjs --html       # dump the HTML to poke at in a browser instead
+node test.mjs                # check the choreography without a browser
 ```
 
 ```bash
@@ -59,6 +60,7 @@ machine is.
 - **`poster.mjs`** — the sheet. All the copy, the CSS, and one layout block
   per format. Change a headline here and every format changes.
 - **`render.mjs`** — drives Chromium and ffmpeg, writes the files.
+- **`test.mjs`** — replays the whole performance in Node and checks it.
 
 ## Rules the sheet keeps
 
@@ -75,7 +77,7 @@ here too.
 
 ## Editing the drawing
 
-`scene.mjs` is a painter's-algorithm renderer, and three things about it
+`scene.mjs` is a painter's-algorithm renderer, and four things about it
 will bite anyone who edits it:
 
 1. **The ground is a base layer, not a participant in the depth sort.**
@@ -87,7 +89,14 @@ will bite anyone who edits it:
    their desks at `gy + 2`: it puts the founder's key *below* the desk's, so
    the desk paints last and crops them at the waist. Move the founder past
    `gy + 1.1` and they pop in front of their own table.
-3. **The people are pixel art and the plate is not.** Sprites are drawn
+3. **Nothing standing up may be wider than one tile.** The walls and desks
+   go in as one-tile columns for this reason. A whole 3-tile wall sorted as
+   a single object compares its far-LEFT corner against a walker who is
+   level with its far RIGHT corner, decides the walker is nearer, and paints
+   them straight over the panel. That was what "walking through the stands"
+   looked like, and it is the failure mode to expect from any new piece of
+   furniture that spans more than a tile.
+4. **The people are pixel art and the plate is not.** Sprites are drawn
    with `imageSmoothingEnabled = false` onto an integer-rounded destination
    rect. The scale factor itself is fractional on purpose: rounding it would
    jump the people a whole 28px in height between formats, because the
@@ -109,6 +118,18 @@ The whole performance is four arrays at the top of `scene.mjs`.
 
 - A **path** is `[frame, gx, gy]` waypoints. It must start and end in the
   same place or the loop visibly jumps; repeat a position to stand still.
+  Route people down the aisle and then turn them towards a stand rather
+  than sending one diagonal from the door: the corner is most of what makes
+  the movement read as navigation instead of drift.
+- **Speed is trapezoidal, not linear.** `speedProfile` accelerates over the
+  first sixth of a run, cruises, and decelerates into the stop. Linear
+  interpolation is what made the old walking look wrong: people do not
+  reach full speed on the first frame or stop dead on the last, and at
+  30fps the eye reads that instantly even when it cannot say why.
+- **The walk cycle is four phases, not two.** The app's idle pose doubles
+  as the passing pose between strides, and it is keyed off distance
+  travelled rather than frame count, so the feet stay in step with the
+  ground while the trapezoid speeds up and slows down.
 - **`SCRIPT`** is who says what, between which frames. Keep bubbles from
   overlapping in time unless they are far apart on the floor: two cards up
   at once in a 700-unit-wide hall reads as noise, not as a busy room.
@@ -116,7 +137,13 @@ The whole performance is four arrays at the top of `scene.mjs`.
   otherwise stand still, because the game has no idle animation and
   inventing one for the poster would be inventing the product.
 
-`LOOP` is 480 frames at 30fps, so 16 seconds. Frame 480 is frame 0.
+`LOOP` is 720 frames at 30fps, so 24 seconds. Frame 720 is frame 0.
+
+`node test.mjs` replays all of it without a browser and fails on the three
+mistakes that were actually made here: a lane routed through a desk, a loop
+that did not close, and two chat bubbles landing on top of each other. It
+also checks that everybody moves at a human pace and that they accelerate
+away from a stop rather than teleporting into full speed.
 
 ## Editing the copy
 
