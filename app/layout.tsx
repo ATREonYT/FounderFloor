@@ -17,6 +17,17 @@ import ScrollProgress from "@/components/ScrollProgress";
  * canonical. Without a metadataBase, Next can't build absolute og:image
  * URLs and social previews silently fall back to a bare link.
  */
+/**
+ * While the launch gate is up (see middleware.ts) every route except the
+ * legal pages renders the holding page, so the site chrome would be a nav
+ * bar whose every link leads back to the gate, above a status stamp reading
+ * "Main Hall open" on a page that says the doors are shut. Both are cut
+ * down to a wordmark that goes home, and the footer's Explore column goes
+ * with them. The legal links stay: they are the reason those pages are
+ * reachable at all.
+ */
+const GATED = /^(1|on|true|yes)$/i.test(process.env.LAUNCH_GATE ?? "");
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://founderfloor.net");
@@ -122,22 +133,28 @@ export default function RootLayout({
               aria-hidden="true"
               className="hidden items-center gap-2 border-l border-line pl-4 md:flex"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-verify" />
-              <span className="micro font-mono text-[10px] text-muted">Main Hall open</span>
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${GATED ? "bg-accent" : "bg-verify"}`}
+              />
+              <span className="micro font-mono text-[10px] text-muted">
+                {GATED ? "Doors open Sunday" : "Main Hall open"}
+              </span>
             </span>
-            <nav
-              aria-label="Main"
-              className="ml-auto flex min-w-0 items-center gap-3 whitespace-nowrap sm:gap-5"
-            >
-              <NavLink href="/lobby">Floors</NavLink>
-              <NavLink href="/directory">Directory</NavLink>
-              <NavConnections />
-              {/* paying members wear their tier in the chrome, site-wide */}
-              <MemberBadge />
-              {/* the operator's console shortcut — invisible to everyone else */}
-              <NavAdmin />
-              <NavProfile />
-            </nav>
+            {!GATED && (
+              <nav
+                aria-label="Main"
+                className="ml-auto flex min-w-0 items-center gap-3 whitespace-nowrap sm:gap-5"
+              >
+                <NavLink href="/lobby">Floors</NavLink>
+                <NavLink href="/directory">Directory</NavLink>
+                <NavConnections />
+                {/* paying members wear their tier in the chrome, site-wide */}
+                <MemberBadge />
+                {/* the operator's console shortcut — invisible to everyone else */}
+                <NavAdmin />
+                <NavProfile />
+              </nav>
+            )}
           </div>
           {/* how far through the page you are, drawn on the header's own rule */}
           <ScrollProgress />
@@ -178,22 +195,29 @@ export default function RootLayout({
                 A trade-show floor that never tears down. Built by one person
                 and a robot, shipped weekly, open to anyone who walks in.
               </p>
-              <nav aria-label="Explore" className="text-sm">
-                <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
-                  Explore
-                </span>
-                <div className="mt-3 flex flex-col gap-2">
-                  {[
-                    ["/lobby", "Floors"],
-                    ["/directory", "Directory"],
-                    ["/floor/tutorial-hall", "Tutorial"],
-                  ].map(([href, label]) => (
-                    <Link key={href} href={href} className="text-muted hover:text-ink hover:underline">
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              </nav>
+              {/* Every link in this column is behind the gate, so while it
+                  is up the column is three ways back to the page you are
+                  already on. The fine-print column beside it stays. */}
+              {GATED ? (
+                <div />
+              ) : (
+                <nav aria-label="Explore" className="text-sm">
+                  <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
+                    Explore
+                  </span>
+                  <div className="mt-3 flex flex-col gap-2">
+                    {[
+                      ["/lobby", "Floors"],
+                      ["/directory", "Directory"],
+                      ["/floor/tutorial-hall", "Tutorial"],
+                    ].map(([href, label]) => (
+                      <Link key={href} href={href} className="text-muted hover:text-ink hover:underline">
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </nav>
+              )}
               <nav aria-label="The fine print" className="text-sm">
                 <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
                   The fine print

@@ -167,6 +167,27 @@ sudo systemctl start founderfloor
 The tool backs up the data file first and signs out every existing session
 of that account.
 
+### The launch gate
+
+`LAUNCH_GATE=on` in the **Vercel** project turns the whole site into a
+holding page at `/soon` that takes an email and counts down to the next
+Open Doors. Delete the variable to open the site again.
+
+**Both changes need a redeploy, not just a settings save.** `middleware.ts`
+reads the variable per request, but `app/layout.tsx` reads it while being
+prerendered, to strip a nav whose every link would lead back to the gate.
+Change one without rebuilding and the two disagree.
+
+Left reachable on purpose while the gate is up: `/imprint`, `/terms`,
+`/privacy`, `/cancel`, `/report`, `/about`, `/admin`, `robots.txt`,
+`sitemap.xml` and the social images. The legal pages are not optional —
+an Impressum has to stay reachable — and a crawler that meets the gate on
+every URL learns the site is one page, which outlives the gate by weeks.
+
+Addresses collected here land in the same subscriber list as the other two
+capture boxes, tagged `launch-gate`, so `/admin/subscribers` can tell them
+apart.
+
 ### Founding seats
 
 The first `FOUNDING_SEATS` accounts (20 by default) get Founder+ and the
