@@ -18,6 +18,7 @@ clicks through meets the same people they saw on the poster.
 | `founderfloor-tall.png` | 1080×1350 | the still to post: Reddit image posts, LinkedIn, Instagram |
 | `founderfloor-wide.png` | 1200×630 | link previews, the Reddit link card, X, Open Graph |
 | `founderfloor-square.png` | 1080×1080 | feeds that crop to a square |
+| `founderfloor-slide-01..09.png` | 1080×1920 | the TikTok / Instagram slideshow |
 
 They live in `public/promo/`, so they are also servable from the site
 (`https://founderfloor.net/promo/founderfloor-wide.png`) for anything that
@@ -31,6 +32,7 @@ cd docs/promo
 node render.mjs              # all three stills
 node render.mjs tall         # just one
 node render.mjs --video      # the animated square
+node render.mjs --slides     # the nine vertical slideshow cards
 node render.mjs --html       # dump the HTML to poke at in a browser instead
 node test.mjs                # check the choreography without a browser
 ```
@@ -60,6 +62,8 @@ machine is.
 - **`poster.mjs`** — the sheet. All the copy, the CSS, and one layout block
   per format. Change a headline here and every format changes.
 - **`render.mjs`** — drives Chromium and ffmpeg, writes the files.
+- **`slides.mjs`** — the nine vertical cards. Its own layout rather than
+  the sheet squeezed into 9:16, for the reasons at the top of the file.
 - **`test.mjs`** — replays the whole performance in Node and checks it.
 
 ## Rules the sheet keeps
@@ -144,6 +148,25 @@ mistakes that were actually made here: a lane routed through a desk, a loop
 that did not close, and two chat bubbles landing on top of each other. It
 also checks that everybody moves at a human pace and that they accelerate
 away from a stop rather than teleporting into full speed.
+
+## Editing the slideshow
+
+The whole deck is the `SLIDES` array at the top of `slides.mjs`: one line
+of copy, one named close-up, one frame number per card.
+
+The close-ups are `VIEWS` in `scene.mjs`. Two things decide them:
+
+- **The whole hall is useless on a phone.** At thumbnail size the people
+  are four pixels tall and whatever the card is pointing at is invisible.
+  Every card except the establishing shot frames one moment at about 3x.
+- **A bubble is as wide as its text, and a view will crop it.** Pick the
+  frame first, then check the speech fits inside the view — or pick a quiet
+  frame. The loop's speech windows are the `at:` pairs in `SCRIPT`; the
+  long gaps are 0-70, 656-720, and the short ones between lines.
+
+Card aspect is 0.867 wide-to-tall, and each view is built to match it.
+Anything else letterboxes inside the frame, which reads as a mistake rather
+than as a margin.
 
 ## Editing the copy
 

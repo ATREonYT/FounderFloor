@@ -4,6 +4,7 @@
  *   node render.mjs              # all three stills
  *   node render.mjs tall         # just one
  *   node render.mjs --video      # the animated square, for subreddits that take video
+ *   node render.mjs --slides     # the 1080x1920 TikTok slideshow
  *   node render.mjs --html       # dump the HTML instead, to poke at in a browser
  *
  * Output lands in ../../public/promo/ so the sheets are servable from the
@@ -26,6 +27,7 @@ import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { posterHtml, SIZES } from "./poster.mjs";
 import { LOOP, POSTER_FRAME } from "./scene.mjs";
+import { SLIDES, SLIDE_SIZE, slideHtml } from "./slides.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(HERE, "../../public/promo");
@@ -36,6 +38,7 @@ const FPS = 30;
 const args = process.argv.slice(2);
 const htmlOnly = args.includes("--html");
 const video = args.includes("--video");
+const slides = args.includes("--slides");
 const wanted = args.filter((a) => !a.startsWith("--"));
 const formats = wanted.length ? wanted : Object.keys(SIZES);
 
@@ -70,6 +73,25 @@ async function openSheet(format, deviceScaleFactor) {
   await page.setContent(posterHtml(format), { waitUntil: "load" });
   await page.evaluate(() => document.fonts.ready);
   return { ctx, page, w, h };
+}
+
+if (slides) {
+  // One page per card: each carries its own canvas, close-up and frame, so
+  // there is nothing to reset between them and a broken card cannot poison
+  // the next one.
+  for (let i = 0; i < SLIDES.length; i++) {
+    const ctx = await browser.newContext({
+      viewport: { width: SLIDE_SIZE.w, height: SLIDE_SIZE.h },
+      deviceScaleFactor: 2,
+    });
+    const page = await ctx.newPage();
+    await page.setContent(slideHtml(i), { waitUntil: "load" });
+    await page.evaluate(() => document.fonts.ready);
+    const path = join(OUT, `founderfloor-slide-${String(i + 1).padStart(2, "0")}.png`);
+    await page.locator("#sheet").screenshot({ path });
+    await ctx.close();
+    console.log(`${path}  ${SLIDE_SIZE.w}x${SLIDE_SIZE.h} @2x`);
+  }
 }
 
 if (video) {
@@ -108,7 +130,7 @@ if (video) {
   console.log(`${mp4}  ${w}x${h}  ${(LOOP / FPS).toFixed(1)}s @${FPS}fps, loops`);
 }
 
-if (!video || wanted.length) {
+if ((!video && !slides) || wanted.length) {
   for (const f of formats) {
     const { ctx, page, w, h } = await openSheet(f, 2);
     await page.evaluate((n) => window.__paint(n), POSTER_FRAME);

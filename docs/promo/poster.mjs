@@ -35,7 +35,7 @@ const flatten = (name) =>
     .map((l) => l.replace(/^export (?=(const|function|class|let) )/, ""))
     .join("\n");
 
-const PLATE_SCRIPT = `
+export const PLATE_SCRIPT = `
 ${flatten("sprites.mjs")}
 ${flatten("scene.mjs")}
 const __cv = document.getElementById("plate");
@@ -45,7 +45,12 @@ function __paint(f) {
   const dpr = window.devicePixelRatio || 1;
   __cv.width = Math.round(w * dpr);
   __cv.height = Math.round(h * dpr);
-  drawScene(__cv.getContext("2d"), w, h, dpr, f, { callouts: __cv.dataset.notes !== "off" });
+  // data-view="x,y,w,h" frames a close-up; absent means the whole hall
+  const v = (__cv.dataset.view || "").split(",").map(Number);
+  drawScene(__cv.getContext("2d"), w, h, dpr, f, {
+    callouts: __cv.dataset.notes !== "off",
+    view: v.length === 4 && v.every(Number.isFinite) ? { x: v[0], y: v[1], w: v[2], h: v[3] } : null,
+  });
   __cv.dataset.frame = String(f);
 }
 window.__paint = __paint;
@@ -176,7 +181,7 @@ const plate = (opts, caption = COPY.plateCaption, spec = COPY.plateSpec) => {
 
 /* ----------------------------------------------------------------- sheet */
 
-const CSS = `
+export const CSS = `
   * { margin:0; padding:0; box-sizing:border-box; }
   :root {
     --paper:#F2EFE7; --panel:#FFFFFF; --ink:#23201A; --muted:#6F6A5E;

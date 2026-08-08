@@ -325,11 +325,53 @@ function dirFrom(dgx, dgy) {
   return sy >= 0 ? "down" : "up";
 }
 
+/**
+ * Close-ups, for the vertical slides.
+ *
+ * A phone thumbnail is about 200px wide. The whole hall shown at that size
+ * is a smudge — the people are four pixels tall and the thing the slide is
+ * pointing at is invisible. Each of these frames one moment instead, at
+ * roughly 3x, so a person is a person and the bubble over their head can be
+ * read at a glance.
+ *
+ * Written in the same viewBox units the drawing uses and derived from the
+ * grid where it matters, so they follow the hall if it is rearranged. Each
+ * is 0.867 wide-to-tall, which is the shape of the art box on a slide;
+ * anything else letterboxes and wastes the only screen a viewer gives you.
+ */
+const around = (cx, cy, w) => ({ x: cx - w / 2, y: cy - w / 0.867 / 2, w, h: w / 0.867 });
+const at = (gx, gy, lift = 0) => [((gx - gy) * TW) / 2, ((gx + gy) * TH) / 2 - lift];
+
+export const VIEWS = {
+  /** The whole hall, landscape. Tighter than VB, which leaves room down
+      each side for the printed sheet's callout labels; a slide has none. */
+  full: { x: -296, y: -28, w: 680, h: 384 },
+  /** Stand 02: the founder, the visitor, and whatever is being said. */
+  talk: around(...at(HOST.gx - 0.6, HOST.gy + 1.1, 26), 250),
+  /**
+   * The same corner, pulled back, for the frames where the founder is
+   * mid-sentence. A bubble is as wide as its text, and the founder's
+   * longest line runs about 224 units — wider than the `talk` view, so it
+   * loses its last two words to the frame edge. Widened here rather than
+   * shortening the line, because the line is the product working.
+   */
+  answer: around(120, 100, 344),
+  /** The gold-trimmed stand and the founder standing at it. */
+  gold: around(...at(BACK[0].gx + 1.6, BACK_GY + 1.2, 22), 240),
+  /** The unlet stand, for the "claim one" slide. */
+  vacant: around(...at(FRONT[2].gx + 1.5, FRONT_GY + 0.4, 18), 240),
+  /** The two visitors doing the rounds, at the stop where they pause and
+      react. Framed on the pause rather than mid-walk: a bubble follows its
+      speaker, so a view aimed at the middle of a walk crops the speech in
+      half more often than not. */
+  pair: around(...at(10.05, 4.65, 26), 250),
+};
+
 /* -------------------------------------------------------------- render */
 
 export function drawScene(ctx, cssW, cssH, dpr, frame, opts = {}) {
   const withNotes = opts.callouts !== false;
-  const vb = withNotes ? VB : VB_PLAIN;
+  const vb = opts.view || (withNotes ? VB : VB_PLAIN);
   const W = cssW * dpr;
   const H = cssH * dpr;
   const k = Math.min(W / vb.w, H / vb.h);
