@@ -188,6 +188,62 @@ Addresses collected here land in the same subscriber list as the other two
 capture boxes, tagged `launch-gate`, so `/admin/subscribers` can tell them
 apart.
 
+### Free trials and referrals
+
+A trial here is a **card-free, time-limited Founder+ entitlement**. No
+payment method is taken, nothing renews, nothing converts, and when the
+clock runs out the account is simply free again. That is the only kind of
+trial that can honestly ship before billing is live, and it is also the
+kind with no withdrawal-rights machinery attached — which matters for an
+operator in the EU. `/terms` and `/privacy` say all of this.
+
+Tunable on the **floor server** (systemd `Environment=` lines), all with
+the same NaN guard as `FOUNDING_SEATS`:
+
+    Environment=TRIAL_DAYS=7
+    Environment=REFERRAL_DAYS=7
+    Environment=MAX_REFERRAL_DAYS=63
+
+**`MAX_REFERRAL_DAYS` is the anti-abuse mechanism, not a nicety.** Nothing
+stops somebody registering ten addresses and referring themselves nine
+times; email is the only proof of a person this product has, and it is weak
+proof. The cap is what makes the exploit worth less than the effort. If it
+ever stops being worth it, withhold the credit until the referred account
+has actually walked a floor — do not start collecting IP addresses for it.
+
+Lowering a cap does not claw back days already granted; it only stops new
+ones. Raising `TRIAL_DAYS` affects trials started after the restart.
+
+How it hangs together:
+
+- Every account gets a random invite code, minted at registration and
+  backfilled for older accounts at startup. `founderfloor.net/?ref=CODE` is
+  caught anywhere on the site and spent at registration.
+- Both sides get `REFERRAL_DAYS`. A credit extends a running window or
+  reopens a lapsed one.
+- **Invite days and the trial are separate.** Crediting an invite does not
+  consume the trial, so somebody who arrives on a link gets their welcome
+  days AND can still start their own 7 — stacked onto the end. Only
+  `POST /trial/start` marks the trial used, and only once per account ever.
+  The referrer's own trial is likewise untouched by handing out invites.
+- Only the referrer's days count against `MAX_REFERRAL_DAYS`. The joiner's
+  welcome is a one-off gift, not something they earned by inviting anyone,
+  so it does not eat into their own cap.
+- A **permanent** entitlement (a founding seat, a real subscription) is
+  never given an expiry — there is nothing to extend, and writing one would
+  be a downgrade dressed as a reward.
+- `GET /state` returns the **effective** entitlement, so an expired trial
+  reads as no entitlement without anything having to sweep the data file.
+  It also returns `perks.trial.lapsed`, which is how the browser tells "your
+  window ended" apart from "this deploy has no billing configured". Without
+  it a trial would expire on the server and never expire on the device.
+
+    curl https://your-host/state?me=acct_...   # -> {"paid":…, "perks":{…}}
+
+`node server/test/trial-referral.mjs` covers all of it, including expiry
+(faked by writing a past timestamp into a scratch data file, since a 7-day
+trial cannot be waited out).
+
 ### Founding seats
 
 The first `FOUNDING_SEATS` accounts (20 by default) get Founder+ and the

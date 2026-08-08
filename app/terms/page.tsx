@@ -136,6 +136,18 @@ export default function TermsPage() {
 
       <Section title="6. Payments">
         <p>
+          <strong>Free trials and invites take no payment details.</strong>{" "}
+          A Founder+ trial, and any days earned by inviting someone, are a
+          time-limited grant and nothing more. No card is asked for, no
+          payment method is stored, nothing renews, and nothing converts
+          into a paid plan when the time runs out — the account simply
+          returns to the free tier. There is accordingly nothing to cancel
+          and no contract to withdraw from. Trial and invite days have no
+          cash value, cannot be exchanged or transferred, and may be
+          withdrawn where an account is used to create accounts for the
+          purpose of collecting them.
+        </p>
+        <p>
           The free tier is free permanently. Paid memberships buy visibility,
           never access. When live billing is enabled, payments are processed
           by Stripe under its own terms; prices and what they include are

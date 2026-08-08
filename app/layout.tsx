@@ -8,6 +8,7 @@ import NavProfile from "@/components/NavProfile";
 import MemberBadge from "@/components/MemberBadge";
 import NavAdmin from "@/components/NavAdmin";
 import MembershipWatcher from "@/components/MembershipWatcher";
+import RefCatcher from "@/components/RefCatcher";
 import Messenger from "@/components/Messenger";
 import ScrollProgress from "@/components/ScrollProgress";
 
@@ -171,6 +172,9 @@ export default function RootLayout({
         {/* plays the membership ceremony on the RECIPIENT's screen when an
             entitlement upgrade lands, whatever page they're on */}
         <MembershipWatcher />
+
+        {/* remembers an invite code from ?ref= on whatever page it lands on */}
+        <RefCatcher />
 
         <footer className="border-t border-line bg-panel">
           {/* pb-20 on phones keeps the fixed chat button from sitting on the

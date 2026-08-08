@@ -25,7 +25,7 @@ import { useAppState } from "@/lib/store";
 import { FLOORS } from "@/lib/data/floors";
 import { TIER_ORDER, type SubTier } from "@/lib/types";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
-import { FOUNDING_OFFER, TIER_PERKS, annualFreeMonths } from "@/lib/pricing";
+import { FOUNDING_OFFER, TIER_PERKS, TRIAL_DAYS, annualFreeMonths } from "@/lib/pricing";
 import Spec from "@/components/Spec";
 
 const PUBLIC_FLOORS = FLOORS.filter((f) => !f.hidden);
@@ -147,6 +147,16 @@ export default function AdmissionStubs({
                   </Spec>
                 ) : (
                   <Spec className="mt-2 block text-muted">No card, no expiry</Spec>
+                )}
+                {/* The trial is Founder+ only, which is why this line lives
+                    on one stub and not on all three. Hidden once the tier is
+                    held: telling a member they can try what they already
+                    have is the pricing-table-that-forgot-you problem this
+                    file exists to avoid. */}
+                {tier === "founder" && !held && (
+                  <Spec className="mt-1 block text-accent">
+                    {TRIAL_DAYS} days free first · no card
+                  </Spec>
                 )}
                 <p className="mt-4 text-sm leading-relaxed text-muted">{blurb}</p>
                 <ul className="mt-4 flex-1 space-y-2 border-t border-line pt-4">

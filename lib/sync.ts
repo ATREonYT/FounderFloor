@@ -33,6 +33,67 @@ export interface PaidEntitlement {
   badge?: string;
   /** When the entitlement was granted (webhook/admin) — ms epoch. */
   ts?: number;
+  /**
+   * When a TIME-LIMITED entitlement ends — ms epoch. Absent means it does
+   * not end. The server has already applied this before answering, so an
+   * entitlement that arrives here is live by definition; the field is for
+   * showing a countdown, never for deciding access. Deciding access from it
+   * on the client would put the deadline on the visitor's own clock.
+   */
+  until?: number;
+}
+
+/** What the account has earned that is not an entitlement: trial and invites. */
+export interface Perks {
+  trial: {
+    until: number | null;
+    used: boolean;
+    days: number;
+    /**
+     * The server HAD an entitlement for this account and it has run out.
+     * That is a different fact from "no entitlement", and the difference
+     * decides whether a null `paid` is the server disagreeing with the
+     * device or the server simply not being configured — see
+     * applyEntitlement in lib/store.ts.
+     */
+    lapsed: boolean;
+  };
+  referral: {
+    code: string;
+    joined: number;
+    daysEarned: number;
+    daysPer: number;
+    daysCap: number;
+  };
+}
+
+/** Shape-check the perks blob; anything malformed becomes null, not a crash. */
+function readPerks(v: unknown): Perks | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, Record<string, unknown>>;
+  const t = o.trial;
+  const r = o.referral;
+  if (!t || !r || typeof r.code !== "string") return null;
+  const num = (x: unknown, fallback = 0) =>
+    typeof x === "number" && Number.isFinite(x) ? x : fallback;
+  return {
+    trial: {
+      until: typeof t.until === "number" && Number.isFinite(t.until) ? t.until : null,
+      used: t.used === true,
+      days: num(t.days, 7),
+      // Absent means an older server, which had no expiring entitlements
+      // to lapse. False is the safe reading either way: it only ever
+      // withholds a downgrade this build would otherwise apply.
+      lapsed: t.lapsed === true,
+    },
+    referral: {
+      code: r.code,
+      joined: num(r.joined),
+      daysEarned: num(r.daysEarned),
+      daysPer: num(r.daysPer, 7),
+      daysCap: num(r.daysCap, 63),
+    },
+  };
 }
 
 export async function pullState(
@@ -43,6 +104,8 @@ export async function pullState(
   paid: PaidEntitlement | null;
   /** Cumulative purchased tickets for this account (null for guests). */
   coins: number | null;
+  /** Trial and referral facts (null for guests). */
+  perks: Perks | null;
 } | null> {
   const base = httpBase();
   if (!base || !me) return null;
@@ -59,6 +122,7 @@ export async function pullState(
       savedAt?: number;
       paid?: unknown;
       coins?: unknown;
+      perks?: unknown;
     };
     const paid =
       data.paid && typeof data.paid === "object" ? (data.paid as PaidEntitlement) : null;
@@ -67,6 +131,7 @@ export async function pullState(
       savedAt: typeof data.savedAt === "number" ? data.savedAt : 0,
       paid,
       coins: typeof data.coins === "number" && Number.isFinite(data.coins) ? data.coins : null,
+      perks: readPerks(data.perks),
     };
   } catch {
     return null; // offline — local-only until the server is back

@@ -9,6 +9,7 @@
  */
 
 import { httpBase } from "@/lib/net";
+import { clearPendingRef, pendingRef } from "@/lib/referral";
 
 const AUTH_KEY = "founderfloor:auth";
 
@@ -116,8 +117,20 @@ async function authPost(path: string, body: unknown): Promise<AuthReply> {
 }
 
 export async function register(email: string, name: string, password: string): Promise<AuthState | string> {
-  const r = await authPost("/auth/register", { email, name, password, gs: guestSecret() });
+  // The invite code, if this visitor arrived on somebody's link. Read here
+  // rather than passed in, so every sign-up form gets it without knowing
+  // referrals exist. Cleared only on success: a failed attempt (name taken,
+  // weak password) must not burn the invite before it is spent.
+  const ref = pendingRef();
+  const r = await authPost("/auth/register", {
+    email,
+    name,
+    password,
+    gs: guestSecret(),
+    ...(ref ? { ref } : {}),
+  });
   if ("error" in r) return r.error;
+  clearPendingRef();
   setAuth(r);
   return r;
 }

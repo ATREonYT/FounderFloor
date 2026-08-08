@@ -29,6 +29,8 @@ import {
   walletBalance,
 } from "@/lib/data/shop";
 import AccountCard from "@/components/AccountCard";
+import TrialCard from "@/components/TrialCard";
+import ReferralCard from "@/components/ReferralCard";
 import AvatarPicker from "@/components/AvatarPicker";
 import BoothPreview from "@/components/BoothPreview";
 import RankBadge from "@/components/RankBadge";
@@ -718,6 +720,10 @@ export default function ProfilePage() {
           currentName={state.profile.name}
           currentId={state.profile.id}
         />
+        {/* Both hide themselves for guests, for anyone offline, and for
+            anyone holding a permanent membership — see the components. */}
+        <TrialCard className="mt-5" />
+        <ReferralCard className="mt-4" />
       </SectionCard>
 
       {/* ---- Identity ---- */}

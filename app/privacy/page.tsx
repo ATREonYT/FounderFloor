@@ -107,9 +107,23 @@ export default function PrivacyPage() {
           service secure.
         </p>
         <p>
+          <strong>Invites.</strong> Every account gets a random invite code.
+          If you make an account through someone&rsquo;s invite link, we
+          store which account invited you, so that both of you can be
+          credited with the free days. That link between two accounts is the
+          whole of it. You are shown the display name of whoever invited
+          you; they are shown only a count of how many people joined on
+          their link, never your name or your email address. Nothing about
+          an invite is shared outside the service. Legal basis: performance
+          of the service you asked for. Ask and the link will be removed,
+          which costs you only the days it earned.
+        </p>
+        <p>
           <strong>What we do not collect:</strong> no analytics scripts, no
           tracking pixels, no advertising identifiers, no selling or renting
-          of data — to anyone, ever.
+          of data — to anyone, ever. Invite codes are random and are not
+          derived from your name or address; no IP address is stored for
+          referrals or trials.
         </p>
       </Section>
 

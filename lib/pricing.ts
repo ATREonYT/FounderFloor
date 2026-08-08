@@ -61,6 +61,16 @@ export const FOUNDING_OFFER = {
   badgeId: "founding",
 } as const;
 
+/**
+ * How long the free trial runs, FOR COPY ONLY.
+ *
+ * The server sets the real length (TRIAL_DAYS, tunable by env) and hands it
+ * back in perks.trial.days — anything showing a member their own countdown
+ * must use that number, not this one. This exists for the pricing stubs,
+ * which are rendered for signed-out visitors who have no perks blob to read.
+ */
+export const TRIAL_DAYS = 7;
+
 /** Stripe Payment Link for a tier/cycle, or null when billing isn't live. */
 export function checkoutLink(tier: Exclude<SubTier, "free">, cycle: BillingCycle): string | null {
   const links: Record<string, string | undefined> = {

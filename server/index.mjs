@@ -354,6 +354,150 @@ function markSessionProcessed(id) {
 }
 
 /**
+ * Trials and referrals.
+ *
+ * A trial here is a FOUNDER+ ENTITLEMENT WITH AN EXPIRY AND NO CARD. It is
+ * not the front half of a subscription: nothing is stored, nothing renews,
+ * nothing is charged, and there is nothing to cancel. When it runs out the
+ * account is simply free again. That is not a smaller version of the usual
+ * trial — it is the only version that can honestly ship before billing is
+ * live, and it is also the version with no withdrawal-rights machinery
+ * attached, which matters for an operator in the EU.
+ *
+ * Referral credit is more of the same currency: days. Both sides of an
+ * invite get REFERRAL_DAYS, and a credit extends a running trial or starts
+ * a fresh window if the last one lapsed.
+ *
+ * ON FRAUD, PLAINLY. Nothing here can stop somebody making ten accounts
+ * with ten addresses and referring themselves nine times. Email is the only
+ * proof of a person this product has, and it is weak proof. The defence is
+ * therefore the CAP, not the check: MAX_REFERRAL_DAYS bounds the whole
+ * exploit to a couple of months of a cosmetic tier, which is worth less
+ * than the effort. If that ever stops being true, the fix is to withhold
+ * the credit until the referred account has actually walked a floor, not
+ * to start collecting IP addresses.
+ */
+const DAY_MS_TRIAL = 86_400_000;
+
+/**
+ * Tunable without a code change, and guarded the same way FOUNDING_SEATS
+ * is: an unparseable value falls back to the default rather than to NaN,
+ * because NaN makes `earned >= cap` false forever and turns the cap — the
+ * only thing standing between this and a sock-puppet farm — into an
+ * unlimited grant.
+ */
+function envDays(name, fallback, max) {
+  const n = Number(process.env[name] ?? fallback);
+  return Number.isInteger(n) && n >= 0 && n <= max ? n : fallback;
+}
+const TRIAL_DAYS = envDays("TRIAL_DAYS", 7, 365);
+const REFERRAL_DAYS = envDays("REFERRAL_DAYS", 7, 365);
+/** The ceiling on referral credit per account. See the note above. */
+const MAX_REFERRAL_DAYS = envDays("MAX_REFERRAL_DAYS", 63, 3650);
+const REF_CODE_LEN = 7;
+/** No vowels and no 0/1/l/o: a code gets read down a phone and retyped. */
+const REF_ALPHABET = "bcdfghjkmnpqrstvwxyz23456789";
+
+/** code -> account id. Rebuilt from the accounts at load. */
+const referralCodes = new Map();
+
+function mintReferralCode() {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const bytes = randomBytes(REF_CODE_LEN);
+    let code = "";
+    for (let i = 0; i < REF_CODE_LEN; i++) code += REF_ALPHABET[bytes[i] % REF_ALPHABET.length];
+    if (!referralCodes.has(code)) return code;
+  }
+  // 28^7 is 13 billion; forty collisions in a row means something is very
+  // wrong, and a longer code is a better outcome than an infinite loop.
+  return `${Date.now().toString(36)}${randomBytes(3).toString("hex")}`;
+}
+
+/**
+ * Give `acct` a code if it has none, and index whatever it ends up with.
+ *
+ * The save matters. This is reachable from GET /state, a read path that
+ * schedules no write of its own, and a code that exists only in memory is
+ * worse than no code at all: the member copies their link, the process
+ * restarts, the account is issued a different code, and the link already
+ * sitting in somebody's DMs now points at nobody — silently, because an
+ * unknown code is ignored rather than refused.
+ */
+function ensureReferralCode(acct) {
+  if (typeof acct.ref !== "string" || !acct.ref) {
+    acct.ref = mintReferralCode();
+    scheduleSave();
+  }
+  referralCodes.set(acct.ref, acct.id);
+  return acct.ref;
+}
+
+/**
+ * The entitlement an account ACTUALLY has right now, or null.
+ *
+ * Every read that decides what someone is allowed to see must go through
+ * this rather than touching acct.paid, or an expired trial keeps working
+ * forever. Bookkeeping reads (does this account already hold a founding
+ * badge, which Stripe customer is this) still use the raw field on purpose:
+ * a lapsed trial must not make the server forget a permanent badge.
+ */
+function entitlementOf(acct) {
+  const p = acct?.paid;
+  if (!p) return null;
+  if (typeof p.until === "number" && p.until <= Date.now()) return null;
+  return p;
+}
+
+/**
+ * A permanent entitlement — a founding seat, a paid subscription, an
+ * operator grant. No `until` means no end, which is the whole difference
+ * between a membership and a window.
+ */
+const isPermanent = (p) => Boolean(p) && typeof p.until !== "number";
+
+/**
+ * Add `days` of Founder+ to an account and return how many were actually
+ * given. Extends a running window, reopens a lapsed one, and leaves a
+ * PERMANENT entitlement alone — a founding member or a paying customer has
+ * nothing to extend, and writing an expiry over them would be a downgrade
+ * dressed as a reward.
+ *
+ * It deliberately does NOT mark the trial as used. Days arrive from two
+ * places, and only one of them is the trial: crediting an invite through
+ * here used to set `trialStarted`, which meant anybody who so much as
+ * touched a referral link lost the 7 days they had never been given.
+ * `trialStarted` is written at /trial/start and nowhere else.
+ */
+function grantTrialDays(acct, days, why) {
+  if (days <= 0) return 0;
+  const cur = acct.paid;
+  if (isPermanent(cur)) return 0; // nothing to extend
+  // Extending a live window versus reopening a dead one: the first inherits
+  // the original grant, the second is a new grant and has to be stamped as
+  // one. The client fires its ceremony once per (account, tier, badge, ts)
+  // and only for a recent ts, so an inherited timestamp would upgrade
+  // somebody back to Founder+ in total silence.
+  const running = typeof cur?.until === "number" && cur.until > Date.now();
+  acct.paid = {
+    tier: "founder",
+    customer: (running && cur.customer) || why,
+    ts: (running && cur.ts) || Date.now(),
+    until: (running ? cur.until : Date.now()) + days * DAY_MS_TRIAL,
+  };
+  if (cur?.badge === "founding") acct.paid.badge = "founding";
+  return days;
+}
+
+/** Referral credit, bounded by the per-account cap. */
+function creditReferral(acct, why) {
+  const used = Number(acct.refDays) || 0;
+  const give = Math.min(REFERRAL_DAYS, Math.max(0, MAX_REFERRAL_DAYS - used));
+  const gave = grantTrialDays(acct, give, why);
+  if (gave > 0) acct.refDays = used + gave;
+  return gave;
+}
+
+/**
  * The founding seats: the first FOUNDING_SEATS accounts to register get
  * Founder+ and the founding badge, kept for life, for nothing.
  *
@@ -399,7 +543,15 @@ function countFoundingSeats() {
  * also the third person through the door keeps their Stripe customer
  * reference and gets moved up, instead of being punished for having paid.
  * There is deliberately no expiry field — an entitlement here has none, so
- * "for life" is what the absence of one already means.
+ * "for life" is what the absence of one already means, and rebuilding the
+ * object rather than spreading it is what drops a trial's `until` on the
+ * way in.
+ *
+ * A TRIAL'S customer and ts are NOT inherited, though a purchase's are. A
+ * seat granted over a running trial would otherwise be filed forever as
+ * customer "trial", granted at the moment the trial began — which reads in
+ * the console and in /admin/subscribers as though the seat were a trial,
+ * and dates the membership to the wrong day.
  *
  * MUST NOT AWAIT between the check and the write. Node is single-threaded,
  * so with no await in between two simultaneous registrations cannot both
@@ -410,10 +562,11 @@ function grantFoundingSeat(acct) {
   if (foundingSeatsUsed >= FOUNDING_SEATS) return 0;
   const seat = foundingSeatsUsed + 1;
   acct.foundingSeat = seat;
+  const wasTrial = typeof acct.paid?.until === "number";
   acct.paid = {
     tier: "founder",
-    customer: acct.paid?.customer || `founding-seat-${seat}`,
-    ts: acct.paid?.ts || Date.now(),
+    customer: (!wasTrial && acct.paid?.customer) || `founding-seat-${seat}`,
+    ts: (!wasTrial && acct.paid?.ts) || Date.now(),
     badge: "founding",
   };
   foundingSeatsUsed = seat;
@@ -467,6 +620,11 @@ function sanitizePaid(p) {
     ts: typeof p.ts === "number" ? p.ts : 0,
   };
   if (p.badge === "founding") out.badge = "founding";
+  // A trial carries its own end. Anything unparseable drops the expiry
+  // rather than the entitlement, which fails toward "permanent" — the
+  // opposite would silently revoke a real membership on a bad read.
+  const until = Number(p.until);
+  if (Number.isFinite(until) && until > 0) out.until = until;
   return out;
 }
 
@@ -1213,11 +1371,43 @@ function loadData() {
       if (Number.isFinite(tp) && tp > 0) acct.ticketsPurchased = Math.min(100_000_000, Math.trunc(tp));
       const seat = Number(a.foundingSeat);
       if (Number.isInteger(seat) && seat >= 1 && seat <= FOUNDING_SEATS) acct.foundingSeat = seat;
+      if (typeof a.ref === "string" && /^[a-z0-9]{4,32}$/.test(a.ref)) acct.ref = a.ref;
+      if (typeof a.referredBy === "string" && a.referredBy.startsWith(ACCT_PREFIX)) {
+        acct.referredBy = a.referredBy.slice(0, MAX_ID_LEN);
+      }
+      const rd = Number(a.refDays);
+      if (Number.isFinite(rd) && rd > 0) acct.refDays = Math.min(MAX_REFERRAL_DAYS, Math.trunc(rd));
+      const rc = Number(a.refCount);
+      if (Number.isFinite(rc) && rc > 0) acct.refCount = Math.min(100_000, Math.trunc(rc));
+      const tstart = Number(a.trialStarted);
+      if (Number.isFinite(tstart) && tstart > 0) acct.trialStarted = tstart;
       accounts.set(nameLower.slice(0, MAX_NAME_LEN), acct);
       indexAccount(acct);
     }
     // The file is the truth about who holds a seat, so the tally is rebuilt
     // from it rather than persisted separately and trusted.
+    // Codes are indexed after every account is in, so a duplicate in a
+    // hand-edited file loses to the first one loaded instead of silently
+    // pointing a stranger's invites at somebody else's account.
+    for (const acct of accountsById.values()) {
+      if (typeof acct.ref === "string" && acct.ref && !referralCodes.has(acct.ref)) {
+        referralCodes.set(acct.ref, acct.id);
+      } else if (acct.ref) {
+        delete acct.ref;
+      }
+    }
+    // Everybody who predates invites gets a code here, not lazily on their
+    // next read: minting one is a write, and the read path that would
+    // otherwise do it can go a whole uptime without any other write to ride
+    // along with. This way a code is on disk before it can be copied.
+    let minted = 0;
+    for (const acct of accountsById.values()) {
+      if (!acct.ref) {
+        ensureReferralCode(acct);
+        minted++;
+      }
+    }
+    if (minted) console.log(`[referral] minted ${minted} code(s) for existing accounts`);
     foundingSeatsUsed = countFoundingSeats();
     backfillFoundingSeats();
     if (foundingSeatsUsed) console.log(`[founding] ${foundingSeatsUsed}/${FOUNDING_SEATS} seats taken`);
@@ -2079,7 +2269,34 @@ async function handleAuthPost(req, res, pathname) {
     };
     accounts.set(key, acct);
     indexAccount(acct);
+    ensureReferralCode(acct);
     applyPendingPaid(acct); // a checkout that paid with this email first
+
+    /* An invite, if they arrived with one. Both sides get days. Checked
+       before the founding seat so that a founding member who happened to
+       use a link still credits their referrer, even though the seat itself
+       leaves them nothing to extend. */
+    let invitedBy = null;
+    const refCode = typeof body.ref === "string" ? body.ref.trim().toLowerCase().slice(0, 32) : "";
+    if (refCode) {
+      const referrer = accountsById.get(referralCodes.get(refCode) ?? "");
+      // Not yourself, and not an account that is somehow already yours: the
+      // id comparison is the only self-referral check that actually holds,
+      // since a determined person controls both addresses anyway.
+      if (referrer && referrer.id !== acct.id && !isBannedAcct(referrer)) {
+        invitedBy = referrer;
+        acct.referredBy = referrer.id;
+        referrer.refCount = (Number(referrer.refCount) || 0) + 1;
+        creditReferral(referrer, "referral");
+        // The joiner's welcome is a gift, not something they earned by
+        // inviting anyone, so it goes through grantTrialDays rather than
+        // creditReferral: it must not eat into their own invite cap, and it
+        // must not appear on their card as "days earned" underneath a count
+        // of nobody joined. Their own trial is still untouched and waiting.
+        grantTrialDays(acct, REFERRAL_DAYS, "referral-welcome");
+      }
+    }
+
     // ...and only then the founding seat, so it upgrades whatever they
     // already had rather than being overwritten by it.
     const seat = grantFoundingSeat(acct);
@@ -2088,7 +2305,8 @@ async function handleAuthPost(req, res, pathname) {
     scheduleSave();
     console.log(
       `[auth] register name="${name}" id=${acct.id}` +
-        (seat ? ` founding-seat=${seat}/${FOUNDING_SEATS}` : ""),
+        (seat ? ` founding-seat=${seat}/${FOUNDING_SEATS}` : "") +
+        (invitedBy ? ` referred-by=${invitedBy.id}` : ""),
     );
     sendWelcomeEmail(acct);
     sendJson(res, {
@@ -2097,6 +2315,7 @@ async function handleAuthPost(req, res, pathname) {
       email: acct.email,
       token,
       foundingSeat: seat || undefined,
+      referredBy: invitedBy ? invitedBy.name : undefined,
     });
     return;
   }
@@ -2153,6 +2372,51 @@ async function handleAuthPost(req, res, pathname) {
     }
     scheduleSave();
     sendJson(res, { id: acct.id, name: acct.name, email: acct.email ?? "", token });
+    return;
+  }
+
+  /**
+   * Start the free trial. Once per account, ever.
+   *
+   * Refused for a PERMANENT entitlement rather than overwriting it: a
+   * founding member or a paying customer starting a "trial" would be
+   * handing themselves an expiry date they did not have.
+   *
+   * Not refused for a running window, though. Somebody who arrived on an
+   * invite is holding referral days, and those are a separate gift — the
+   * card offered them 7 days for joining and 7 days for trying Founder+,
+   * and both promises have to be kept. The days stack onto the end of
+   * whatever is already running.
+   *
+   * This is also the only place `trialStarted` is written, which is what
+   * makes "once per account, ever" true: it has to be impossible for an
+   * invite to consume a trial that was never handed over.
+   */
+  if (pathname === "/trial/start") {
+    const token = typeof body.token === "string" ? body.token : "";
+    const entry = tokens.get(token);
+    const acct = entry ? accountsById.get(entry.id) : undefined;
+    if (!acct) {
+      sendJson(res, { error: "sign in first" });
+      return;
+    }
+    if (isBannedAcct(acct)) {
+      sendJson(res, { error: "this account is suspended" });
+      return;
+    }
+    if (acct.trialStarted) {
+      sendJson(res, { error: "you have already had the free trial" });
+      return;
+    }
+    if (isPermanent(entitlementOf(acct))) {
+      sendJson(res, { error: "you already have Founder+ — there is nothing to try" });
+      return;
+    }
+    acct.trialStarted = Date.now();
+    grantTrialDays(acct, TRIAL_DAYS, "trial");
+    scheduleSave();
+    console.log(`[trial] start id=${acct.id} days=${TRIAL_DAYS}`);
+    sendJson(res, { ok: true, until: acct.paid.until, days: TRIAL_DAYS });
     return;
   }
 
@@ -2723,7 +2987,10 @@ const server = createServer((req, res) => {
     return;
   }
 
-  if (req.method === "POST" && url.pathname.startsWith("/auth/")) {
+  // /trial/start rides with the auth routes on purpose: it is an
+  // account-token operation and it wants the same per-IP rate limit, since
+  // a loop against it is the cheapest way to probe for live tokens.
+  if (req.method === "POST" && (url.pathname.startsWith("/auth/") || url.pathname === "/trial/start")) {
     void handleAuthPost(req, res, url.pathname);
     return;
   }
@@ -3199,13 +3466,37 @@ const server = createServer((req, res) => {
     // into the wallet exactly once (wallet.redeemed high-water mark).
     const isAcct = me.startsWith(ACCT_PREFIX);
     const acctRec = isAcct ? accountsById.get(me) : undefined;
-    const paid = acctRec?.paid ?? null;
+    // entitlementOf, not acctRec.paid: a lapsed trial has to read as no
+    // entitlement here, because this response IS what the client believes.
+    const paid = entitlementOf(acctRec);
     const coins = isAcct ? (acctRec?.ticketsPurchased ?? 0) : null;
+    const perks = acctRec
+      ? {
+          trial: {
+            until: typeof paid?.until === "number" ? paid.until : null,
+            used: Boolean(acctRec.trialStarted),
+            days: TRIAL_DAYS,
+            // "Your window ended", as distinct from "there was never
+            // anything here". The client cannot tell those apart from a
+            // null `paid` alone, and on a deploy with no Stripe keys it
+            // guesses the second — see applyEntitlement in lib/store.ts.
+            // A raw acct.paid that entitlementOf refused is the first.
+            lapsed: Boolean(acctRec.paid) && !paid,
+          },
+          referral: {
+            code: ensureReferralCode(acctRec),
+            joined: Number(acctRec.refCount) || 0,
+            daysEarned: Number(acctRec.refDays) || 0,
+            daysPer: REFERRAL_DAYS,
+            daysCap: MAX_REFERRAL_DAYS,
+          },
+        }
+      : null;
     sendJson(
       res,
       entry
-        ? { state: entry.state, savedAt: entry.savedAt, paid, coins }
-        : { state: null, savedAt: 0, paid, coins },
+        ? { state: entry.state, savedAt: entry.savedAt, paid, coins, perks }
+        : { state: null, savedAt: 0, paid, coins, perks },
     );
     return;
   }

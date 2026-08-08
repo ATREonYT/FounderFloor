@@ -29,7 +29,7 @@ import { FLOORS, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { QUESTS } from "@/lib/data/quests";
 import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
-import type { PaidEntitlement } from "@/lib/sync";
+import type { PaidEntitlement, Perks } from "@/lib/sync";
 import { billingLive } from "@/lib/pricing";
 
 const STORAGE_KEY = "founderfloor:v1";
@@ -331,13 +331,41 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
 }
 
 /**
- * Once real billing is live, the server's word on what an account has PAID
- * for beats whatever tier the local state carries (including tiers
- * "simulated" before billing existed). Runs only for signed-in accounts —
- * guests can't be matched to a Stripe payment, so their local state stands.
+ * The server's word on what an account is entitled to beats whatever tier
+ * the local state carries. Runs only for signed-in accounts — guests can't
+ * be matched to an entitlement, so their local state stands.
+ *
+ * The condition below used to be `if (!billingLive()) return`, which was
+ * right when the only source of an entitlement was Stripe: with no
+ * checkout configured the server always answered `paid: null`, and applying
+ * that would have stamped out the tiers this build lets you simulate.
+ *
+ * It stopped being right the moment entitlements could be GRANTED —
+ * founding seats, trials, an operator grant from /admin/grant. Those are
+ * real on a deploy with no Stripe keys at all, and the early return threw
+ * every one of them away: granted on the server, discarded on arrival,
+ * with the member seeing no badge and no tier and nothing in the console
+ * to say why.
+ *
+ * So the rule is about whether the server HAS something to say, not about
+ * whether money is involved. An entitlement always applies. A null is only
+ * a downgrade when the server is actually saying something with it, and
+ * there are exactly two ways to know that it is:
+ *
+ *   - billing is live, so a null means Stripe has no record of you; or
+ *   - the account HAD a window and it ran out, which the server states
+ *     outright as `perks.trial.lapsed` rather than making us infer it.
+ *
+ * The second one is not optional. Trials ship on a deploy with no Stripe
+ * keys — that is the whole point of them — so without it every trial on
+ * this build would expire on the server and never expire on the device:
+ * the tier would stay founder, get pushed back up in the state blob, and
+ * pull down onto every other browser the member signs into. A seven-day
+ * trial that never ends is not a generous bug, it is the paid tier given
+ * away to everyone who clicks once.
  */
-function applyEntitlement(paid: PaidEntitlement | null): void {
-  if (!billingLive()) return;
+function applyEntitlement(paid: PaidEntitlement | null, perks: Perks | null): void {
+  if (!paid && !billingLive() && perks?.trial.lapsed !== true) return;
   if (!state.profile.id.startsWith("acct_")) return;
   const tier: SubTier =
     paid?.tier === "founder" ? "founder" : paid?.tier === "pro" ? "pro" : "free";
@@ -346,11 +374,18 @@ function applyEntitlement(paid: PaidEntitlement | null): void {
   const badge = paid?.badge === "founding" ? "founding" : null;
   const needBadge = badge !== null && !state.badges.includes(badge);
 
-  // The recipient's ceremony: play it once per grant per device. The
-  // fingerprint pins the exact entitlement (account, tier, badge, grant
-  // time); the freshness window keeps months-old memberships from
-  // re-celebrating on every new browser.
-  if (tier !== "free") {
+  /* The recipient's ceremony: play it once per grant per device. The
+     fingerprint pins the exact entitlement (account, tier, badge, grant
+     time); the freshness window keeps months-old memberships from
+     re-celebrating on every new browser.
+
+     NOT for a time-limited entitlement. The ceremony tells a Founder+ that
+     the gold trim is theirs "from now on", which is a straightforwardly
+     false thing to say to somebody with seven days — and firing the full
+     confetti for a trial cheapens it for the people who actually bought
+     one. The trial card says what they have and for how long, which is the
+     honest version of the same news. */
+  if (tier !== "free" && typeof paid?.until !== "number") {
     const fingerprint = `${state.profile.id}|${tier}|${badge ?? ""}|${paid?.ts ?? 0}`;
     let seen = "";
     try {
@@ -372,10 +407,22 @@ function applyEntitlement(paid: PaidEntitlement | null): void {
     }
   }
 
-  if (state.sub === tier && !needBadge) return;
+  /* The stand carries its own copy of the tier — that is how the gold trim
+     and the priority listing travel with it to the floor and the directory
+     — and that copy is a SNAPSHOT taken the last time the form was saved.
+     Nothing else recomputes it. Left alone, an expired trial keeps its
+     Founder+ tag and its place above every paying member in the directory
+     forever, because its owner has no reason to ever reopen the editor.
+     So the tier is re-derived here, where it changes. */
+  const standTier: "pro" | "founder" | undefined = tier === "free" ? undefined : tier;
+  const stand = state.myStartup;
+  const standStale = Boolean(stand) && stand?.tier !== standTier;
+
+  if (state.sub === tier && !needBadge && !standStale) return;
   setState({
     ...state,
     sub: tier,
+    ...(stand && standStale ? { myStartup: { ...stand, tier: standTier } } : {}),
     // the entitlement badge goes FIRST so a full badge book can't drop it
     badges: needBadge && badge ? [...new Set([badge, ...state.badges])].slice(0, 48) : state.badges,
   });
@@ -413,7 +460,7 @@ export function syncNow(): void {
     if (remote && remote.state) applyRemoteState(remote);
     // Entitlement applies even when the blob was stale/absent — a fresh
     // payment changes `paid` without touching savedAt.
-    if (remote) applyEntitlement(remote.paid);
+    if (remote) applyEntitlement(remote.paid, remote.perks);
     if (remote) applyCoinCredits(remote.coins);
     // Follow with a push ONLY when the pull answered. It's hash-guarded, so
     // it's a no-op unless a merge folded local work into the pulled state or
