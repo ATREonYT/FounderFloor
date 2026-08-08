@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { isValidLogo, syncNow, useAppState } from "@/lib/store";
 import { getAuth } from "@/lib/auth";
+import { daysLeft, usePerks } from "@/lib/perks";
 import { registerStartup, unregisterStartup } from "@/lib/social";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { FLOORS } from "@/lib/data/floors";
@@ -360,6 +361,7 @@ function ColorRow({
 
 export default function ProfilePage() {
   const [state, actions] = useAppState();
+  const perks = usePerks();
   const [ready, setReady] = useState(false);
   const [form, setForm] = useState<BoothForm>(EMPTY_FORM);
   const [monthly, setMonthly] = useState("");
@@ -686,6 +688,14 @@ export default function ProfilePage() {
   const isFounding =
     state.badges.includes(FOUNDING_OFFER.badgeId) && state.sub === "founder";
 
+  /* A running trial holds the founder tier, so every tier-driven surface
+     on this page would otherwise present it as a bought membership — with
+     no end date, and sitting under a standing invitation to cancel
+     something that was never started. It is a grant with a clock on it,
+     and the page has to say so wherever it says "your plan". */
+  const trialDaysLeft = daysLeft(perks?.trial.until ?? null);
+  const trialing = trialDaysLeft > 0;
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-12">
       <h1 className="font-display text-3xl">Profile</h1>
@@ -720,8 +730,11 @@ export default function ProfilePage() {
           currentName={state.profile.name}
           currentId={state.profile.id}
         />
-        {/* Both hide themselves for guests, for anyone offline, and for
-            anyone holding a permanent membership — see the components. */}
+        {/* Both hide themselves for guests and for anyone offline. The
+            trial card also stands down for a permanent membership, since
+            there is nothing there to try; the invite card stays, because a
+            founding member can still send people in — it just tells them
+            plainly that the days land on the joiner's side only. */}
         <TrialCard className="mt-5" />
         <ReferralCard className="mt-4" />
       </SectionCard>
@@ -1562,7 +1575,8 @@ export default function ProfilePage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {!billingLive() ? (
             <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">
-              billing not live yet — buttons simulate the switch
+              billing goes live at launch — the free trial is the way in
+              until then
             </span>
           ) : (
             <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">
@@ -1593,12 +1607,17 @@ export default function ProfilePage() {
         </div>
 
         <p className="micro mb-3 text-muted">
-          All prices in USD and inclusive of VAT where applicable. Cancel a
-          membership any time on the{" "}
+          All prices in USD and inclusive of VAT where applicable. A paid
+          membership can be cancelled any time on the{" "}
           <Link href="/cancel" className="text-accent underline">
             cancellation page
           </Link>
-          .
+          . {/* A trial has no subscription behind it, so pointing a
+                trialling member at /cancel gets them a written confirmation
+                that a renewal was stopped in Stripe — for a renewal that
+                never existed. */}
+          A free trial has nothing to cancel: it ends by itself and takes no
+          card in the first place.
         </p>
 
         {/* founding member — the launch offer */}
@@ -1618,31 +1637,27 @@ export default function ProfilePage() {
             <span className="micro mt-3 inline-block rounded-md border border-gold/60 px-3 py-1.5 text-gold-deep">
               You&rsquo;re a founding member
             </span>
-          ) : foundingCheckoutLink() || !billingLive() ? (
+          ) : foundingCheckoutLink() ? (
             <button
               type="button"
-              onClick={() => {
-                const link = foundingCheckoutLink();
-                if (link) {
-                  openCheckout(link);
-                  return;
-                }
-                actions.setSub("founder");
-                actions.grantBadge(FOUNDING_OFFER.badgeId);
-                setToast({
-                  id: Date.now(),
-                  text: "Founding member (simulated). Welcome to the wall.",
-                });
-              }}
+              onClick={() => openCheckout(foundingCheckoutLink() as string)}
               className="mt-3 rounded-md bg-ink px-3 py-1.5 text-sm text-paper hover:bg-ink/85"
             >
-              {foundingCheckoutLink() ? "Become a founding member" : "Simulate founding membership"}
+              Become a founding member
             </button>
           ) : (
-            // billing is live but the founding link is gone: the offer is
-            // over — never show the simulate path to real visitors
+            /* No checkout link: either billing is not live yet, or the offer
+               has closed. This used to offer "Simulate founding membership",
+               which granted the founding badge locally — handing out, for
+               one click, the scarcest thing on the site, the thing the first
+               twenty accounts are given for actually showing up first. The
+               badge is never clawed back, so it outlived the fake tier and
+               unlocked the founding title on a free account. There is no
+               honest button here, so there is no button. */
             <span className="micro mt-3 inline-block rounded-md border border-line px-3 py-1.5 text-muted">
-              Founding memberships are closed
+              {billingLive()
+                ? "Founding memberships are closed"
+                : "Opens when billing goes live at launch"}
             </span>
           )}
         </article>
@@ -1706,36 +1721,37 @@ export default function ProfilePage() {
                     <span className="micro mt-4 rounded-md border border-gold/60 px-3 py-1.5 text-center text-gold-deep">
                       Included with your founding membership
                     </span>
+                  ) : trialing && tier === "founder" ? (
+                    // A trial is not a plan. Saying "current plan" here is
+                    // what sends somebody to the cancellation page looking
+                    // for a subscription that was never created.
+                    <span className="micro mt-4 rounded-md border border-accent/40 px-3 py-1.5 text-center text-accent">
+                      On trial — {trialDaysLeft}{" "}
+                      {trialDaysLeft === 1 ? "day" : "days"} left
+                    </span>
                   ) : (
                     <span className="micro mt-4 rounded-md border border-accent/40 px-3 py-1.5 text-center text-accent">
                       Current plan
                     </span>
                   )
-                ) : isFounding && billingLive() ? null : (
-                  // (real founding members see no switch buttons — their plan
-                  // is permanent, and a "switch to free" next to it only
-                  // confuses. On no-billing deploys the SIMULATED founding
-                  // state keeps them, or the tier UI dead-ends forever.)
+                ) : isFounding ? null : tier === "free" ? null : checkoutLink(tier, cycle) ? (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (tier !== "free") {
-                        const link = checkoutLink(tier, cycle);
-                        if (link) {
-                          openCheckout(link);
-                          return;
-                        }
-                      }
-                      actions.setSub(tier);
-                      setToast({
-                        id: Date.now(),
-                        text: `Switched to ${TIER_LABEL[tier]}.`,
-                      });
-                    }}
+                    onClick={() => openCheckout(checkoutLink(tier, cycle) as string)}
                     className="mt-4 rounded-md border border-ink px-3 py-1.5 text-sm hover:bg-paper"
                   >
-                    Switch to {TIER_LABEL[tier]}
+                    {trialing ? "Keep it after the trial" : `Switch to ${TIER_LABEL[tier]}`}
                   </button>
+                ) : (
+                  /* No checkout link means no way to actually buy this. The
+                     button used to flip the tier locally instead, which the
+                     server now (correctly) overrules on the next heartbeat —
+                     so it was a switch that undid itself 45 seconds later,
+                     with a toast confirming it had worked. The free trial is
+                     the real way to see Founder+ before launch. */
+                  <span className="micro mt-4 rounded-md border border-line px-3 py-1.5 text-center text-muted">
+                    Opens at launch
+                  </span>
                 )}
               </article>
             );

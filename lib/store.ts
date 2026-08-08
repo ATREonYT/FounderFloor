@@ -348,24 +348,22 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
  * to say why.
  *
  * So the rule is about whether the server HAS something to say, not about
- * whether money is involved. An entitlement always applies. A null is only
- * a downgrade when the server is actually saying something with it, and
- * there are exactly two ways to know that it is:
+ * whether money is involved — and `perks` is exactly that signal. The
+ * server sends it for every account it recognises, so a null `paid`
+ * alongside a non-null `perks` is the server stating that this account
+ * holds nothing, not a server that was never wired up. For anyone else
+ * (a guest, an unreachable server) it stays null and the local tier stands.
  *
- *   - billing is live, so a null means Stripe has no record of you; or
- *   - the account HAD a window and it ran out, which the server states
- *     outright as `perks.trial.lapsed` rather than making us infer it.
- *
- * The second one is not optional. Trials ship on a deploy with no Stripe
- * keys — that is the whole point of them — so without it every trial on
- * this build would expire on the server and never expire on the device:
- * the tier would stay founder, get pushed back up in the state blob, and
- * pull down onto every other browser the member signs into. A seven-day
- * trial that never ends is not a generous bug, it is the paid tier given
- * away to everyone who clicks once.
+ * This is not a nicety. Trials ship on a deploy with no Stripe keys — that
+ * is the whole point of them — so without it a trial would expire on the
+ * server and never expire on the device: the tier would stay founder, get
+ * pushed back up in the state blob, and pull down onto every other browser
+ * the member signs into. A seven-day trial that never ends is not a
+ * generous bug, it is the paid tier given away to anyone who clicks once.
+ * The same goes for an operator revoking a grant from /admin.
  */
 function applyEntitlement(paid: PaidEntitlement | null, perks: Perks | null): void {
-  if (!paid && !billingLive() && perks?.trial.lapsed !== true) return;
+  if (!paid && !perks && !billingLive()) return;
   if (!state.profile.id.startsWith("acct_")) return;
   const tier: SubTier =
     paid?.tier === "founder" ? "founder" : paid?.tier === "pro" ? "pro" : "free";

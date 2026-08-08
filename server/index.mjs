@@ -2412,11 +2412,24 @@ async function handleAuthPost(req, res, pathname) {
       sendJson(res, { error: "you already have Founder+ — there is nothing to try" });
       return;
     }
+    // Read what the grant ACTUALLY gave rather than assuming acct.paid now
+    // exists. TRIAL_DAYS=0 is a legitimate way for an operator to switch
+    // the offer off — envDays accepts it, and so does an env line typed as
+    // `TRIAL_DAYS=` with nothing after it — and grantTrialDays returns
+    // early on zero without ever assigning acct.paid. Reaching into it
+    // blind threw a TypeError inside a `void`-dispatched handler, which on
+    // this server is not a failed request: it is the process exiting and
+    // every open floor going down with it, repeatable by anyone with an
+    // account. The trial is only stamped as used if days were handed over.
+    const gave = grantTrialDays(acct, TRIAL_DAYS, "trial");
+    if (gave <= 0) {
+      sendJson(res, { error: "the free trial is not running right now" });
+      return;
+    }
     acct.trialStarted = Date.now();
-    grantTrialDays(acct, TRIAL_DAYS, "trial");
     scheduleSave();
-    console.log(`[trial] start id=${acct.id} days=${TRIAL_DAYS}`);
-    sendJson(res, { ok: true, until: acct.paid.until, days: TRIAL_DAYS });
+    console.log(`[trial] start id=${acct.id} days=${gave}`);
+    sendJson(res, { ok: true, until: acct.paid.until, days: gave });
     return;
   }
 
@@ -2933,6 +2946,49 @@ function notFound(res) {
   res.end("not found");
 }
 
+/**
+ * Run an async route handler without letting a throw inside it take the
+ * whole hall down.
+ *
+ * The routes below are fired and forgotten. An exception in one of them is
+ * an unhandled rejection, and Node's answer to an unhandled rejection is to
+ * exit — which on this process does not mean a failed request, it means
+ * every open floor dropped at once, every websocket closed, and a restart
+ * loop if whatever threw is reachable a second time. One reachable bug
+ * anywhere therefore becomes a total outage; that is too much leverage to
+ * leave lying around, so the request gets a 500 and the stack goes to the
+ * journal while the hall keeps running.
+ *
+ * Nothing is swallowed quietly: a line in the log with a stack is how this
+ * gets noticed and fixed.
+ */
+function dispatch(promise, res, where) {
+  Promise.resolve(promise).catch((err) => {
+    console.error(`[route] ${where} threw — ${err?.stack || err}`);
+    try {
+      if (!res.headersSent) {
+        res.writeHead(500, {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": ACAO,
+        });
+        res.end('{"error":"something went wrong on our end"}');
+      } else {
+        res.end();
+      }
+    } catch {
+      /* the socket is already gone — nothing left to answer */
+    }
+  });
+}
+
+/* The backstop for the routes still written as `void (async () => …)()`,
+   and for anything a future edit adds without going through dispatch().
+   Same reasoning: on a server whose failure mode is "everybody is thrown
+   out of the building", staying up and loud beats exiting quietly. */
+process.on("unhandledRejection", (err) => {
+  console.error(`[fatal-guard] unhandled rejection — ${err?.stack || err}`);
+});
+
 const server = createServer((req, res) => {
   let url;
   try {
@@ -2983,7 +3039,7 @@ const server = createServer((req, res) => {
   }
 
   if (req.method === "POST" && url.pathname.startsWith("/social/")) {
-    void handleSocialPost(req, res, url.pathname);
+    dispatch(handleSocialPost(req, res, url.pathname), res, url.pathname);
     return;
   }
 
@@ -2991,12 +3047,12 @@ const server = createServer((req, res) => {
   // account-token operation and it wants the same per-IP rate limit, since
   // a loop against it is the cheapest way to probe for live tokens.
   if (req.method === "POST" && (url.pathname.startsWith("/auth/") || url.pathname === "/trial/start")) {
-    void handleAuthPost(req, res, url.pathname);
+    dispatch(handleAuthPost(req, res, url.pathname), res, url.pathname);
     return;
   }
 
   if (req.method === "POST" && url.pathname.startsWith("/admin/")) {
-    void handleAdminPost(req, res, url.pathname);
+    dispatch(handleAdminPost(req, res, url.pathname), res, url.pathname);
     return;
   }
 
@@ -3476,12 +3532,6 @@ const server = createServer((req, res) => {
             until: typeof paid?.until === "number" ? paid.until : null,
             used: Boolean(acctRec.trialStarted),
             days: TRIAL_DAYS,
-            // "Your window ended", as distinct from "there was never
-            // anything here". The client cannot tell those apart from a
-            // null `paid` alone, and on a deploy with no Stripe keys it
-            // guesses the second — see applyEntitlement in lib/store.ts.
-            // A raw acct.paid that entitlementOf refused is the first.
-            lapsed: Boolean(acctRec.paid) && !paid,
           },
           referral: {
             code: ensureReferralCode(acctRec),

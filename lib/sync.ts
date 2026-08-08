@@ -45,19 +45,7 @@ export interface PaidEntitlement {
 
 /** What the account has earned that is not an entitlement: trial and invites. */
 export interface Perks {
-  trial: {
-    until: number | null;
-    used: boolean;
-    days: number;
-    /**
-     * The server HAD an entitlement for this account and it has run out.
-     * That is a different fact from "no entitlement", and the difference
-     * decides whether a null `paid` is the server disagreeing with the
-     * device or the server simply not being configured — see
-     * applyEntitlement in lib/store.ts.
-     */
-    lapsed: boolean;
-  };
+  trial: { until: number | null; used: boolean; days: number };
   referral: {
     code: string;
     joined: number;
@@ -81,10 +69,6 @@ function readPerks(v: unknown): Perks | null {
       until: typeof t.until === "number" && Number.isFinite(t.until) ? t.until : null,
       used: t.used === true,
       days: num(t.days, 7),
-      // Absent means an older server, which had no expiring entitlements
-      // to lapse. False is the safe reading either way: it only ever
-      // withholds a downgrade this build would otherwise apply.
-      lapsed: t.lapsed === true,
     },
     referral: {
       code: r.code,

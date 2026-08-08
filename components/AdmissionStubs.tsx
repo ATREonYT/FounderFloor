@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAuth } from "@/lib/auth";
 import { useAppState } from "@/lib/store";
+import { daysLeft, usePerks } from "@/lib/perks";
 import { FLOORS } from "@/lib/data/floors";
 import { TIER_ORDER, type SubTier } from "@/lib/types";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
@@ -37,6 +38,7 @@ export default function AdmissionStubs({
   pricing: { tier: SubTier; blurb: string }[];
 }) {
   const [state] = useAppState();
+  const perks = usePerks();
   const [signedIn, setSignedIn] = useState(false);
 
   // profile.id flips between a guest id and an account id, so it is the
@@ -49,6 +51,21 @@ export default function AdmissionStubs({
   // A founding badge without a paid tier is a stale local leftover, not a
   // membership — the server grants both together.
   const founding = signedIn && state.badges.includes("founding") && state.sub !== "free";
+
+  /* A running trial holds the founder tier, so without this the Founder+
+     stub would mark itself "Your membership · Manage membership" — a plan
+     with no end date, for a grant that ends on Tuesday. */
+  const trialLeft = daysLeft(perks?.trial.until ?? null);
+  const trialing = signedIn && trialLeft > 0;
+
+  /* Whether the trial is actually available to whoever is reading. Signed
+     out, it is: making an account is the next step anyway. Signed in, the
+     server refuses anyone who already used it or already holds Founder+,
+     so advertising it to them is an offer with no button behind it — and
+     the error they would eventually get names a tier they do not hold.
+     Waiting for `perks` costs a moment's delay; guessing costs a promise. */
+  const canTrial = !signedIn || (perks !== null && !perks.trial.used && current === "free");
+  const trialDays = perks?.trial.days ?? TRIAL_DAYS;
 
   return (
     <>
@@ -83,26 +100,35 @@ export default function AdmissionStubs({
           const [amount, per] = TIER_PRICE[tier].split("/");
           const featured = tier === "pro";
           const held = current === tier;
+          // Held on a trial, not bought. Everything below has to say so:
+          // "Manage membership" sends people looking for a subscription
+          // that does not exist, and /cancel then confirms in writing that
+          // a Stripe renewal was stopped.
+          const onTrial = held && trialing && tier === "founder";
           // Which way this stub would move someone who already has a tier.
           const step = current ? TIER_ORDER[tier] - TIER_ORDER[current] : 0;
 
-          const cta = held
-            ? tier === "free"
-              ? "Your account"
-              : "Manage membership"
-            : current
-              ? `${step > 0 ? "Upgrade to" : "Switch to"} ${TIER_LABEL[tier]}`
-              : `Choose ${TIER_LABEL[tier]}`;
+          const cta = onTrial
+            ? "See your trial"
+            : held
+              ? tier === "free"
+                ? "Your account"
+                : "Manage membership"
+              : current
+                ? `${step > 0 ? "Upgrade to" : "Switch to"} ${TIER_LABEL[tier]}`
+                : `Choose ${TIER_LABEL[tier]}`;
 
-          const mark = held
-            ? founding && tier === "founder"
-              ? "Founding member"
-              : "Your membership"
-            : featured
-              ? "Most taken"
-              : tier === "founder"
-                ? "The gold one"
-                : "Always free";
+          const mark = onTrial
+            ? `Trial · ${trialLeft} ${trialLeft === 1 ? "day" : "days"} left`
+            : held
+              ? founding && tier === "founder"
+                ? "Founding member"
+                : "Your membership"
+              : featured
+                ? "Most taken"
+                : tier === "founder"
+                  ? "The gold one"
+                  : "Always free";
 
           return (
             // Admission stub: the notches at the tear line are cut out of
@@ -149,13 +175,10 @@ export default function AdmissionStubs({
                   <Spec className="mt-2 block text-muted">No card, no expiry</Spec>
                 )}
                 {/* The trial is Founder+ only, which is why this line lives
-                    on one stub and not on all three. Hidden once the tier is
-                    held: telling a member they can try what they already
-                    have is the pricing-table-that-forgot-you problem this
-                    file exists to avoid. */}
-                {tier === "founder" && !held && (
+                    on one stub and not on all three. */}
+                {tier === "founder" && canTrial && (
                   <Spec className="mt-1 block text-accent">
-                    {TRIAL_DAYS} days free first · no card
+                    {trialDays} days free first · no card
                   </Spec>
                 )}
                 <p className="mt-4 text-sm leading-relaxed text-muted">{blurb}</p>
@@ -188,7 +211,8 @@ export default function AdmissionStubs({
               <span aria-hidden="true" className="stub-perf dash-x" />
               <div className="flex h-[104px] flex-col justify-center gap-3 px-5">
                 <Spec className={held ? "text-verify" : "text-muted"}>
-                  {held ? "Admitted" : "Admit one"} · {TIER_LABEL[tier]}
+                  {onTrial ? "On trial" : held ? "Admitted" : "Admit one"} ·{" "}
+                  {TIER_LABEL[tier]}
                 </Spec>
                 <Link
                   href="/profile#membership"

@@ -36,6 +36,17 @@ export function daysLeft(until: number | null): number {
  * the server will not keep.
  */
 /**
+ * Holds Founder+ with no end date: a founding seat, an operator grant, a
+ * real subscription. A tier above free with no countdown behind it is the
+ * whole test, and more than one card needs the same answer — a trial has
+ * nothing to offer these people, and neither does an invite, since there
+ * is no window to extend.
+ */
+export function permanentMember(sub: string, perks: Perks | null): boolean {
+  return sub !== "free" && !perks?.trial.until;
+}
+
+/**
  * Something changed that /state knows about but the store does not.
  *
  * Starting a trial on top of a running invite window moves no local value

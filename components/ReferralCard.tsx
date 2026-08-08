@@ -11,13 +11,23 @@
  * also the anti-abuse mechanism (see the note above the trial constants in
  * server/index.mjs), so a member who hits it should find out from the
  * card rather than from an invite that silently stops working.
+ *
+ * Two people get a different card, for the same reason: the server pays
+ * them nothing, so the card must not promise them anything. A founding
+ * member or a paying subscriber has no window to extend — grantTrialDays
+ * refuses to write an expiry over a permanent entitlement, which is
+ * correct — and a member at the cap has run out of credit. Both can still
+ * hand the link around, and the joiner still gets their days, so the card
+ * stays; only the half about what THEY earn goes away.
  */
 
 import { useState } from "react";
-import { usePerks, referralLink } from "@/lib/perks";
+import { useAppState } from "@/lib/store";
+import { usePerks, permanentMember, referralLink } from "@/lib/perks";
 import Spec from "@/components/Spec";
 
 export default function ReferralCard({ className = "" }: { className?: string }) {
+  const [state] = useAppState();
   const perks = usePerks();
   const [copied, setCopied] = useState(false);
 
@@ -25,17 +35,24 @@ export default function ReferralCard({ className = "" }: { className?: string })
 
   const link = referralLink(perks.referral.code);
   const { joined, daysEarned, daysPer, daysCap } = perks.referral;
-  const capped = daysEarned >= daysCap;
+  const permanent = permanentMember(state.sub, perks);
+  const capped = !permanent && daysEarned >= daysCap;
+  const earns = !permanent && !capped;
 
   return (
     <div className={`panel p-5 ${className}`}>
       <Spec className="text-gold-deep">Invite a founder</Spec>
       <p className="mt-1.5 font-display text-lg">
-        You both get {daysPer} days of Founder+.
+        {earns
+          ? `You both get ${daysPer} days of Founder+.`
+          : `They get ${daysPer} days of Founder+.`}
       </p>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Anyone who makes an account on your link starts with {daysPer} days,
-        and you get {daysPer} more on top of whatever you have left.
+        {permanent
+          ? `Anyone who makes an account on your link starts with ${daysPer} days of Founder+. Your own membership does not run out, so there is nothing on your side to extend — the days all go to them.`
+          : earns
+            ? `Anyone who makes an account on your link starts with ${daysPer} days, and you get ${daysPer} more on top of whatever you have left.`
+            : `Anyone who makes an account on your link still starts with ${daysPer} days. You have earned the maximum, so no more are added on your side.`}
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -71,13 +88,18 @@ export default function ReferralCard({ className = "" }: { className?: string })
           <dt className="micro text-muted">Joined on your link</dt>
           <dd className="mt-0.5 font-display text-2xl tabular-nums">{joined}</dd>
         </div>
-        <div>
-          <dt className="micro text-muted">Days earned</dt>
-          <dd className="mt-0.5 font-display text-2xl tabular-nums">
-            {daysEarned}
-            <span className="ml-1 text-base text-muted">/ {daysCap}</span>
-          </dd>
-        </div>
+        {/* A permanent member is never credited, so a counter frozen at
+            0 / 63 under their name would read as a broken feature rather
+            than as a rule. The invite count still means something. */}
+        {!permanent && (
+          <div>
+            <dt className="micro text-muted">Days earned</dt>
+            <dd className="mt-0.5 font-display text-2xl tabular-nums">
+              {daysEarned}
+              <span className="ml-1 text-base text-muted">/ {daysCap}</span>
+            </dd>
+          </div>
+        )}
       </dl>
 
       {capped && (

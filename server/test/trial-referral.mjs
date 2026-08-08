@@ -200,6 +200,11 @@ const state = (base, id, token) =>
     JSON.stringify(fs2.paid));
   check(fs2.paid?.badge === "founding", "with the badge intact");
   check(fs2.perks.referral.joined === 1, "while still counting the invite");
+  // Nothing was credited, and nothing pretends otherwise — ReferralCard
+  // reads exactly these numbers and drops its "you earn days" half when
+  // the member is permanent.
+  check(fs2.perks.referral.daysEarned === 0,
+    "and crediting nothing is reported as nothing", String(fs2.perks.referral.daysEarned));
 
   await stop(h);
   rmSync(dir, { recursive: true, force: true });
@@ -347,10 +352,13 @@ const state = (base, id, token) =>
   h = await boot({ dataFile, port: 3503 });
   let st = await state(h.base, a.id, a.token);
   check(st.paid === null, "the entitlement is gone", JSON.stringify(st.paid));
-  // Without this the client cannot tell "your trial ended" from "this
-  // deploy has no billing configured", and on a pre-billing deploy it
-  // guesses the second — leaving the tier switched on forever.
-  check(st.perks.trial.lapsed === true, "and the client is told so outright");
+  // The client applies a null `paid` because `perks` arrived with it —
+  // that pairing is how it tells "your window ended" from "this deploy has
+  // no billing configured". Without it the trial expires on the server and
+  // never expires in the browser.
+  check(st.perks !== null && st.perks !== undefined,
+    "but the server still answers with perks, which is what makes the null authoritative");
+  check(st.perks.trial.used === true, "and the trial still reads as used");
 
   await register(h.base, "Latecomer", code);
   st = await state(h.base, a.id, a.token);
@@ -361,7 +369,43 @@ const state = (base, id, token) =>
   const days = (st.paid.until - Date.now()) / DAY;
   check(days > 6.9 && days < 7.01, "and it runs from today, not from the old expiry",
     `${days.toFixed(2)} days`);
-  check(st.perks.trial.lapsed === false, "and it no longer reads as lapsed");
+  check(st.perks.trial.until === st.paid.until, "and the countdown matches the entitlement");
+
+  await stop(h);
+  rmSync(dir, { recursive: true, force: true });
+}
+
+/* -------------- REGRESSION: switching the offer off must not kill the hall */
+{
+  group("REGRESSION: TRIAL_DAYS=0 refuses the trial instead of killing the server");
+  // grantTrialDays returns without assigning acct.paid when there are no
+  // days to give. /trial/start used to reach into acct.paid.until anyway,
+  // and a throw in a fire-and-forget route handler is not a failed request
+  // on this process — it is Node exiting, every floor emptying, and a
+  // restart loop that any account with a token can re-trigger at will.
+  // TRIAL_DAYS=0 is the obvious way to close the offer, and `TRIAL_DAYS=`
+  // with nothing after it parses to the same thing.
+  const dir = mkdtempSync(join(tmpdir(), "ff-zero-"));
+  const dataFile = join(dir, "floor-data.json");
+  const h = await boot({ dataFile, port: 3504, env: { TRIAL_DAYS: "0" } });
+
+  const a = await register(h.base, "Zero");
+  const t = await post(h.base, "/trial/start", { token: a.token });
+  check(!t.ok && typeof t.error === "string", "the request is answered, not dropped", JSON.stringify(t));
+
+  const alive = await fetch(`${h.base}/health`).then((r) => r.ok).catch(() => false);
+  check(alive, "and the server is still standing");
+
+  const st = await state(h.base, a.id, a.token);
+  check(st.paid === null, "nothing was granted", JSON.stringify(st.paid));
+  check(st.perks.trial.used === false,
+    "and the trial was not burned for zero days either");
+
+  // Same account, second go: without the fix this is the crash loop.
+  const again = await post(h.base, "/trial/start", { token: a.token });
+  check(!again.ok, "asking twice is refused twice", again.error);
+  const stillAlive = await fetch(`${h.base}/health`).then((r) => r.ok).catch(() => false);
+  check(stillAlive, "with the hall still open");
 
   await stop(h);
   rmSync(dir, { recursive: true, force: true });

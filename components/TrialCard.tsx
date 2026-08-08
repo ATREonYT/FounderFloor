@@ -30,6 +30,10 @@ export default function TrialCard({ className = "" }: { className?: string }) {
 
   const left = daysLeft(perks.trial.until);
   const running = left > 0;
+  // Past the cap an invite adds nothing on this side, so the card must
+  // stop offering it — the invite card directly below already says so, and
+  // two cards contradicting each other 4px apart is worse than either.
+  const moreToEarn = perks.referral.daysEarned < perks.referral.daysCap;
   // A permanent entitlement — a founding seat, a real subscription — has no
   // end date. Offering those people a trial would be offering a downgrade.
   const permanent = state.sub !== "free" && !perks.trial.until;
@@ -54,9 +58,13 @@ export default function TrialCard({ className = "" }: { className?: string }) {
           No card was taken and nothing renews, so there is nothing to
           cancel.
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Invite someone and you both get {perks.referral.daysPer} more days.
-        </p>
+        {/* Not once they are at the cap: creditReferral gives 0 from there
+            on, and the invite card four pixels below already says so. */}
+        {moreToEarn && (
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            Invite someone and you both get {perks.referral.daysPer} more days.
+          </p>
+        )}
       </div>
     );
   }
@@ -68,8 +76,9 @@ export default function TrialCard({ className = "" }: { className?: string }) {
         <p className="mt-1.5 font-display text-lg">Your trial has finished.</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           You are back on the free floor, which is still the whole floor.
-          Inviting someone gives you another {perks.referral.daysPer} days of
-          Founder+, and gives them the same.
+          {moreToEarn
+            ? ` Inviting someone gives you another ${perks.referral.daysPer} days of Founder+, and gives them the same.`
+            : " Inviting someone still gives them 7 days, though you have already earned all the days invites can add."}
         </p>
       </div>
     );

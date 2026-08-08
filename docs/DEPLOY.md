@@ -234,9 +234,11 @@ How it hangs together:
   be a downgrade dressed as a reward.
 - `GET /state` returns the **effective** entitlement, so an expired trial
   reads as no entitlement without anything having to sweep the data file.
-  It also returns `perks.trial.lapsed`, which is how the browser tells "your
-  window ended" apart from "this deploy has no billing configured". Without
-  it a trial would expire on the server and never expire on the device.
+  It returns `perks` for every account it recognises, and that pairing is
+  what makes a null `paid` authoritative in the browser — "you hold
+  nothing", as opposed to "this deploy has no billing configured". Without
+  it a trial would expire on the server and never expire on the device, and
+  an `/admin/grant` revoke would never land either.
 
     curl https://your-host/state?me=acct_...   # -> {"paid":…, "perks":{…}}
 
@@ -290,8 +292,14 @@ same 404 as any unknown path.
 | `NEXT_PUBLIC_STRIPE_LINK_TICKETS_L` | Stripe Payment Link URL (ticket pack) |
 
 - Without the Stripe vars everything works and the membership UI honestly
-  says billing isn't live (buttons simulate). With them, every buy button
-  opens real checkout — no code change.
+  says billing goes live at launch — there is nothing to click, and the
+  free trial is the real way to see Founder+ in the meantime. With them,
+  every buy button opens real checkout — no code change.
+- There used to be buttons here that flipped the tier locally to "simulate"
+  a purchase. They are gone. One of them granted the founding badge, which
+  is never clawed back, so a click handed out the scarcest thing on the
+  site; and the server, quite rightly, never agreed with any of it, so the
+  switch undid itself at the next heartbeat.
 
 ### Stripe setup, end to end
 
