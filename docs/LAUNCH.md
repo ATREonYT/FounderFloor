@@ -117,3 +117,116 @@ properly in the sub, so you are not a stranger arriving with a link.
 weekly (`lib/data/event-window.mjs`). A one-off means anyone reading on
 Monday is already too late and bounces. "Every Sunday, first one is the 9th"
 gives a late reader a reason to click anyway.
+
+
+---
+
+# The empty-room video
+
+The one piece of launch content with real reach, and the one that cannot be
+written in advance. Its whole power is that it is true, so the script below
+is a skeleton with the ending left open: shoot it, then pick the close that
+matches what actually happened.
+
+Target length 35-45 seconds. Vertical. Most people watch muted, so every
+line needs to exist as on-screen text as well as voiceover.
+
+## Shoot this BEFORE Sunday
+
+So that a quiet night still produces a video instead of nothing:
+
+- 30 seconds of screen recording walking your own character around the
+  empty hall. Wide, unhurried.
+- A slow pan across the empty stands, close enough to read TO LET.
+- One clip of you claiming a stand and dressing it.
+- Your face, if you are willing to be on camera. It roughly doubles reach
+  on this kind of video and there is no way around that.
+
+Then on the night: **start recording at 17:55 and do not stop.** The
+useable moment is unpredictable and unrepeatable. Screen record with system
+audio on.
+
+## The script
+
+**0:00-0:03 — the hook.** Your character alone in the middle of the floor.
+Do not explain anything yet.
+
+> On screen: `6:00pm. I invited the internet.`
+> Voice: "It's six o'clock. This is the room."
+
+**0:03-0:09 — what it is, fast.** Cut to the pan across the stands.
+
+> Voice: "I built a floor where founders keep a stand and you walk up and
+> talk to them. One hour a week, everybody at the same time. That hour is
+> right now."
+
+**0:09-0:15 — the honest number.** Stand still in the empty aisle.
+
+> On screen: `24 stands.`
+> Voice: "Twenty-four stands. Right now [N] of them have somebody standing
+> at them."
+
+**0:15-0:24 — the wait.** Do not cut this short and do not fill it with
+talking. Dead air is the joke, and the tension is what makes people stay to
+the end. Let the little guy stand there.
+
+> On screen: a running clock, or nothing at all.
+
+**0:24-0:36 — the ending.** Pick one:
+
+*If nobody came, or one or two people did:*
+
+> Voice: "So that went great. Two people. One of them was me."
+> On screen: `2 people. one was me.`
+> Voice: "Doing it again next Sunday. Same time. It only takes one week
+> where enough people show up at once, and I have got a lot of Sundays."
+
+*If a handful came (the likely one):*
+
+> Voice: "Seven people. Which is not a crowd. But seven people talked to
+> each other for an hour, and that is seven more than a dead Discord
+> managed all year."
+> Then show one real chat exchange from the night.
+> Voice: "Next Sunday, same time."
+
+*If it actually worked:*
+
+> Voice: "I did not think that would work."
+> Show the floor with people on it. No narration over it — just let it run.
+> Voice: "Every Sunday, six o'clock. Come and see."
+
+**0:36-0:42 — the ask.** One line, one URL.
+
+> On screen: `founderfloor.net — Sundays, 18:00 CET`
+> Voice: "It is free, it runs in the browser, and I would rather you came
+> and told me it is bad than not came at all."
+
+## Caption
+
+> Nobody tells you the worst part of building a community product: you have
+> to be in the empty room first. Sundays, 18:00 CET.
+
+Ask a question in a pinned first comment — comment velocity in the first
+hour drives distribution harder than likes do:
+
+> Genuine question, what would actually make you show up to something like
+> this?
+
+## Rules for this one
+
+**Be amused, not wounded.** The video works if you find it funny. It dies
+if it reads as bitter, or as fishing for sympathy. Same words, completely
+different result — it is entirely in the delivery.
+
+**Do not fake the room.** Not one staged extra, not a busier take from
+another night. You are inviting people to a specific hour on a specific
+Sunday; anyone who takes you up on it finds out immediately, and they are
+exactly the people you needed.
+
+**Do not apologise in it.** No "sorry for the self-promo", no "I know this
+is cringe". It is a launch, launches are allowed.
+
+**The follow-up is the real asset.** Whatever the first one does, the
+second video is "that video got X views, here is what last night looked
+like." A series with a number beats a one-off every time, and the second
+one is much easier to make than the first.
