@@ -105,6 +105,7 @@ export default function AdminPage() {
   const [kickId, setKickId] = useState("");
   const [standFloor, setStandFloor] = useState("");
   const [standOwner, setStandOwner] = useState("");
+  const [wallOwner, setWallOwner] = useState("");
   const [announceText, setAnnounceText] = useState("");
 
   const auth = ready ? getAuth() : null;
@@ -292,6 +293,22 @@ export default function AdminPage() {
               }
             >
               Clear stand
+            </button>
+          </Row>
+          <Row>
+            {/* Clearing a stand only reaches one floor, and a spam listing
+                usually has no stand at all — registering a startup is the
+                cheap way onto the founders wall. This takes the listing off
+                every public surface at once, without banning: a wrong
+                listing and a bad actor are different problems. */}
+            <Field label="Wall takedown — owner profile id" value={wallOwner} onChange={setWallOwner} />
+            <button
+              type="button"
+              className={BTN}
+              disabled={!wallOwner.trim()}
+              onClick={() => run("wall-remove", "/admin/wall-remove", { ownerId: wallOwner.trim() })}
+            >
+              Remove listing
             </button>
           </Row>
           {overview && overview.banned.length > 0 && (

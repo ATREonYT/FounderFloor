@@ -236,6 +236,18 @@ function isBannedAcct(acct) {
   return !!acct && (banned.has(acct.id.toLowerCase()) || (acct.email && banned.has(acct.email)));
 }
 
+/**
+ * Same question asked about a bare profile id — the form the public
+ * listings have. A guest id is not an account and cannot be banned by
+ * email, so the id ban list is the only lever there, which is exactly what
+ * /admin/ban writes.
+ */
+function isBannedOwner(id) {
+  if (typeof id !== "string" || !id) return false;
+  if (banned.has(id.toLowerCase())) return true;
+  return isBannedAcct(accountsById.get(id));
+}
+
 /** Resolve an /admin/* caller: valid token AND admin-listed email, or null. */
 function adminFor(body) {
   const token = typeof body?.token === "string" ? body.token : "";
@@ -1802,6 +1814,54 @@ function sanitizeStr(v, max, fallback = "") {
 }
 
 /**
+ * A founder's link to their own thing, or undefined.
+ *
+ * This is the one field on the site that puts an ATTACKER-CHOSEN URL in
+ * front of a visitor, so it is an allowlist, not a blocklist. Only http
+ * and https survive — `javascript:` and `data:` are the classic ways a
+ * "website" field becomes stored XSS, and while React will not render a
+ * javascript: href as script, this value also travels into the directory,
+ * the wall and (eventually) anywhere else that trusts server-cleaned data.
+ * Refusing the scheme outright is the version that stays safe when the
+ * next consumer forgets to check.
+ *
+ * Credentials are stripped rather than rejected, since `user:pass@host` in
+ * a submitted link is nearly always a paste accident, and keeping them
+ * would leak somebody's password onto a public page.
+ *
+ * A bare "example.com" is accepted and https:// is assumed — people type
+ * their domain without a scheme, and refusing that is a form that looks
+ * broken rather than strict.
+ */
+function sanitizeLink(v) {
+  if (typeof v !== "string") return undefined;
+  const raw = stripControl(v).trim();
+  // Length is checked BEFORE any clamping. sanitizeStr would truncate,
+  // and a truncated URL is worse than no URL: it still looks like a link
+  // and it points somewhere the founder never wrote.
+  if (!raw || raw.length > 200) return undefined;
+  let url;
+  try {
+    url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return undefined;
+  // A hostname with no dot is a machine on the READER'S network rather
+  // than a public site — "localhost", "router", an intranet name — and a
+  // link field is not a port scanner.
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(url.hostname)) return undefined;
+  // ...which the dot rule alone does not cover: 127.0.0.1 is all dots and
+  // digits and sails through it. No real TLD is numeric, so a numeric last
+  // label is an IP literal (or a typo), and both are refused. Bracketed
+  // IPv6 hosts fail the rule above on the brackets.
+  if (/^\d+$/.test(url.hostname.slice(url.hostname.lastIndexOf(".") + 1))) return undefined;
+  url.username = "";
+  url.password = "";
+  return url.toString();
+}
+
+/**
  * Rebuild a startup object from untrusted input: only known fields survive,
  * all of them clamped. Returns null when structurally unusable. Shared by
  * stand claims (ws) and profile registrations (HTTP).
@@ -1825,6 +1885,7 @@ function sanitizeStartup(s) {
       goalProgress: Number.isFinite(goalProgress) ? Math.min(1, Math.max(0, goalProgress)) : 0,
       verifiedRevenue: Number.isFinite(verifiedRevenue) ? Math.max(0, verifiedRevenue) : 0,
       seekingCofounder: s.seekingCofounder === true,
+      link: sanitizeLink(s.link),
       tier: s.tier === "pro" || s.tier === "founder" ? s.tier : undefined,
       booth: {
         carpet: HEX_COLOR.test(booth.carpet) ? booth.carpet : "#C2B8A3",
@@ -2192,7 +2253,24 @@ function clientIp(req) {
   return ip;
 }
 
-/** POST /auth/*: register, login, logout. Fixed-window rate limit per IP. */
+/**
+ * POST /auth/*: register, login, logout. Fixed-window rate limit per IP.
+ *
+ * /startups/register and /trial/start ride on this too, which is
+ * deliberate — they are the other two ways to make something appear on a
+ * public page — but it means one founders-wall submission spends TWO of
+ * the window's slots (the account, then the listing). Ten per minute per
+ * IP therefore allows five wall submissions a minute from one address:
+ * far more than a person needs, far less than a script wants.
+ *
+ * Tunable for the same reason the trial lengths are, and guarded the same
+ * way: a garbled value falls back to the default rather than to NaN, since
+ * `count > NaN` is false forever and would remove the limit entirely.
+ */
+const AUTH_RATE_LIMIT = (() => {
+  const n = Number(process.env.AUTH_RATE_LIMIT ?? 10);
+  return Number.isInteger(n) && n >= 1 && n <= 100_000 ? n : 10;
+})();
 const authAttempts = new Map(); // ip -> { windowStart, count }
 function authRateLimited(req) {
   const ip = clientIp(req);
@@ -2209,7 +2287,7 @@ function authRateLimited(req) {
       }
     }
   }
-  return ++a.count > 10;
+  return ++a.count > AUTH_RATE_LIMIT;
 }
 
 async function handleAuthPost(req, res, pathname) {
@@ -2894,6 +2972,39 @@ async function handleAdminPost(req, res, pathname) {
       return;
     }
 
+    /**
+     * Take a listing off the public wall and directory.
+     *
+     * /admin/stand-clear only reaches a stand on one floor, which is a
+     * different thing: a founder who registered a startup without ever
+     * claiming a spot has no stand to clear, and that is exactly the cheap
+     * path a spammer takes to get a link onto the front page. This removes
+     * the registry entry AND every stand the owner holds, everywhere.
+     *
+     * It does not ban. A wrong listing and a bad actor are different
+     * problems and the second one has /admin/ban, which now also hides
+     * everything they have listed.
+     */
+    if (pathname === "/admin/wall-remove") {
+      const ownerId = sanitizeStr(body.ownerId, MAX_ID_LEN);
+      if (!ownerId) {
+        sendJson(res, { error: "which owner?" });
+        return;
+      }
+      let removed = registry.delete(ownerId) ? 1 : 0;
+      for (const [fid, byOwner] of stands) {
+        if (fid === "__inbox") continue;
+        if (!byOwner.delete(ownerId)) continue;
+        removed++;
+        const room = rooms.get(fid);
+        if (room) broadcast(room, { t: "booth_clear", ownerId });
+      }
+      if (removed) scheduleSave();
+      console.log(`[admin] ${admin.email} removed ${removed} listing(s) for ${ownerId}`);
+      sendJson(res, { ok: true, removed });
+      return;
+    }
+
     if (pathname === "/admin/announce") {
       const text = moderateText(sanitizeText(body.text));
       if (!text) {
@@ -3369,6 +3480,11 @@ const server = createServer((req, res) => {
       if (!isRealFloor(floorId)) continue;
       const room = rooms.get(floorId);
       for (const [ownerId, st] of byOwner) {
+        // A ban has to reach the public pages too. This list is what the
+        // directory and the founders wall render, both of them ungated, so
+        // leaving a banned account's listing up means the ban only stopped
+        // them walking around while their advert stayed on the front page.
+        if (isBannedOwner(ownerId)) continue;
         standOwners.add(ownerId);
         out.push({
           floorId,
@@ -3384,6 +3500,7 @@ const server = createServer((req, res) => {
     for (const [ownerId, entry] of registry) {
       if (out.length >= 512) break;
       if (standOwners.has(ownerId)) continue; // their stand supersedes this
+      if (isBannedOwner(ownerId)) continue;
       out.push({
         floorId: null,
         spotIndex: -1,

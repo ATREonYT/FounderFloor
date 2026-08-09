@@ -4,6 +4,8 @@ import EmailCapture from "@/components/EmailCapture";
 import Spec from "@/components/Spec";
 import LaunchCountdown from "@/components/LaunchCountdown";
 import HeroScene from "@/components/HeroScene";
+import FoundersWall from "@/components/FoundersWall";
+import WallJoin from "@/components/WallJoin";
 
 /**
  * The launch gate: what everything rewrites to while LAUNCH_GATE is on.
@@ -91,6 +93,32 @@ export default function SoonPage() {
           <Spec className="text-muted">WASD · arrow keys · or tap</Spec>
         </figcaption>
       </figure>
+
+      {/* The founders wall.
+          A holding page whose only ask is an address gives a visitor
+          nothing to do and nothing to show anyone. This gives them both:
+          their startup goes up in public now, and the entry they make IS
+          the stand they walk up to on Sunday — so filling the wall fills
+          the room rather than competing with it. */}
+      <section aria-labelledby="wall-heading" className="mt-14 sm:mt-16">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 border-t border-line pt-3">
+          <Spec className="text-muted">Founders wall</Spec>
+          <Spec className="text-muted">Free · stays up · yours to edit</Spec>
+        </div>
+        <h2
+          id="wall-heading"
+          className="mt-6 font-display text-[1.8rem] leading-tight sm:text-[2.2rem]"
+        >
+          Who is coming.
+        </h2>
+        <p className="mt-3 max-w-xl text-pretty text-[0.975rem] leading-[1.75] text-muted">
+          Every startup that has taken a stand, doors open or not. Put yours
+          up and it is on the wall the moment you press the button.
+        </p>
+
+        <WallJoin className="mt-7" />
+        <FoundersWall className="mt-4" limit={24} />
+      </section>
 
       {/* No legal links here: the site footer below carries them, and the
           middleware keeps those pages open precisely so it can. */}

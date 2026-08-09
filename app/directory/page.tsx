@@ -266,6 +266,23 @@ export default function DirectoryPage() {
                   <p className="mt-1 text-sm leading-snug text-muted">{s.oneLiner}</p>
                   <p className="micro mt-1.5 text-muted">
                     {s.founder} · {s.category}
+                    {s.link && (
+                      <>
+                        {" · "}
+                        {/* A founder's own URL, same rules as the wall: no
+                            ranking credit passed on, no window.opener
+                            handed over, host shown so nobody clicks
+                            blind. */}
+                        <a
+                          href={s.link}
+                          target="_blank"
+                          rel="nofollow ugc noopener noreferrer"
+                          className="text-accent underline underline-offset-2 hover:text-accent-strong"
+                        >
+                          {s.link.replace(/^https?:\/\/(www\.)?/, "").replace(/\/+$/, "")}
+                        </a>
+                      </>
+                    )}
                   </p>
                 </div>
                 {floor && (

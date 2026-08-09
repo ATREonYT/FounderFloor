@@ -232,6 +232,7 @@ const BADGE_META: Record<string, { name: string; blurb: string; howTo: string; g
 interface BoothForm {
   name: string;
   oneLiner: string;
+  link: string;
   pitch: string;
   category: string;
   goal: string;
@@ -250,6 +251,7 @@ interface BoothForm {
 const EMPTY_FORM: BoothForm = {
   name: "",
   oneLiner: "",
+  link: "",
   pitch: "",
   category: "",
   goal: "",
@@ -268,6 +270,7 @@ function formFrom(s: Startup): BoothForm {
   return {
     name: s.name,
     oneLiner: s.oneLiner,
+    link: s.link ?? "",
     pitch: s.pitch,
     category: s.category,
     goal: s.goal,
@@ -548,6 +551,10 @@ export default function ProfilePage() {
       id: "mine",
       name: form.name.trim(),
       oneLiner: form.oneLiner.trim(),
+      // The server rebuilds this with sanitizeLink() and drops anything
+      // that is not a plain http(s) address, so a typo here costs the link
+      // rather than the save.
+      link: form.link.trim() || undefined,
       pitch: form.pitch.trim(),
       founder: state.profile.name,
       founderLook: state.profile.look,
@@ -960,6 +967,29 @@ export default function ProfilePage() {
                 placeholder="What it does, in one breath"
                 className="w-full rounded-md border border-line px-3 py-2 text-sm placeholder:text-muted/70"
               />
+            </div>
+            <div>
+              <label htmlFor="booth-link" className="micro mb-1.5 block text-muted">
+                Link — shown on your stand and on the founders wall
+              </label>
+              <input
+                id="booth-link"
+                // Plain text on purpose. type="url" makes the browser
+                // refuse a bare "yourstartup.com" — which is what people
+                // type, and exactly what sanitizeLink() is written to
+                // accept — and it refuses it by blocking the whole save.
+                type="text"
+                inputMode="url"
+                value={form.link}
+                maxLength={200}
+                onChange={(e) => set("link", e.target.value)}
+                placeholder="yourstartup.com"
+                className="w-full rounded-md border border-line px-3 py-2 text-sm placeholder:text-muted/70"
+              />
+              <p className="micro mt-1 text-muted">
+                Optional. Anything that is not a normal http(s) address is
+                dropped rather than shown.
+              </p>
             </div>
             <div>
               <label htmlFor="booth-pitch" className="micro mb-1.5 block text-muted">

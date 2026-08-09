@@ -14,6 +14,8 @@ import Parallax from "@/components/Parallax";
 import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
 import AdmissionStubs from "@/components/AdmissionStubs";
 import FoundingSeatsCard from "@/components/FoundingSeatsCard";
+import FoundersWall from "@/components/FoundersWall";
+import WallJoin from "@/components/WallJoin";
 import Spec from "@/components/Spec";
 
 /**
@@ -266,11 +268,12 @@ const FAQ = [
 const PROGRAMME: IndexEntry[] = [
   { id: "route", n: "01", label: "Three stops, one lap" },
   { id: "index", n: "02", label: "Find your way around" },
-  { id: "halls", n: "03", label: "The floor" },
-  { id: "ranks", n: "04", label: "The rank ladder" },
-  { id: "admission", n: "05", label: "Admission" },
-  { id: "roadmap", n: "06", label: "The floor keeps changing" },
-  { id: "faq", n: "07", label: "Fair questions" },
+  { id: "wall", n: "03", label: "The founders wall" },
+  { id: "halls", n: "04", label: "The floor" },
+  { id: "ranks", n: "05", label: "The rank ladder" },
+  { id: "admission", n: "06", label: "Admission" },
+  { id: "roadmap", n: "07", label: "The floor keeps changing" },
+  { id: "faq", n: "08", label: "Fair questions" },
 ];
 
 /* ------------------------------------------------------------------ page */
@@ -485,9 +488,27 @@ export default function LandingPage() {
         </ul>
       </Section>
 
-      {/* ============================================ 03 — THE HALL */}
+      {/* ============================================ 03 — THE WALL */}
+      {/* High on the page on purpose. Everything above it is the site
+          describing itself; this is other people, which is the only part a
+          stranger has no reason to doubt. It is also the shortest path from
+          "what is this" to "I am in it" — no download, no floor, no
+          waiting for Sunday. */}
       <Section
         n="03"
+        id="wall"
+        kicker="Who is here"
+        title="The founders wall"
+        lede="Every startup that has taken a stand, live from the floor server. Adding yours is free and takes one form."
+        tone="panel"
+      >
+        <WallJoin />
+        <FoundersWall className="mt-4" limit={24} />
+      </Section>
+
+      {/* ============================================ 04 — THE HALL */}
+      <Section
+        n="04"
         id="halls"
         kicker="The venue"
         title={MANY_FLOORS ? "The floors" : "The floor"}
@@ -563,7 +584,7 @@ export default function LandingPage() {
 
       {/* ============================================ 04 — THE BOARD */}
       <Section
-        n="04"
+        n="05"
         id="ranks"
         kicker="The board"
         title="The rank ladder"
@@ -617,7 +638,7 @@ export default function LandingPage() {
 
       {/* ============================================ 05 — ADMISSION */}
       <Section
-        n="05"
+        n="06"
         id="admission"
         kicker="What costs money"
         title="Admission"
@@ -635,7 +656,7 @@ export default function LandingPage() {
 
       {/* ============================================ 06 — THE BUILD LOG */}
       <Section
-        n="06"
+        n="07"
         id="roadmap"
         kicker="Shipping weekly"
         title="The floor keeps changing"
@@ -673,7 +694,7 @@ export default function LandingPage() {
 
       {/* ============================================ 07 — ENQUIRIES */}
       <Section
-        n="07"
+        n="08"
         id="faq"
         kicker="Before you ask"
         title="Fair questions"

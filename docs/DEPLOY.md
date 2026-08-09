@@ -262,6 +262,42 @@ twice. To reopen the offer after it closes, raise `FOUNDING_SEATS` and
 restart; the next boot backfills the difference to the oldest accounts that
 do not already hold one.
 
+### The founders wall
+
+The wall on the landing page and on the launch gate is **not a second
+database**. It renders `GET /startups` — the same listing the directory
+shows and the same text painted on that founder's stand. Editing a stand
+edits the wall entry, because they are one record. Adding yourself through
+the wall form makes an account, registers the startup, and that entry is
+already your stand when you first walk in.
+
+Startups may now carry a `link`. It is the only field on the site that puts
+a stranger's URL in front of a visitor, so:
+
+- `sanitizeLink()` on the server is an **allowlist**: http/https only, a
+  hostname with a dot and a non-numeric last label (so `javascript:`,
+  `data:`, `localhost`, `127.0.0.1` and intranet names are all refused),
+  credentials stripped, 200 characters max **checked before truncation** —
+  a shortened URL points somewhere its owner never wrote.
+- Every renderer uses `rel="nofollow ugc noopener noreferrer"`. Not
+  politeness: a public page anyone can post links to is a link farm without
+  it, and the penalty lands on this domain.
+- `node server/test/wall.mjs` covers both halves against a real server.
+
+Anti-spam is the account, not a filter. A wall entry costs a working email
+address, and both halves of the submission (`/auth/register` then
+`/startups/register`) spend a slot in the per-IP window — see
+`AUTH_RATE_LIMIT` below — so one address can post about five listings a
+minute. Bans now hide every listing the banned owner has, and
+`/admin/wall-remove` takes a single listing off every public surface
+without banning anyone.
+
+    Environment=AUTH_RATE_LIMIT=10
+
+Ten POSTs per IP per minute across `/auth/*`, `/startups/*` and
+`/trial/start`. Raise it only if real founders start hitting it at launch;
+a garbled value falls back to 10 rather than removing the limit.
+
 ### Operator console
 
 `ADMIN_EMAILS` (comma-separated, default
@@ -270,7 +306,7 @@ account moves domains) names the
 accounts allowed to use `/admin` on the site: grants (membership, founding
 badge, tickets), bans/unbans (by email or profile id — bans kick live
 sessions, clear stands, and block both login and floor joins), kicks,
-stand clearing, and floor-wide announcements. Sign in as that account and
+stand clearing, wall takedowns, and floor-wide announcements. Sign in as that account and
 open `founderfloor.net/admin`. For everyone else the endpoints return the
 same 404 as any unknown path.
 

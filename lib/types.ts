@@ -140,6 +140,16 @@ export interface Startup {
   verifiedRevenue: number; // monthly USD, drives rank; 0 = unverified
   seekingCofounder: boolean;
   /**
+   * Where to find the thing itself. Optional, http(s) only, and rebuilt by
+   * sanitizeLink() on the server before it is ever stored.
+   *
+   * This is the one field on the site that puts a STRANGER'S URL in front
+   * of a visitor, so anything rendering it owes them the full set:
+   * rel="nofollow ugc noopener noreferrer", target="_blank", and the host
+   * shown in the label so nobody clicks blind.
+   */
+  link?: string;
+  /**
    * The owner's paid plan at save time — drives the visibility perks
    * (directory/board priority, tags, Founder+ gold stand trim). Absent for
    * free members and all seed startups.
