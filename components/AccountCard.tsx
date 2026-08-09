@@ -203,10 +203,18 @@ export default function AccountCard({
   if (auth) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm">
-          Signed in as <span className="font-medium">{auth.name}</span>
-          {auth.email && <span className="ml-2 text-muted">({auth.email})</span>}
-          <span className="micro ml-2 rounded-sm border border-verify/40 px-1.5 py-0.5 text-verify">
+        {/* A flex row that wraps, not a paragraph with margins. A long
+            address plus the chip is wider than a 360px phone, and inline
+            margins gave the chip nowhere to go — it hung past the edge and
+            took the page's horizontal scroll with it. */}
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span>
+            Signed in as <span className="font-medium">{auth.name}</span>
+          </span>
+          {auth.email && (
+            <span className="min-w-0 break-all text-muted">({auth.email})</span>
+          )}
+          <span className="micro shrink-0 rounded-sm border border-verify/40 px-1.5 py-0.5 text-verify">
             verified identity
           </span>
         </p>

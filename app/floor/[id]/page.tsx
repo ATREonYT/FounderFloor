@@ -34,6 +34,7 @@ import ChatPanel, { type ChatThread } from "@/components/ChatPanel";
 import EmoteBar from "@/components/EmoteBar";
 import HoverCard from "@/components/HoverCard";
 import TutorialCoach from "@/components/TutorialCoach";
+import { controlCopy, useDevice } from "@/lib/device";
 import GraduationCeremony from "@/components/GraduationCeremony";
 import QuietFloorCard from "@/components/QuietFloorCard";
 import QuestPanel from "@/components/QuestPanel";
@@ -149,7 +150,13 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [tab, setTab] = useState<string>("floor");
   const [hover, setHover] = useState<HoverTarget | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [coarse, setCoarse] = useState(false);
+  /* One source for "what am I on". `coarse` used to be worked out here with
+     its own media query while the engine did the same thing separately;
+     they could disagree, and the hints a visitor reads have to match the
+     controls they actually have. */
+  const device = useDevice();
+  const coarse = device.pointer === "touch";
+  const controls = controlCopy(device);
   const [toast, setToast] = useState<ToastData | null>(null);
   // Touch users have no M key; this mirrors the engine's on-when-map-overflows
   // default (true on any phone-sized viewport) and drives the "map" button.
@@ -243,14 +250,6 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     if (ready && floor && !nameSet) router.replace("/lobby");
   }, [ready, floor, nameSet, router]);
 
-  // coarse pointer (touch) — different control hints, same game
-  useEffect(() => {
-    const mq = window.matchMedia("(pointer: coarse)");
-    setCoarse(mq.matches);
-    const onChange = (e: MediaQueryListEvent): void => setCoarse(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   // Mail toast click: open that connection's chat thread in the panel.
   const openSocialFromToast = useCallback((peerId: string) => {
@@ -1266,14 +1265,70 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               ? `${presence.count} here`
               : "solo preview — floor server offline"}
           </span>
+          {coarse && (
+            <button
+              type="button"
+              aria-pressed={minimapOn}
+              aria-label="Toggle the map"
+              onClick={() => {
+                const next = !minimapOn;
+                setMinimapOn(next);
+                handleRef.current?.setMinimap(next);
+              }}
+              className={`glass min-h-[44px] min-w-[44px] px-3 text-xs shadow-float ${
+                minimapOn ? "text-ink" : "text-muted"
+              }`}
+            >
+              map
+            </button>
+          )}
+          {coarse && (
+            <button
+              type="button"
+              onClick={() => setHelpOpen((v) => !v)}
+              aria-expanded={helpOpen}
+              aria-label="Help"
+              className="glass min-h-[44px] min-w-[44px] text-sm text-muted shadow-float"
+            >
+              ?
+            </button>
+          )}
           <Link
             href="/lobby"
-            className="glass px-3 py-2 text-xs text-ink shadow-float hover:bg-paper"
+            className={`glass px-3 text-xs text-ink shadow-float hover:bg-paper ${
+              coarse ? "flex min-h-[44px] items-center" : "py-2"
+            }`}
           >
             Leave
           </Link>
         </div>
       </div>
+
+      {/* Touch help panel. The fine-pointer one hangs off the "?" in the
+          bottom row; on a phone that button lives up top, so the panel does
+          too — anchored under it rather than floating over the reactions. */}
+      {coarse && helpOpen && (
+        <div className="pointer-events-auto absolute right-3 top-16 z-30 w-64 max-w-[calc(100vw-24px)]">
+          <div className="glass p-3 text-xs leading-relaxed text-muted shadow-float">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="micro text-ink">Controls</p>
+              <button
+                type="button"
+                onClick={() => setHelpOpen(false)}
+                className="micro -my-2 min-h-[44px] px-2 text-muted"
+              >
+                close
+              </button>
+            </div>
+            {controls.lines.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+            <p className="mt-1.5 border-t border-line pt-1.5">
+              Quests live top-left. Finish them for reactions and titles.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* quest tracker — the single "what should I do?" surface (the ticker
           now lives in the chat panel's header, and the tour is its own card) */}
@@ -1344,9 +1399,9 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       {nearBooth && !activeBooth && (
         <div className="pointer-events-none absolute bottom-44 left-1/2 -translate-x-1/2 sm:bottom-24">
           <span className="glass px-3 py-1.5 text-sm shadow-float">
-            {!coarse && (
+            {controls.interactKey && (
               <kbd className="micro mr-2 rounded-sm border border-line px-1 py-0.5 text-muted">
-                E
+                {controls.interactKey}
               </kbd>
             )}
             {nearBooth.startup
@@ -1465,7 +1520,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         <div className="pointer-events-none absolute bottom-44 left-1/2 flex -translate-x-1/2 justify-center sm:bottom-20">
           <TutorialCoach
             done={state.onboarding}
-            coarse={coarse}
+            device={device}
             onSkip={() => actions.setTutorialDone(true)}
           />
         </div>
@@ -1498,39 +1553,22 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         {/* min-w-0 + the bar's own horizontal scroll: eight 44px reaction
             buttons plus the map toggle are wider than a 390px phone, and
             without this the row was silently clipped at the left edge */}
-        <div className="order-2 flex min-w-0 items-stretch gap-2 sm:order-none">
+        {/* On a phone the reaction row owns this line ALONE. Eight buttons
+            plus a map toggle plus a help button do not fit across 360px,
+            and the row silently scrolled — three reactions existed that
+            nobody could see. Map and help move up to the top-right cluster
+            instead, where phone chrome belongs. */}
+        <div className="order-2 flex min-w-0 items-stretch justify-center gap-2 sm:order-none">
           <EmoteBar onEmote={handleEmote} unlocked={emotes} />
-          {coarse && (
-            <button
-              type="button"
-              aria-pressed={minimapOn}
-              onClick={() => {
-                const next = !minimapOn;
-                setMinimapOn(next);
-                handleRef.current?.setMinimap(next);
-              }}
-              className={`glass pointer-events-auto px-3 text-xs shadow-float ${
-                minimapOn ? "text-ink" : "text-muted"
-              }`}
-            >
-              map
-            </button>
-          )}
-          {/* help lives with the other controls — a lone centered "?" island
-              above the emote bar read as misplaced on phones */}
-          <div className="relative">
+          {/* Fine pointers keep help down here with the other controls; on
+              touch it lives in the top-right cluster, see above. */}
+          <div className={`relative ${coarse ? "hidden" : ""}`}>
             {helpOpen && (
               <div className="glass pointer-events-auto absolute bottom-10 right-0 w-56 p-3 text-xs leading-relaxed text-muted shadow-float">
                 <p className="micro mb-1.5 text-ink">Controls</p>
-                {coarse ? (
-                  <p>Tap to walk. Tap a booth to talk. Buttons below to react.</p>
-                ) : (
-                  <>
-                    <p>WASD / arrows or click — walk</p>
-                    <p>E — talk to the booth you&rsquo;re near</p>
-                    <p>1–8 — reactions · M — minimap</p>
-                  </>
-                )}
+                {controls.lines.map((line) => (
+                  <p key={line}>{line}</p>
+                ))}
                 <p className="mt-1.5 border-t border-line pt-1.5">
                   Quests live top-left. Finish them for reactions and titles.
                 </p>
@@ -1541,7 +1579,9 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               onClick={() => setHelpOpen((v) => !v)}
               aria-expanded={helpOpen}
               aria-label="Help"
-              className="glass pointer-events-auto h-9 w-9 text-sm text-muted shadow-float hover:text-ink"
+              className={`glass pointer-events-auto shrink-0 text-sm text-muted shadow-float hover:text-ink ${
+                coarse ? "h-11 w-11" : "h-9 w-9"
+              }`}
             >
               ?
             </button>

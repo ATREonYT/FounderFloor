@@ -8,6 +8,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { EMOTES, type EmoteKind } from "@/lib/types";
+import { useDevice } from "@/lib/device";
 import { questForEmote } from "@/lib/data/quests";
 import { emoteDataUrl } from "@/game/emotes";
 
@@ -30,6 +31,27 @@ export default function EmoteBar({
   /** Emote kinds this player can fire (quests unlock the rest). */
   unlocked: EmoteKind[];
 }) {
+  /* Control size follows the input AND the room available.
+     A finger needs a big target and cannot read a "press 3" caption for a
+     keyboard it does not have; a mouse is precise, and every pixel the
+     chrome gives back is a pixel of hall.
+     The size is then computed rather than picked from a width bucket,
+     because the bucket was wrong on the phones between the buckets: at
+     393px eight 48px buttons overflowed and the last two reactions
+     silently scrolled out of reach. Better a row that fits at 42px than a
+     row at 48 with two buttons nobody can find. */
+  const device = useDevice();
+  const touch = device.pointer === "touch";
+  const showKeys = !touch;
+  /* Locked reactions are a preview, and a preview is a luxury on a 360px
+     screen. On touch they are dropped and the quest panel — which is where
+     you would go to unlock them anyway — carries that job alone. */
+  const shown = touch ? EMOTES.filter((em) => unlocked.includes(em.kind)) : EMOTES;
+  const GAP = 2;
+  const CHROME = 32 + 8; // page insets + the bar's own padding
+  const fit = Math.floor((device.width - CHROME - (shown.length - 1) * GAP) / Math.max(1, shown.length));
+  const px = touch ? Math.max(40, Math.min(48, fit)) : 36;
+
   const cbRef = useRef(onEmote);
   cbRef.current = onEmote;
   const unlockedRef = useRef(unlocked);
@@ -54,7 +76,7 @@ export default function EmoteBar({
       aria-label="Reactions"
       className="glass no-scrollbar pointer-events-auto flex max-w-full gap-0.5 overflow-x-auto p-1 shadow-float"
     >
-      {EMOTES.map((em) => {
+      {shown.map((em) => {
         const open = unlocked.includes(em.kind);
         if (!open) {
           const quest = questForEmote(em.kind);
@@ -65,12 +87,15 @@ export default function EmoteBar({
               disabled
               aria-label={`${em.label} — locked`}
               title={quest ? `Locked — finish "${quest.title}" (${quest.blurb})` : "Locked"}
-              className="flex h-11 w-11 shrink-0 cursor-help flex-col items-center justify-center rounded-sm opacity-40"
+              style={{ width: px, height: px }}
+              className="flex shrink-0 cursor-help flex-col items-center justify-center rounded-sm opacity-40"
             >
               <PixelEmote kind={em.kind} dim />
-              <span aria-hidden="true" className="micro mt-0.5 leading-none text-muted">
-                ✕
-              </span>
+              {showKeys && (
+                <span aria-hidden="true" className="micro mt-0.5 leading-none text-muted">
+                  ✕
+                </span>
+              )}
             </button>
           );
         }
@@ -81,12 +106,15 @@ export default function EmoteBar({
             onClick={() => onEmote(em.kind)}
             aria-label={`${em.label} (key ${em.key})`}
             title={`${em.label} — ${em.key}`}
-            className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-sm hover:bg-paper active:bg-accent-soft"
+            style={{ width: px, height: px }}
+            className="flex shrink-0 flex-col items-center justify-center rounded-sm hover:bg-paper active:bg-accent-soft"
           >
             <PixelEmote kind={em.kind} />
-            <span aria-hidden="true" className="micro mt-0.5 leading-none text-muted">
-              {em.key}
-            </span>
+            {showKeys && (
+              <span aria-hidden="true" className="micro mt-0.5 leading-none text-muted">
+                {em.key}
+              </span>
+            )}
           </button>
         );
       })}

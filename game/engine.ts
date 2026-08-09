@@ -31,10 +31,29 @@ import type { Npc } from "./npc";
 import { BubbleManager } from "./bubbles";
 import { findPath } from "./path";
 
-const ZOOM = 2; // world px -> screen px
-/** Snap a world coordinate to the screen-pixel grid (1/ZOOM world px). Sprites
- * and camera both live on this grid, so nothing shimmers against the floor. */
-const snapW = (v: number): number => Math.round(v * ZOOM) / ZOOM;
+/**
+ * World px -> screen px. NOT a constant any more: on a phone a fixed 2x
+ * showed about five and a half tiles across, which is less than two stands
+ * — you could not see where you were going, and walking felt like moving a
+ * torch around a dark room. The hall is 50 tiles wide; the window onto it
+ * has to grow as the screen shrinks, which means zooming OUT on small
+ * screens rather than in.
+ *
+ * The ladder is deliberately short. Pixel art wants whole-number scaling,
+ * and 1.5 already lands on whole device pixels at dpr 2 (the common phone
+ * case); anything finer buys a few tiles at the cost of shimmering edges
+ * on every wall in the room.
+ */
+const ZOOM_LADDER = [2, 1.5, 1] as const;
+/** The smallest window onto the hall worth calling a view: 7.5 x 7 tiles. */
+const MIN_VIEW_W = 240;
+const MIN_VIEW_H = 224;
+function zoomFor(cssW: number, cssH: number): number {
+  for (const z of ZOOM_LADDER) {
+    if (cssW / z >= MIN_VIEW_W && cssH / z >= MIN_VIEW_H) return z;
+  }
+  return ZOOM_LADDER[ZOOM_LADDER.length - 1];
+}
 const SPEED = 140; // player px/s
 const LERP_RATE = 12; // remote interpolation, fraction/s
 const SEND_INTERVAL = 0.1; // 10 packets/s while moving
@@ -459,14 +478,71 @@ export function createGame(opts: GameOptions): GameHandle {
     return null;
   };
 
+  /**
+   * Drag to steer, for fingers.
+   *
+   * Tap-to-walk is fine with a mouse and a wide view. On a phone the view
+   * is a fraction of the hall, so crossing it by tapping means tapping the
+   * edge, waiting, tapping again — the room feels far away. Holding and
+   * dragging anywhere turns the whole screen into a thumbstick: press,
+   * push in a direction, walk that way until you let go.
+   *
+   * A press that never travels past DRAG_DEAD is still a tap, so nothing
+   * that worked before stops working. Touch only: dragging with a mouse
+   * would fight click-to-walk, which people already know.
+   */
+  const DRAG_DEAD = 12; // px of slop before a press becomes a steer
+  const DRAG_FULL = 46; // px at which the stick is pushed all the way over
+  let drag: { id: number; x0: number; y0: number; vx: number; vy: number; steering: boolean } | null =
+    null;
+  /** Where the stick is on screen, for the HUD ring. null when idle. */
+  let dragUi: { x: number; y: number; dx: number; dy: number } | null = null;
   const onPointerDown = (e: PointerEvent): void => {
     if (e.pointerType === "mouse" && e.button !== 0) return;
     // Gate EVERY step, not just walking — a stray tap while the chat input
     // is focused must not switch DM tabs or swap the active booth card.
     if (!inputEnabled) return;
+    if (e.pointerType !== "mouse") {
+      // Decide on release: this could still be a tap.
+      drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, vx: 0, vy: 0, steering: false };
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        /* capture is a convenience — the up handler works without it */
+      }
+      return;
+    }
+    tapAt(e.clientX, e.clientY);
+  };
+
+  const onPointerUp = (e: PointerEvent): void => {
+    if (!drag || drag.id !== e.pointerId) return;
+    const wasSteering = drag.steering;
+    drag = null;
+    dragUi = null;
+    if (!wasSteering && inputEnabled) tapAt(e.clientX, e.clientY);
+  };
+
+  const onDragMove = (e: PointerEvent): void => {
+    if (!drag || drag.id !== e.pointerId) return;
+    const dx = e.clientX - drag.x0;
+    const dy = e.clientY - drag.y0;
+    const dist = Math.hypot(dx, dy);
+    if (!drag.steering) {
+      if (dist < DRAG_DEAD) return;
+      drag.steering = true;
+      clearPath(); // a steer overrides wherever the last tap was heading
+    }
+    const k = Math.min(1, dist / DRAG_FULL) / (dist || 1);
+    drag.vx = dx * k;
+    drag.vy = dy * k;
+    dragUi = { x: drag.x0, y: drag.y0, dx: dx * Math.min(1, DRAG_FULL / (dist || 1)), dy: dy * Math.min(1, DRAG_FULL / (dist || 1)) };
+  };
+
+  const tapAt = (clientX: number, clientY: number): void => {
     const rct = canvas.getBoundingClientRect();
-    const wx = cam.x + (e.clientX - rct.left) / ZOOM;
-    const wy = cam.y + (e.clientY - rct.top) / ZOOM;
+    const wx = cam.x + (clientX - rct.left) / zoom;
+    const wy = cam.y + (clientY - rct.top) / zoom;
     // 1) a remote player's avatar -> open a DM
     for (const [id, r] of remotes) {
       if (hitAvatar(wx, wy, r.x, r.y)) {
@@ -498,8 +574,8 @@ export function createGame(opts: GameOptions): GameHandle {
   let lastHoverMs = 0;
 
   const hoverAt = (cx: number, cy: number): HoverTarget | null => {
-    const wx = cam.x + cx / ZOOM;
-    const wy = cam.y + cy / ZOOM;
+    const wx = cam.x + cx / zoom;
+    const wy = cam.y + cy / zoom;
     for (const [id, r] of remotes) {
       if (hitAvatar(wx, wy, r.x, r.y)) {
         return {
@@ -508,8 +584,8 @@ export function createGame(opts: GameOptions): GameHandle {
           name: r.name,
           status: r.status,
           title: r.title,
-          x: (r.x - cam.x) * ZOOM,
-          y: (r.y - SPRITE_H - cam.y) * ZOOM,
+          x: (r.x - cam.x) * zoom,
+          y: (r.y - SPRITE_H - cam.y) * zoom,
         };
       }
     }
@@ -519,8 +595,8 @@ export function createGame(opts: GameOptions): GameHandle {
           kind: "npc",
           startupId: n.startupId,
           name: n.name,
-          x: (n.x - cam.x) * ZOOM,
-          y: (n.y - SPRITE_H - cam.y) * ZOOM,
+          x: (n.x - cam.x) * zoom,
+          y: (n.y - SPRITE_H - cam.y) * zoom,
         };
       }
     }
@@ -529,8 +605,8 @@ export function createGame(opts: GameOptions): GameHandle {
       return {
         kind: "booth",
         booth: b,
-        x: ((b.spot.x + 2) * TILE - cam.x) * ZOOM,
-        y: (b.spot.y * TILE - 8 - cam.y) * ZOOM,
+        x: ((b.spot.x + 2) * TILE - cam.x) * zoom,
+        y: (b.spot.y * TILE - 8 - cam.y) * zoom,
       };
     }
     return null;
@@ -577,6 +653,13 @@ export function createGame(opts: GameOptions): GameHandle {
   let dpr = 1;
   let cssW = canvas.clientWidth || 640;
   let cssH = canvas.clientHeight || 480;
+  /** Live world->screen scale. Recomputed by resize(); see zoomFor(). */
+  let zoom = zoomFor(cssW, cssH);
+  /** Snap a world coordinate to the screen-pixel grid (1/zoom world px).
+   *  Sprites and camera both live on this grid, so nothing shimmers
+   *  against the floor. Reads the LIVE zoom — a snapshot taken at module
+   *  load would keep snapping to the desktop grid after a rotate. */
+  const snapW = (v: number): number => Math.round(v * zoom) / zoom;
   /**
    * Adaptive resolution. Frame cost is dominated by canvas raster/composite
    * pixels, not our JS (measured ~3ms JS vs 50ms+ frames on software
@@ -585,7 +668,7 @@ export function createGame(opts: GameOptions): GameHandle {
    * compositor stretch it. Every rung keeps an integer device-px per world
    * px (4, 3, 2, 1), so the pixel art stays crisp — the last rungs just
    * look chunkier, which beats a slideshow. Starts at 2: dpr-3 phones pay
-   * 2.25x the pixels for fidelity ZOOM-2 pixel art can't show anyway.
+   * 2.25x the pixels for fidelity zoom-2 pixel art can't show anyway.
    */
   const DPR_LADDER = [2, 1.5, 1, 0.5] as const;
   /**
@@ -620,6 +703,9 @@ export function createGame(opts: GameOptions): GameHandle {
     dpr = Math.max(0.5, Math.min(DPR_LADDER[ladderIdx], window.devicePixelRatio || 1));
     cssW = canvas.clientWidth || cssW;
     cssH = canvas.clientHeight || cssH;
+    // Rotating a phone changes which rung of the ladder fits, so this is
+    // recomputed here rather than once at startup.
+    zoom = zoomFor(cssW, cssH);
     // floor, not round: content drawn under setTransform(dpr) covers at most
     // cssW*dpr device px — a rounded-up backing store keeps a stripe of
     // pixels no draw call can ever reach
@@ -637,11 +723,11 @@ export function createGame(opts: GameOptions): GameHandle {
   resize();
 
   // minimap defaults ON only when there's more hall than viewport
-  minimapOn = mapW > cssW / ZOOM || mapH > cssH / ZOOM;
+  minimapOn = mapW > cssW / zoom || mapH > cssH / zoom;
 
   // ---------- camera ----------
 
-  const cam: Cam = { x: 0, y: 0, w: cssW / ZOOM, h: cssH / ZOOM };
+  const cam: Cam = { x: 0, y: 0, w: cssW / zoom, h: cssH / zoom };
   const clampAxis = (want: number, map: number, view: number): number =>
     map <= view ? (map - view) / 2 : Math.max(0, Math.min(map - view, want));
 
@@ -660,6 +746,13 @@ export function createGame(opts: GameOptions): GameHandle {
     if (vx !== 0 && vy !== 0) {
       vx *= Math.SQRT1_2;
       vy *= Math.SQRT1_2;
+    }
+    // The thumbstick is analogue and already normalised to <=1, so it feeds
+    // in after the diagonal correction rather than through it. Keys win if
+    // somehow both are live (a tablet with a keyboard attached).
+    if (vx === 0 && vy === 0 && inputEnabled && drag?.steering) {
+      vx = drag.vx;
+      vy = drag.vy;
     }
     const keyMoving = vx !== 0 || vy !== 0;
     let moving = keyMoving;
@@ -787,8 +880,8 @@ export function createGame(opts: GameOptions): GameHandle {
     wx: number,
     wy: number,
   ): void => {
-    const sx = Math.round((wx - cam.x) * ZOOM);
-    const sy = Math.round((wy - SPRITE_H - cam.y) * ZOOM - 8);
+    const sx = Math.round((wx - cam.x) * zoom);
+    const sy = Math.round((wy - SPRITE_H - cam.y) * zoom - 8);
     if (sx < -90 || sx > cssW + 90 || sy < -60 || sy > cssH + 60) return;
     const st = status ? status.trim() : "";
     const ti = title ? title.trim().toUpperCase() : "";
@@ -837,12 +930,17 @@ export function createGame(opts: GameOptions): GameHandle {
 
   /** Screen-space y of a bubble's tail tip, sitting just above the name pill. */
   const bubbleTailY = (wy: number, labelH: number): number => {
-    const headTop = (wy - SPRITE_H - cam.y) * ZOOM;
+    const headTop = (wy - SPRITE_H - cam.y) * zoom;
     return labelH > 0 ? headTop - 11 - labelH : headTop - 4;
   };
 
   const drawMinimap = (): void => {
-    const k = Math.min(MINIMAP_MAX_W / mapW, MINIMAP_MAX_H / mapH);
+    // The map is a HUD element, so it is sized against the screen rather
+    // than fixed: 160x120 is a corner widget on a laptop and a third of the
+    // width of a 360px phone, which is why it read as being in the way.
+    const capW = Math.min(MINIMAP_MAX_W, Math.round(cssW * 0.3));
+    const capH = Math.min(MINIMAP_MAX_H, Math.round(cssH * 0.22));
+    const k = Math.min(capW / mapW, capH / mapH);
     const mw = mapW * k;
     const mh = mapH * k;
     const mx = cssW - MINIMAP_INSET - mw;
@@ -909,8 +1007,8 @@ export function createGame(opts: GameOptions): GameHandle {
 
   const render = (nowMs: number): void => {
     const t = nowMs / 1000;
-    cam.w = cssW / ZOOM;
-    cam.h = cssH / ZOOM;
+    cam.w = cssW / zoom;
+    cam.h = cssH / zoom;
     cam.x = clampAxis(player.x - cam.w / 2, mapW, cam.w);
     cam.y = clampAxis(player.y - cam.h / 2, mapH, cam.h);
     // Snap the camera to the device-pixel grid — fractional camera positions
@@ -919,7 +1017,7 @@ export function createGame(opts: GameOptions): GameHandle {
     // camera OUTWARD past the map edge by half a device px; snap toward the
     // interior at the upper clamp instead, or the ground stops short of the
     // viewport edge and (with the letterbox skipped) leaves stale pixels.
-    const grid = ZOOM * dpr;
+    const grid = zoom * dpr;
     cam.x = Math.round(cam.x * grid) / grid;
     cam.y = Math.round(cam.y * grid) / grid;
     if (cam.x > 0 && cam.x + cam.w > mapW) cam.x = Math.floor((mapW - cam.w) * grid) / grid;
@@ -935,7 +1033,7 @@ export function createGame(opts: GameOptions): GameHandle {
       ctx.fillRect(0, 0, cssW, cssH);
     }
 
-    const s = dpr * ZOOM;
+    const s = dpr * zoom;
     ctx.setTransform(s, 0, 0, s, -cam.x * s, -cam.y * s);
     // Ground: per-tile painting, viewport-culled inside (measured faster
     // than blitting a pre-baked map canvas — software rasterizers pay more
@@ -998,7 +1096,7 @@ export function createGame(opts: GameOptions): GameHandle {
     bubbles.draw(
       ctx,
       "me",
-      (player.x - cam.x) * ZOOM,
+      (player.x - cam.x) * zoom,
       bubbleTailY(player.y, myLabelH),
       nowMs,
       cssW,
@@ -1008,7 +1106,7 @@ export function createGame(opts: GameOptions): GameHandle {
       bubbles.draw(
         ctx,
         id,
-        (r.x - cam.x) * ZOOM,
+        (r.x - cam.x) * zoom,
         bubbleTailY(r.y, (r.status ? LABEL_H_STATUS : LABEL_H) + (r.title ? TITLE_EXTRA : 0)),
         nowMs,
         cssW,
@@ -1016,14 +1114,14 @@ export function createGame(opts: GameOptions): GameHandle {
       );
     }
     for (const n of npcs) {
-      bubbles.draw(ctx, n.bubbleId, (n.x - cam.x) * ZOOM, bubbleTailY(n.y, LABEL_H), nowMs, cssW, cssH);
+      bubbles.draw(ctx, n.bubbleId, (n.x - cam.x) * zoom, bubbleTailY(n.y, LABEL_H), nowMs, cssW, cssH);
     }
 
     if (nearBooth) {
       const wx = (nearBooth.spot.x + 2) * TILE;
       const wy = nearBooth.spot.y * TILE - 12;
-      const bx = (wx - cam.x) * ZOOM;
-      const by = (wy - cam.y) * ZOOM + Math.sin(t * 3) * 3;
+      const bx = (wx - cam.x) * zoom;
+      const by = (wy - cam.y) * zoom + Math.sin(t * 3) * 3;
       ctx.fillStyle = "rgba(255,253,245,0.95)";
       ctx.strokeStyle = "#E4DFD3";
       ctx.lineWidth = 1;
@@ -1039,6 +1137,37 @@ export function createGame(opts: GameOptions): GameHandle {
     }
 
     if (minimapOn) drawMinimap();
+    if (dragUi) drawStick();
+  };
+
+  /**
+   * The thumbstick, drawn where the finger landed.
+   *
+   * Only while steering, and only under the finger — a permanently parked
+   * on-screen pad would eat a corner of a screen that has none to spare,
+   * and would be wrong for the many people who just tap to walk.
+   */
+  const drawStick = (): void => {
+    if (!dragUi) return;
+    const rct = canvas.getBoundingClientRect();
+    const cx = dragUi.x - rct.left;
+    const cy = dragUi.y - rct.top;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 46, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(35,32,26,0.10)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(35,32,26,0.22)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx + dragUi.dx, cy + dragUi.dy, 18, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(217,72,15,0.85)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
   };
 
   // ---------- loop / lifecycle ----------
@@ -1183,13 +1312,22 @@ export function createGame(opts: GameOptions): GameHandle {
   raf = requestAnimationFrame(tick);
 
   const prevTouchAction = canvas.style.touchAction;
-  canvas.style.touchAction = "manipulation";
+  // "none", not "manipulation": the canvas is a thumbstick now, and a
+  // browser that keeps pan-and-zoom for itself will scroll the page out
+  // from under the finger mid-walk.
+  canvas.style.touchAction = "none";
 
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("blur", onBlur);
   canvas.addEventListener("pointerdown", onPointerDown);
   canvas.addEventListener("pointermove", onPointerMove);
+  canvas.addEventListener("pointermove", onDragMove);
+  canvas.addEventListener("pointerup", onPointerUp);
+  // A cancel is the browser taking the gesture away (a system swipe, a call
+  // coming in). Without this the player keeps walking after the finger is
+  // gone, which is the worst possible bug to leave in a movement stick.
+  canvas.addEventListener("pointercancel", onPointerUp);
   canvas.addEventListener("pointerleave", onPointerLeave);
 
   return {
@@ -1239,6 +1377,9 @@ export function createGame(opts: GameOptions): GameHandle {
       window.removeEventListener("blur", onBlur);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointermove", onDragMove);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointercancel", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerLeave);
       canvas.style.cursor = "";
       canvas.style.touchAction = prevTouchAction;

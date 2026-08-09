@@ -732,7 +732,11 @@ export default function ProfilePage() {
           <a
             key={id}
             href={`#${id}`}
-            className="min-h-[36px] shrink-0 whitespace-nowrap rounded-full border border-line bg-panel px-3.5 py-1.5 text-xs text-muted hover:border-ink hover:text-ink"
+            // 36px is a comfortable target for a cursor and a miss for a
+            // thumb. The media query asks the real question — is the thing
+            // pointing at this a finger — rather than guessing from width,
+            // so a touchscreen laptop gets it right too.
+            className="min-h-[36px] shrink-0 whitespace-nowrap rounded-full border border-line bg-panel px-3.5 py-1.5 text-xs text-muted hover:border-ink hover:text-ink [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:px-4"
           >
             {label}
           </a>

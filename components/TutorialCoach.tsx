@@ -5,52 +5,56 @@
  * bar, advancing as the player actually does each thing. Skippable. When the
  * last step lands the floor page marks the tutorial done, which completes the
  * "First steps" quest.
+ *
+ * Every instruction that names a control comes from controlCopy() rather
+ * than being written twice here. Telling somebody on a phone to "press E"
+ * is not a small mistake — it is the first thing they read, it does not
+ * work, and there is no way for them to know the site is not broken.
  */
 
 import { ONBOARDING_STEPS, type OnboardingStep } from "@/lib/types";
+import { controlCopy, type DeviceInfo } from "@/lib/device";
 
-const STEP_COPY: Record<OnboardingStep, { title: string; body: string; touchBody?: string }> = {
-  move: {
-    title: "Walk around",
-    body: "WASD or arrow keys — or click anywhere on the floor to walk there.",
-    touchBody: "Tap anywhere on the floor to walk there.",
-  },
-  interact: {
-    title: "Find a booth",
-    body: "Walk up to any stand and press E (or click it) to see who's there.",
-    touchBody: "Walk up to any stand and tap it to see who's there.",
-  },
-  talk: {
-    title: "Say something",
-    body: "Ask the founder a question — type in the chat that just opened.",
-  },
-  emote: {
-    title: "React",
-    body: "Press 1–5 (or use the buttons below) to send a reaction.",
-    touchBody: "Use the reaction buttons below to send one.",
-  },
-  connect: {
-    title: "Make it count",
-    body: "Like them? Hit Connect on the booth card — they go in your contact list.",
-  },
-};
+function stepCopy(
+  step: OnboardingStep,
+  device: DeviceInfo,
+): { title: string; body: string } {
+  const c = controlCopy(device);
+  switch (step) {
+    case "move":
+      return { title: "Walk around", body: c.walk };
+    case "interact":
+      return { title: "Find a stand", body: c.interact };
+    case "talk":
+      return {
+        title: "Say something",
+        body: "Ask the founder a question — type in the chat that just opened.",
+      };
+    case "emote":
+      return { title: "React", body: c.react };
+    case "connect":
+      return {
+        title: "Make it count",
+        body: "Like them? Hit Connect on the stand card — they go in your contact list.",
+      };
+  }
+}
 
 export default function TutorialCoach({
   done,
-  coarse,
+  device,
   onSkip,
 }: {
   /** Steps already completed. */
   done: OnboardingStep[];
-  /** Coarse pointer (touch) — swaps the keyboard copy. */
-  coarse: boolean;
+  /** Drives which controls the copy names. */
+  device: DeviceInfo;
   onSkip: () => void;
 }) {
   const current = ONBOARDING_STEPS.find((s) => !done.includes(s));
   if (!current) return null;
   const idx = ONBOARDING_STEPS.indexOf(current);
-  const copy = STEP_COPY[current];
-  const body = coarse && copy.touchBody ? copy.touchBody : copy.body;
+  const copy = stepCopy(current, device);
 
   return (
     <div className="glass anim-in pointer-events-auto w-[320px] max-w-[calc(100vw-24px)] border-l-2 border-l-accent p-3 shadow-float">
@@ -61,13 +65,15 @@ export default function TutorialCoach({
         <button
           type="button"
           onClick={onSkip}
-          className="micro text-muted hover:text-ink"
+          // 44px of tappable height around a 10px label: the old one was
+          // the exact size of the text, which on a phone means missing it.
+          className="micro -my-2 -mr-1 min-h-[44px] px-2 text-muted hover:text-ink"
         >
           skip tour
         </button>
       </div>
       <p className="mt-1 font-display text-base leading-tight">{copy.title}</p>
-      <p className="mt-0.5 text-sm leading-snug text-muted">{body}</p>
+      <p className="mt-0.5 text-sm leading-snug text-muted">{copy.body}</p>
     </div>
   );
 }

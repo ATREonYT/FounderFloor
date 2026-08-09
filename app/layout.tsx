@@ -122,10 +122,12 @@ export default function RootLayout({
               aria-label="FounderFloor home"
             >
               <PixelLogo size={22} />
-              {/* wordmark hides on the tightest phones so the nav never
-                  overflows/scrolls at 375px — the pixel logo stays as the
-                  home affordance */}
-              <span className="hidden font-display text-lg tracking-tight min-[400px]:inline">
+              {/* The wordmark waits for a tablet. It used to appear at
+                  400px, which was a breakpoint tuned to one phone: at 412
+                  (a Pixel) the wordmark fit and the nav then did not, so
+                  the whole page scrolled sideways. The pixel logo is the
+                  home affordance on phones and always has been. */}
+              <span className="hidden font-display text-lg tracking-tight sm:inline">
                 FounderFloor
               </span>
             </Link>
@@ -141,10 +143,16 @@ export default function RootLayout({
                 {GATED ? "Doors open Sunday" : "Main Hall open"}
               </span>
             </span>
+            {/* The nav scrolls ITSELF rather than the document.
+                whitespace-nowrap with no overflow rule meant the last item
+                hung off the right edge and took the page with it — every
+                page, at any width where the row happened not to fit. A nav
+                that scrolls is a minor inconvenience; a page that scrolls
+                sideways feels broken. */}
             {!GATED && (
               <nav
                 aria-label="Main"
-                className="ml-auto flex min-w-0 items-center gap-3 whitespace-nowrap sm:gap-5"
+                className="no-scrollbar ml-auto flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap sm:gap-5"
               >
                 <NavLink href="/lobby">Floors</NavLink>
                 <NavLink href="/directory">Directory</NavLink>
