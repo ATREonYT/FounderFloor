@@ -298,6 +298,52 @@ Ten POSTs per IP per minute across `/auth/*`, `/startups/*` and
 `/trial/start`. Raise it only if real founders start hitting it at launch;
 a garbled value falls back to 10 rather than removing the limit.
 
+### Moderating stands
+
+Three tiers, and they behave differently on purpose:
+
+| tier | what happens | where it lives |
+| --- | --- | --- |
+| profanity | masked in place (`✱✱✱`), rest goes through | `PROFANITY_WORDS` |
+| slurs | masked in place everywhere it renders | `SLUR_WORDS` |
+| **prohibited** | **the save is refused** | `BLOCKED_PHRASES` |
+| watched | saved, then queued for you | `WATCHED_PHRASES` / `WATCHED_WORDS` |
+
+Masking is wrong for the top tier: a drug market with stars in its name is
+still a drug market, and you are the one hosting it. So a blocked stand is
+refused at both write paths — `POST /startups/register` answers with a
+sentence the founder sees, and a floor claim comes back `booth_denied` with
+`reason: "prohibited"`.
+
+**Be clear-eyed about what the list does.** It cannot decide legality —
+that depends on jurisdiction, framing and intent, none of which are in the
+string. It stops the lazy and the obvious, which is most of what turns up.
+So the two lists are drawn on different rules:
+
+- **Blocked** is kept to phrases with no innocent reading: an explicit
+  offer to sell an unambiguously illegal good (`cvvforsale`,
+  `buyfakepassport`, `buycocaineonline`), plus sexual content involving
+  minors, which is blocked on the subject alone. A genuine child-safety
+  company will trip that and have to email you. That is the intended trade
+  and it only goes in this direction.
+- **Watched** is everything a real company might legitimately write — a
+  fraud team writes about carding, a security team about ransomware, an
+  NGO about trafficking. Those save normally and appear in **Needs a look**
+  on `/admin`, with a "load into takedown" button next to each. The queue
+  is a queue, not a hold: the stand is live while it waits.
+
+Matching mirrors the profanity filter — phrases against a letters-only
+flattening (so `h i t m a n f o r h i r e` and `f4ke p4ssports` collapse to
+the same string), single words on token boundaries only (so "something"
+does not contain "meth"). `node server/test/moderation.mjs` asserts both
+halves, and gives the false positives as many checks as the true ones.
+
+Bans now clear stands on **every** floor, not just the ones with somebody
+standing on them — the old version walked live rooms, so a banned stand
+survived on exactly the floors nobody was watching. The response reports
+how many it took down. The directory listing is hidden rather than deleted,
+so an unban restores it.
+
 ### Operator console
 
 `ADMIN_EMAILS` (comma-separated, default

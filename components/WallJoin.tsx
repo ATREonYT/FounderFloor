@@ -23,7 +23,7 @@
 
 import { useState } from "react";
 import { getAuth, register } from "@/lib/auth";
-import { registerStartup } from "@/lib/social";
+import { registerStartupChecked } from "@/lib/social";
 import { useAppState } from "@/lib/store";
 import type { Startup } from "@/lib/types";
 import Spec from "@/components/Spec";
@@ -100,10 +100,13 @@ export default function WallJoin({ className = "" }: { className?: string }) {
     // uploads an empty account and leaves the stand behind on this device.
     actions.saveMyStartup(startup);
     if (!signedIn) actions.setIdentity(me, founder);
-    const ok = await registerStartup(me, startup);
+    // The server can refuse a listing on its content, and this form is the
+    // most likely place for that to happen — it is the one a stranger
+    // fills in first. Say what it said.
+    const refused = await registerStartupChecked(me, startup);
     setBusy(false);
-    if (!ok) {
-      setErr("the floor server did not take it — it is saved here, try again in a moment");
+    if (refused) {
+      setErr(refused);
       return;
     }
     setDone(true);

@@ -116,6 +116,32 @@ export function registerStartup(me: string, startup: Startup): Promise<boolean> 
   return post("/startups/register", { me, startup, token: tokenFor(me), gs: guestSecret() });
 }
 
+/**
+ * The same call, but reporting WHY it failed.
+ *
+ * The server can now refuse a listing on its content rather than on a
+ * network problem, and a founder who is refused deserves a sentence rather
+ * than a save that quietly did nothing. Returns "" on success, or the
+ * server's own words. Offline stays silent on purpose: the local save
+ * happened, the next one will push it, and that is not theirs to fix.
+ */
+export async function registerStartupChecked(me: string, startup: Startup): Promise<string> {
+  const base = httpBase();
+  if (!base || !me) return "";
+  try {
+    const res = await fetch(`${base}/startups/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ me, startup, token: tokenFor(me), gs: guestSecret() }),
+    });
+    if (!res.ok) return "";
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    return data.ok ? "" : data.error || "";
+  } catch {
+    return "";
+  }
+}
+
 export function unregisterStartup(me: string): Promise<boolean> {
   return post("/startups/unregister", { me, token: tokenFor(me), gs: guestSecret() });
 }

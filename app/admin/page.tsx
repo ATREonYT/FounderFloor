@@ -21,6 +21,16 @@ interface Overview {
   banned: { key: string; reason: string; ts: number; by: string }[];
   emailLive: boolean;
   uptimeSec: number;
+  /** Stands that tripped the watch list. Saved, but waiting on a human. */
+  flagged?: {
+    ownerId: string;
+    name: string;
+    oneLiner: string;
+    link: string;
+    terms: string[];
+    where: string;
+    ts: number;
+  }[];
 }
 
 async function adminPost(path: string, body: Record<string, unknown>) {
@@ -325,6 +335,59 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+      </section>
+
+      {/* The half of moderation a word list cannot do. The block list stops
+          what is indefensible; everything ambiguous lands here for a person
+          to read, because "is this legal" is not a question a regex gets to
+          answer. Empty is the normal state. */}
+      <section className="panel p-5" aria-label="Flagged listings">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-xl">Needs a look</h2>
+          <span className="micro text-muted">{overview?.flagged?.length ?? 0} waiting</span>
+        </div>
+        <p className="micro mt-1 text-muted">
+          Stands that tripped the watch list. They are LIVE — this is a
+          queue, not a hold. Use the takedown above to remove one.
+        </p>
+        {overview?.flagged?.length ? (
+          <ul className="mt-3 space-y-3">
+            {overview.flagged.map((f) => (
+              <li key={`${f.ownerId}-${f.ts}`} className="border-t border-line pt-3">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-display text-base">{f.name || "(no name)"}</span>
+                  <span className="micro text-accent">{f.terms.join(", ")}</span>
+                  <span className="micro text-muted">
+                    {f.where} · {new Date(f.ts).toLocaleString()}
+                  </span>
+                </div>
+                {f.oneLiner && <p className="mt-0.5 text-sm text-muted">{f.oneLiner}</p>}
+                <div className="mt-1 flex flex-wrap items-center gap-3">
+                  <code className="text-xs text-muted">{f.ownerId}</code>
+                  <button
+                    type="button"
+                    onClick={() => setWallOwner(f.ownerId)}
+                    className="micro text-accent hover:underline"
+                  >
+                    load into takedown
+                  </button>
+                  {f.link && (
+                    <a
+                      href={f.link}
+                      target="_blank"
+                      rel="nofollow ugc noopener noreferrer"
+                      className="micro text-accent hover:underline"
+                    >
+                      {f.link.replace(/^https?:\/\/(www\.)?/, "").slice(0, 40)}
+                    </a>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-muted">Nothing waiting.</p>
+        )}
       </section>
 
       <section className="panel p-5" aria-label="Announce">

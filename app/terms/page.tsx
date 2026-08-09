@@ -130,7 +130,19 @@ export default function TermsPage() {
         <p>
           The operator may remove content, free up stands, and suspend or
           terminate accounts that break these rules — with notice where
-          practical, immediately where necessary.
+          practical, immediately where necessary. Suspending an account also
+          takes its stand off the floor and its listing off the public
+          pages.
+        </p>
+        <p>
+          <strong>Automated screening.</strong> Stand text and links are
+          checked automatically before they go up, and a small number of
+          things are refused outright — chiefly offers to sell goods that
+          cannot lawfully be sold, and anything sexual involving minors.
+          That check is a filter, not a judgement about you: it reads words,
+          it does not know your business, and it will sometimes be wrong
+          about a legitimate one. If it refuses something it should not
+          have, write to the address below and a person will look.
         </p>
       </Section>
 

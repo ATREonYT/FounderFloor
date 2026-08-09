@@ -1529,6 +1529,24 @@ function loadData() {
       .slice(-MAX_REPORTS);
   }
 
+  // The moderation queue survives a restart. An operator inbox that empties
+  // itself whenever the process cycles is an inbox nobody can trust.
+  if (Array.isArray(parsed.flagged)) {
+    for (const f of parsed.flagged.slice(0, MAX_FLAGGED)) {
+      if (f && typeof f === "object" && typeof f.ts === "number" && f.ownerId) {
+        flagged.push({
+          ownerId: String(f.ownerId).slice(0, MAX_ID_LEN),
+          name: String(f.name ?? "").slice(0, 40),
+          oneLiner: String(f.oneLiner ?? "").slice(0, 80),
+          link: typeof f.link === "string" ? f.link.slice(0, 220) : "",
+          terms: Array.isArray(f.terms) ? f.terms.slice(0, 8).map((t) => String(t).slice(0, 40)) : [],
+          where: String(f.where ?? "").slice(0, 32),
+          ts: f.ts,
+        });
+      }
+    }
+  }
+
   if (Array.isArray(parsed.feedback)) {
     feedback = parsed.feedback
       .filter((f) => f && typeof f === "object" && typeof f.ts === "number" && typeof f.text === "string")
@@ -1589,6 +1607,7 @@ function saveNow() {
       [...stands].map(([floorId, byOwner]) => [floorId, Object.fromEntries(byOwner)]),
     ),
     reports,
+    flagged,
     feedback,
     subscribers: Object.fromEntries(subscribers),
     social: Object.fromEntries(social),
@@ -1800,6 +1819,148 @@ function moderateField(text) {
     })
     .join("");
 }
+
+/* ------------------------------------------------ prohibited content ----
+ *
+ * A THIRD tier, above slurs and profanity, for what a stand may not
+ * advertise at all. The other two mask and move on; this one REFUSES THE
+ * SAVE, because a drug market with stars in its name is still a drug
+ * market, and the operator is the one hosting it.
+ *
+ * WHAT A WORD LIST CAN AND CANNOT DO. It cannot decide legality — that
+ * depends on jurisdiction, framing and intent, none of which are in the
+ * string. What it can do is stop the lazy and the obvious, which is most
+ * of what actually turns up, and put everything ambiguous in front of a
+ * human. So there are two lists and they are drawn on different rules:
+ *
+ *   BLOCKED — refused outright. Kept to phrases with NO innocent reading:
+ *     an explicit offer to sell an unambiguously illegal good, plus the
+ *     one category that is blocked on the topic alone.
+ *   WATCHED — saved, and queued for the operator to look at. Everything
+ *     a real company might legitimately write: a fraud team writes about
+ *     carding, a security team writes about ransomware, an NGO writes
+ *     about trafficking. Blocking those would be the filter doing more
+ *     damage than the spam.
+ *
+ * Matching mirrors the profanity filter: PHRASES are matched against the
+ * letters-only flattening of the whole field, so spacing and leetspeak
+ * evasions collapse into the same string; single WORDS are matched on
+ * token boundaries only, never as substrings, or "something" contains
+ * "meth" and every third pitch on the floor gets flagged.
+ */
+
+/** Refused outright. Every entry here has to be indefensible on its face. */
+const BLOCKED_PHRASES = [
+  // Sexual content involving minors. Blocked on the SUBJECT, not on an
+  // offer — the only category where that is the right trade. A genuine
+  // child-safety company will hit this and have to email the operator;
+  // that is a cost worth paying in this direction and not the other.
+  "childporn", "childpornography", "childsexabuse", "childsexual", "underagenudes",
+  "underagesex", "jailbait", "preteensex", "lolicon", "cpforsale",
+  // Violence for hire.
+  "hitmanforhire", "hireahitman", "hireahitmen", "killforhire", "murderforhire",
+  "contractkilling",
+  // An OFFER plus an unambiguously illegal good. The offer is what makes
+  // these safe to block: the goods on their own are watched instead,
+  // because writing about them is most of what security companies do.
+  "cvvforsale", "dumpsforsale", "fullzforsale", "clonedcardsforsale",
+  "stolencardsforsale", "stolenaccountsforsale", "hackedaccountsforsale",
+  "stolendataforsale", "buystolencards", "buystolenaccounts",
+  "fakepassportsforsale", "fakeidsforsale", "buyfakepassport", "buyfakeid",
+  "counterfeitcashforsale", "counterfeitnotesforsale",
+  "untraceablefirearms", "ghostgunsforsale", "gunsnobackgroundcheck",
+  "buymethonline", "buycocaineonline", "buyheroinonline", "buyfentanylonline",
+  "drugsforsaleonline",
+];
+
+/** Saved, then put in front of a human. Ambiguity belongs here, not above. */
+const WATCHED_PHRASES = [
+  "humantrafficking", "moneylaundering", "launderyourmoney", "darkwebmarket",
+  "darknetmarket", "bulletproofhosting", "creditcarddumps", "carderforum",
+  "stolencredentials", "cashoutservice", "bankdrops", "escrowmixer",
+  "coinmixer", "bypasskyc", "fakereviews", "buyfollowers", "cheatengine",
+  "essaywriting", "examanswers",
+];
+
+/** Single words, matched on token boundaries. Watch-tier only. */
+const WATCHED_WORDS = new Set([
+  "cocaine", "heroin", "fentanyl", "meth", "methamphetamine", "mdma", "lsd",
+  "ketamine", "oxycodone", "steroids", "carding", "botnet", "ddos", "ransomware",
+  "keylogger", "rootkit", "spyware", "stalkerware", "counterfeit", "poaching",
+  "ivory", "unlicensed", "prostitution", "escort", "escorts",
+]);
+
+/**
+ * Screen one field. Returns the first blocked phrase found, or the watched
+ * terms, or nothing at all.
+ */
+function screenText(text) {
+  const out = { blocked: null, watched: [] };
+  if (!text) return out;
+  const flat = normalizeToken(String(text));
+  for (const p of BLOCKED_PHRASES) {
+    if (flat.includes(p)) {
+      out.blocked = p;
+      return out; // one is enough — the save is refused either way
+    }
+  }
+  for (const p of WATCHED_PHRASES) {
+    if (flat.includes(p)) out.watched.push(p);
+  }
+  for (const part of String(text).split(/\s+/)) {
+    const tok = normalizeToken(part);
+    if (tok && (WATCHED_WORDS.has(tok) || WATCHED_WORDS.has(collapseRuns(tok)))) {
+      out.watched.push(tok);
+    }
+  }
+  return out;
+}
+
+/**
+ * Screen a whole stand — every field a visitor reads, plus the link, since
+ * "buyfakeid.example.com" says as much as the pitch does.
+ */
+function screenStartup(s) {
+  const fields = [s?.name, s?.oneLiner, s?.pitch, s?.goal, s?.category, s?.booth?.sign, s?.link];
+  const watched = new Set();
+  for (const f of fields) {
+    const r = screenText(f);
+    if (r.blocked) return { blocked: r.blocked, watched: [] };
+    for (const w of r.watched) watched.add(w);
+  }
+  return { blocked: null, watched: [...watched] };
+}
+
+/**
+ * The review queue: stands that tripped the watch list, newest first.
+ *
+ * This is the half that actually works. The block list stops what is
+ * obvious; everything else is a judgement call, and a judgement call needs
+ * the operator, not a regex. Capped, and persisted so a restart does not
+ * quietly empty the inbox.
+ */
+const flagged = [];
+const MAX_FLAGGED = 300;
+function flagListing(ownerId, startup, terms, where) {
+  if (!terms.length) return;
+  flagged.unshift({
+    ownerId: String(ownerId).slice(0, MAX_ID_LEN),
+    name: String(startup?.name ?? "").slice(0, 40),
+    oneLiner: String(startup?.oneLiner ?? "").slice(0, 80),
+    link: startup?.link ?? "",
+    terms: terms.slice(0, 8),
+    where: String(where).slice(0, 32),
+    ts: Date.now(),
+  });
+  if (flagged.length > MAX_FLAGGED) flagged.length = MAX_FLAGGED;
+  console.log(`[moderation] flagged ${ownerId} (${where}): ${terms.join(", ")}`);
+  scheduleSave();
+}
+
+/** What the founder is told. Deliberately not a list of what to avoid. */
+const BLOCKED_MESSAGE =
+  "that stand can't go up — it reads as something this site doesn't host. " +
+  "If you think that's wrong, email the address on the About page and a person will look.";
 
 const GLYPHS = new Set(["bolt", "leaf", "coin", "chip", "flask", "rocket", "heart", "cube", "wave", "star"]);
 const PATTERNS = new Set(["solid", "border", "stripes"]);
@@ -2786,6 +2947,9 @@ async function handleAdminPost(req, res, pathname) {
         uptimeSec: Math.round(process.uptime()),
         subscribers: subscribers.size,
         demoNightRsvps: [...subscribers.values()].filter((s) => s.demoNight).length,
+        // The half of moderation a word list cannot do. Trimmed to what
+        // fits on a screen; the rest stays in the data file and the log.
+        flagged: flagged.slice(0, 40),
       });
       return;
     }
@@ -2868,9 +3032,9 @@ async function handleAdminPost(req, res, pathname) {
         if (acct.email) keys.push(acct.email);
       }
       for (const k of new Set(keys)) banned.set(k, entry);
-      // kick every live session of the banned identity and clear their stands
+      // Kick every live session of the banned identity.
       const targetIds = new Set(keys);
-      for (const [floorId, room] of rooms) {
+      for (const room of rooms.values()) {
         for (const [cid, c] of [...room]) {
           if (targetIds.has((c.rawId ?? "").toLowerCase())) {
             room.delete(cid);
@@ -2878,19 +3042,31 @@ async function handleAdminPost(req, res, pathname) {
             try { c.ws.close(4003, "suspended"); } catch { /* gone */ }
           }
         }
-        const byOwner = stands.get(floorId);
-        if (byOwner) {
-          for (const ownerId of [...byOwner.keys()]) {
-            if (targetIds.has(ownerId.toLowerCase())) {
-              byOwner.delete(ownerId);
-              broadcast(room, { t: "booth_clear", ownerId });
-            }
-          }
+      }
+      // Then take their stands down EVERYWHERE. This walks `stands`, not
+      // `rooms`: a room only exists while somebody is in it, so the old
+      // version left the banned stand standing on every quiet floor —
+      // exactly the floors nobody is watching. The registry listing is
+      // hidden rather than deleted (see isBannedOwner in GET /startups),
+      // so an unban that was a mistake restores the directory entry; the
+      // stand itself goes, because the spot has to be free for somebody
+      // else while they are suspended.
+      let cleared = 0;
+      for (const [floorId, byOwner] of stands) {
+        for (const ownerId of [...byOwner.keys()]) {
+          if (!targetIds.has(ownerId.toLowerCase())) continue;
+          byOwner.delete(ownerId);
+          cleared++;
+          const room = rooms.get(floorId);
+          if (room) broadcast(room, { t: "booth_clear", ownerId });
         }
+        if (byOwner.size === 0) stands.delete(floorId);
       }
       scheduleSave();
-      console.log(`[admin] ${admin.email} banned ${[...new Set(keys)].join(", ")}`);
-      sendJson(res, { ok: true, banned: [...new Set(keys)] });
+      console.log(
+        `[admin] ${admin.email} banned ${[...new Set(keys)].join(", ")} (${cleared} stand(s) cleared)`,
+      );
+      sendJson(res, { ok: true, banned: [...new Set(keys)], cleared });
       return;
     }
 
@@ -3714,6 +3890,16 @@ const server = createServer((req, res) => {
           notFound(res);
           return;
         }
+        // Screened AFTER sanitizing, so the screen sees the same text a
+        // visitor would — masking runs first and could otherwise hide a
+        // term from the check that the reader still ends up seeing.
+        const screen = screenStartup(startup);
+        if (screen.blocked) {
+          console.log(`[moderation] blocked ${me} (register): ${screen.blocked}`);
+          sendJson(res, { error: BLOCKED_MESSAGE });
+          return;
+        }
+        flagListing(me, startup, screen.watched, "register");
         if (!registry.has(me) && registry.size >= MAX_REGISTRY) {
           sendJson(res, { error: "registry full" });
           return;
@@ -4031,6 +4217,16 @@ wss.on("connection", (ws, req) => {
   function handleBoothSet(msg, opts = {}) {
     const claim = sanitizeClaim(msg.claim);
     if (!claim) return;
+    // The other way a stand reaches the floor. Refusing here matters more
+    // than at /startups/register: this is the path that paints the text
+    // onto a booth in front of whoever is standing in the room.
+    const screen = screenStartup(claim.startup);
+    if (screen.blocked) {
+      console.log(`[moderation] blocked ${client.rawId} (claim): ${screen.blocked}`);
+      send(ws, { t: "booth_denied", spotIndex: claim.spotIndex, reason: "prohibited" });
+      return;
+    }
+    flagListing(client.rawId, claim.startup, screen.watched, "claim");
     // A claim carried in by a JOIN is a saved state re-raising itself, not a
     // decision. If the founder's one stand meanwhile lives on another real
     // floor (moved from a different device, or this browser's claim is

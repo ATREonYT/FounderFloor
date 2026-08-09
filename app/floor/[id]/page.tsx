@@ -916,6 +916,18 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           }
           return;
         }
+        if (ev.reason === "prohibited") {
+          // Refused on content, not on the spot. Do NOT restore a previous
+          // claim or re-announce: nothing about the spot was wrong, and
+          // retrying the same text would only be denied again.
+          prevClaimRef.current = null;
+          handleRef.current?.setMyBooth(null);
+          actions.unclaimSpot(f.id);
+          showToast(
+            "That stand can't go up as written. Edit it in your profile, or email the address on the About page.",
+          );
+          return;
+        }
         // Someone else claimed that spot first. If this was a MOVE, the
         // server still holds our previous spot — restore it locally and
         // re-announce so every state (server, net client, room) reconverges

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { isValidLogo, syncNow, useAppState } from "@/lib/store";
 import { getAuth } from "@/lib/auth";
 import { daysLeft, usePerks } from "@/lib/perks";
-import { registerStartup, unregisterStartup } from "@/lib/social";
+import { registerStartupChecked, unregisterStartup } from "@/lib/social";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { FLOORS } from "@/lib/data/floors";
 import { earnedTitles, questStates } from "@/lib/data/quests";
@@ -596,8 +596,17 @@ export default function ProfilePage() {
     actions.saveMyStartup(startup);
     // Register site-wide immediately: the directory (and its category chips)
     // pick this up without waiting for a floor stand to be claimed.
-    void registerStartup(state.profile.id, startup);
-    setToast({ id: Date.now(), text: "Booth saved. See you on the floor." });
+    //
+    // The result is read now rather than ignored, because the server can
+    // refuse the listing on its content. A refusal that showed "Booth
+    // saved" would leave the founder believing their stand is up while the
+    // floor and the directory show nothing.
+    void registerStartupChecked(state.profile.id, startup).then((err) => {
+      setToast({
+        id: Date.now(),
+        text: err || "Booth saved. See you on the floor.",
+      });
+    });
   };
 
   const randomizeTheme = () => {
