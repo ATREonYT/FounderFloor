@@ -1238,23 +1238,58 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         aria-label={`${floor.name} — walkable expo floor`}
       />
 
-      {/* top bar */}
-      <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-wrap items-start justify-between gap-2">
-        <div className="pointer-events-auto flex flex-wrap items-center gap-2">
-          <span className="glass flex items-center gap-3 px-3 py-2 shadow-float">
-            <span className="font-display text-base leading-none">{floor.name}</span>
-            <TierTag tier={floor.tier} />
+      {/* Top bar. ONE ROW, always.
+          It used to wrap, and a wrapped right-hand cluster does not stay on
+          the right — it drops to the next line and left-aligns, so on a
+          phone the floor name sat alone above a loose pile of buttons that
+          read as debris. Nothing wraps now: the name truncates instead,
+          and the controls keep their corner at every width.
+          On touch the head-count folds INTO the name pill, because a phone
+          has room for one status chip, not two. */}
+      <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+        <div className="pointer-events-auto flex min-w-0 items-center gap-2">
+          <span className="glass flex min-w-0 items-center gap-2 px-3 py-2 shadow-float">
+            {coarse && (
+              <span
+                aria-hidden="true"
+                className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                  presence.online ? "bg-verify" : "bg-line"
+                }`}
+              />
+            )}
+            <span className="truncate font-display text-base leading-none">{floor.name}</span>
+            {coarse && presence.online && (
+              <span className="shrink-0 text-xs text-muted">{presence.count}</span>
+            )}
+            {/* The tier badge stands down on the narrowest phones. The
+                floor NAME is the one thing this pill exists to say, and
+                truncating it to "Ma…" to make room for a badge that repeats
+                what the lobby already said is the wrong trade. */}
+            <span className={`shrink-0 ${device.size === "xs" ? "hidden" : ""}`}>
+              <TierTag tier={floor.tier} />
+            </span>
           </span>
           {/* CSS-hidden (not unmounted) on phones so the live-badge effect
-              still runs; the chip itself is lobby content, not phone HUD */}
-          <span className="hidden sm:block">
+              still runs; the chip itself is lobby content, not phone HUD.
+              A phone held sideways is WIDE — it passes the sm width test —
+              but it is 300px tall, so it is hidden by pointer and shape
+              rather than by width alone. */}
+          <span className={`hidden sm:block ${device.landscapePhone ? "sm:hidden" : ""}`}>
             <EventPill floorId={floor.id} onLiveHere={handleEventLive} />
           </span>
         </div>
-        <div className="pointer-events-auto flex items-center gap-2">
+        <div className="pointer-events-auto flex shrink-0 items-center gap-2">
           {/* your membership, worn on the floor chrome too */}
           <MemberBadge glass />
-          <span className="glass flex items-center gap-2 px-3 py-2 text-xs text-muted shadow-float">
+          {/* The head-count, for pointers with room for a second chip. On
+              touch it is already inside the name pill — a phone in
+              landscape is wide enough to pass `sm` and would otherwise
+              show the same number twice. */}
+          <span
+            className={`glass items-center gap-2 px-3 py-2 text-xs text-muted shadow-float ${
+              coarse ? "hidden" : "hidden sm:flex"
+            }`}
+          >
             <span
               aria-hidden="true"
               className={`inline-block h-2 w-2 rounded-full ${
@@ -1330,20 +1365,31 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* quest tracker — the single "what should I do?" surface (the ticker
-          now lives in the chat panel's header, and the tour is its own card) */}
-      <div className="pointer-events-none absolute left-3 top-24 flex flex-col items-start gap-2 sm:top-16">
-        <QuestPanel quests={quests} />
-        {/* wallet at a glance — quests above pay out in tickets, so the
-            balance lives right under the quest board */}
-        <Link
-          href="/profile#tickets"
-          className="glass pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 text-xs text-gold-deep shadow-float hover:bg-paper"
-          title="Your ticket balance — spend it on booth styles and props"
-        >
-          <TicketIcon /> {walletBalance(state).toLocaleString("en-US")} tickets
-        </Link>
-      </div>
+      {/* Quest tracker — the single "what should I do?" surface (the ticker
+          lives in the chat panel's header, and the tour is its own card).
+
+          HIDDEN WHILE THE TOUR IS RUNNING. Both of them answer the same
+          question, and on a phone they answered it on top of each other:
+          the centred tour card landed across a quest chip wide enough to
+          reach it. One instruction at a time is the whole idea of a tour.
+
+          The ticket balance also stands down on a phone in landscape,
+          where the visible page is barely 300px tall and a wallet readout
+          is the least of what somebody needs to see. */}
+      {state.tutorialDone && (
+        <div className="pointer-events-none absolute left-3 top-24 flex flex-col items-start gap-2 sm:top-16">
+          <QuestPanel quests={quests} />
+          <Link
+            href="/profile#tickets"
+            className={`glass pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 text-xs text-gold-deep shadow-float hover:bg-paper ${
+              device.landscapePhone ? "hidden" : ""
+            }`}
+            title="Your ticket balance — spend it on booth styles and props"
+          >
+            <TicketIcon /> {walletBalance(state).toLocaleString("en-US")} tickets
+          </Link>
+        </div>
+      )}
 
       {/* incoming connection DM — pixel mail, top right, click to open */}
       <MailToast
@@ -1517,7 +1563,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* tutorial coach — one instruction at a time, above the bottom HUD */}
       {!state.tutorialDone && (
-        <div className="pointer-events-none absolute bottom-44 left-1/2 flex -translate-x-1/2 justify-center sm:bottom-20">
+        /* Sits on the bottom rail, above the reaction row, and never in the
+           middle of the room. In landscape the page is ~300px tall, so a
+           card floating at the vertical centre covers the floor it is
+           telling you to walk on. */
+        <div className="pointer-events-none absolute inset-x-3 bottom-40 flex justify-center sm:inset-x-auto sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2">
           <TutorialCoach
             done={state.onboarding}
             device={device}

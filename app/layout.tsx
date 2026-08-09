@@ -223,7 +223,15 @@ export default function RootLayout({
                       ["/directory", "Directory"],
                       ["/floor/tutorial-hall", "Tutorial"],
                     ].map(([href, label]) => (
-                      <Link key={href} href={href} className="text-muted hover:text-ink hover:underline">
+                      <Link
+                        key={href}
+                        href={href}
+                        // A 20px line of text is a comfortable click and a
+                        // coin-toss for a thumb. Padding rather than a
+                        // bigger font: the footer should stay quiet, it
+                        // just has to be hittable.
+                        className="py-1 text-muted hover:text-ink hover:underline [@media(pointer:coarse)]:py-2"
+                      >
                         {label}
                       </Link>
                     ))}
@@ -244,7 +252,11 @@ export default function RootLayout({
                     ["/report", "Report content"],
                     ["/about#feedback", "Send feedback"],
                   ].map(([href, label]) => (
-                    <Link key={href} href={href} className="text-muted hover:text-ink hover:underline">
+                    <Link
+                      key={href}
+                      href={href}
+                      className="py-1 text-muted hover:text-ink hover:underline [@media(pointer:coarse)]:py-2"
+                    >
                       {label}
                     </Link>
                   ))}

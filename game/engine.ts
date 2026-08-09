@@ -938,8 +938,8 @@ export function createGame(opts: GameOptions): GameHandle {
     // The map is a HUD element, so it is sized against the screen rather
     // than fixed: 160x120 is a corner widget on a laptop and a third of the
     // width of a 360px phone, which is why it read as being in the way.
-    const capW = Math.min(MINIMAP_MAX_W, Math.round(cssW * 0.3));
-    const capH = Math.min(MINIMAP_MAX_H, Math.round(cssH * 0.22));
+    const capW = Math.min(MINIMAP_MAX_W, Math.round(cssW * 0.26));
+    const capH = Math.min(MINIMAP_MAX_H, Math.round(cssH * 0.18));
     const k = Math.min(capW / mapW, capH / mapH);
     const mw = mapW * k;
     const mh = mapH * k;
