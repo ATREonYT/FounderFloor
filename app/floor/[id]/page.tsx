@@ -145,6 +145,23 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       delete document.body.dataset.onFloor;
     };
   }, []);
+
+  /* Leave a breadcrumb, so a trip to the membership page or the ticket
+     booth is a round trip. Your spot is never at risk — a stand stays up
+     while you are away — but "will I lose my place?" is the reason people
+     don't click, so the way back has to be visible from the other page.
+     sessionStorage, not local: it belongs to this tab's visit. */
+  useEffect(() => {
+    if (!floor) return;
+    try {
+      window.sessionStorage.setItem(
+        "founderfloor:last-floor",
+        JSON.stringify({ id: floor.id, name: floor.name }),
+      );
+    } catch {
+      /* private mode, or storage full — the pill just doesn't appear */
+    }
+  }, [floor]);
   const [floorMsgs, setFloorMsgs] = useState<ChatMsg[]>([]);
   const [threads, setThreads] = useState<Record<string, ThreadState>>({});
   const [tab, setTab] = useState<string>("floor");

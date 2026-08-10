@@ -28,12 +28,14 @@ import {
   dailyTickets,
   ownsItem,
   walletBalance,
+  type ShopItem,
 } from "@/lib/data/shop";
 import AccountCard from "@/components/AccountCard";
 import TrialCard from "@/components/TrialCard";
 import ReferralCard from "@/components/ReferralCard";
 import AvatarPicker from "@/components/AvatarPicker";
 import BoothPreview from "@/components/BoothPreview";
+import BuyConfirm from "@/components/BuyConfirm";
 import RankBadge from "@/components/RankBadge";
 import PixelGlyph, { GLYPH_IDS } from "@/components/PixelGlyph";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
@@ -371,6 +373,8 @@ export default function ProfilePage() {
   const [progress, setProgress] = useState(0);
   const [cycle, setCycle] = useState<BillingCycle>("annual");
   const [toast, setToast] = useState<ToastData | null>(null);
+  /** The item awaiting a yes/no. Nothing is spent until `buy` runs. */
+  const [pendingBuy, setPendingBuy] = useState<{ item: ShopItem; buy: () => void } | null>(null);
   const [questsOpen, setQuestsOpen] = useState(false);
   // Post-checkout: what we're waiting on, and what to celebrate once it lands
   const [pendingPay, setPendingPay] = useState<{
@@ -1233,20 +1237,18 @@ export default function ProfilePage() {
                           <button
                             type="button"
                             aria-label={`Buy ${s.name} for ${s.price} tickets`}
-                            onClick={() => {
-                              if (actions.buyItem(s.id)) {
-                                set("style", s.style);
-                                setToast({
-                                  id: Date.now(),
-                                  text: `${s.name} is yours — it's on in the preview. Save stand takes it to the floor.`,
-                                });
-                              } else {
-                                setToast({
-                                  id: Date.now(),
-                                  text: `Not enough tickets — ${s.name} costs ${s.price}. Earn them at the Ticket booth below.`,
-                                });
-                              }
-                            }}
+                            onClick={() =>
+                              setPendingBuy({
+                                item: s,
+                                buy: () => {
+                                  set("style", s.style);
+                                  setToast({
+                                    id: Date.now(),
+                                    text: `${s.name} is yours — it's on in the preview. Save stand takes it to the floor.`,
+                                  });
+                                },
+                              })
+                            }
                             className="shrink-0 rounded-sm border border-gold/60 px-2.5 py-1 text-xs text-gold-deep hover:border-gold"
                           >
                             <TicketIcon /> {s.price}
@@ -1272,23 +1274,21 @@ export default function ProfilePage() {
                           type="button"
                           title={p.blurb}
                           aria-label={`Buy ${p.name} for ${p.price} tickets`}
-                          onClick={() => {
-                            if (actions.buyItem(p.id)) {
-                              const placed = form.props.length < MAX_EQUIPPED_PROPS;
-                              if (placed) set("props", [...form.props, p.prop]);
-                              setToast({
-                                id: Date.now(),
-                                text: placed
-                                  ? `${p.name} bought and placed — Save stand takes it to the floor.`
-                                  : `${p.name} bought. All ${MAX_EQUIPPED_PROPS} slots are full — take one down to place it.`,
-                              });
-                            } else {
-                              setToast({
-                                id: Date.now(),
-                                text: `Not enough tickets — ${p.name} costs ${p.price}.`,
-                              });
-                            }
-                          }}
+                          onClick={() =>
+                            setPendingBuy({
+                              item: p,
+                              buy: () => {
+                                const placed = form.props.length < MAX_EQUIPPED_PROPS;
+                                if (placed) set("props", [...form.props, p.prop]);
+                                setToast({
+                                  id: Date.now(),
+                                  text: placed
+                                    ? `${p.name} bought and placed — Save stand takes it to the floor.`
+                                    : `${p.name} bought. All ${MAX_EQUIPPED_PROPS} slots are full — take one down to place it.`,
+                                });
+                              },
+                            })
+                          }
                           className="rounded-sm border border-gold/60 px-3 py-1.5 text-xs text-gold-deep hover:border-gold"
                         >
                           {p.name} · <TicketIcon /> {p.price}
@@ -1908,6 +1908,27 @@ export default function ProfilePage() {
 
       <Toast toast={toast} />
       <ConfettiBurst burstId={burst} />
+
+      {pendingBuy && (
+        <BuyConfirm
+          name={pendingBuy.item.name}
+          blurb={pendingBuy.item.blurb}
+          price={pendingBuy.item.price}
+          balance={walletBalance(state)}
+          onCancel={() => setPendingBuy(null)}
+          onConfirm={() => {
+            // buyItem is still the one authority on affordability — the
+            // dialog's arithmetic is for the reader, not for the ledger.
+            if (actions.buyItem(pendingBuy.item.id)) pendingBuy.buy();
+            else
+              setToast({
+                id: Date.now(),
+                text: `That didn't go through — ${pendingBuy.item.name} is still unbought.`,
+              });
+            setPendingBuy(null);
+          }}
+        />
+      )}
 
 
     </main>

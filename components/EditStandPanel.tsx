@@ -20,6 +20,7 @@
 
 import { useState } from "react";
 import BoothPreview from "@/components/BoothPreview";
+import BuyConfirm from "@/components/BuyConfirm";
 import type { AppState, BoothProp, BoothStyle, Startup } from "@/lib/types";
 import {
   BOOTH_PROPS,
@@ -28,6 +29,7 @@ import {
   MAX_EQUIPPED_PROPS,
   ownsItem,
   walletBalance,
+  type ShopItem,
 } from "@/lib/data/shop";
 import TicketIcon from "@/components/TicketIcon";
 
@@ -98,6 +100,8 @@ export default function EditStandPanel({
   const [style, setStyle] = useState<BoothStyle>(startup.booth.style ?? "classic");
   const [props, setProps] = useState<BoothProp[]>(startup.booth.props ?? []);
   const [note, setNote] = useState<string | null>(null);
+  /** The item awaiting a yes/no. Nothing is spent until `buy` runs. */
+  const [pending, setPending] = useState<{ item: ShopItem; buy: () => void } | null>(null);
 
   /* Typing does NOT broadcast. Leaving a field does: nobody needs to
      watch "Ket", "Kettl", "Kettle" cross the floor, and per-keystroke
@@ -318,15 +322,16 @@ export default function EditStandPanel({
                     type="button"
                     title={s.blurb}
                     aria-label={`Buy ${s.name} for ${s.price} tickets`}
-                    onClick={() => {
-                      if (onBuy(s.id)) {
-                        setStyle(s.style);
-                        apply({ style: s.style }, s.id);
-                        setNote(`${s.name} is yours — it's on your stand now.`);
-                      } else {
-                        setNote(`Not enough tickets — ${s.name} costs ${s.price}.`);
-                      }
-                    }}
+                    onClick={() =>
+                      setPending({
+                        item: s,
+                        buy: () => {
+                          setStyle(s.style);
+                          apply({ style: s.style }, s.id);
+                          setNote(`${s.name} is yours — it's on your stand now.`);
+                        },
+                      })
+                    }
                     className="rounded-sm border border-gold/60 px-2 py-1 text-xs text-gold-deep hover:border-gold"
                   >
                     {s.name} <TicketIcon /> {s.price}
@@ -371,21 +376,22 @@ export default function EditStandPanel({
                     type="button"
                     title={p.blurb}
                     aria-label={`Buy ${p.name} for ${p.price} tickets`}
-                    onClick={() => {
-                      if (onBuy(p.id)) {
-                        const next =
-                          props.length < MAX_EQUIPPED_PROPS ? [...props, p.prop] : props;
-                        setProps(next);
-                        apply({ props: next }, p.id);
-                        setNote(
-                          props.length < MAX_EQUIPPED_PROPS
-                            ? `${p.name} bought — it's on your stand now.`
-                            : `${p.name} bought. Take one off to place it.`,
-                        );
-                      } else {
-                        setNote(`Not enough tickets — ${p.name} costs ${p.price}.`);
-                      }
-                    }}
+                    onClick={() =>
+                      setPending({
+                        item: p,
+                        buy: () => {
+                          const next =
+                            props.length < MAX_EQUIPPED_PROPS ? [...props, p.prop] : props;
+                          setProps(next);
+                          apply({ props: next }, p.id);
+                          setNote(
+                            props.length < MAX_EQUIPPED_PROPS
+                              ? `${p.name} bought — it's on your stand now.`
+                              : `${p.name} bought. Take one off to place it.`,
+                          );
+                        },
+                      })
+                    }
                     className="rounded-sm border border-gold/60 px-2 py-1 text-xs text-gold-deep hover:border-gold"
                   >
                     {p.name} <TicketIcon /> {p.price}
@@ -449,6 +455,23 @@ export default function EditStandPanel({
           Done
         </button>
       </div>
+
+      {pending && (
+        <BuyConfirm
+          name={pending.item.name}
+          blurb={pending.item.blurb}
+          price={pending.item.price}
+          balance={balance}
+          onCancel={() => setPending(null)}
+          onConfirm={() => {
+            // onBuy is still the one authority on affordability — the
+            // dialog's arithmetic is for the reader, not for the ledger.
+            if (onBuy(pending.item.id)) pending.buy();
+            else setNote(`That didn't go through — ${pending.item.name} is still unbought.`);
+            setPending(null);
+          }}
+        />
+      )}
     </aside>
   );
 }
