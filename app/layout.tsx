@@ -111,9 +111,15 @@ export default function RootLayout({
         {/* Solid, ruled chrome. The translucent blurred bar it replaces is
             the single most-used header treatment on the web right now, and
             it reads as a template even when everything under it doesn't. */}
+        {/* overflow-x-clip, not hidden: the nav inside is a horizontal
+            scroller, and on a phone its overflowing width still widened the
+            page itself — every page picked up a sideways scroll and the
+            fixed buttons drifted off the right edge with it. `clip` stops
+            that without creating a scroll container, so the header stays
+            sticky and the profile menu still hangs below it. */}
         <header
           data-site-nav
-          className="sticky top-0 z-40 border-b border-line bg-paper"
+          className="sticky top-0 z-40 overflow-x-clip border-b border-line bg-paper"
         >
           <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-5 sm:gap-6 sm:px-8">
             <Link

@@ -10,7 +10,7 @@
 import { TILE } from "../lib/types";
 import type { BoothClaim, BoothInstance, FloorDef, Startup } from "../lib/types";
 import { shade } from "./sprites";
-import { drawBoothBanner, drawBoothCounter } from "./boothArt";
+import { drawBoothBanner, drawBoothCounter, drawCarpet as paintCarpet } from "./boothArt";
 
 // ---------- shared shapes ----------
 
@@ -418,6 +418,7 @@ export function buildFloor(
 
 // ---------- booth pieces ----------
 
+/** Tile coords in, world pixels out — the art itself lives in boothArt. */
 function drawCarpet(
   ctx: CanvasRenderingContext2D,
   sx: number,
@@ -425,23 +426,7 @@ function drawCarpet(
   color: string,
   pattern?: "solid" | "border" | "stripes"
 ): void {
-  const x = sx * T;
-  const y = sy * T;
-  const cw = 4 * T;
-  const ch = 4 * T; // 3 booth rows + 1 apron row
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, cw, ch);
-  if (pattern === "stripes") {
-    ctx.fillStyle = shade(color, -0.08);
-    for (let i = 0; i < 4; i += 2) ctx.fillRect(x + i * T, y, T, ch);
-  } else if (pattern === "border") {
-    ctx.strokeStyle = shade(color, 0.14);
-    ctx.lineWidth = 3;
-    ctx.strokeRect(x + 5.5, y + 5.5, cw - 11, ch - 11);
-  }
-  ctx.strokeStyle = shade(color, -0.16);
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x + 1, y + 1, cw - 2, ch - 2);
+  paintCarpet(ctx, sx * T, sy * T, color, pattern);
 }
 
 function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {

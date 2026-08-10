@@ -528,20 +528,55 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
   // On-floor stand editing: save to the store, re-register site-wide, and
   // rebroadcast the claim so everyone on the floor sees the change at once.
-  const handleEditSave = useCallback(
+  /**
+   * Push a stand change out NOW: local state, the canvas, and the floor.
+   *
+   * All three are cheap. The registry write is not — it is an HTTP post
+   * that shares the per-IP auth budget — so it is debounced behind them.
+   * Without that split, clicking through eight colour swatches would be
+   * eight posts and the ninth would start being refused.
+   */
+  const registryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const applyStandLive = useCallback(
     (updated: Startup) => {
       actions.saveMyStartup(updated);
-      void registerStartup(profileRef.current.id, updated);
       if (floor && claimsRef.current[floor.id] !== undefined) {
         const claim = { spotIndex: claimsRef.current[floor.id]!, startup: updated };
         handleRef.current?.setMyBooth(claim);
         netRef.current?.sendBoothSet(claim);
       }
+      if (registryTimer.current) clearTimeout(registryTimer.current);
+      registryTimer.current = setTimeout(() => {
+        registryTimer.current = null;
+        void registerStartup(profileRef.current.id, updated);
+      }, 1500);
+    },
+    [floor, actions],
+  );
+
+  // A pending registry write must not be lost by walking away mid-edit.
+  useEffect(
+    () => () => {
+      if (registryTimer.current) clearTimeout(registryTimer.current);
+    },
+    [],
+  );
+
+  const handleEditSave = useCallback(
+    (updated: Startup) => {
+      applyStandLive(updated);
+      // Done means done: flush the debounce rather than leaving the
+      // directory a second and a half behind the floor.
+      if (registryTimer.current) {
+        clearTimeout(registryTimer.current);
+        registryTimer.current = null;
+      }
+      void registerStartup(profileRef.current.id, updated);
       setEditingStand(false);
       setActiveBooth(null);
       showToast("Stand updated — the whole floor sees it.");
     },
-    [floor, actions, showToast],
+    [applyStandLive, showToast],
   );
 
   // Walking away (or closing the card) always closes the editor with it.
@@ -1461,14 +1496,17 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* booth card */}
+      {/* booth card — bounded at the bottom so a tall panel (the stand
+          editor on a phone) ends above the emote bar and the chat strip
+          instead of running its last controls off the screen */}
       {activeBooth && (
-        <div className="pointer-events-none absolute right-3 top-16">
+        <div className="pointer-events-none absolute bottom-28 right-3 top-16 flex flex-col items-end justify-start sm:bottom-3">
           {activeBooth.startup && activeBooth.isYours && editingStand && myStartup ? (
             <EditStandPanel
               startup={myStartup}
               state={state}
               onBuy={actions.buyItem}
+              onApply={applyStandLive}
               onSave={handleEditSave}
               onClose={() => setEditingStand(false)}
               onFocusChange={handleFocusChange}

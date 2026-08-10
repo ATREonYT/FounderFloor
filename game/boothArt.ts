@@ -83,6 +83,98 @@ function signColors(theme: BoothTheme): { face: string; fg: string; dark: string
   return { face, fg: luma(face) > 0.62 ? INK : "#FFFDF5", dark: shade(face, -0.42) };
 }
 
+/**
+ * Where each build wears its metal.
+ *
+ * Two bands are drawn ON TOP of the architecture — the trim you buy, and
+ * the Founder+ gold crown — and both used to be drawn at one fixed height
+ * copied from the classic stall. On every other build that height lands
+ * somewhere arbitrary: the crown floated in mid-air past the edges of the
+ * circus tent, and ran straight through the arcade's marquee text. A band
+ * has to sit on an EDGE, and each build's edges are in a different place,
+ * so each build says where its own are.
+ *
+ * `trim` is the band's top-left and width; `crown` the same for the gold.
+ */
+interface Rails {
+  trim: { x: number; y: number; w: number };
+  crown: { x: number; y: number; w: number };
+}
+
+function railsFor(style: string, bx: number, by: number): Rails {
+  switch (style) {
+    case "bigtop":
+      return {
+        // just above the scalloped hem, following the widest tent band
+        trim: { x: bx + 2, y: by + T - 9, w: 4 * T - 4 },
+        // A valance along the top of the tent's widest tier. Bracketing
+        // the narrow second tier instead left the gold hanging in the gap
+        // either side of it — a crown has to sit on something full-width
+        // or it reads as floating.
+        crown: { x: bx, y: by, w: 4 * T },
+      };
+    case "garden":
+      return {
+        // the lattice top, under the pergola beam: the base of this build
+        // belongs to the planter boxes
+        trim: { x: bx, y: by + 1, w: 4 * T },
+        crown: { x: bx - 2, y: by - 8, w: 4 * T + 4 }, // on the beam, not above it
+      };
+    case "arcade":
+      return {
+        // the marquee's own light strip — buying a trim re-cuts the chase
+        // lights rather than adding a second band next to them
+        trim: { x: bx + 6, y: by - 12, w: 4 * T - 12 },
+        crown: { x: bx, y: by - 14, w: 4 * T }, // the cabinet's own top edge
+      };
+    case "neon":
+      return {
+        // Inside the screen but clear of the tube: the bottom halo starts
+        // at by + T - 6, and a band laid over it swallowed the frame line
+        // that makes the panel read as a screen at all.
+        trim: { x: bx + 8, y: by + T - 14, w: 4 * T - 16 },
+        crown: { x: bx + 2, y: by - 8, w: 4 * T - 4 }, // the stage's top edge
+      };
+    default:
+      return {
+        trim: { x: bx + 3, y: by + T - 7, w: 4 * T - 6 },
+        crown: { x: bx + 3, y: by - 8, w: 4 * T - 6 },
+      };
+  }
+}
+
+/**
+ * The carpet under a stand: 4 tiles wide, 4 tall (3 booth rows + apron).
+ *
+ * Lives here rather than in the two renderers because it was written twice
+ * — and a pattern you can pick but cannot see is the same class of bug as
+ * a trim you buy and cannot see. The stripes used to be an 8% shade one
+ * tile wide, which on every palette in the shop was invisible.
+ */
+export function drawCarpet(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  color: string,
+  pattern?: "solid" | "border" | "stripes",
+): void {
+  const cw = 4 * T;
+  const ch = 4 * T;
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, cw, ch);
+  if (pattern === "stripes") {
+    ctx.fillStyle = shade(color, -0.17);
+    for (let i = 0; i < 8; i += 2) ctx.fillRect(x + i * (T / 2), y, T / 2, ch);
+  } else if (pattern === "border") {
+    ctx.strokeStyle = shade(color, 0.2);
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 5.5, y + 5.5, cw - 11, ch - 11);
+  }
+  ctx.strokeStyle = shade(color, -0.16);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, cw - 2, ch - 2);
+}
+
 // ---------- the two layers ----------
 
 export function drawBoothBanner(ctx: CanvasRenderingContext2D, o: BoothArtOpts): void {
@@ -93,21 +185,30 @@ export function drawBoothBanner(ctx: CanvasRenderingContext2D, o: BoothArtOpts):
   else if (style === "neon") bannerNeon(ctx, o);
   else bannerClassic(ctx, o);
 
+  // The trim you bought, on WHATEVER you bought it for. This used to be
+  // called from bannerClassic alone, so four of the five styles took your
+  // tickets and drew nothing — the single worst kind of bug in a shop.
+  trimBand(ctx, o);
+
   const props = o.theme.props ?? [];
   if (props.includes("spotlight")) propSpotlight(ctx, o);
   if (props.includes("balloons")) propBalloons(ctx, o);
 
   // shared markers, on top of any architecture
   const { dark } = signColors(o.theme);
+  const rails = railsFor(style, o.bx, o.by);
   if (o.yours) {
+    // Under the banner rather than across it: a threshold strip on the
+    // founder lane reads the same on all five builds, where a line drawn
+    // INTO the architecture has to dodge a different obstacle each time.
     ctx.fillStyle = GOLD;
-    ctx.fillRect(o.bx + 3, o.by + T - 7, 4 * T - 6, 3);
+    ctx.fillRect(o.bx + 2, o.by + T + 1, 4 * T - 4, 3);
   }
   if (o.tier === "founder") {
     ctx.fillStyle = GOLD;
-    ctx.fillRect(o.bx + 3, o.by - 8, 4 * T - 6, 2);
-    ctx.fillRect(o.bx + 3, o.by - 8, 2, 8);
-    ctx.fillRect(o.bx + 4 * T - 5, o.by - 8, 2, 8);
+    ctx.fillRect(rails.crown.x, rails.crown.y, rails.crown.w, 2);
+    ctx.fillRect(rails.crown.x, rails.crown.y, 2, 8);
+    ctx.fillRect(rails.crown.x + rails.crown.w - 2, rails.crown.y, 2, 8);
   }
   if (o.ownerLamp) {
     ctx.fillStyle = dark;
@@ -152,28 +253,42 @@ function signAndIcon(
   ctx.font = SIGN_FONT;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(o.theme.sign.toUpperCase(), tx, ty, maxW);
+  /* The icon ends where the text begins, with nothing between them: the
+     glyph's right edge and the text box's left edge were the same pixel,
+     so a wide first letter sat ON the icon. Three pixels of air, taken out
+     of the text box rather than out of the plate, so the label still
+     centres inside what is left. */
+  const GAP = 3;
+  ctx.fillText(o.theme.sign.toUpperCase(), tx + GAP, ty, Math.max(8, maxW - GAP * 2));
 }
 
 function trimBand(ctx: CanvasRenderingContext2D, o: BoothArtOpts): void {
   const trim = o.theme.trim ?? "plain";
   if (trim === "plain") return;
   const { fg, dark } = signColors(o.theme);
-  const ty = o.by + T - 7;
-  const tw = 4 * T - 6;
-  const bx = o.bx;
+  const { x: tx, y: ty, w: tw } = railsFor(o.theme.style ?? "classic", o.bx, o.by).trim;
   ctx.fillStyle = dark;
-  ctx.fillRect(bx + 3, ty, tw, 4);
+  ctx.fillRect(tx, ty, tw, 4);
   ctx.fillStyle = fg;
   if (trim === "stripes") {
-    for (let x = 0; x < tw - 3; x += 8) ctx.fillRect(bx + 3 + x + 2, ty, 4, 4);
+    // The last stripe is clipped to the band rather than drawn past it —
+    // an 8px step over a width that is not a multiple of 8 hangs the final
+    // block off the end, which is exactly how the tent grew a stray white
+    // square on its right edge.
+    for (let x = 2; x + 2 <= tw; x += 8) ctx.fillRect(tx + x, ty, Math.min(4, tw - x), 4);
   } else if (trim === "checker") {
-    for (let x = 0; x < tw - 1; x += 4) {
+    for (let x = 0; x + 2 <= tw; x += 4) {
       const odd = (x / 4) % 2 === 1;
-      ctx.fillRect(bx + 3 + x, odd ? ty + 2 : ty, 2, 2);
+      ctx.fillRect(tx + x, odd ? ty + 2 : ty, 2, 2);
     }
   } else if (trim === "dots") {
-    for (let x = 4; x < tw - 3; x += 9) ctx.fillRect(bx + 3 + x, ty + 1, 2, 2);
+    // Centred: the leftover from the last full step is split between the
+    // two ends, so the run of dots reads as deliberate instead of as a row
+    // that ran out of room.
+    const step = 9;
+    const n = Math.max(1, Math.floor((tw - 2) / step));
+    const pad = Math.round((tw - 2 - (n - 1) * step) / 2);
+    for (let i = 0; i < n; i++) ctx.fillRect(tx + pad + i * step, ty + 1, 2, 2);
   }
 }
 
@@ -242,7 +357,6 @@ function bannerClassic(ctx: CanvasRenderingContext2D, o: BoothArtOpts): void {
   ctx.lineWidth = 2;
   ctx.strokeRect(bx + 4, by - 7, 4 * T - 8, T + 2);
   signAndIcon(ctx, o, bx + 8, by, bx + 2 * T + 7, by + 9, 4 * T - 44, fg);
-  trimBand(ctx, o);
 }
 
 function counterClassic(ctx: CanvasRenderingContext2D, o: BoothArtOpts, y0: number): void {
@@ -256,38 +370,61 @@ function bannerBigtop(ctx: CanvasRenderingContext2D, o: BoothArtOpts): void {
   const { bx, by } = o;
   const { face, dark } = signColors(o.theme);
   const stripeB = luma(face) > 0.8 ? shade(face, -0.25) : PAPER;
-  // tent canvas: three stepped bands widening toward the bottom
-  // (integer insets — fractional edges would smear on the pixel grid)
+  /* Tent canvas: three stepped bands widening toward the bottom.
+     ONE STRIPE GRID for all three, MIRRORED about the tent's centre line.
+     Two earlier versions of this were lopsided for two different reasons:
+     each band starting its 8px cycle at its own inset (44, 24 and 2 are
+     three different phases), and then — once that was unified — an even
+     number of stripes across the width, which cannot be symmetric: the
+     left edge opened on canvas and the right closed on stripe. Measuring
+     out from the middle gives matching edges and a double-width panel
+     under the flag, which is where a real tent's seam goes anyway. */
+  const cx = (4 * T) / 2;
+  // Keyed off the MIDDLE of each 8px run, not its left edge: measuring from
+  // the edge puts the two halves of the centre panel a step apart and the
+  // mirror fails on the seam it was drawn around. Runs stay 8 wide so the
+  // only rect boundaries are the ones the eye is meant to see — stepping
+  // finer left a hairline everywhere two same-coloured rects met.
+  const stripeAt = (x: number): string =>
+    Math.floor(Math.abs(x + 4 - cx) / 8) % 2 ? stripeB : face;
   const bands: [number, number, number][] = [
     // [xInset, yTop, height]
-    [44, by - 14, 6],
-    [23, by - 8, 8],
-    [2, by, T],
+    [40, by - 14, 6],
+    [24, by - 8, 8],
+    [0, by, T],
   ];
-  for (const [inset, y, h] of bands) {
-    const w = 4 * T - inset * 2;
-    for (let x = 0; x < w; x += 8) {
-      ctx.fillStyle = Math.floor((x + inset) / 8) % 2 ? stripeB : face;
-      ctx.fillRect(bx + inset + x, y, Math.min(8, w - x), h);
+  /* Ground colour first, then only the OTHER colour on top. Painting every
+     run edge-to-edge butts same-coloured rects against each other, and on a
+     canvas that is not scaled by a whole number those joins show up as
+     hairlines down the middle of a stripe. */
+  const canvas = (x: number, y: number, w: number, h: number): void => {
+    ctx.fillStyle = face;
+    ctx.fillRect(bx + x, y, w, h);
+    ctx.fillStyle = stripeB;
+    for (let i = 0; i < w; i += 8) {
+      if (stripeAt(x + i) !== stripeB) continue;
+      // clipped, never overhanging: the run has to end ON the band
+      ctx.fillRect(bx + x + i, y, Math.min(8, w - i), h);
     }
-  }
-  // scalloped hem along the bottom edge
-  for (let x = 0; x < 4 * T - 4; x += 8) {
-    ctx.fillStyle = Math.floor(x / 8) % 2 ? stripeB : face;
-    ctx.fillRect(bx + 2 + x, by + T - 4, 8, 4);
+  };
+  for (const [inset, y, h] of bands) canvas(inset, y, 4 * T - inset * 2, h);
+  // Scalloped hem, on the same grid and clipped to the same width.
+  canvas(0, by + T - 4, 4 * T, 4);
+  for (let x = 0; x < 4 * T; x += 8) {
     ctx.fillStyle = dark;
-    ctx.fillRect(bx + 2 + x + 2, by + T, 4, 2);
+    ctx.fillRect(bx + x + 2, by + T, 4, 2);
   }
   // peak pole + flag
   ctx.fillStyle = dark;
   ctx.fillRect(bx + 2 * T - 1, by - 22, 2, 9);
   ctx.fillStyle = face;
   ctx.fillRect(bx + 2 * T + 1, by - 22, 8, 5);
-  // side poles
+  // Side poles, symmetric: 2px in from each edge, so the tent sits square
+  // instead of leaning a pixel to the left.
   ctx.fillStyle = shade(dark, -0.2);
-  ctx.fillRect(bx + 1, by - 2, 3, T + 2);
-  ctx.fillRect(bx + 4 * T - 4, by - 2, 3, T + 2);
-  // hanging wooden sign board
+  ctx.fillRect(bx + 2, by - 2, 3, T + 2);
+  ctx.fillRect(bx + 4 * T - 5, by - 2, 3, T + 2);
+  // hanging wooden sign board — ropes mirrored about the centre
   ctx.fillStyle = shade(WOOD_FRONT, -0.35);
   ctx.fillRect(bx + T + 6, by + 2, 1, 5);
   ctx.fillRect(bx + 3 * T - 7, by + 2, 1, 5);
@@ -367,18 +504,27 @@ function bannerArcade(ctx: CanvasRenderingContext2D, o: BoothArtOpts): void {
   const { bx, by } = o;
   const { face } = signColors(o.theme);
   const glow = shade(face, 0.3);
-  // cabinet body, taller than the wall
+  // Cabinet body, taller than the wall — and two pixels taller than it
+  // was, because the marquee has to hold a light strip AND a title without
+  // one sitting on the other's cap height.
   ctx.fillStyle = CABINET;
-  ctx.fillRect(bx, by - 12, 4 * T, T + 12);
+  ctx.fillRect(bx, by - 14, 4 * T, T + 14);
   ctx.fillStyle = shade(CABINET, 0.15);
-  ctx.fillRect(bx, by - 12, 2, T + 12);
-  ctx.fillRect(bx + 4 * T - 2, by - 12, 2, T + 12);
+  ctx.fillRect(bx, by - 14, 2, T + 14);
+  ctx.fillRect(bx + 4 * T - 2, by - 14, 2, T + 14);
   // marquee: sign text over the banner color, framed by chase lights
+  // One pixel taller than it was, so the light strip and the title are not
+  // fighting for the same row — the lights were clipping the cap height of
+  // every letter.
   ctx.fillStyle = shade(face, -0.25);
-  ctx.fillRect(bx + 3, by - 10, 4 * T - 6, 12);
-  for (let x = 0; x < 4 * T - 10; x += 8) {
-    ctx.fillStyle = Math.floor(x / 8) % 2 ? GOLD : PAPER;
-    ctx.fillRect(bx + 6 + x, by - 9, 3, 2);
+  ctx.fillRect(bx + 3, by - 13, 4 * T - 6, 15);
+  if ((o.theme.trim ?? "plain") === "plain") {
+    // Default chase lights. A bought trim replaces them (see railsFor) —
+    // two rows of decoration stacked on one marquee is one too many.
+    for (let x = 0; x + 3 <= 4 * T - 12; x += 8) {
+      ctx.fillStyle = Math.floor(x / 8) % 2 ? GOLD : PAPER;
+      ctx.fillRect(bx + 6 + x, by - 12, 3, 2);
+    }
   }
   ctx.fillStyle = luma(face) > 0.62 ? INK : "#FFFDF5";
   ctx.font = SIGN_FONT;

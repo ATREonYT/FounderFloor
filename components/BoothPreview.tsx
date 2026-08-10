@@ -19,7 +19,7 @@ import type {
 } from "@/lib/types";
 import { TILE } from "@/lib/types";
 import { SPRITE_H, SPRITE_W, SpriteBank, shade } from "@/game/sprites";
-import { drawBoothBanner, drawBoothCounter } from "@/game/boothArt";
+import { drawBoothBanner, drawBoothCounter, drawCarpet } from "@/game/boothArt";
 
 export interface BoothPreviewProps {
   carpet: string;
@@ -36,6 +36,18 @@ export interface BoothPreviewProps {
   /** Hall floor colors behind the stand (defaults: Main Hall). */
   floorA?: string;
   floorB?: string;
+  /**
+   * Founder+ gold trim, exactly as the hall draws it.
+   *
+   * This file's own doc-comment promises that what you buy is what the
+   * hall shows, and this was the one thing it left out: the gold edge is a
+   * paid perk that only appeared once you walked in. If it is not in the
+   * preview then the preview is not the answer to "what will this look
+   * like".
+   */
+  tier?: "pro" | "founder";
+  /** The gold "yours" underline the hall paints on your own stand. */
+  yours?: boolean;
 }
 
 export default function BoothPreview({
@@ -51,6 +63,8 @@ export default function BoothPreview({
   founderLook,
   floorA = "#D8D2C4",
   floorB = "#D1CABA",
+  tier,
+  yours,
 }: BoothPreviewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const bankRef = useRef<SpriteBank | null>(null);
@@ -104,25 +118,11 @@ export default function BoothPreview({
       const bx = 1 * TILE;
       const by = 1.25 * TILE;
 
-      // carpet: 4 tiles wide, 4 tall (3 zone rows + apron), same as drawCarpet
-      const cw = 4 * TILE;
-      const ch = 4 * TILE;
-      ctx.fillStyle = carpet;
-      ctx.fillRect(bx, by, cw, ch);
-      if (pattern === "stripes") {
-        ctx.fillStyle = shade(carpet, -0.08);
-        for (let i = 0; i < 4; i += 2) ctx.fillRect(bx + i * TILE, by, TILE, ch);
-      } else if (pattern === "border") {
-        ctx.strokeStyle = shade(carpet, 0.14);
-        ctx.lineWidth = 3;
-        ctx.strokeRect(bx + 5.5, by + 5.5, cw - 11, ch - 11);
-      }
-      ctx.strokeStyle = shade(carpet, -0.16);
-      ctx.lineWidth = 2;
-      ctx.strokeRect(bx + 1, by + 1, cw - 2, ch - 2);
+      // the same carpet call the hall makes, so the two cannot drift
+      drawCarpet(ctx, bx, by, carpet, pattern);
 
       // banner layer (architecture + banner-row props)
-      drawBoothBanner(ctx, { bx, by, theme, logoImg, seed: 0x5eed });
+      drawBoothBanner(ctx, { bx, by, theme, logoImg, seed: 0x5eed, tier, yours });
 
       // founder in the lane, facing front
       const frames = bankRef.current!.makeAvatar(founderLook);
@@ -135,7 +135,7 @@ export default function BoothPreview({
       ctx.drawImage(frames.down[0], Math.round(fx - SPRITE_W / 2), Math.round(fy - SPRITE_H));
 
       // counter layer (architecture + counter-row props)
-      drawBoothCounter(ctx, { bx, by, theme, seed: 0x5eed });
+      drawBoothCounter(ctx, { bx, by, theme, seed: 0x5eed, tier, yours });
     };
 
     render(null);
@@ -155,7 +155,7 @@ export default function BoothPreview({
     }
     return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carpet, banner, sign, glyph, pattern, trim, style, propsKey, logo, founderLook, floorA, floorB]);
+  }, [carpet, banner, sign, glyph, pattern, trim, style, propsKey, logo, founderLook, floorA, floorB, tier, yours]);
 
   return (
     <canvas

@@ -21,6 +21,8 @@ export default function robots(): MetadataRoute.Robots {
         "/floor/",
         // the archived landing design, kept live only for comparison
         "/design-v1",
+        // workshop tools; a 404 in the shipped build, but say so anyway
+        "/dev/",
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
