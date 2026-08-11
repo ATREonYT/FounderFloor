@@ -75,8 +75,118 @@ async function post(path: string, body: unknown): Promise<boolean> {
   }
 }
 
-export function sendConnectRequest(card: ProfileCard, to: string): Promise<boolean> {
-  return post("/social/request", { card, to, token: tokenFor(card.id), gs: guestSecret() });
+/**
+ * What actually happened to a connection request.
+ *
+ *   sent       it's in their inbox
+ *   already    you'd asked before, or they'd asked you
+ *   connected  it landed on a request they had already sent you
+ *   full       somebody's mailbox is full and it was dropped
+ *   failed     the server never answered
+ *
+ * The server used to reply `ok: true` to all five, and the floor toasted
+ * "they'll see your card" over a request that had been thrown away.
+ */
+export type RequestState = "sent" | "already" | "connected" | "full" | "failed";
+
+export async function sendConnectRequest(card: ProfileCard, to: string): Promise<RequestState> {
+  const base = httpBase();
+  if (!base) return "failed";
+  try {
+    const res = await fetch(`${base}/social/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ card, to, token: tokenFor(card.id), gs: guestSecret() }),
+    });
+    if (!res.ok) return "failed";
+    const data: unknown = await res.json();
+    const st = (data as { state?: unknown } | null)?.state;
+    return st === "already" || st === "connected" || st === "full" || st === "sent"
+      ? st
+      : // an older server answers { ok: true } with no state
+        "sent";
+  } catch {
+    return "failed";
+  }
+}
+
+/**
+ * One founder's stand, by owner id — what /stand/<ownerId> renders.
+ *
+ * Deliberately not "fetch the directory and find the row": that listing is
+ * capped and drops registry entries a stand shadows, so a permalink to
+ * either of those founders would come back empty from a page that renders
+ * them perfectly well.
+ */
+export async function fetchStand(ownerId: string): Promise<StandEntry | null> {
+  const base = httpBase();
+  if (!base || !ownerId) return null;
+  try {
+    const res = await fetch(`${base}/startup?owner=${encodeURIComponent(ownerId)}`);
+    if (!res.ok) return null;
+    const data: unknown = await res.json();
+    const entry = (data as { entry?: unknown } | null)?.entry as StandEntry | undefined;
+    if (!entry || typeof entry !== "object") return null;
+    if (!entry.startup || typeof entry.startup !== "object") return null;
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+export interface StandEntry {
+  ownerId: string;
+  floorId: string | null;
+  spotIndex: number;
+  online: boolean;
+  lastSeen: number;
+  ownerName?: string;
+  startup: Startup;
+}
+
+/** The notes left at one stand. Guestbooks are keyed floor + "spot:<n>". */
+export async function fetchGuestbook(
+  floorId: string,
+  spotIndex: number,
+): Promise<{ from: string; text: string; ts: number }[]> {
+  const base = httpBase();
+  if (!base || !floorId || spotIndex < 0) return [];
+  try {
+    const res = await fetch(`${base}/guestbook?floor=${encodeURIComponent(floorId)}&key=spot:${spotIndex}`);
+    if (!res.ok) return [];
+    const data: unknown = await res.json();
+    const list = (data as { entries?: unknown } | null)?.entries;
+    return Array.isArray(list) ? (list as { from: string; text: string; ts: number }[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Sign a guestbook from off the floor.
+ *
+ * The floor signs over the websocket. This exists because a stand is no
+ * longer always standing in a hall you can walk into — an absent founder's
+ * stand lives at its permalink, and leaving them a note has to work from
+ * there too.
+ */
+export async function signGuestbook(
+  me: string,
+  name: string,
+  floorId: string,
+  spotIndex: number,
+  text: string,
+): Promise<boolean> {
+  const ok = await post("/guestbook/sign", {
+    me,
+    name,
+    floor: floorId,
+    key: `spot:${spotIndex}`,
+    text,
+    token: tokenFor(me),
+    gs: guestSecret(),
+  });
+  return ok;
 }
 
 export function respondToRequest(

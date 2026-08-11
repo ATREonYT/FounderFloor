@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Every community startup on the site — one entry per claimed stand, live or
- * away, polled from GET httpBase()/startups. The directory merges these with
- * the seed startups so anything a founder sets up is searchable within
- * seconds, and its category joins the filter chips automatically.
+ * Every community startup on the site — one entry per claimed stand plus
+ * one per founder who registered a startup without claiming a spot, polled
+ * from GET httpBase()/startups. This IS the directory's list; there is no
+ * seed-startup merge. Categories join the filter chips automatically.
  * Fails silently (empty list) when the floor server is offline or during SSR.
  */
 
@@ -13,12 +13,19 @@ import { httpBase } from "@/lib/net";
 import type { Startup } from "@/lib/types";
 
 export interface CommunityStartup {
+  /**
+   * Optional on purpose: a browser that loads before the server is updated
+   * won't have it, and requiring it in the type guard would blank the whole
+   * directory over a field it can derive. Read it through ownerIdOf().
+   */
+  ownerId?: string;
   /** null = registered from the profile editor, no floor stand claimed yet. */
   floorId: string | null;
   spotIndex: number;
-  /** Founder currently walking that floor (vs. an away stand). */
+  /** Founder currently walking that floor. */
   online: boolean;
   lastSeen: number;
+  ownerName?: string;
   startup: Startup;
 }
 
@@ -59,7 +66,7 @@ export function useCommunityStartups(pollMs = 20_000): CommunityStartup[] {
         if (!Array.isArray(list)) return;
         setStartups(list.filter(isEntry));
       } catch {
-        // Offline or aborted — the directory just shows the seed startups.
+        // Offline or aborted — the directory shows its empty state.
       }
     };
 

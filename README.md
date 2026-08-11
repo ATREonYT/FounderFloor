@@ -99,15 +99,25 @@ carpet/banner colors, sign, glyph, carpet pattern — with a pixel-accurate live
 preview), then walk up to any open stand and press **E** → **Claim this
 stand**. Your booth goes up on the spot, with a gold owner stripe, and every
 player on the floor sees it live over the WebSocket (first claim wins; the
-server arbitrates ties). One stand per floor; claiming another spot moves your
-stand; "Pack up" from your own stand card takes it down.
+server arbitrates ties). Claiming another spot moves your stand; "Pack up" from your own stand card takes it down. One stand per
+FOUNDER, not per floor: claiming a spot anywhere packs up the one you had.
 
-**Stands persist while you're away.** When you leave the floor your stand stays
-up, server-side, marked with a gray "away" lamp on the banner (green while
-you're on the floor) — visitors can still read your pitch, connect, and leave
-guestbook notes, which is the whole point of an expo stand. It comes back
-online the moment you return, and expires after 7 days without a visit.
-Packing up (or taking down your startup in Profile) removes it everywhere.
+**A floor shows who is in the hall.** Close the tab and your stand comes down
+off the floor — the halls are meant to answer "who is actually here", and a
+room full of stands nobody is standing at answers the wrong question.
+
+**Your stand keeps its own address.** The record survives: your spot stays
+reserved for you (nobody else can claim it, and walking back in puts the
+stand back where it was), the Directory keeps listing you, and
+`/stand/<ownerId>` renders the same booth the hall does — where anyone, at
+any hour, can read your pitch, follow your link, sign your guestbook and ask
+to connect. After 7 days with no visit the stand is swept, the spot frees up,
+and the guestbook goes with it. Packing up (or taking down your startup in
+Profile) removes it everywhere.
+
+Set `FLOOR_STANDS_WHILE_AWAY=1` on the floor server to go back to the older
+behaviour, where an absent founder's stand stays on the floor with a grey
+"away" lamp.
 
 ## Connections (mutual) and off-floor chat
 

@@ -204,6 +204,16 @@ the same NaN guard as `FOUNDING_SEATS`:
     Environment=REFERRAL_DAYS=7
     Environment=MAX_REFERRAL_DAYS=63
 
+**`FLOOR_STANDS_WHILE_AWAY`** (unset by default) is the one variable that
+changes what a hall looks like. Unset, a floor draws only founders who are
+connected right now; a stand comes down when its owner closes the tab, while
+the record, the spot reservation and the directory listing all survive. Set
+it to `1` and absent founders' stands stay on the floor with a grey "away"
+lamp, as they did before. Whether empty halls read as honest or as dead is a
+question about people, so it is a restart, not a deploy:
+
+    Environment=FLOOR_STANDS_WHILE_AWAY=1
+
 **`MAX_REFERRAL_DAYS` is the anti-abuse mechanism, not a nicety.** Nothing
 stops somebody registering ten addresses and referring themselves nine
 times; email is the only proof of a person this product has, and it is weak
@@ -452,7 +462,10 @@ swap in the live link URLs and live `whsec_`.
 - [ ] `https://floor.yourdomain.com/health` returns ok
 - [ ] Walk a floor from two browsers — you see each other move
 - [ ] Create an account on desktop, sign in on a phone — booth follows
-- [ ] Claim a stand, close the tab, reopen — stand still there
+- [ ] Claim a stand; from a SECOND browser watch it come off the floor when
+      you close the first tab — then reopen and it is back on the same spot
+- [ ] While that first tab is closed, open the stand from /directory — the
+      booth renders, and Sign / Ask to connect both work
 - [ ] Send feedback from /about — appears in `floor-data.json`
 - [ ] Buy buttons open Stripe checkout (test mode first!)
 - [ ] Create an account with a real email — welcome mail arrives; "Forgot

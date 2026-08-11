@@ -623,7 +623,7 @@ export default function LandingPageV1() {
               },
               {
                 q: "What happens to my stand when I close the tab?",
-                a: "It stays up for 7 days while you're away — collecting guestbook notes and connection requests. Come back within the week and the clock resets.",
+                a: "It comes off the floor — a floor only shows who is in the hall right now. Your spot stays reserved, so walking back in puts the stand back where it was. Meanwhile the stand keeps its own page in the directory, collecting guestbook notes and connection requests. Leave it 7 days and the spot frees up.",
               },
               {
                 q: "Do I need an account?",

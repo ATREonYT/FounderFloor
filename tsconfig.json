@@ -17,5 +17,13 @@
     "paths": { "@/*": ["./*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "server"]
+  "exclude": [
+    "node_modules",
+    "server",
+    // Frozen design snapshots, kept so the landing page can be rolled back
+    // in one command. They are not routed and not built; typechecking them
+    // means a component deleted from the live app breaks the build over a
+    // file whose whole job is to remember what the app used to look like.
+    "docs"
+  ]
 }

@@ -180,9 +180,9 @@ export default function PrivacyPage() {
       <Section title="6. How long data is kept">
         <p>
           Sessions expire after 30 days of disuse. Synced progress is deleted
-          after 180 days of inactivity. A stand stays up for 7 days after you
-          were last seen, then the spot frees up — its guestbook goes with
-          it. Direct-message threads keep only the latest 100 messages.
+          after 180 days of inactivity. A stand is kept for 7 days after you
+          were last seen, then the spot frees up and its guestbook is deleted
+          with it. Direct-message threads keep only the latest 100 messages.
           Feedback, content reports, and cancellation requests are kept as a
           rolling log (oldest entries drop off) for as long as they may be
           needed to handle the matter. Suspension records are kept while the

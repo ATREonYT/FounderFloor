@@ -297,7 +297,7 @@ export function createGame(opts: GameOptions): GameHandle {
       case "player_leave":
         remotes.delete(ev.id);
         bubbles.remove(ev.id);
-        // their stand STAYS — the server re-announces it as away (booth_set)
+        // their stand comes down — the server sends booth_clear, handled below
         presence();
         break;
       case "booth_set":

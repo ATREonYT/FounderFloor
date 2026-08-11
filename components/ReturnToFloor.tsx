@@ -5,9 +5,10 @@
  *
  * Every chip on the floor's top bar is a one-way door: tap your membership
  * badge and you are on the profile page with the hall behind you and no
- * obvious route back. Nothing is actually lost — a stand stays up while its
- * owner is away — but a door with no handle on the other side stops people
- * using it at all, so the fear costs more than the trip.
+ * obvious route back. Nothing is actually lost — your SPOT stays reserved
+ * while you are away, so walking back in puts the stand back where it was —
+ * but a door with no handle on the other side stops people using it at all,
+ * so the fear costs more than the trip.
  *
  * Shown on every page EXCEPT the floors themselves, and only once this
  * tab has actually been on a floor.

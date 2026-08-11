@@ -8,6 +8,17 @@
 import { useEffect, useState } from "react";
 import { httpBase } from "@/lib/net";
 
+/** A dated thing the operator put on the calendar. */
+export interface UpcomingEvent {
+  id: string;
+  title: string;
+  startMs: number;
+  endMs?: number;
+  where?: string;
+  blurb?: string;
+  href?: string;
+}
+
 /** How many founding seats are left, or null while unknown/offline. */
 export interface FoundingSeats {
   total: number;
@@ -33,6 +44,74 @@ function readFounding(data: unknown): FoundingSeats | null {
   if (typeof total !== "number" || typeof left !== "number") return null;
   if (!Number.isFinite(total) || !Number.isFinite(left) || left < 0 || left > total) return null;
   return { total, left };
+}
+
+function readEvents(data: unknown): UpcomingEvent[] | null {
+  if (!data || typeof data !== "object") return null;
+  const list = (data as { events?: unknown }).events;
+  if (!Array.isArray(list)) return null;
+  const out: UpcomingEvent[] = [];
+  for (const v of list.slice(0, 20)) {
+    if (!v || typeof v !== "object") continue;
+    const e = v as Record<string, unknown>;
+    if (typeof e.title !== "string" || typeof e.startMs !== "number") continue;
+    if (!Number.isFinite(e.startMs)) continue;
+    out.push({
+      id: typeof e.id === "string" ? e.id : `${e.startMs}`,
+      title: e.title,
+      startMs: e.startMs,
+      endMs: typeof e.endMs === "number" ? e.endMs : undefined,
+      where: typeof e.where === "string" ? e.where : undefined,
+      blurb: typeof e.blurb === "string" ? e.blurb : undefined,
+      href: typeof e.href === "string" ? e.href : undefined,
+    });
+  }
+  return out;
+}
+
+/**
+ * What's coming up, as set from the admin console.
+ *
+ * Rides the /presence poll every client already makes, for the same reason
+ * the founding counter does — a ten-item list is not worth a second
+ * endpoint that can be separately down. Open Doors is NOT in here: that
+ * one is a recurring window computed in lib/data/event-window.mjs and has
+ * to keep working with this server unreachable.
+ */
+export function useUpcomingEvents(pollMs = 60_000): UpcomingEvent[] {
+  const [events, setEvents] = useState<UpcomingEvent[]>([]);
+
+  useEffect(() => {
+    let ctrl: AbortController | null = null;
+    let disposed = false;
+
+    const load = async (): Promise<void> => {
+      const base = httpBase();
+      if (!base) return;
+      ctrl?.abort();
+      ctrl = new AbortController();
+      try {
+        const res = await fetch(`${base}/presence`, { signal: ctrl.signal });
+        if (!res.ok) return;
+        const data: unknown = await res.json();
+        if (disposed) return;
+        const list = readEvents(data);
+        if (list) setEvents(list);
+      } catch {
+        // Offline — show nothing rather than a calendar that may be wrong.
+      }
+    };
+
+    void load();
+    const timer = setInterval(() => void load(), pollMs);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+      ctrl?.abort();
+    };
+  }, [pollMs]);
+
+  return events;
 }
 
 export function usePresence(pollMs = 15_000): Record<string, number> {

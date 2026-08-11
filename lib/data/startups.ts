@@ -44,7 +44,7 @@ export const STARTUPS: Record<string, Startup> = {
         {
           keywords: ["booth", "stand", "claim", "spot", "set up", "setup"],
           reply:
-            "Your own stand! Go to Profile, fill in your startup's name and pitch, pick your colors, banner trim and sign — then walk up to any OPEN SPOT on a real floor and claim it. It stays up for 7 days even while you're away, collecting guestbook notes and connection requests.",
+            "Your own stand! Go to Profile, fill in your startup's name and pitch, pick your colors, banner trim and sign — then walk up to any OPEN SPOT on a real floor and claim it. Close the tab and it comes off the floor, because a floor is only who's in the hall right now. Your spot is held for 7 days, and the stand keeps a page of its own in the directory, collecting guestbook notes and connection requests while you're gone.",
         },
         {
           keywords: ["connect", "connection", "network", "friend", "request"],
@@ -74,7 +74,7 @@ export const STARTUPS: Record<string, Startup> = {
         {
           keywords: ["guestbook", "sign", "note"],
           reply:
-            "Every stand has a guestbook. If the founder's away, it's how you leave your mark — they read it when they're back, with your name attached. Signing a couple of guestbooks also earns a badge.",
+            "Every stand has a guestbook. If the founder isn't in, open their stand from the Directory and sign it there — they read it when they're back, with your name attached. Signing a couple of guestbooks also earns a badge.",
         },
         {
           keywords: ["account", "email", "password", "sign in", "login", "register"],

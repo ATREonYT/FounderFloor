@@ -322,7 +322,13 @@ export type NetEvent =
   | {
       t: "booth_denied";
       spotIndex: number;
-      reason?: "elsewhere";
+      /**
+       * "elsewhere"  your one stand already lives on another floor
+       * "prohibited" the stand's own text was refused, not the spot
+       * "reserved"   held by a founder who isn't on the floor right now
+       * "taken"      someone is standing there
+       */
+      reason?: "elsewhere" | "prohibited" | "reserved" | "taken";
       standFloorId?: string;
       standSpotIndex?: number;
     }

@@ -14,7 +14,15 @@ interface BoothCardProps {
   isYours: boolean;
   /** Claimed by a live player on this floor (the founder is a real person here now). */
   live?: boolean;
-  /** Claimed stand whose owner has left the floor (stand stays up, marked away). */
+  /**
+   * Claimed stand whose owner is not in the hall. A floor now clears a stand
+   * when its owner disconnects, so on a default server this is the gap before
+   * booth_clear lands rather than the resting state it used to be; it is the
+   * resting state only under FLOOR_STANDS_WHILE_AWAY=1. Still worth getting
+   * right, because the alternative branch offers "Chat with <name>", and that
+   * opens a scripted reply thread — fine for a seed booth, a lie for a real
+   * founder who has stepped out.
+   */
   ownerAway?: boolean;
   connected: boolean;
   /** Owned stands only: a connection request is already out to this person. */
@@ -210,8 +218,10 @@ export default function BoothCard({
         ) : ownerAway ? (
           <>
             <p className="text-sm text-muted">
-              {firstName} set this stand up but is away right now. Leave a note
-              in the guestbook — founders read them when they come back.
+              {firstName} set this stand up but is not in the hall right now.
+              Leave a note in the guestbook — founders read them when they come
+              back — or find their stand in the directory, which is open
+              whether they are here or not.
             </p>
             <button
               type="button"

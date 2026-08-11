@@ -3,10 +3,10 @@ import Link from "next/link";
 import "./globals.css";
 import PixelLogo from "@/components/PixelLogo";
 import NavLink from "@/components/NavLink";
-import NavConnections from "@/components/NavConnections";
 import NavProfile from "@/components/NavProfile";
 import MemberBadge from "@/components/MemberBadge";
 import NavAdmin from "@/components/NavAdmin";
+import NotificationBell from "@/components/NotificationBell";
 import MembershipWatcher from "@/components/MembershipWatcher";
 import RefCatcher from "@/components/RefCatcher";
 import ReturnToFloor from "@/components/ReturnToFloor";
@@ -157,19 +157,26 @@ export default function RootLayout({
                 that scrolls is a minor inconvenience; a page that scrolls
                 sideways feels broken. */}
             {!GATED && (
-              <nav
-                aria-label="Main"
-                className="no-scrollbar ml-auto flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap sm:gap-5"
-              >
-                <NavLink href="/lobby">Floors</NavLink>
-                <NavLink href="/directory">Directory</NavLink>
-                <NavConnections />
-                {/* paying members wear their tier in the chrome, site-wide */}
-                <MemberBadge />
-                {/* the operator's console shortcut — invisible to everyone else */}
-                <NavAdmin />
-                <NavProfile />
-              </nav>
+              <>
+                <nav
+                  aria-label="Main"
+                  className="no-scrollbar ml-auto flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap sm:gap-5"
+                >
+                  <NavLink href="/lobby">Floors</NavLink>
+                  <NavLink href="/directory">Directory</NavLink>
+                  {/* paying members wear their tier in the chrome, site-wide */}
+                  <MemberBadge />
+                  {/* the operator's console shortcut — invisible to everyone else */}
+                  <NavAdmin />
+                  <NavProfile />
+                </nav>
+                {/* Requests, new connections and the calendar. Outside the nav
+                    on purpose: the nav above scrolls sideways, so a bell in
+                    there would take its panel into a scroll container and
+                    could itself scroll off a phone. Inside the header on
+                    purpose too — that is what hides it on floors. */}
+                <NotificationBell />
+              </>
             )}
           </div>
           {/* how far through the page you are, drawn on the header's own rule */}

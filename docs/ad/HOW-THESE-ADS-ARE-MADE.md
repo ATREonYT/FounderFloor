@@ -128,7 +128,7 @@ mid-range voice, slightly slower than default) or read it yourself.
 > Every startup on the floor is searchable. Your own stand is yours to
 > design, pixel for pixel.
 >
-> Claim a spot, and it stays up while you sleep.
+> Claim a spot, and it gets its own address.
 >
 > Open Doors, every Sunday. Three hours. The whole floor turns up.
 >

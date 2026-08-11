@@ -6,7 +6,8 @@
  * normal account — gets the site's ordinary 404, so the console does not
  * exist for them. Everything here is a thin form over the /admin/*
  * endpoints: grants (tier / founding / tickets), bans, kicks, stand
- * clearing, announcements. Membership grants replay the full ceremony.
+ * clearing, announcements, the events calendar. Membership grants replay
+ * the full ceremony.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -33,6 +34,21 @@ interface Overview {
   }[];
 }
 
+/**
+ * One row of the calendar, exactly as /admin/events hands it back — declared
+ * here beside Overview because this page is typed off the wire, not off the
+ * app's own models.
+ */
+interface AdminEvent {
+  id: string;
+  title: string;
+  startMs: number;
+  endMs?: number;
+  where?: string;
+  blurb?: string;
+  href?: string;
+}
+
 async function adminPost(path: string, body: Record<string, unknown>) {
   const auth = getAuth();
   const res = await fetch(`${httpBase()}${path}`, {
@@ -54,28 +70,71 @@ function Field({
   onChange,
   placeholder,
   width = "w-64",
+  type = "text",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   width?: string;
+  /** "datetime-local" for the calendar; everything else here is text. */
+  type?: string;
 }) {
   return (
     <label className="flex flex-col gap-1">
       <span className="micro text-muted">{label}</span>
       <input
-        type="text"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={`h-10 rounded-md border border-line px-3 text-sm placeholder:text-muted/60 ${width}`}
+        className={`min-h-[44px] rounded-md border border-line px-3 text-sm placeholder:text-muted/60 ${width}`}
       />
     </label>
   );
 }
 
-const BTN = "btn-press h-10 rounded-md bg-ink px-4 text-sm text-paper hover:bg-ink/85 disabled:opacity-50";
+/* 44px, not 40. Every button here is a finger target on a console its
+   operator will end up using from a phone at least once, usually the once
+   that matters. */
+const BTN =
+  "btn-press min-h-[44px] rounded-md bg-ink px-4 text-sm text-paper hover:bg-ink/85 disabled:opacity-50";
+
+/**
+ * The operator's own zone, named ("Europe/London"), never a UTC offset.
+ * Read lazily: this module is evaluated on the server too, where the answer
+ * is whatever the box is set to and has nothing to do with whoever is
+ * looking at the screen.
+ */
+function localZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "your local time";
+  } catch {
+    return "your local time";
+  }
+}
+
+/**
+ * An event's time, drawn on the operator's clock — the same clock the
+ * datetime-local field writes in, so a date typed a month or twelve hours
+ * out reads back visibly wrong instead of quietly right.
+ */
+function fmtWhen(startMs: number, endMs?: number): string {
+  const full: Intl.DateTimeFormatOptions = {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  const start = new Date(startMs);
+  const head = start.toLocaleString(undefined, full);
+  if (!endMs) return head;
+  const end = new Date(endMs);
+  const sameDay = start.toDateString() === end.toDateString();
+  const tail = end.toLocaleString(undefined, sameDay ? { hour: "2-digit", minute: "2-digit" } : full);
+  return `${head} – ${tail}`;
+}
 
 export default function AdminPage() {
   const [ready, setReady] = useState(false);
@@ -95,6 +154,20 @@ export default function AdminPage() {
     }
   }, []);
 
+  const [events, setEvents] = useState<AdminEvent[]>([]);
+
+  // A bare POST (token only) is the read. Failures stay quiet: the gate
+  // above already reports an unreachable server, and a second complaint
+  // about the same outage is noise.
+  const loadEvents = useCallback(async () => {
+    try {
+      const r = await adminPost("/admin/events", {});
+      if (Array.isArray(r?.events)) setEvents(r.events as AdminEvent[]);
+    } catch {
+      /* offline — the calendar just stays empty */
+    }
+  }, []);
+
   useEffect(() => {
     setReady(true);
     if (!getAuth()) {
@@ -102,7 +175,8 @@ export default function AdminPage() {
       return;
     }
     void refresh();
-  }, [refresh]);
+    void loadEvents();
+  }, [refresh, loadEvents]);
 
   // grant form
   const [gEmail, setGEmail] = useState("");
@@ -117,15 +191,29 @@ export default function AdminPage() {
   const [standOwner, setStandOwner] = useState("");
   const [wallOwner, setWallOwner] = useState("");
   const [announceText, setAnnounceText] = useState("");
+  // events form
+  const [evTitle, setEvTitle] = useState("");
+  const [evStart, setEvStart] = useState("");
+  const [evEnd, setEvEnd] = useState("");
+  const [evWhere, setEvWhere] = useState("");
+  const [evBlurb, setEvBlurb] = useState("");
+  const [evHref, setEvHref] = useState("");
 
   const auth = ready ? getAuth() : null;
 
-  const run = async (label: string, path: string, body: Record<string, unknown>) => {
+  // Returns the parsed reply (null on error or a dead server) so callers
+  // that get state back in the response — /admin/events answers with the
+  // whole calendar — can use it instead of asking again and racing.
+  const run = async (
+    label: string,
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<Record<string, unknown> | null> => {
     try {
       const r = await adminPost(path, body);
       if (r.error) {
         say(`${label}: ${r.error}`);
-        return;
+        return null;
       }
       say(`${label}: ok ${JSON.stringify(r).slice(0, 140)}`);
       if (path === "/admin/grant") {
@@ -137,8 +225,10 @@ export default function AdminPage() {
         else say("granted — they'll get the ceremony on their screen when it lands");
       }
       void refresh();
+      return r;
     } catch (err) {
       say(`${label}: ${err instanceof Error ? err.message : "failed"}`);
+      return null;
     }
   };
 
@@ -153,11 +243,55 @@ export default function AdminPage() {
       ...(gTickets.trim() ? { tickets: Number(gTickets) } : {}),
     });
 
+  const addEvent = async () => {
+    const title = evTitle.trim();
+    // A datetime-local value has no zone in it ("2026-09-03T19:00"), and
+    // Date reads that shape as LOCAL time. That is the whole point: the
+    // operator types the wall clock of the room, and we send the epoch ms
+    // that means. Never append a Z here, and never build the number by
+    // hand — the browser already knows the offset, including the DST one
+    // in force on that date rather than today's.
+    const startMs = new Date(evStart).getTime();
+    const endMs = evEnd ? new Date(evEnd).getTime() : NaN;
+    if (!title || !Number.isFinite(startMs)) {
+      say("event: needs a title and a start date");
+      return;
+    }
+    const r = await run("event add", "/admin/events", {
+      title,
+      startMs,
+      ...(Number.isFinite(endMs) ? { endMs } : {}),
+      ...(evWhere.trim() ? { where: evWhere.trim() } : {}),
+      ...(evBlurb.trim() ? { blurb: evBlurb.trim() } : {}),
+      ...(evHref.trim() ? { href: evHref.trim() } : {}),
+    });
+    if (!Array.isArray(r?.events)) return; // rejected — run() already said why
+    setEvents(r.events as AdminEvent[]);
+    setEvTitle("");
+    setEvStart("");
+    setEvEnd("");
+    setEvWhere("");
+    setEvBlurb("");
+    setEvHref("");
+  };
+
+  const removeEvent = async (id: string) => {
+    const r = await run("event remove", "/admin/events", { remove: id });
+    if (Array.isArray(r?.events)) setEvents(r.events as AdminEvent[]);
+  };
+
   if (!ready) return null;
   // anyone who isn't the verified operator gets the site's ordinary 404 —
   // signed out, wrong account, server not answering: the page doesn't exist
   if (gate === "denied" || !auth) notFound();
   if (gate === "checking") return null;
+
+  // Local-time formatting is safe from here down: the page renders null
+  // until `ready`, so the server never emits a date string for the client
+  // to disagree with on hydration.
+  const zone = localZone();
+  const now = Date.now();
+  const calendar = [...events].sort((a, b) => a.startMs - b.startMs);
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10">
@@ -409,12 +543,119 @@ export default function AdminPage() {
         </Row>
       </section>
 
+      {/* The calendar. These ride out on the /presence poll every client
+          already makes, so an event added here shows up on the floors
+          within a minute and drops off by itself once it is over. Open
+          Doors is not in this list — that one is the hardcoded weekly
+          window and has to survive this server being down. */}
+      <section className="panel p-5" aria-label="Events">
+        <h2 className="font-display text-xl">Events</h2>
+        <p className="micro mt-1 text-muted">
+          Shown and entered in your own clock ({zone}). Check the zone before you post one.
+        </p>
+        {calendar.length > 0 ? (
+          <ul className="mt-3 space-y-3">
+            {calendar.map((e) => {
+              const over = (e.endMs ?? e.startMs) <= now;
+              return (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-start justify-between gap-2 border-t border-line pt-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="font-display text-base">{e.title}</span>
+                      {over && <span className="micro text-muted">over · no longer sent out</span>}
+                    </div>
+                    <p className="micro mt-0.5 text-muted">
+                      {fmtWhen(e.startMs, e.endMs)} · {zone}
+                      {e.where ? ` · ${e.where}` : ""}
+                    </p>
+                    {e.blurb && <p className="mt-0.5 text-sm text-muted">{e.blurb}</p>}
+                    {e.href && (
+                      <a
+                        href={e.href}
+                        target="_blank"
+                        rel="nofollow ugc noopener noreferrer"
+                        className="micro text-accent hover:underline"
+                      >
+                        {e.href.replace(/^https?:\/\/(www\.)?/, "").slice(0, 40)}
+                      </a>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void removeEvent(e.id)}
+                    className="btn-press min-h-[44px] rounded-md border border-line px-3 text-sm text-muted hover:border-ink hover:text-ink"
+                  >
+                    Remove
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-muted">Nothing on the calendar.</p>
+        )}
+        <div className="mt-4 flex flex-col gap-3 border-t border-line pt-4">
+          <Row>
+            <Field
+              label="Title"
+              value={evTitle}
+              onChange={setEvTitle}
+              placeholder="Demo night"
+              width="w-full max-w-xs"
+            />
+            <Field label="Starts" type="datetime-local" value={evStart} onChange={setEvStart} width="w-52" />
+            <Field
+              label="Ends (optional)"
+              type="datetime-local"
+              value={evEnd}
+              onChange={setEvEnd}
+              width="w-52"
+            />
+          </Row>
+          <Row>
+            <Field
+              label="Where (optional)"
+              value={evWhere}
+              onChange={setEvWhere}
+              placeholder="Main hall"
+              width="w-40"
+            />
+            <Field
+              label="Blurb (optional)"
+              value={evBlurb}
+              onChange={setEvBlurb}
+              placeholder="Ten founders, five minutes each."
+              width="w-full max-w-sm"
+            />
+          </Row>
+          <Row>
+            <Field label="Link (optional)" value={evHref} onChange={setEvHref} placeholder="https://" />
+            <button
+              type="button"
+              className={BTN}
+              disabled={!evTitle.trim() || !evStart}
+              onClick={() => void addEvent()}
+            >
+              Add event
+            </button>
+          </Row>
+        </div>
+      </section>
+
       {log.length > 0 && (
         <section className="panel p-5" aria-label="Action log">
           <h2 className="font-display text-xl">Log</h2>
           <ul className="mt-2 space-y-1 font-mono text-xs text-muted">
             {log.map((l, i) => (
-              <li key={i}>{l}</li>
+              // break-all: the log prints raw JSON replies, and a run of
+              // {"key":"value", has no legal break point — one event add
+              // used to widen the whole page at 360px.
+              <li key={i} className="min-w-0 break-all">
+                {l}
+              </li>
             ))}
           </ul>
         </section>

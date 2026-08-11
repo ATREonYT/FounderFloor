@@ -150,7 +150,13 @@ export default function Messenger() {
     const last = msgs.length ? msgs[msgs.length - 1] : null;
     return last && last.fromId !== me && last.ts > (seen[peerId] ?? 0);
   }).length;
-  const badge = unreadThreads + inbox.requests.length;
+  /* Unread messages only. Connection requests used to be folded in here
+     too, from before there was anywhere else for them to go — now the bell
+     in the header owns them, and two badges in opposite corners both
+     showing "1" for the same single request is worse than either alone.
+     They also fell out of step: answering one from the bell cleared its
+     count immediately and left this one showing 1 until the next poll. */
+  const badge = unreadThreads;
 
   const activePeer = activeThread
     ? inbox.connections.find((c) => c.peerId === activeThread)

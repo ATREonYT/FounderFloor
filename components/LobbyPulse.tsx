@@ -15,6 +15,8 @@ import { httpBase } from "@/lib/net";
 import { useInbox } from "@/lib/social";
 import { TIER_ORDER, type FloorDef, type SubTier } from "@/lib/types";
 import { useCommunityStartups } from "@/components/useCommunityStartups";
+import type { CommunityStartup } from "@/components/useCommunityStartups";
+import { ownerIdOf } from "@/lib/ownerId";
 import TierTag, { TIER_LABEL } from "@/components/TierTag";
 
 const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(FLOORS.map((f) => [f.id, f]));
@@ -34,6 +36,11 @@ interface SeekingRow {
 /** Membership visibility boost: Founder+ over Pro over free. */
 function tierWeight(tier: "pro" | "founder" | undefined): number {
   return tier === "founder" ? 2 : tier === "pro" ? 1 : 0;
+}
+
+/** Whose row is this? Prefer the field; fall back to the id convention. */
+function ownerOf(c: CommunityStartup): string {
+  return c.ownerId ?? ownerIdOf(c.startup.id);
 }
 
 export default function LobbyPulse({
@@ -85,12 +92,7 @@ export default function LobbyPulse({
   // excluding your own.
   const fresh = useMemo(
     () =>
-      community.filter(
-        (c) =>
-          c.lastSeen > prevSeenAt &&
-          c.startup.id !== `reg:${me}` &&
-          c.startup.id !== `claim:${me}`,
-      ),
+      community.filter((c) => c.lastSeen > prevSeenAt && ownerOf(c) !== me),
     [community, prevSeenAt, me],
   );
 
@@ -98,7 +100,7 @@ export default function LobbyPulse({
     const rows: SeekingRow[] = [];
     for (const c of community) {
       if (!c.startup.seekingCofounder) continue;
-      if (c.startup.id === `reg:${me}` || c.startup.id === `claim:${me}`) continue;
+      if (ownerOf(c) === me) continue;
       const floor = c.floorId !== null ? FLOOR_BY_ID[c.floorId] : undefined;
       rows.push({
         key: c.startup.id,

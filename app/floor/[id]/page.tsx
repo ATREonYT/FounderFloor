@@ -23,7 +23,7 @@ import type {
   Startup,
 } from "@/lib/types";
 import { questStates, unlockedEmotes } from "@/lib/data/quests";
-import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox } from "@/lib/social";
+import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
 import { acquireFloorLock } from "@/lib/tabLock";
 import RequestCard from "@/components/RequestCard";
@@ -52,6 +52,15 @@ function uid(): string {
 
 function firstName(full: string): string {
   return full.split(" ")[0] || full;
+}
+
+/** Say what the server actually did with the request, not what we hoped. */
+function requestToast(state: RequestState, who: string): string {
+  if (state === "connected") return `You and ${who} are connected.`;
+  if (state === "already") return `You've already asked ${who} — they haven't answered yet.`;
+  if (state === "full") return `${who}'s inbox is full right now. Try again later.`;
+  if (state === "failed") return "That didn't send — check your connection.";
+  return `Request sent to ${who}. They'll see your card.`;
 }
 
 /** One chat thread in the panel: an NPC founder DM, a live-player DM, or a
@@ -147,9 +156,10 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   }, []);
 
   /* Leave a breadcrumb, so a trip to the membership page or the ticket
-     booth is a round trip. Your spot is never at risk — a stand stays up
-     while you are away — but "will I lose my place?" is the reason people
-     don't click, so the way back has to be visible from the other page.
+     booth is a round trip. Your spot is never at risk — it stays reserved
+     while you are away, even though the stand itself comes down off the
+     floor — but "will I lose my place?" is the reason people don't click,
+     so the way back has to be visible from the other page.
      sessionStorage, not local: it belongs to this tab's visit. */
   useEffect(() => {
     if (!floor) return;
@@ -423,11 +433,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         // A real person's stand: connecting is a REQUEST — they see your
         // card (name, title, badges, track record) and accept or decline.
         // ownerId is their stable profile id; the server routes it.
-        void sendConnectRequest(buildCard(stateRef.current), ownerId).then((ok) => {
-          if (ok) refreshInbox();
+        void sendConnectRequest(buildCard(stateRef.current), ownerId).then((st) => {
+          if (st !== "failed") refreshInbox();
+          showToast(requestToast(st, s.founder));
         });
         actions.completeOnboarding("connect");
-        showToast(`Request sent to ${s.founder}. They'll see your card.`);
         return;
       }
       if (connectedIdsRef.current.has(s.id)) return;
@@ -497,11 +507,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       // A real player: send a connection request. Their wire id is fine —
       // the server resolves live wire ids to profile ids.
       if (!th.peerId) return;
-      void sendConnectRequest(buildCard(stateRef.current), th.peerId).then((ok) => {
-        if (ok) refreshInbox();
+      void sendConnectRequest(buildCard(stateRef.current), th.peerId).then((st) => {
+        if (st !== "failed") refreshInbox();
+        showToast(requestToast(st, th.label));
       });
       actions.completeOnboarding("connect");
-      showToast(`Request sent to ${th.label}. They'll see your card.`);
     },
     [floor, actions, handleConnect, showToast],
   );
@@ -1005,7 +1015,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           actions.unclaimSpot(f.id);
           handleRef.current?.setMyBooth(null);
           netRef.current?.sendBoothClear();
-          showToast("Someone claimed that stand first. Pick another spot.");
+          showToast(
+            ev.reason === "reserved"
+              ? "That spot is spoken for — a founder's stand is parked there while they're away."
+              : "Someone claimed that stand first. Pick another spot.",
+          );
         }
       }
       if (ev.t === "booth_clear" && ev.ownerId === profileRef.current.id) {

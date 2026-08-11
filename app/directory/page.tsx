@@ -18,6 +18,7 @@ import { TIER_LABEL } from "@/components/TierTag";
 import RankBadge from "@/components/RankBadge";
 import TierTag from "@/components/TierTag";
 import { usePresence } from "@/components/usePresence";
+import { ownerIdOf, standHref } from "@/lib/ownerId";
 import { useCommunityStartups } from "@/components/useCommunityStartups";
 
 const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(
@@ -31,6 +32,7 @@ const MIN_RANKS = RANKS.filter((r) => r.id > 0);
 /** One directory row — a real founder's stand. */
 interface DirRow {
   key: string;
+  ownerId: string;
   startup: Startup;
   floor: FloorDef | undefined;
   community: boolean;
@@ -75,6 +77,8 @@ export default function DirectoryPage() {
       const floor = c.floorId !== null ? FLOOR_BY_ID[c.floorId] : undefined;
       rows.push({
         key: c.startup.id,
+        // Older servers don't send it; the id has always carried it.
+        ownerId: c.ownerId ?? ownerIdOf(c.startup.id),
         startup: c.startup,
         floor,
         community: true,
@@ -249,7 +253,18 @@ export default function DirectoryPage() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-lg leading-snug">{s.name}</h2>
+                    {/* The stand itself. A directory ought to open onto the
+                        thing it is listing, not just point at the hall it
+                        happens to be standing in — and a founder who is not
+                        on a floor right now has no hall to point at. */}
+                    <h2 className="font-display text-lg leading-snug">
+                      <Link
+                        href={standHref(r.ownerId)}
+                        className="underline-offset-4 hover:underline"
+                      >
+                        {s.name}
+                      </Link>
+                    </h2>
                     <RankBadge revenue={s.verifiedRevenue} />
                     {r.community && (
                       <span className="micro rounded-sm border border-accent/40 px-1.5 py-0.5 text-accent">
@@ -302,8 +317,8 @@ export default function DirectoryPage() {
                     </span>
                     {TIER_ORDER[state.sub] >= TIER_ORDER[floor.tier] ? (
                       <Link
-                        // deep link: the floor page auto-walks you from the
-                        // door to this stand (?booth for seed, ?spot for live)
+                        // deep link: the floor page reads ?spot and walks you
+                        // from the door to this stand
                         href={r.href}
                         className="rounded-md border border-ink px-3 py-2 text-sm hover:bg-panel"
                       >
@@ -322,10 +337,12 @@ export default function DirectoryPage() {
                   </div>
                 )}
                 {!floor && r.community && (
-                  <span className="shrink-0 text-xs text-muted sm:text-right">
-                    No stand yet — their founder
-                    <br className="hidden sm:block" /> hasn&rsquo;t claimed a spot
-                  </span>
+                  <Link
+                    href={standHref(r.ownerId)}
+                    className="shrink-0 rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-ink hover:text-ink"
+                  >
+                    See their stand
+                  </Link>
                 )}
               </li>
             );

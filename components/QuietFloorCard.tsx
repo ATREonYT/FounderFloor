@@ -7,8 +7,9 @@
  * concludes the place is dead and leaves — that single moment costs more
  * users than any other screen. So when someone is genuinely alone, say so
  * plainly and hand them the three things that are still worth doing:
- * put a stand up (it stays up while they're away), come back for the
- * weekly hour when the floor is busy, or read who else is here.
+ * put a stand up (the floor empties when they leave, but the stand's own
+ * page does not), come back for the weekly hour when the floor is busy, or
+ * read who else is here.
  *
  * Dismissible, and it never appears during the tutorial or on a floor that
  * already has stands on it — it exists for the dead-room case only.
@@ -76,8 +77,8 @@ export default function QuietFloorCard({
         </Link>
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted">
-        A stand stays up while you&rsquo;re away, so people can find you when
-        you&rsquo;re not here.
+        A stand comes off the floor when you leave, but it keeps a page of its
+        own, so people can find you when you&rsquo;re not here.
       </p>
     </aside>
   );

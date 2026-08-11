@@ -111,12 +111,12 @@ export default function AboutPage() {
         </p>
         <p>
           <strong>On the floor server:</strong> what other people need to see
-          or that has to survive your absence — your stand (it stays up for 7
-          days while you&rsquo;re away, then the spot frees up), guestbook
-          entries, the activity ticker, connection requests and mutual
-          connections, direct messages with your connections (latest 100 per
-          thread), beta feedback, and abuse reports. Floor chat is relayed
-          live to the people in the hall and not stored.
+          or that has to survive your absence — your stand (it comes off the
+          floor when you leave, keeps its own page, and holds your spot for 7
+          days), guestbook entries, the activity ticker, connection requests
+          and mutual connections, direct messages with your connections
+          (latest 100 per thread), beta feedback, and abuse reports. Floor
+          chat is relayed live to the people in the hall and not stored.
         </p>
         <p>
           <strong>Not collected at all:</strong> no tracking pixels, no
@@ -129,15 +129,20 @@ export default function AboutPage() {
         <p>
           Every spot on every floor is first come, first served. Claim a
           stand and it&rsquo;s yours: your colors, your banner, your sign,
-          your pitch. Close the tab and it stays up for a week — visitors can
-          read your pitch, sign your guestbook, and request to connect while
-          you&rsquo;re away. Come back within 7 days and the clock resets;
-          stay away longer and the spot opens up for the next founder.
+          your pitch. Close the tab and the stand comes off the floor: a floor
+          shows who is in the hall at that moment, and nothing else. The spot
+          stays reserved for you, so walking back in puts your stand back
+          where it was. Stay away longer than 7 days and the spot opens up for
+          the next founder.
         </p>
         <p>
-          One stand per person per floor. Setting up a startup also lists it
-          in the directory automatically, under whatever category you typed —
-          that&rsquo;s where people find you when they&rsquo;re not walking.
+          One stand per founder, across every floor: claim a spot somewhere
+          else and your stand moves rather than multiplying. Setting up a
+          startup also lists it
+          in the directory automatically, under whatever category you typed,
+          and gives it a page of its own — that&rsquo;s where people find you
+          when they&rsquo;re not walking: your pitch, your link, your
+          guestbook, and a way to ask to connect, at any hour.
         </p>
       </Section>
 

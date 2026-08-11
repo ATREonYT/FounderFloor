@@ -25,7 +25,7 @@
  *                                      booths = persistent stands with ownerName + online)
  *     { t: "player_join", player: RemotePlayer }
  *     { t: "player_move", id, s: MoveState }
- *     { t: "player_leave", id }        (their stand STAYS, re-announced online:false)
+ *     { t: "player_leave", id }        (their stand comes down: booth_clear)
  *     { t: "booth_set", ownerId, ownerName, online, claim }  (ownerId = stable profile id)
  *     { t: "booth_clear", ownerId }
  *
@@ -112,9 +112,11 @@ const rooms = new Map();
 const guestbooks = new Map();
 
 /**
- * stands: floorId -> Map<profileId, { claim, ownerName, lastSeen }> — claimed
- * booths persist while their owner is away (shown as "away" stands) and expire
- * after STAND_TTL_MS without a visit. Keyed by the STABLE profile id (rawId),
+ * stands: floorId -> Map<profileId, { claim, ownerName, lastSeen }> — the
+ * RECORD persists while its owner is away (it is what the directory, the
+ * stand's own page and the owner's spot reservation all read) even though
+ * the booth itself is no longer drawn on the floor; it expires after
+ * STAND_TTL_MS without a visit. Keyed by the STABLE profile id (rawId),
  * not the per-connection wire id, so reconnects and second tabs re-own them.
  */
 const stands = new Map();
@@ -169,6 +171,36 @@ const MAX_REPORTS = 500;
 /** feedback: beta notes from users ("this broke", "build this"), cap 500. */
 let feedback = [];
 const MAX_FEEDBACK = 500;
+
+/**
+ * events: the dated things the operator puts on the calendar — a demo
+ * night, an AMA, a themed floor — soonest first, cap 50.
+ *
+ * Separate from Open Doors, which is a recurring weekly window computed in
+ * lib/data/event-window.mjs and shared with the web app. That one has to
+ * work with this server unreachable, so it stays hardcoded; these are
+ * additive on top and only exist while the server is up.
+ */
+let events = [];
+const MAX_EVENTS = 50;
+
+/**
+ * Do floors show the stands of founders who are not currently connected?
+ *
+ * The halls now read as "who is actually here": when you close the tab your
+ * stand comes down off the floor, and your permanent home becomes the
+ * directory and your /stand/<id> permalink, where people can still read
+ * your pitch, sign your guestbook and ask to connect.
+ *
+ * Your SPOT is still reserved either way — the stand record survives, it is
+ * simply not drawn — so coming back puts you where you were.
+ *
+ * Set FLOOR_STANDS_WHILE_AWAY=1 to go back to the old behaviour, where an
+ * absent founder's stand stays on the floor marked "away". That is one env
+ * var and a restart, because "does an empty hall look worse than an honest
+ * one" is a question about people, not code, and the answer may change.
+ */
+const STANDS_WHILE_AWAY = process.env.FLOOR_STANDS_WHILE_AWAY === "1";
 
 /**
  * subscribers: emailLower -> { email, source, ts, demoNight }
@@ -1547,6 +1579,23 @@ function loadData() {
     }
   }
 
+  if (Array.isArray(parsed.events)) {
+    for (const e of parsed.events.slice(0, MAX_EVENTS)) {
+      if (e && typeof e === "object" && typeof e.startMs === "number" && e.title) {
+        events.push({
+          id: String(e.id ?? "").slice(0, 24) || `e${events.length}`,
+          title: String(e.title).slice(0, 80),
+          startMs: e.startMs,
+          endMs: typeof e.endMs === "number" ? e.endMs : undefined,
+          where: String(e.where ?? "").slice(0, 60),
+          blurb: String(e.blurb ?? "").slice(0, 200),
+          href: typeof e.href === "string" ? e.href.slice(0, 220) : "",
+        });
+      }
+    }
+    events.sort((a, b) => a.startMs - b.startMs);
+  }
+
   if (Array.isArray(parsed.feedback)) {
     feedback = parsed.feedback
       .filter((f) => f && typeof f === "object" && typeof f.ts === "number" && typeof f.text === "string")
@@ -1609,6 +1658,7 @@ function saveNow() {
     reports,
     flagged,
     feedback,
+    events,
     subscribers: Object.fromEntries(subscribers),
     social: Object.fromEntries(social),
     dms: Object.fromEntries(dms),
@@ -2132,6 +2182,11 @@ function floorBooths(floorId, room, exceptProfileId) {
   const out = [];
   for (const [ownerId, st] of byOwner) {
     if (ownerId === exceptProfileId) continue;
+    // A floor shows who is HERE. The record stays either way — it is what
+    // the directory and /stand/<id> read, and it is what keeps this spot
+    // reserved for its owner — but by default it is not drawn to visitors
+    // while its founder is elsewhere.
+    if (!STANDS_WHILE_AWAY && !ownerOnline(room, ownerId)) continue;
     out.push({ ownerId, ownerName: st.ownerName, online: ownerOnline(room, ownerId), claim: st.claim });
   }
   return out;
@@ -2180,6 +2235,22 @@ function spotTakenBy(floorId, spotIndex, exceptProfileId) {
 }
 
 /** Drop stands whose owner hasn't visited in STAND_TTL_MS. Runs hourly. */
+/**
+ * A guestbook belongs to the stand, not to the square of carpet.
+ *
+ * Books are keyed floor + "spot:<n>", so without this the notes left for
+ * one founder outlived their stand and were then served to whoever claimed
+ * that spot next — a stranger reading messages written to somebody else.
+ * The privacy policy has always said the guestbook goes when the stand
+ * goes; this is the code that makes that true.
+ */
+function dropGuestbook(floorId, spotIndex) {
+  const books = guestbooks.get(floorId);
+  if (!books) return;
+  books.delete(`spot:${spotIndex}`);
+  if (books.size === 0) guestbooks.delete(floorId);
+}
+
 function pruneStands() {
   const cutoff = Date.now() - STAND_TTL_MS;
   for (const [floorId, byOwner] of stands) {
@@ -2187,6 +2258,7 @@ function pruneStands() {
     for (const [ownerId, st] of byOwner) {
       if (st.lastSeen < cutoff && !ownerOnline(room, ownerId)) {
         byOwner.delete(ownerId);
+        dropGuestbook(floorId, st.claim.spotIndex);
         if (room) broadcast(room, { t: "booth_clear", ownerId });
         scheduleSave();
       }
@@ -2449,6 +2521,35 @@ function authRateLimited(req) {
     }
   }
   return ++a.count > AUTH_RATE_LIMIT;
+}
+
+/**
+ * A separate bucket for the public social writes.
+ *
+ * Deliberately NOT the auth bucket: that one defaults to 10/minute/IP and
+ * is shared with sign-in, so folding a Connect button into it would mean
+ * one office behind a single NAT browsing the directory locks everybody in
+ * the building out of logging in.
+ */
+const SOCIAL_RATE_LIMIT = (() => {
+  const n = Number(process.env.SOCIAL_RATE_LIMIT ?? 30);
+  return Number.isInteger(n) && n >= 1 && n <= 100_000 ? n : 30;
+})();
+const socialAttempts = new Map(); // ip -> { windowStart, count }
+function socialRateLimited(req) {
+  const ip = clientIp(req);
+  const now = Date.now();
+  let a = socialAttempts.get(ip);
+  if (!a || now - a.windowStart >= 60_000) {
+    a = { windowStart: now, count: 0 };
+    socialAttempts.set(ip, a);
+    if (socialAttempts.size > 1000) {
+      for (const [k, v] of socialAttempts) {
+        if (now - v.windowStart >= 60_000) socialAttempts.delete(k);
+      }
+    }
+  }
+  return ++a.count > SOCIAL_RATE_LIMIT;
 }
 
 async function handleAuthPost(req, res, pathname) {
@@ -2802,6 +2903,12 @@ async function handleAuthPost(req, res, pathname) {
 
 /** POST /social/*: the mutual-connection and off-floor DM API. */
 async function handleSocialPost(req, res, pathname) {
+  // These are reachable from public pages now (a stand permalink carries a
+  // Connect button), so they get a limit of their own.
+  if (socialRateLimited(req)) {
+    sendJson(res, { error: "slow down — try again in a minute" });
+    return;
+  }
   const body = await readJson(req);
   if (!body) {
     notFound(res);
@@ -2830,24 +2937,31 @@ async function handleSocialPost(req, res, pathname) {
       return;
     }
     sender.name = card.name;
-    const already =
-      sender.connections.some((c) => c.peerId === to) ||
-      sender.outgoing.includes(to) ||
-      recipient.requests.some((r) => r.from.id === card.id);
-    if (!already) {
+    /* `ok: true` used to come back even when the request was silently
+       dropped — a full mailbox, a full outbox, a duplicate — and the floor
+       cheerfully toasted "they'll see your card" over the top of it. Say
+       what actually happened instead. */
+    let state = "sent";
+    if (sender.connections.some((c) => c.peerId === to)) state = "connected";
+    else if (sender.outgoing.includes(to) || recipient.requests.some((r) => r.from.id === card.id))
+      state = "already";
+    else {
       // A crossing request (they asked you first) auto-accepts — you both want it.
       const crossing = sender.requests.findIndex((r) => r.from.id === to);
       if (crossing >= 0) {
         const theirs = sender.requests.splice(crossing, 1)[0];
         acceptPair(card.id, card.name, to, theirs.from.name, card.startupName, theirs.from.startupName);
-      } else if (recipient.requests.length < MAX_REQUESTS_PER_USER && sender.outgoing.length < 50) {
+        state = "connected";
+      } else if (recipient.requests.length >= MAX_REQUESTS_PER_USER || sender.outgoing.length >= 50) {
+        state = "full";
+      } else {
         recipient.requests.push({ from: card, ts: Date.now() });
         sender.outgoing.push(to);
         pushToProfile(to, { t: "connect_request", req: { from: card, ts: Date.now() } });
       }
       scheduleSave();
     }
-    sendJson(res, { ok: true });
+    sendJson(res, { ok: true, state });
     return;
   }
 
@@ -3195,6 +3309,71 @@ async function handleAdminPost(req, res, pathname) {
       }
       console.log(`[admin] ${admin.email} announced: ${text}`);
       sendJson(res, { ok: true, floorsReached });
+      return;
+    }
+
+    /**
+     * The calendar. POST with a title + startMs to add one, with
+     * `remove: <id>` to take one down, with neither to just read the list
+     * back (the admin page renders what it gets either way).
+     */
+    if (pathname === "/admin/events") {
+      if (body.remove) {
+        const id = sanitizeStr(body.remove, 24);
+        const before = events.length;
+        events = events.filter((e) => e.id !== id);
+        if (events.length !== before) {
+          scheduleSave();
+          console.log(`[admin] ${admin.email} removed event ${id}`);
+        }
+        sendJson(res, { ok: true, events });
+        return;
+      }
+      if (body.title !== undefined || body.startMs !== undefined) {
+        // moderateText returns null on a slur — the same "nothing to
+        // announce" shape /admin/announce uses, rather than storing null.
+        const title = moderateText(sanitizeStr(body.title, 80));
+        const startMs = Number(body.startMs);
+        if (!title || !Number.isFinite(startMs)) {
+          sendJson(res, { error: "an event needs a title and a date" });
+          return;
+        }
+        const endMs = Number(body.endMs);
+        // An end before the start is a typo, not an instruction. The
+        // operator can see the date they typed; say so rather than dropping
+        // the field and reporting success.
+        if (body.endMs !== undefined && body.endMs !== "" && !(Number.isFinite(endMs) && endMs > startMs)) {
+          sendJson(res, { error: "the end has to come after the start", events });
+          return;
+        }
+        // Finished events are history, and they are what fills a calendar
+        // up. Clear them before judging the cap, and refuse OUT LOUD if it
+        // is still full: capping with slice(0, MAX) would bin the entry
+        // just typed (a new event is usually the furthest out, so it sorts
+        // last) and still answer ok.
+        const past = Date.now();
+        const live = events.filter((e) => (e.endMs ?? e.startMs) > past);
+        if (live.length >= MAX_EVENTS) {
+          events = live;
+          scheduleSave();
+          sendJson(res, { error: `the calendar is full (${MAX_EVENTS}) — remove one first`, events });
+          return;
+        }
+        live.push({
+          id: `e${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`,
+          title,
+          startMs,
+          endMs: Number.isFinite(endMs) && endMs > startMs ? endMs : undefined,
+          where: moderateText(sanitizeStr(body.where, 60)) ?? "",
+          blurb: moderateText(sanitizeStr(body.blurb, 200)) ?? "",
+          href: sanitizeLink(body.href) ?? "",
+        });
+        live.sort((a, b) => a.startMs - b.startMs);
+        events = live;
+        scheduleSave();
+        console.log(`[admin] ${admin.email} added event "${title}"`);
+      }
+      sendJson(res, { ok: true, events });
       return;
     }
   }
@@ -3636,9 +3815,14 @@ const server = createServer((req, res) => {
     for (const [floorId, room] of rooms) floors[floorId] = room.size;
     // The founding-seat counter rides along on a poll the lobby already
     // makes. It is a cached integer, not a scan, so this stays O(1).
+    // Upcoming operator events ride along for the same reason the founding
+    // counter does: every client already polls this, and a second endpoint
+    // for a ten-item list is a second thing to be down.
+    const now = Date.now();
     sendJson(res, {
       floors,
       founding: { total: FOUNDING_SEATS, left: Math.max(0, FOUNDING_SEATS - foundingSeatsUsed) },
+      events: events.filter((e) => (e.endMs ?? e.startMs) > now).slice(0, 10),
     });
     return;
   }
@@ -3646,8 +3830,9 @@ const server = createServer((req, res) => {
   // Every community startup on the site: claimed stands across all floors
   // (live or away) plus registry entries for founders who created a startup
   // but haven't claimed a spot yet. Everything was sanitized on the way in,
-  // so this is a straight read — the directory merges it with the seed
-  // startups and grows its category chips from whatever founders typed.
+  // so this is a straight read — the directory renders these rows alone
+  // (there is no seed-startup merge) and grows its category chips from
+  // whatever founders typed.
   if (req.method === "GET" && url.pathname === "/startups") {
     const out = [];
     const standOwners = new Set();
@@ -3663,10 +3848,15 @@ const server = createServer((req, res) => {
         if (isBannedOwner(ownerId)) continue;
         standOwners.add(ownerId);
         out.push({
+          // The owner id, said out loud. It was always recoverable from the
+          // startup id's claim:/reg: prefix, but a permalink to someone's
+          // stand should not depend on a naming convention holding.
+          ownerId,
           floorId,
           spotIndex: st.claim.spotIndex,
           online: ownerOnline(room, ownerId),
           lastSeen: st.lastSeen,
+          ownerName: st.ownerName,
           startup: st.claim.startup,
         });
         if (out.length >= 512) break; // plenty for a directory page
@@ -3678,10 +3868,12 @@ const server = createServer((req, res) => {
       if (standOwners.has(ownerId)) continue; // their stand supersedes this
       if (isBannedOwner(ownerId)) continue;
       out.push({
+        ownerId,
         floorId: null,
         spotIndex: -1,
         online: false,
         lastSeen: entry.ts,
+        ownerName: entry.startup?.founder,
         startup: entry.startup,
       });
     }
@@ -3711,6 +3903,62 @@ const server = createServer((req, res) => {
     sendJson(res, {
       startups: [...out.filter((r) => r.floorId !== null), ...bestRegistry.values()],
     });
+    return;
+  }
+
+  /**
+   * One founder's stand, by owner id — the read behind /stand/<ownerId>.
+   *
+   * Not "fetch the directory and filter": that listing is capped at 512
+   * rows and deliberately drops registry entries shadowed by a stand, so a
+   * permalink to either of those founders would 404 on a page that renders
+   * perfectly well. It is also a 20-second-stale read of the whole site to
+   * show one row.
+   *
+   * The ban guard is the same one the listing uses, and has to be: without
+   * it a ban would pull the listing while the direct link kept the advert
+   * up, which is the failure the comment on /startups warns about.
+   */
+  if (req.method === "GET" && url.pathname === "/startup") {
+    const owner = (url.searchParams.get("owner") || "").slice(0, MAX_ID_LEN);
+    if (!owner || isBannedOwner(owner)) {
+      notFound(res);
+      return;
+    }
+    for (const [floorId, byOwner] of stands) {
+      if (!isRealFloor(floorId)) continue;
+      const st = byOwner.get(owner);
+      if (!st) continue;
+      const room = rooms.get(floorId);
+      sendJson(res, {
+        entry: {
+          ownerId: owner,
+          floorId,
+          spotIndex: st.claim.spotIndex,
+          online: ownerOnline(room, owner),
+          lastSeen: st.lastSeen,
+          ownerName: st.ownerName,
+          startup: st.claim.startup,
+        },
+      });
+      return;
+    }
+    const entry = registry.get(owner);
+    if (entry) {
+      sendJson(res, {
+        entry: {
+          ownerId: owner,
+          floorId: null,
+          spotIndex: -1,
+          online: false,
+          lastSeen: entry.ts,
+          ownerName: entry.startup?.founder,
+          startup: entry.startup,
+        },
+      });
+      return;
+    }
+    notFound(res);
     return;
   }
 
@@ -3762,7 +4010,9 @@ const server = createServer((req, res) => {
         st.claim.startup.id = `claim:${toId}`;
         byOwner.set(toId, st);
         moved++;
-        if (floorRoom) {
+        // Same rule as the register path: only put it on a floor the owner
+        // is actually standing on.
+        if (floorRoom && (STANDS_WHILE_AWAY || ownerOnline(floorRoom, toId))) {
           broadcast(floorRoom, {
             t: "booth_set",
             ownerId: toId,
@@ -3919,7 +4169,10 @@ const server = createServer((req, res) => {
           if (!st) continue;
           st.claim.startup = { ...startup, id: `claim:${me}` };
           const r = rooms.get(fid);
-          if (r) {
+          // Only re-announce to a floor the owner is actually standing on.
+          // Otherwise editing your stand from the profile page would put it
+          // back on a hall you had already walked out of.
+          if (r && (STANDS_WHILE_AWAY || ownerOnline(r, me))) {
             broadcast(r, {
               t: "booth_set",
               ownerId: me,
@@ -3939,6 +4192,65 @@ const server = createServer((req, res) => {
         return;
       }
       notFound(res);
+    })();
+    return;
+  }
+
+  /**
+   * Sign a guestbook over HTTP.
+   *
+   * The ws `sign` frame still exists and is what the floor uses. This one
+   * exists because a stand is no longer always ON a floor to walk up to:
+   * the permalink at /stand/<ownerId> is where an absent founder's stand
+   * lives now, and "leave a note while they're away" has to keep working
+   * from there. Same key shapes, same moderation, same caps — only the
+   * transport differs, and a live room still gets the broadcast so anyone
+   * standing there watches the note land.
+   */
+  if (req.method === "POST" && url.pathname === "/guestbook/sign") {
+    void (async () => {
+      if (socialRateLimited(req)) {
+        sendJson(res, { error: "slow down — try again in a minute" });
+        return;
+      }
+      const body = await readJson(req);
+      if (!body || !verifyIdentity(body.me, body.token, body.gs)) {
+        notFound(res);
+        return;
+      }
+      const floorId = sanitizeStr(body.floor, MAX_ID_LEN);
+      const key = sanitizeStr(body.key, MAX_KEY_LEN);
+      const text = moderateText(sanitizeStr(body.text, MAX_SIGN_LEN));
+      const from = sanitizeStr(body.name, MAX_NAME_LEN) || "a founder";
+      if (!floorId || !isRealFloor(floorId) || !key || !text || !isValidGuestbookKey(key)) {
+        notFound(res);
+        return;
+      }
+      let books = guestbooks.get(floorId);
+      if (!books) {
+        if (guestbooks.size >= MAX_FLOORS_TRACKED) {
+          notFound(res);
+          return;
+        }
+        books = new Map();
+        guestbooks.set(floorId, books);
+      }
+      let entries = books.get(key);
+      if (!entries) {
+        if (books.size >= MAX_KEYS_PER_FLOOR) {
+          notFound(res);
+          return;
+        }
+        entries = [];
+        books.set(key, entries);
+      }
+      const entry = { from, text, ts: Date.now() };
+      entries.unshift(entry);
+      if (entries.length > GUESTBOOK_KEEP) entries.length = GUESTBOOK_KEEP;
+      const room = rooms.get(floorId);
+      if (room) broadcast(room, { t: "guestbook", key, entry });
+      scheduleSave();
+      sendJson(res, { ok: true, entry });
     })();
     return;
   }
@@ -4208,7 +4520,11 @@ wss.on("connection", (ws, req) => {
 
   function removeStand(profileId) {
     const byOwner = stands.get(floorId);
+    const st = byOwner?.get(profileId);
     if (!byOwner?.delete(profileId)) return;
+    // Packing up takes the notes with it — they were written to this
+    // founder, not to this square of floor.
+    if (st) dropGuestbook(floorId, st.claim.spotIndex);
     if (byOwner.size === 0) stands.delete(floorId);
     broadcast(room, { t: "booth_clear", ownerId: profileId }, client.id);
     scheduleSave();
@@ -4252,7 +4568,14 @@ wss.on("connection", (ws, req) => {
     const holder = spotTakenBy(floorId, claim.spotIndex, client.rawId);
     if (holder) {
       // First claim wins — including stands whose owner is merely away.
-      send(ws, { t: "booth_denied", spotIndex: claim.spotIndex });
+      // Say WHICH, because with away stands no longer drawn on the floor
+      // the spot looked empty to whoever just tried to take it.
+      const parked = !ownerOnline(room, holder);
+      send(ws, {
+        t: "booth_denied",
+        spotIndex: claim.spotIndex,
+        reason: parked ? "reserved" : "taken",
+      });
       return;
     }
     // Every client saves its own startup under the same local id ("mine"), so
@@ -4523,19 +4846,23 @@ wss.on("connection", (ws, req) => {
       room.delete(client.id);
       broadcast(room, { t: "player_leave", id: client.id });
       broadcast(room, { t: "status", online: true, count: room.size });
-      // Their stand stays up. If this was the owner's last connection on the
-      // floor, tell everyone it just went "away" (and stamp lastSeen for expiry).
+      // The RECORD stays — the directory, /stand/<id> and this founder's
+      // claim on the spot all read it. If that was their last connection to
+      // this floor, the booth itself comes down (and lastSeen is stamped so
+      // the expiry clock starts).
       const st = stands.get(floorId)?.get(client.rawId);
       if (st && !ownerOnline(room, client.rawId)) {
         st.lastSeen = Date.now();
         scheduleSave();
-        broadcast(room, {
-          t: "booth_set",
-          ownerId: client.rawId,
-          ownerName: st.ownerName,
-          online: false,
-          claim: st.claim,
-        });
+        // Take the stand down for everyone still in the room. NOT
+        // removeStand() — the record has to survive, or the directory
+        // loses the listing and the owner loses the spot.
+        broadcast(
+          room,
+          STANDS_WHILE_AWAY
+            ? { t: "booth_set", ownerId: client.rawId, ownerName: st.ownerName, online: false, claim: st.claim }
+            : { t: "booth_clear", ownerId: client.rawId },
+        );
       }
       console.log(`[ws] leave floor=${floorId} id=${client.id} (${room.size} online)`);
       if (room.size === 0) rooms.delete(floorId);

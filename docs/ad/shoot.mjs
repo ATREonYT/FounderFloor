@@ -311,7 +311,7 @@ await film("claim", async (page, start) => {
   start();
   await sleep(900);
   await page.keyboard.press("KeyE");
-  await captionIn(page, "Step 05", "Claim a spot. It stays up while you sleep.");
+  await captionIn(page, "Step 05", "Claim a spot. It gets its own address.");
   await sleep(1700);
   const claim = page
     .locator("button", { hasText: /claim this stand|move your stand here/i })

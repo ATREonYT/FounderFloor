@@ -103,7 +103,7 @@ export default function SoonPage() {
       <section aria-labelledby="wall-heading" className="mt-14 sm:mt-16">
         <div className="flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1.5 border-t border-line pt-3">
           <Spec className="text-muted">Founders wall</Spec>
-          <Spec className="text-muted">Free · stays up · yours to edit</Spec>
+          <Spec className="text-muted">Free · always findable · yours to edit</Spec>
         </div>
         <h2
           id="wall-heading"
