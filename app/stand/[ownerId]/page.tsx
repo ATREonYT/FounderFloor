@@ -52,7 +52,7 @@ export default function StandPage({ params }: { params: { ownerId: string } }) {
   const ownerId = decodeURIComponent(params.ownerId);
   const [state] = useAppState();
   const [entry, setEntry] = useState<StandEntry | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "missing">("loading");
+  const [status, setStatus] = useState<"loading" | "ready" | "missing" | "offline">("loading");
   const [notes, setNotes] = useState<Note[]>([]);
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
@@ -66,14 +66,22 @@ export default function StandPage({ params }: { params: { ownerId: string } }) {
   useEffect(() => {
     let dead = false;
     const load = async (): Promise<void> => {
-      const found = await fetchStand(ownerId);
+      const res = await fetchStand(ownerId);
       if (dead) return;
-      setEntry(found);
-      setStatus(found ? "ready" : "missing");
-      if (found?.floorId && found.spotIndex >= 0) {
-        const book = await fetchGuestbook(found.floorId, found.spotIndex);
-        if (!dead) setNotes(book);
+      if (res.state === "found") {
+        setEntry(res.entry);
+        setStatus("ready");
+        if (res.entry.floorId && res.entry.spotIndex >= 0) {
+          const book = await fetchGuestbook(res.entry.floorId, res.entry.spotIndex);
+          if (!dead) setNotes(book);
+        }
+        return;
       }
+      // Keep whatever is already on screen if a later poll fails — a page
+      // that has been rendering a stand for a minute should not blank
+      // itself because one refresh could not reach the server.
+      setEntry((prev) => prev);
+      setStatus((prev) => (prev === "ready" ? "ready" : res.state));
     };
     void load();
     // Stands expire and get packed up; a page left open shouldn't insist
@@ -135,6 +143,33 @@ export default function StandPage({ params }: { params: { ownerId: string } }) {
     return (
       <main className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8">
         <p className="text-sm text-muted">Finding the stand…</p>
+      </main>
+    );
+  }
+
+  if (status === "offline" && !entry) {
+    return (
+      <main className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-8">
+        <h1 className="font-display text-3xl">Can&rsquo;t reach the floor right now</h1>
+        <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
+          The stand is probably fine — the server that holds it isn&rsquo;t answering. Try
+          again in a moment.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-md border border-ink px-3 py-2 text-sm hover:bg-panel"
+          >
+            Try again
+          </button>
+          <Link
+            href="/directory"
+            className="rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-ink hover:text-ink"
+          >
+            Back to the directory
+          </Link>
+        </div>
       </main>
     );
   }

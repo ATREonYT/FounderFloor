@@ -118,17 +118,66 @@ export async function sendConnectRequest(card: ProfileCard, to: string): Promise
  * either of those founders would come back empty from a page that renders
  * them perfectly well.
  */
-export async function fetchStand(ownerId: string): Promise<StandEntry | null> {
+export type StandResult =
+  | { state: "found"; entry: StandEntry }
+  | { state: "missing" }
+  | { state: "offline" };
+
+export async function fetchStand(ownerId: string): Promise<StandResult> {
   const base = httpBase();
-  if (!base || !ownerId) return null;
+  if (!base || !ownerId) return { state: "offline" };
   try {
     const res = await fetch(`${base}/startup?owner=${encodeURIComponent(ownerId)}`);
+    if (res.ok) {
+      const data: unknown = await res.json();
+      const entry = (data as { entry?: unknown } | null)?.entry as StandEntry | undefined;
+      if (entry && typeof entry === "object" && entry.startup && typeof entry.startup === "object") {
+        return { state: "found", entry };
+      }
+      return { state: "missing" };
+    }
+    /* A 404 here means one of two very different things, and the endpoint
+       cannot tell them apart: there is no such stand, or this floor server
+       predates the endpoint and 404s the ROUTE. The web app deploys itself
+       on every push; the floor server is a box somebody has to update by
+       hand, so those two are guaranteed to be out of step for a while.
+       Ask the listing — which every version of the server has — before
+       telling a founder their stand is gone. */
+    const row = await standFromListing(base, ownerId);
+    if (row) return { state: "found", entry: row };
+    return { state: "missing" };
+  } catch {
+    // Nothing answered at all: the server is down or unreachable. That is
+    // not the same as "this stand isn't up any more" and must not be
+    // reported as if it were.
+    return { state: "offline" };
+  }
+}
+
+/** The same stand, dug out of the directory listing. Fallback only. */
+async function standFromListing(base: string, ownerId: string): Promise<StandEntry | null> {
+  try {
+    const res = await fetch(`${base}/startups`);
     if (!res.ok) return null;
     const data: unknown = await res.json();
-    const entry = (data as { entry?: unknown } | null)?.entry as StandEntry | undefined;
-    if (!entry || typeof entry !== "object") return null;
-    if (!entry.startup || typeof entry.startup !== "object") return null;
-    return entry;
+    const list = (data as { startups?: unknown } | null)?.startups;
+    if (!Array.isArray(list)) return null;
+    for (const raw of list) {
+      const row = raw as Partial<StandEntry> & { startup?: Startup };
+      if (!row?.startup?.id) continue;
+      const owner = row.ownerId ?? row.startup.id.replace(/^(claim|reg):/, "");
+      if (owner !== ownerId) continue;
+      return {
+        ownerId,
+        floorId: row.floorId ?? null,
+        spotIndex: typeof row.spotIndex === "number" ? row.spotIndex : -1,
+        online: Boolean(row.online),
+        lastSeen: typeof row.lastSeen === "number" ? row.lastSeen : 0,
+        ownerName: row.ownerName,
+        startup: row.startup,
+      };
+    }
+    return null;
   } catch {
     return null;
   }
