@@ -21,6 +21,8 @@ interface Overview {
   accounts: number;
   banned: { key: string; reason: string; ts: number; by: string }[];
   emailLive: boolean;
+  emailFrom?: string;
+  emailReplyTo?: string | null;
   uptimeSec: number;
   /** Stands that tripped the watch list. Saved, but waiting on a human. */
   flagged?: {
@@ -315,6 +317,20 @@ export default function AdminPage() {
               {overview.accounts} accounts · email {overview.emailLive ? "live" : "OFF"} · up{" "}
               {Math.round(overview.uptimeSec / 60)}m
             </p>
+            {overview.emailFrom && (
+              // The From line, in full. Whatever EMAIL_FROM is set to on the
+              // server is what recipients see when they tap the sender — and
+              // if that is somebody's personal address, this is where it
+              // shows up rather than in a stranger's inbox.
+              <p className="micro mt-1 break-all text-muted">
+                letters signed <span className="text-ink">{overview.emailFrom}</span>
+                {overview.emailReplyTo ? (
+                  <> · replies to <span className="text-ink">{overview.emailReplyTo}</span></>
+                ) : (
+                  <> · no reply-to set</>
+                )}
+              </p>
+            )}
             <ul className="mt-3 space-y-1 text-sm">
               {overview.floors.length === 0 && <li className="text-muted">No one on any floor.</li>}
               {overview.floors.map((f) => (

@@ -3058,6 +3058,12 @@ async function handleAdminPost(req, res, pathname) {
         accounts: accounts.size,
         banned: [...banned].map(([key, v]) => ({ key, ...v })),
         emailLive: !!RESEND_API_KEY && !EMAIL_ECHO,
+        // Behind the admin gate, so this is config for the operator rather
+        // than anything public. "email: live" was never the useful half —
+        // the question that actually comes up is what address the letters
+        // are signed with, and the only way to answer it was to SSH in.
+        emailFrom: EMAIL_FROM,
+        emailReplyTo: EMAIL_REPLY_TO || null,
         uptimeSec: Math.round(process.uptime()),
         subscribers: subscribers.size,
         demoNightRsvps: [...subscribers.values()].filter((s) => s.demoNight).length,

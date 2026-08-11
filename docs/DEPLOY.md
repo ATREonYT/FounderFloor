@@ -153,6 +153,33 @@ and exposes it at `/debug/emails`) — never set it in production.
    sender. Keeping the contact address on the sending domain
    (`founderfloor.net`) avoids this — see `lib/contact.ts`.
 
+### The emails say FounderFloor but show a personal address
+
+Open `/admin` and read the line under the account count: it prints the
+exact `EMAIL_FROM` the running server is using, and the reply-to. What a
+recipient sees when they tap the sender is that address, and nothing else
+— the display name in front of it is decoration.
+
+If it is a personal mailbox, `EMAIL_FROM` is set that way in the systemd
+unit. Fix it there:
+
+    sudo systemctl edit --full founderfloor
+    # quotes matter — without them systemd truncates at the first space
+    Environment="EMAIL_FROM=FounderFloor <noreply@founderfloor.net>"
+    Environment="EMAIL_REPLY_TO=hello@founderfloor.net"
+    sudo systemctl daemon-reload && sudo systemctl restart founderfloor
+
+**Resend will refuse a From on a domain you have not verified**, and the
+refusal is silent to the user — the letter simply never arrives. So verify
+`founderfloor.net` under Resend → Domains → Add domain and add the SPF and
+DKIM records it gives you BEFORE changing this. Until the domain is
+verified, Resend only delivers to the address that owns the Resend account,
+which is why a personal address appears to work: it is the one exception.
+
+`EMAIL_REPLY_TO` is where a reply goes and can be any mailbox you read —
+including a personal one — because a reply-to is a private arrangement
+between you and whoever answers. The From is what the world sees.
+
 ### Locked out (operator password rescue)
 
 If the operator account itself can't receive reset mail, set its password
