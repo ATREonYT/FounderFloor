@@ -98,7 +98,7 @@ export default function BoothCard({
         </button>
       </div>
 
-      <div className="flex max-h-[60vh] flex-col gap-3 overflow-y-auto p-4">
+      <div className="flex max-h-[60svh] overscroll-contain flex-col gap-3 overflow-y-auto p-4">
         <div className="flex items-start justify-between gap-3">
           <h2 className="font-display text-xl leading-tight">{s.name}</h2>
           <RankBadge revenue={s.verifiedRevenue} />

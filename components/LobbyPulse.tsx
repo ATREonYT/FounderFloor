@@ -133,7 +133,11 @@ export default function LobbyPulse({
       className={`mt-8 grid gap-4 ${hasDigest ? "lg:grid-cols-2" : ""}`}
     >
       {hasDigest && (
-        <div className="panel p-5">
+        // min-w-0: a grid item's default min-width is `auto`, so a long
+        // founder name inside made this panel wider than its own column and
+        // the whole lobby scrolled sideways on a phone. `truncate` on the
+        // text cannot help while an ancestor is still allowed to grow.
+        <div className="panel min-w-0 p-5">
           <h2 className="font-display text-lg">Since you were away</h2>
           <ul className="mt-3 flex flex-col gap-2 text-sm text-muted">
             {fresh.length > 0 && (
@@ -182,7 +186,7 @@ export default function LobbyPulse({
         </div>
       )}
 
-      <div className="panel p-5">
+      <div className="panel min-w-0 p-5">
         <h2 className="font-display text-lg">Looking for a co-founder right now</h2>
         {seeking.length === 0 ? (
           <p className="mt-3 text-sm text-muted">

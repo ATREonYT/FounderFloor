@@ -712,13 +712,52 @@ export function createGame(opts: GameOptions): GameHandle {
     const bw = Math.max(1, Math.floor(cssW * dpr));
     const bh = Math.max(1, Math.floor(cssH * dpr));
     if (canvas.width !== bw || canvas.height !== bh) {
+      // A height-only wobble the size of a phone's address bar says nothing
+      // about how expensive this device is to draw for. Treating it as a
+      // real resize wiped the frame-time window and reset the warm-up, so
+      // during any bar churn the adaptive-resolution monitor never
+      // collected its samples and the phone stayed pinned to whatever
+      // rung it started on.
+      const chromeOnly = canvas.width === bw && Math.abs(canvas.height - bh) < 120 * dpr;
       canvas.width = bw;
       canvas.height = bh;
-      backingChanged = true;
+      if (!chromeOnly) backingChanged = true;
     }
     ctx.imageSmoothingEnabled = false;
   };
-  const ro = new ResizeObserver(resize);
+  /* Reallocation waits for the box to stop moving.
+     Assigning canvas.width/height is not a resize, it is a reallocation:
+     the whole backing store is freed, re-made and zero-filled, and the GPU
+     texture goes with it — about 5MB on a phone, and on a slow one that
+     costs 20ms of main thread each time. A phone's address bar sliding
+     away walks the height through a dozen intermediate values, so doing it
+     per observer callback meant a dozen reallocations for one gesture,
+     each landing after that frame had already drawn — so each also
+     painted one blank frame.
+
+     Now the observer only notes that something moved. The realloc happens
+     in the frame loop, once the size has held still for SETTLE_MS, with
+     the old backing store scaled to fit in the meantime — a little soft
+     for a sixth of a second, which is a far better trade than a dozen
+     stalls. A change big enough to be a rotation or a real window resize
+     skips the wait, so those stay crisp immediately. */
+  const SETTLE_MS = 160;
+  let pendingResize = false;
+  let sizeMovedAt = 0;
+  let lastSeenW = canvas.clientWidth;
+  let lastSeenH = canvas.clientHeight;
+  const ro = new ResizeObserver(() => {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (w === lastSeenW && h === lastSeenH) return;
+    // A width change, or a height change larger than any browser toolbar,
+    // is a real resize: take it now rather than after the settle.
+    const big = w !== lastSeenW || Math.abs(h - lastSeenH) > 160;
+    lastSeenW = w;
+    lastSeenH = h;
+    pendingResize = true;
+    sizeMovedAt = big ? 0 : performance.now();
+  });
   ro.observe(canvas);
   resize();
 
@@ -1303,6 +1342,12 @@ export function createGame(opts: GameOptions): GameHandle {
   const tick = (now: number): void => {
     if (destroyed) return;
     raf = requestAnimationFrame(tick);
+    // Before the frame is measured or drawn: a reallocation that lands
+    // after the draw wastes the frame it lands in.
+    if (pendingResize && now - sizeMovedAt >= SETTLE_MS) {
+      pendingResize = false;
+      resize();
+    }
     noteFrame(now - last);
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;

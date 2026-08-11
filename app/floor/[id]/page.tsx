@@ -150,8 +150,27 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   // here (see the matching rule in globals.css).
   useEffect(() => {
     document.body.dataset.onFloor = "1";
+    /* Lock the document while the hall is up. The game is a fixed overlay,
+       so it contributes no height — which left the site footer as the only
+       thing in the flow, and made the floor a ~750px scrollable page hiding
+       behind an opaque canvas. A thumb on the bottom HUD scrolled a page
+       nobody could see, and on a phone that is what collapses the address
+       bar. In JS rather than CSS because the CSS form needs :has(), and
+       this has to work on exactly the older browsers that lack it.
+       Restores the PREVIOUS inline value, not "", so a modal that locks
+       scroll on top of this one doesn't clobber it. */
+    const html = document.documentElement;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevOverscroll = html.style.overscrollBehavior;
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
     return () => {
       delete document.body.dataset.onFloor;
+      html.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      html.style.overscrollBehavior = prevOverscroll;
     };
   }, []);
 
@@ -1297,7 +1316,11 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-paper">
+    // floor-viewport pins the height to 100svh (see globals.css). `inset-0`
+    // alone sizes to the layout viewport, which iOS grows and shrinks with
+    // the address bar — and every one of those steps reallocated the
+    // canvas's backing store mid-animation.
+    <div className="floor-viewport fixed inset-x-0 top-0 z-50 overflow-hidden bg-paper">
       <canvas
         ref={canvasRef}
         className="pixelated absolute inset-0 h-full w-full"

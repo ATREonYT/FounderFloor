@@ -147,7 +147,7 @@ export default function ChatPanel({
     >
       <div className="flex items-stretch border-b border-line">
         <div
-          className="flex flex-1 overflow-x-auto"
+          className="flex flex-1 overflow-x-auto overscroll-x-contain"
           role="tablist"
           aria-label="Chat channels"
         >
@@ -252,7 +252,7 @@ export default function ChatPanel({
 
       <div
         ref={scrollRef}
-        className="h-36 overflow-y-auto py-1 sm:h-44"
+        className="h-36 overflow-y-auto overscroll-contain py-1 sm:h-44"
         aria-live="polite"
       >
         {msgs.length === 0 && (

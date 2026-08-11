@@ -94,7 +94,17 @@ export default function RootLayout({
           />
         </noscript>
       </head>
-      <body className="flex min-h-screen flex-col bg-paper text-ink">
+      {/* min-h-svh, not min-h-screen. Tailwind's `screen` is 100vh, which
+          on a phone is the viewport with the address bar HIDDEN — so every
+          page stood about 90px taller than what you could see, and that
+          strip of empty space was the only thing to scroll. Scrolling it
+          collapsed the bar, which removed the overflow, which snapped the
+          page back to the top, which brought the bar back. That loop is
+          the "it starts bugging when you move it a bit". `svh` is the
+          viewport with the bar SHOWING, so there is nothing spare to
+          scroll. `dvh` would be wrong here: it re-runs layout on every
+          frame of the bar's animation, which is the thing being fixed. */}
+      <body className="flex min-h-svh flex-col bg-paper text-ink">
         {/* sticky translucent chrome — the page scrolls under it. Floor
             pages hide it (body[data-on-floor], set by the floor page): the
             game is fullscreen with its own chrome, and the route-transition
@@ -202,7 +212,7 @@ export default function RootLayout({
             never fights the chat bubble in the opposite corner */}
         <ReturnToFloor />
 
-        <footer className="border-t border-line bg-panel">
+        <footer data-site-footer className="border-t border-line bg-panel">
           {/* pb-20 on phones keeps the fixed chat button from sitting on the
               footer text; desktops have room to spare */}
           {/* The colophon: a masthead rule, then the sections, then the

@@ -187,7 +187,7 @@ export default function Messenger() {
         <div
           role="dialog"
           aria-label="Chats"
-          className="glass anim-in fixed bottom-20 right-4 z-40 flex max-h-[min(480px,70vh)] w-[320px] max-w-[calc(100vw-24px)] flex-col shadow-float"
+          className="glass anim-in fixed bottom-20 right-4 z-40 flex max-h-[min(480px,70svh)] w-[320px] max-w-[calc(100vw-24px)] flex-col shadow-float"
         >
           <div className="flex items-center gap-2 border-b border-line px-3 py-2">
             {activeThread ? (

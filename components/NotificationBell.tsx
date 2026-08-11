@@ -308,7 +308,7 @@ export default function NotificationBell() {
             ref={panelRef}
             role="dialog"
             aria-label="Notifications"
-            className="glass anim-in fixed right-3 top-14 z-[45] flex max-h-[min(560px,calc(100vh-72px))] w-[340px] max-w-[calc(100vw-24px)] flex-col shadow-float"
+            className="glass anim-in fixed right-3 top-14 z-[45] flex max-h-[min(560px,calc(100svh-72px))] w-[340px] max-w-[calc(100vw-24px)] flex-col shadow-float"
           >
           <div className="flex items-center gap-2 border-b border-line px-3">
             <span className="font-display text-base">Notifications</span>

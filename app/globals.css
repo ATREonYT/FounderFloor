@@ -6,6 +6,10 @@
   html {
     height: 100%;
     scroll-behavior: smooth;
+    /* body carries the paper wash; html did not paint at all. With the body
+       floor now at 100svh, a phone with its address bar collapsed shows a
+       strip below the body — this fills it in the same colour. */
+    background-color: #f2efe7;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -68,6 +72,18 @@
 }
 
 @layer components {
+  /* The hall's box is pinned to the SMALL viewport.
+     `fixed inset-0` sizes to the LAYOUT viewport, which iOS grows and
+     shrinks as the address bar hides — so the canvas changed height on
+     every frame of that animation, and each change reallocated a ~5MB
+     backing store. 100svh is defined as "all toolbars showing" and a
+     browser may not change it while one animates, so a bar transition
+     moves nothing. A real rotation or a desktop window drag still does. */
+  .floor-viewport {
+    height: 100vh; /* pre-svh browsers: no fix, but no regression either */
+    height: 100svh;
+  }
+
   /* ==================== MOTION SYSTEM ====================
      One rhythm for the whole site. Two curves, three speeds:
        --ease-out    entrances & hovers (fast start, soft landing)
@@ -854,6 +870,15 @@
 }
 
 /* The game floor owns the whole viewport — the site nav gets out of the way. */
+/* The floor is a fixed, full-screen overlay, so nothing it draws is in the
+   document flow — which left the footer as the page's only in-flow content
+   and made the hall a ~750px scrollable document hiding behind an opaque
+   canvas. A thumb on the bottom HUD scrolled a page nobody could see, and
+   that is what collapsed the address bar in the first place. */
+body[data-on-floor] footer[data-site-footer] {
+  display: none;
+}
+
 body[data-on-floor] header[data-site-nav] {
   display: none;
 }

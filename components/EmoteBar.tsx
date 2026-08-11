@@ -74,7 +74,7 @@ export default function EmoteBar({
     <div
       role="toolbar"
       aria-label="Reactions"
-      className="glass no-scrollbar pointer-events-auto flex max-w-full gap-0.5 overflow-x-auto p-1 shadow-float"
+      className="glass no-scrollbar pointer-events-auto flex max-w-full gap-0.5 overflow-x-auto overscroll-x-contain p-1 shadow-float"
     >
       {shown.map((em) => {
         const open = unlocked.includes(em.kind);

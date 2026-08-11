@@ -48,7 +48,7 @@ export default function QuestPanel({ quests }: { quests: QuestState[] }) {
       </button>
       <div className={`reveal-rows ${open ? "open" : ""}`}>
         <div>
-          <ul className="max-h-[46vh] overflow-y-auto border-t border-line/70">
+          <ul className="max-h-[46svh] overscroll-contain overflow-y-auto border-t border-line/70">
             {quests.map((q) => (
               <li key={q.def.id} className="border-b border-line/60 px-3 py-2 last:border-b-0">
                 <div className="flex items-baseline justify-between gap-2">

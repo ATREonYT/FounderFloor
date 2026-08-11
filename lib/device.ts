@@ -123,7 +123,28 @@ export function useDevice(): DeviceInfo {
       cancelAnimationFrame(frame);
       // One read per frame: a resize drag fires this dozens of times a
       // second and every one of them would re-render the page.
-      frame = requestAnimationFrame(() => setInfo(readDevice()));
+      frame = requestAnimationFrame(() => {
+        const next = readDevice();
+        /* Return the PREVIOUS object when nothing anyone reads has changed,
+           so React bails out of the render entirely. readDevice() builds a
+           fresh literal every call, so without this a phone's address bar
+           sliding away re-rendered the whole floor page — 1700 lines and
+           forty-odd unmemoised children — once per animation frame.
+
+           `height` is deliberately not compared: nothing reads it directly.
+           It reaches the UI only through landscapePhone (height < 500), and
+           an address bar is nowhere near big enough to cross that in either
+           orientation. */
+        setInfo((prev) =>
+          prev.pointer === next.pointer &&
+          prev.platform === next.platform &&
+          prev.size === next.size &&
+          prev.width === next.width &&
+          prev.landscapePhone === next.landscapePhone
+            ? prev
+            : next,
+        );
+      });
     };
     read();
     window.addEventListener("resize", read);
