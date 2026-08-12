@@ -527,6 +527,8 @@ function Header({ name, rule, step }: { name: string; rule: string; step: string
 }
 
 export interface ArcadeProps {
+  /** Rendered above the quick run — the parkour and quiz-room entries. */
+  extra?: React.ReactNode;
   /** Tickets already won here today, so the cap can be honest about it. */
   wonToday: number;
   /** The best run total this hall has seen, or null if nobody has played. */
@@ -535,7 +537,7 @@ export interface ArcadeProps {
   onPayout(tickets: number, total: number): void;
 }
 
-export default function Arcade({ wonToday, hallRecord, onPayout }: ArcadeProps) {
+export default function Arcade({ wonToday, hallRecord, onPayout, extra }: ArcadeProps) {
   const [stage, setStage] = useState<Stage>("lobby");
   const [rounds, setRounds] = useState<RoundScore[]>([]);
   const paid = useRef(false);
@@ -565,8 +567,10 @@ export default function Arcade({ wonToday, hallRecord, onPayout }: ArcadeProps) 
   if (stage === "lobby") {
     return (
       <div className="flex flex-col gap-5">
+        {extra}
+        <p className="micro text-[10px] text-muted">THE QUICK RUN</p>
         <p className="text-sm leading-relaxed text-muted">
-          Three games, back to back, one score at the end. Reactions, then
+          Three short games back to back, one score at the end. Reactions, then
           questions, then memory — so a run rewards being decent at all three
           rather than excellent at one.
         </p>

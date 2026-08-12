@@ -29,6 +29,8 @@ import { FLOORS, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { QUESTS } from "@/lib/data/quests";
 import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
 import { ARCADE_DAILY_CAP } from "@/components/Arcade";
+import { MAX_OWN_QUIZZES, QUIZ_COST, sanitizeQuiz } from "@/lib/data/quiz";
+import type { Quiz } from "@/lib/data/quiz";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
 import type { PaidEntitlement, Perks } from "@/lib/sync";
 import { billingLive } from "@/lib/pricing";
@@ -89,6 +91,11 @@ export interface StoreActions {
    * applied against what has actually been paid out today.
    */
   earnArcade(tickets: number, runTotal: number): void;
+  /** Bank a parkour clear: keeps the better time, pays out under the cap. */
+  finishParkour(mapId: string, seconds: number, tickets: number): void;
+  /** Publish a quiz, spending QUIZ_COST. False if it could not be afforded. */
+  publishQuiz(quiz: unknown): boolean;
+  deleteQuiz(id: string): void;
   /**
    * Switch to a server-issued identity (sign-in) or back to a fresh guest id
    * (sign-out). Sign-in keeps local progress and merges it into the account;
@@ -324,6 +331,20 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
   };
   // the visit-day marker must move forward with the streak, or a pull from
   // a device that hasn't visited today re-arms today's daily grant
+  // parkour times are a low-water mark; quizzes are a union by id
+  {
+    const times: Record<string, number> = { ...(merged.parkourBests ?? {}) };
+    for (const [k, v] of Object.entries(local.parkourBests ?? {})) {
+      if (times[k] === undefined || v < times[k]) times[k] = v;
+    }
+    merged.parkourBests = times;
+    const byId = new Map<string, unknown>();
+    for (const q of [...(merged.quizzes ?? []), ...(local.quizzes ?? [])]) {
+      const c = sanitizeQuiz(q);
+      if (c) byId.set(c.id, c);
+    }
+    merged.quizzes = [...byId.values()].slice(0, MAX_OWN_QUIZZES);
+  }
   // the best arcade run is a high-water mark, like the streak
   merged.arcadeBest = Math.max(merged.arcadeBest ?? 0, local.arcadeBest ?? 0);
   if (local.arcadeDay && (!merged.arcadeDay || local.arcadeDay > merged.arcadeDay)) {
@@ -735,6 +756,18 @@ function sanitize(raw: unknown): AppState {
 
   base.claimedQuests = strList(r.claimedQuests, 32, 50);
 
+  if (Array.isArray(r.quizzes)) {
+    base.quizzes = r.quizzes.map(sanitizeQuiz).filter(Boolean).slice(0, MAX_OWN_QUIZZES);
+  }
+  if (r.parkourBests && typeof r.parkourBests === "object" && !Array.isArray(r.parkourBests)) {
+    const out: Record<string, number> = {};
+    for (const [k, v] of Object.entries(r.parkourBests as Record<string, unknown>)) {
+      if (typeof v === "number" && Number.isFinite(v) && v > 0 && v < 100000) {
+        out[k.slice(0, 40)] = Math.round(v * 10) / 10;
+      }
+    }
+    base.parkourBests = out;
+  }
   if (typeof r.arcadeDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.arcadeDay)) {
     base.arcadeDay = r.arcadeDay;
   }
@@ -1046,6 +1079,41 @@ const ACTIONS: StoreActions = {
       claimedQuests: [...state.claimedQuests, q],
       wallet: credited(state.wallet, bounty),
     });
+  },
+
+  finishParkour(mapId, seconds, tickets) {
+    const today = dayKey(Date.now());
+    const already = state.arcadeDay === today ? (state.arcadeWon ?? 0) : 0;
+    const pay = Math.min(Math.max(0, ARCADE_DAILY_CAP - already), Math.max(0, Math.floor(tickets)));
+    const bests = { ...(state.parkourBests ?? {}) };
+    const t = Math.max(0, Math.round(seconds * 10) / 10);
+    if (bests[mapId] === undefined || t < bests[mapId]) bests[mapId] = t;
+    setState({
+      ...state,
+      parkourBests: bests,
+      arcadeDay: today,
+      arcadeWon: already + pay,
+      wallet: pay > 0 ? credited(state.wallet, pay) : state.wallet,
+    });
+  },
+
+  publishQuiz(quiz) {
+    const clean = sanitizeQuiz(quiz);
+    if (!clean) return false;
+    const mine = (state.quizzes ?? []).map(sanitizeQuiz).filter(Boolean) as Quiz[];
+    if (mine.length >= MAX_OWN_QUIZZES) return false;
+    if (walletBalance(state) < QUIZ_COST) return false;
+    setState({
+      ...state,
+      quizzes: [...mine, { ...clean, builtin: false }],
+      wallet: { ...state.wallet, redeemed: state.wallet.redeemed + QUIZ_COST },
+    });
+    return true;
+  },
+
+  deleteQuiz(id) {
+    const mine = (state.quizzes ?? []).map(sanitizeQuiz).filter(Boolean) as Quiz[];
+    setState({ ...state, quizzes: mine.filter((q) => q.id !== id) });
   },
 
   earnArcade(tickets, runTotal) {

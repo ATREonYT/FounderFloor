@@ -29,6 +29,10 @@ import EditStandPanel from "@/components/EditStandPanel";
 import StallPanel from "@/components/StallPanel";
 import { GuideStall, PorterStall, RegisterStall, TicketStall } from "@/components/StallContents";
 import Arcade from "@/components/Arcade";
+import Parkour from "@/components/Parkour";
+import QuizRoom from "@/components/QuizRoom";
+import { BUILTIN_QUIZZES, sanitizeQuiz } from "@/lib/data/quiz";
+import type { Quiz } from "@/lib/data/quiz";
 import { usePresence } from "@/components/usePresence";
 import { seedIdAt } from "@/game/tilemap";
 import { acquireFloorLock } from "@/lib/tabLock";
@@ -782,6 +786,29 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       };
     });
   }, [floor, state.myStartup, state.claims, state.profile.id]);
+  /**
+   * ?stall=arcade opens a stall on arrival. It exists so the arcade can be
+   * linked to and so an end-to-end test can reach it without twenty tiles
+   * of dead reckoning; it also means "meet me at the arcade" is a URL.
+   */
+  useEffect(() => {
+    if (!floor?.plaza?.merchants) return;
+    const want = new URLSearchParams(window.location.search).get("stall");
+    if (!want) return;
+    const m = floor.plaza.merchants.find((x) => x.id === want);
+    if (m) setOpenStall(m);
+  }, [floor]);
+
+  /** Which room of the arcade is open: the hub, the parkour or the quizzes. */
+  const [arcadeRoom, setArcadeRoom] = useState<"hub" | "parkour" | "quiz">("hub");
+  /** Everything playable in the quiz room: shipped plus anything written here. */
+  const quizzes = useMemo<Quiz[]>(
+    () => [
+      ...BUILTIN_QUIZZES,
+      ...((state.quizzes ?? []).map(sanitizeQuiz).filter(Boolean) as Quiz[]),
+    ],
+    [state.quizzes],
+  );
   /** Arcade tickets already taken today, so the panel can say what is left. */
   const arcadeWonToday = useMemo(() => {
     const d = new Date();
@@ -1617,19 +1644,76 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           keeper={openStall.keeper}
           blurb={openStall.blurb}
           color={openStall.color}
-          onClose={() => setOpenStall(null)}
+          onClose={() => {
+            setOpenStall(null);
+            setArcadeRoom("hub");
+          }}
           onFocusChange={handleFocusChange}
+          wide={openStall.action === "arcade"}
         >
           {openStall.action === "tickets" && <TicketStall state={state} />}
           {openStall.action === "register" && <RegisterStall booths={hallBooths} />}
           {openStall.action === "porter" && (
             <PorterStall floorId={floor?.id ?? ""} presence={floorCounts} tier={state.sub} />
           )}
-          {openStall.action === "arcade" && (
+          {openStall.action === "arcade" && arcadeRoom === "parkour" && (
+            <Parkour
+              look={state.profile.look}
+              bests={state.parkourBests ?? {}}
+              capLeft={Math.max(0, 60 - arcadeWonToday)}
+              onFinish={(mapId, st, tickets) =>
+                actions.finishParkour(mapId, st.time, tickets)
+              }
+              onExit={() => setArcadeRoom("hub")}
+            />
+          )}
+          {openStall.action === "arcade" && arcadeRoom === "quiz" && (
+            <QuizRoom
+              quizzes={quizzes}
+              balance={walletBalance(state)}
+              capLeft={Math.max(0, 60 - arcadeWonToday)}
+              authorName={state.profile.name}
+              onPublish={(q) => {
+                if (!actions.publishQuiz(q)) {
+                  showToast("Not enough tickets to publish that.");
+                }
+              }}
+              onDelete={(id) => actions.deleteQuiz(id)}
+              onPayout={(tickets) => actions.earnArcade(tickets, 0)}
+              onExit={() => setArcadeRoom("hub")}
+            />
+          )}
+          {openStall.action === "arcade" && arcadeRoom === "hub" && (
             <Arcade
               wonToday={arcadeWonToday}
               hallRecord={state.arcadeBest ?? null}
               onPayout={(tickets, total) => actions.earnArcade(tickets, total)}
+              extra={
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setArcadeRoom("parkour")}
+                    className="rounded-lg border border-line px-4 py-3 text-left transition-colors hover:border-accent hover:bg-paper"
+                  >
+                    <span className="font-display text-lg leading-tight">After Hours</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-muted">
+                      Four parkour maps across the scaffolding, played as your own
+                      character. Collect tickets on the way.
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArcadeRoom("quiz")}
+                    className="rounded-lg border border-line px-4 py-3 text-left transition-colors hover:border-accent hover:bg-paper"
+                  >
+                    <span className="font-display text-lg leading-tight">The Quiz Room</span>
+                    <span className="mt-0.5 block text-xs leading-snug text-muted">
+                      Buzzer quizzes on business. Play the shipped ones, or write
+                      your own and put it in the room.
+                    </span>
+                  </button>
+                </div>
+              }
             />
           )}
           {openStall.action === "editor" &&

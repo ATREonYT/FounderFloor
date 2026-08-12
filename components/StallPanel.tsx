@@ -32,6 +32,8 @@ export interface StallPanelProps {
   blurb: string;
   /** Awning colour, used for the header rule and the keeper chip. */
   color: string;
+  /** Games need elbow room; the shop and the register do not. */
+  wide?: boolean;
   onClose(): void;
   /** Called with true on open and false on close, to gate the movement keys. */
   onFocusChange?(focused: boolean): void;
@@ -45,6 +47,7 @@ export default function StallPanel({
   keeper,
   blurb,
   color,
+  wide = false,
   onClose,
   onFocusChange,
   children,
@@ -114,7 +117,7 @@ export default function StallPanel({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="panel relative flex max-h-full w-full max-w-lg flex-col overflow-hidden shadow-float outline-none transition-all duration-200 ease-out"
+        className={`panel relative flex max-h-full w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col overflow-hidden shadow-float outline-none transition-all duration-200 ease-out`}
         style={{
           opacity: open ? 1 : 0,
           transform: open ? "translateY(0) scale(1)" : "translateY(10px) scale(0.97)",

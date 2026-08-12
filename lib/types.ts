@@ -697,6 +697,10 @@ export interface AppState {
    * store, not in the panel — a payout ceiling that only exists in the UI
    * is not a ceiling.
    */
+  /** Quizzes this visitor wrote. Sanitised on every load and save. */
+  quizzes?: unknown[];
+  /** Best parkour time per map id, in seconds. */
+  parkourBests?: Record<string, number>;
   arcadeDay?: string;
   arcadeWon?: number;
   arcadeBest?: number;
