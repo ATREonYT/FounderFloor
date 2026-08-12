@@ -69,18 +69,32 @@ export const FLOORS: FloorDef[] = [
     // again: append, never reorder.
     //
     // ─── GEOMETRY ──────────────────────────────────────────────────────
-    // Plaza      x 21..36, y 14..27   (paved, walkable)
-    // Fountain   x 26..31, y 18..23   (solid; centre 29, 21 — dead centre
-    //                                  of both the plaza and the avenues)
-    // Avenues    N x27..30 y1..13   S x27..30 y28..40
-    //            W x1..20 y19..22   E x37..56 y19..22
-    // Booth rows y=3 (zone 3-5, apron 6)    outer north
-    //            y=10 (zone 10-12, apron 13) inner north, on the plaza rim
-    //            y=29 (zone 29-31, apron 32) inner south, on the plaza rim
-    //            y=36 (zone 36-38, apron 39) outer south
+    // The stands stand ON the plaza rim. That is the whole point of the
+    // shape: the hall exists to show companies, so the first thing you
+    // meet walking in should be a company, not a water feature with the
+    // companies four rows behind it. The inner rank's carpet apron is the
+    // plaza's own top row — you step off the paving straight onto a stand.
+    //
+    // Plaza      x 20..37, y 17..25   (paved, walkable)
+    // Fountain   x 26..31, y 20..22   (solid; centre 29, 21.5 — the exact
+    //                                  centre of the plaza, which the
+    //                                  geometry check asserts)
+    // Avenues    N x27..30 y1..16   S x27..30 y26..40
+    //            W x1..19 y19..23   E x38..56 y19..23
+    // Booth rows y=5  (zone 5-7, apron 8)     outer north
+    //            y=13 (zone 13-15, apron 16)  inner north, ON the plaza rim
+    //            y=26 (zone 26-28, apron 29)  inner south, ON the plaza rim
+    //            y=34 (zone 34-36, apron 37)  outer south
     // Columns    x = 3 / 9 / 15 / 21 | avenue | 33 / 39 / 45 / 51
     //            — zones are 4 wide, so every gap is exactly 2 clear tiles,
     //            and the avenue keeps 2 clear on each side of it too.
+    //
+    // WHY THE INNER RANK IS ONLY FOUR WIDE EITHER SIDE: booths face DOWN,
+    // so a stand north of the plaza shows the fountain its front and a
+    // stand south of it shows its back. The southern rank is therefore
+    // placed to be met FACE ON by somebody walking up the south avenue
+    // from the door — you pass between two shopfronts and then the plaza
+    // opens up in front of you.
     //
     // The player spawns at (width/2, height-5) = tile (29, 37), which is
     // inside the south avenue: you arrive at the bottom of the hall looking
@@ -103,139 +117,139 @@ export const FLOORS: FloorDef[] = [
     // Ordered inner ring first, alternating north/south so the hall fills
     // outward from the fountain and stays visually balanced while it does.
     boothSpots: [
-      // inner ring — the four stands flanking the avenues on the plaza rim
-      { x: 21, y: 10 },
-      { x: 33, y: 10 },
-      { x: 21, y: 29 },
-      { x: 33, y: 29 },
-      // inner ring — the outer pair on each rim
-      { x: 15, y: 10 },
-      { x: 39, y: 10 },
-      { x: 15, y: 29 },
-      { x: 39, y: 29 },
-      // outer band, working away from the avenues
-      { x: 21, y: 3 },
-      { x: 33, y: 3 },
-      { x: 21, y: 36 },
-      { x: 33, y: 36 },
-      { x: 15, y: 3 },
-      { x: 39, y: 3 },
-      { x: 15, y: 36 },
-      { x: 39, y: 36 },
-      { x: 9, y: 3 },
-      { x: 45, y: 3 },
-      { x: 9, y: 36 },
-      { x: 45, y: 36 },
-      { x: 3, y: 3 },
-      { x: 51, y: 3 },
-      { x: 3, y: 36 },
-      { x: 51, y: 36 },
+      // Inner rank, flanking the two avenue mouths — the four best places
+      // in the building. You cannot stand at the fountain without one of
+      // these in view, and they are the ones kept open for real founders.
+      { x: 21, y: 13 },
+      { x: 33, y: 13 },
+      { x: 21, y: 26 },
+      { x: 33, y: 26 },
+      // Inner rank, the outer pair on each rim — still on the plaza, one
+      // stand further from the water.
+      { x: 15, y: 13 },
+      { x: 39, y: 13 },
+      { x: 15, y: 26 },
+      { x: 39, y: 26 },
+      // Outer band, working away from the avenues.
+      { x: 21, y: 5 },
+      { x: 33, y: 5 },
+      { x: 21, y: 34 },
+      { x: 33, y: 34 },
+      { x: 15, y: 5 },
+      { x: 39, y: 5 },
+      { x: 15, y: 34 },
+      { x: 39, y: 34 },
+      { x: 9, y: 5 },
+      { x: 45, y: 5 },
+      { x: 9, y: 34 },
+      { x: 45, y: 34 },
+      { x: 3, y: 5 },
+      { x: 51, y: 5 },
+      { x: 3, y: 34 },
+      { x: 51, y: 34 },
     ],
-    // Sixteen sample stands (see lib/data/startups.ts), placed on the OUTER
-    // bands only. seedSpots is what keeps them off indices 0-7 — the inner
-    // ring on the plaza rim, which stays open so the first real founders
-    // through the door get the best places in the hall rather than the back.
+    // Sixteen sample stands (see lib/data/startups.ts). seedSpots decides
+    // which of the two things the plaza rim is doing at any moment.
+    //
+    // 2 and 3 are seeded: they are the pair you walk between coming in
+    // from the door, and two empty boards as the first thing anybody sees
+    // reads as a hall that closed down rather than one that is filling up.
+    // 0 and 1 are NOT: they face the fountain from the north side, so an
+    // OPEN STAND board is the invitation, in the place everybody looks,
+    // and the first real founders through the door get it rather than the
+    // back wall.
     startupIds: [
       "soup-ticket", "night-shift-audio", "crate-and-pallet", "zine-machine",
       "sheet-metal", "on-call-room", "lower-third", "second-stove",
       "pocket-notary", "grave-matters", "kerb-appeal", "second-fiddle",
       "damp-patrol", "the-long-table", "pothole-index", "ferrule-repairs",
     ],
-    seedSpots: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+    seedSpots: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
     ambientBots: 9,
     plaza: {
-      // The plaza clears BOTH inner stand rows by exactly one row (14 above,
-      // 28 below). It used to butt straight up against the northern row's
-      // carpet, so the octagon's cut corner ran into the stands and they
-      // looked pasted onto the paving instead of standing on the floor.
-      rect: { x0: 21, y0: 15, x1: 36, y1: 27 },
+      // The paving runs from the northern rank's apron row to the southern
+      // rank's top row, so the stands are literally on its edge: step off
+      // the carpet and you are at the water.
+      rect: { x0: 20, y0: 17, x1: 37, y1: 25 },
       // Centred in the plaza, and the art centres the basin inside this —
       // 6x3 tiles is the basin's own 2:1 footprint, so the stonework, the
       // tile block and the inlaid rings all share one middle.
       fountain: { x0: 26, y0: 20, x1: 31, y1: 22 },
       avenues: [
-        { x0: 27, y0: 1, x1: 30, y1: 14 }, // north
-        { x0: 27, y0: 28, x1: 30, y1: 40 }, // south
-        { x0: 1, y0: 19, x1: 20, y1: 22 }, // west
-        { x0: 37, y0: 19, x1: 56, y1: 22 }, // east
+        { x0: 27, y0: 1, x1: 30, y1: 16 }, // north
+        { x0: 27, y0: 26, x1: 30, y1: 40 }, // south
+        { x0: 1, y0: 19, x1: 19, y1: 23 }, // west
+        { x0: 38, y0: 19, x1: 56, y1: 23 }, // east
       ],
       // hung across the south avenue, in front of where everyone arrives
-      arch: { x0: 26, y0: 33, x1: 31, y1: 33 },
-      // Carpet down the two cross-aisles. Bare floor between two banks of
-      // stands is the single thing that made the hall read as unfinished.
+      arch: { x0: 26, y0: 32, x1: 31, y1: 32 },
+      // Carpet down the two cross-aisles, in the three clear rows between
+      // each pair of stand ranks.
       runners: [
-        { x0: 1, y0: 7, x1: 56, y1: 9 },
-        { x0: 1, y0: 33, x1: 56, y1: 35 },
+        { x0: 1, y0: 9, x1: 56, y1: 11 },
+        { x0: 1, y0: 31, x1: 56, y1: 33 },
       ],
       furniture: [
-        // --- plaza rim: rope posts, leaving every avenue mouth open ---
-        { kind: "stanchion", x: 21, y: 15 }, { kind: "stanchion", x: 23, y: 15 },
-        { kind: "stanchion", x: 25, y: 15 },
-        { kind: "stanchion", x: 32, y: 15 }, { kind: "stanchion", x: 34, y: 15 },
-        { kind: "stanchion", x: 36, y: 15 },
-        { kind: "stanchion", x: 21, y: 27 }, { kind: "stanchion", x: 23, y: 27 },
-        { kind: "stanchion", x: 25, y: 27 },
-        { kind: "stanchion", x: 32, y: 27 }, { kind: "stanchion", x: 34, y: 27 },
-        { kind: "stanchion", x: 36, y: 27 },
-        { kind: "stanchion", x: 21, y: 17 }, { kind: "stanchion", x: 21, y: 24 },
-        { kind: "stanchion", x: 36, y: 17 }, { kind: "stanchion", x: 36, y: 24 },
+        // --- plaza rim: rope posts down the SIDES only ---
+        // There used to be a run of them along the top and bottom edges
+        // too. Now that the stands are on those edges, a rope across the
+        // front of a shop reads as "keep out" — which is the opposite of
+        // what a stand is for. The sides have no stands, so they keep
+        // theirs and the plaza still has an edge.
+        { kind: "stanchion", x: 20, y: 17 }, { kind: "stanchion", x: 20, y: 19 },
+        { kind: "stanchion", x: 20, y: 23 }, { kind: "stanchion", x: 20, y: 25 },
+        { kind: "stanchion", x: 37, y: 17 }, { kind: "stanchion", x: 37, y: 19 },
+        { kind: "stanchion", x: 37, y: 23 }, { kind: "stanchion", x: 37, y: 25 },
         // --- inside the plaza: somewhere to sit and look at the water ---
-        // The benches are double-sided, so the pair north of the fountain
-        // and the pair south of it are both the right way round.
-        { kind: "bench", x: 22, y: 18 }, { kind: "bench", x: 33, y: 18 },
-        { kind: "bench", x: 22, y: 24 }, { kind: "bench", x: 33, y: 24 },
-        // --- plaza corners and the two side avenue mouths ---
-        { kind: "planter", x: 22, y: 16 }, { kind: "planter", x: 35, y: 16 },
-        { kind: "planter", x: 22, y: 26 }, { kind: "planter", x: 35, y: 26 },
+        // The benches are double-sided, so the pair either side of the
+        // basin are both the right way round. Level with the water rather
+        // than in front of it: they used to sit between the fountain and
+        // the two stalls, which made the middle read as furniture.
+        { kind: "bench", x: 22, y: 21 }, { kind: "bench", x: 34, y: 21 },
         // --- lamps ALONGSIDE every avenue, never in one ---
         // They used to stand on the avenues' outer tiles, which looked like
         // lining a street and walked like an obstacle course. Nothing solid
         // belongs on a walkway; the geometry check now refuses it outright.
-        { kind: "lamp", x: 26, y: 5 }, { kind: "lamp", x: 31, y: 5 },
-        { kind: "lamp", x: 26, y: 12 }, { kind: "lamp", x: 31, y: 12 },
+        { kind: "lamp", x: 26, y: 3 }, { kind: "lamp", x: 31, y: 3 },
+        { kind: "lamp", x: 26, y: 10 }, { kind: "lamp", x: 31, y: 10 },
         { kind: "lamp", x: 26, y: 31 }, { kind: "lamp", x: 31, y: 31 },
-        { kind: "lamp", x: 26, y: 38 }, { kind: "lamp", x: 31, y: 38 },
-        { kind: "lamp", x: 5, y: 18 }, { kind: "lamp", x: 5, y: 23 },
-        { kind: "lamp", x: 12, y: 18 }, { kind: "lamp", x: 12, y: 23 },
-        { kind: "lamp", x: 45, y: 18 }, { kind: "lamp", x: 45, y: 23 },
-        { kind: "lamp", x: 52, y: 18 }, { kind: "lamp", x: 52, y: 23 },
-        // --- WEST WING: café above the avenue, lounge below ---
-        { kind: "tree", x: 2, y: 11 }, { kind: "tree", x: 13, y: 11 },
-        { kind: "table", x: 4, y: 11 }, { kind: "table", x: 9, y: 11 },
-        { kind: "table", x: 4, y: 15 }, { kind: "table", x: 9, y: 15 },
+        { kind: "lamp", x: 26, y: 39 }, { kind: "lamp", x: 31, y: 39 },
+        { kind: "lamp", x: 5, y: 18 }, { kind: "lamp", x: 5, y: 24 },
+        { kind: "lamp", x: 12, y: 18 }, { kind: "lamp", x: 12, y: 24 },
+        { kind: "lamp", x: 45, y: 18 }, { kind: "lamp", x: 45, y: 24 },
+        { kind: "lamp", x: 52, y: 18 }, { kind: "lamp", x: 52, y: 24 },
+        // --- WEST WING: café above the side avenue, lounge below ---
         { kind: "bar", x: 2, y: 17 },
-        { kind: "kiosk", x: 17, y: 16 },
+        { kind: "board", x: 6, y: 18 },
+        { kind: "table", x: 12, y: 17 },
+        { kind: "kiosk", x: 17, y: 17 },
         { kind: "sign", x: 19, y: 12, label: "PLAZA" },
-        { kind: "sofa", x: 3, y: 25 }, { kind: "sofa", x: 3, y: 29 },
-        { kind: "tree", x: 7, y: 27 },
-        { kind: "table", x: 10, y: 25 }, { kind: "table", x: 10, y: 29 },
-        { kind: "board", x: 15, y: 25 },
-        { kind: "crates", x: 2, y: 31 }, { kind: "crates", x: 14, y: 31 },
-        { kind: "tree", x: 19, y: 30 },
+        { kind: "sofa", x: 2, y: 25 }, { kind: "sofa", x: 12, y: 25 },
+        { kind: "tree", x: 6, y: 25 },
+        { kind: "tree", x: 1, y: 31 }, { kind: "tree", x: 18, y: 31 },
+        { kind: "crates", x: 2, y: 38 }, { kind: "crates", x: 14, y: 38 },
         // --- EAST WING: mirrored, different furniture so it is not a copy ---
-        { kind: "tree", x: 44, y: 11 }, { kind: "tree", x: 55, y: 11 },
-        { kind: "sofa", x: 46, y: 11 }, { kind: "sofa", x: 51, y: 11 },
-        { kind: "board", x: 46, y: 15 },
-        { kind: "table", x: 51, y: 15 },
-        { kind: "kiosk", x: 39, y: 16 },
+        { kind: "table", x: 43, y: 17 },
+        { kind: "board", x: 50, y: 18 },
+        { kind: "bar", x: 53, y: 17 },
+        { kind: "kiosk", x: 39, y: 17 },
         { kind: "sign", x: 38, y: 12, label: "STANDS" },
-        { kind: "table", x: 45, y: 25 }, { kind: "table", x: 50, y: 25 },
-        { kind: "bar", x: 53, y: 27 },
-        { kind: "tree", x: 43, y: 27 },
-        { kind: "sofa", x: 45, y: 29 }, { kind: "sofa", x: 50, y: 29 },
-        { kind: "board", x: 39, y: 25 },
-        { kind: "crates", x: 43, y: 31 }, { kind: "crates", x: 55, y: 31 },
+        { kind: "sofa", x: 43, y: 25 }, { kind: "sofa", x: 53, y: 25 },
+        { kind: "tree", x: 50, y: 25 },
+        { kind: "tree", x: 39, y: 31 }, { kind: "tree", x: 56, y: 31 },
+        { kind: "crates", x: 43, y: 38 }, { kind: "crates", x: 55, y: 38 },
         // --- corners of the hall, so the outer band is not bare ---
         { kind: "tree", x: 1, y: 1 }, { kind: "tree", x: 56, y: 1 },
         { kind: "tree", x: 1, y: 40 }, { kind: "tree", x: 56, y: 40 },
         { kind: "crates", x: 25, y: 1 }, { kind: "crates", x: 32, y: 1 },
         { kind: "board", x: 24, y: 40 }, { kind: "board", x: 32, y: 40 },
       ],
-      // Four traders along the east and west avenues. They are the only
-      // decor you can walk up to and use, and they exist so the two long
-      // side approaches have a reason to be walked down: the shop, the
-      // sign painter, the records board and the way to the directory are
-      // all things in the hall now, not only entries in a menu.
+      // Four traders along the east and west avenues, and two in the plaza
+      // itself. They are the only decor you can walk up to and use, and
+      // they exist so the two long side approaches have a reason to be
+      // walked down: the shop, the sign painter, the records board and the
+      // way to the directory are all things in the hall now, not only
+      // entries in a menu.
       merchants: [
         {
           id: "tickets",
@@ -283,8 +297,8 @@ export const FLOORS: FloorDef[] = [
         },
         {
           id: "arcade",
-          x: 33,
-          y: 25,
+          x: 34,
+          y: 24,
           action: "arcade",
           sign: "THE ARCADE",
           keeper: "Bram",
@@ -295,7 +309,7 @@ export const FLOORS: FloorDef[] = [
         {
           id: "records",
           x: 21,
-          y: 25,
+          y: 24,
           action: "records",
           sign: "THE RECORDS",
           keeper: "Bea",

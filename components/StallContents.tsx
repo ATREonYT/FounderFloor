@@ -208,13 +208,13 @@ interface GuideRow {
 const GUIDE: GuideRow[] = [
   {
     where: "The fountain",
-    what: "The middle of the hall, and the easiest place to find again.",
+    what: "The middle of the hall, ringed by stands, and the easiest place to find again.",
     how: "Straight up the avenue from where you came in.",
   },
   {
     where: "The stands",
-    what: "Two banks north, two south. Walk up to one and press E to talk to it.",
-    how: "Either side of the fountain. Empty ones show a number you can claim.",
+    what: "Walk up to one and press E to talk to it. Empty ones show a number you can claim.",
+    how: "The nearest eight are on the fountain's own edge — you pass between two on the way in. The rest are in the banks behind them.",
   },
   {
     where: "Ticket Booth · Sign Painter",
