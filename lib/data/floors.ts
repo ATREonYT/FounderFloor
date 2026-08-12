@@ -184,13 +184,9 @@ export const FLOORS: FloorDef[] = [
         // and the pair south of it are both the right way round.
         { kind: "bench", x: 22, y: 18 }, { kind: "bench", x: 33, y: 18 },
         { kind: "bench", x: 22, y: 24 }, { kind: "bench", x: 33, y: 24 },
-        { kind: "tree", x: 24, y: 16 }, { kind: "tree", x: 33, y: 16 },
-        { kind: "tree", x: 24, y: 26 }, { kind: "tree", x: 33, y: 26 },
         // --- plaza corners and the two side avenue mouths ---
         { kind: "planter", x: 22, y: 16 }, { kind: "planter", x: 35, y: 16 },
         { kind: "planter", x: 22, y: 26 }, { kind: "planter", x: 35, y: 26 },
-        { kind: "planter", x: 19, y: 18 }, { kind: "planter", x: 19, y: 23 },
-        { kind: "planter", x: 38, y: 18 }, { kind: "planter", x: 38, y: 23 },
         // --- lamps ALONGSIDE every avenue, never in one ---
         // They used to stand on the avenues' outer tiles, which looked like
         // lining a street and walked like an obstacle course. Nothing solid
@@ -287,14 +283,25 @@ export const FLOORS: FloorDef[] = [
         },
         {
           id: "arcade",
-          x: 46,
-          y: 31,
+          x: 33,
+          y: 25,
           action: "arcade",
           sign: "THE ARCADE",
           keeper: "Bram",
-          blurb: "Three games, one run. A good score is worth tickets.",
+          blurb: "Parkour, quizzes and a quick run. Tickets for a good one.",
           color: "#C4562B",
           look: { skin: 3, outfit: 7, hair: 6 },
+        },
+        {
+          id: "records",
+          x: 21,
+          y: 25,
+          action: "records",
+          sign: "THE RECORDS",
+          keeper: "Bea",
+          blurb: "Best times, best runs, and who is top of the hall.",
+          color: "#B08D2E",
+          look: { skin: 0, outfit: 1, hair: 3 },
         },
       ],
     },

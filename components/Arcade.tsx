@@ -527,17 +527,17 @@ function Header({ name, rule, step }: { name: string; rule: string; step: string
 }
 
 export interface ArcadeProps {
-  /** Rendered above the quick run — the parkour and quiz-room entries. */
-  extra?: React.ReactNode;
   /** Tickets already won here today, so the cap can be honest about it. */
   wonToday: number;
   /** The best run total this hall has seen, or null if nobody has played. */
   hallRecord: number | null;
   /** Called with the tickets earned; the caller does the granting. */
   onPayout(tickets: number, total: number): void;
+  /** Back to the arcade's room list. */
+  onExit(): void;
 }
 
-export default function Arcade({ wonToday, hallRecord, onPayout, extra }: ArcadeProps) {
+export default function Arcade({ wonToday, hallRecord, onPayout, onExit }: ArcadeProps) {
   const [stage, setStage] = useState<Stage>("lobby");
   const [rounds, setRounds] = useState<RoundScore[]>([]);
   const paid = useRef(false);
@@ -567,7 +567,13 @@ export default function Arcade({ wonToday, hallRecord, onPayout, extra }: Arcade
   if (stage === "lobby") {
     return (
       <div className="flex flex-col gap-5">
-        {extra}
+        <button
+          type="button"
+          onClick={onExit}
+          className="self-start text-xs text-muted transition-colors hover:text-ink"
+        >
+          ← Back to the arcade
+        </button>
         <p className="micro text-[10px] text-muted">THE QUICK RUN</p>
         <p className="text-sm leading-relaxed text-muted">
           Three short games back to back, one score at the end. Reactions, then
@@ -656,17 +662,26 @@ export default function Arcade({ wonToday, hallRecord, onPayout, extra }: Arcade
           the score; the tickets come back tomorrow.
         </p>
       )}
-      <button
-        type="button"
-        onClick={() => {
-          paid.current = false;
-          setRounds([]);
-          setStage("lobby");
-        }}
-        className="rounded-md border border-line px-4 py-2.5 text-sm transition-colors hover:bg-paper"
-      >
-        Play again
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            paid.current = false;
+            setRounds([]);
+            setStage("lobby");
+          }}
+          className="flex-1 rounded-md border border-line px-4 py-2.5 text-sm transition-colors hover:bg-paper"
+        >
+          Play again
+        </button>
+        <button
+          type="button"
+          onClick={onExit}
+          className="flex-1 rounded-md border border-line px-4 py-2.5 text-sm text-muted transition-colors hover:bg-paper hover:text-ink"
+        >
+          Back to the arcade
+        </button>
+      </div>
     </div>
   );
 }

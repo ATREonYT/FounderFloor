@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MAPS, PT, ParkourRun } from "@/game/parkour";
+import { MAPS, PT, ParkourRun, TIME_LIMIT } from "@/game/parkour";
 import type { MapDef, ParkourStatus } from "@/game/parkour";
 import { SpriteBank } from "@/game/sprites";
 import type { AvatarLook } from "@/lib/types";
@@ -56,11 +56,34 @@ const secs = (s: number): string => {
 export default function Parkour({ look, bests, capLeft, onFinish, onExit }: ParkourProps) {
   const [map, setMap] = useState<MapDef | null>(null);
   const [status, setStatus] = useState<ParkourStatus | null>(null);
-  const [done, setDone] = useState<{ status: ParkourStatus; tickets: number } | null>(null);
+  const [done, setDone] = useState<{
+    status: ParkourStatus;
+    tickets: number;
+    next: MapDef | null;
+  } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const runRef = useRef<ParkourRun | null>(null);
   const input = useRef({ left: false, right: false, jump: false });
   const paidRef = useRef(false);
+
+  /**
+   * The run's effect must depend on the MAP and nothing else.
+   *
+   * These two used to be in its dependency list, and `onFinish` is an inline
+   * arrow on the floor page — a new function on every render of a page that
+   * re-renders for presence, chat and the clock. Each one tore down the loop
+   * and built a fresh ParkourRun, which is to say: the level silently
+   * restarted underneath you, mid-jump, several times a minute. Reading them
+   * out of a ref keeps the latest value without restarting the level.
+   */
+  const finishRef = useRef(onFinish);
+  const capRef = useRef(capLeft);
+  const lookRef = useRef(look);
+  useEffect(() => {
+    finishRef.current = onFinish;
+    capRef.current = capLeft;
+    lookRef.current = look;
+  }, [onFinish, capLeft, look]);
 
   // ---- keyboard ----
   useEffect(() => {
@@ -93,7 +116,7 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const run = new ParkourRun(map, look, new SpriteBank());
+    const run = new ParkourRun(map, lookRef.current, new SpriteBank());
     runRef.current = run;
     paidRef.current = false;
 
@@ -104,6 +127,7 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
     let raf = 0;
     let last = performance.now();
     let alive = true;
+    let hudStamp = "";
     const tick = (now: number): void => {
       if (!alive) return;
       // Clamp: a backgrounded tab returns with a huge delta and the player
@@ -116,17 +140,30 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
       ctx.imageSmoothingEnabled = false;
       run.draw(ctx, VIEW_W, VIEW_H, now / 1000);
 
+      // The HUD shows one decimal, so pushing state 60 times a second
+      // re-renders the panel five times for every change anyone can see.
       const s = run.status;
-      setStatus(s);
+      const stamp = `${Math.round(s.left * 10)}|${s.tickets}|${s.deaths}`;
+      if (stamp !== hudStamp || s.finished) {
+        hudStamp = stamp;
+        setStatus(s);
+      }
       if (s.finished && !paidRef.current) {
         paidRef.current = true;
-        // A ticket per collectable picked up, plus a bonus for the medal,
-        // clamped by whatever is left of today's arcade allowance.
         const bonus = s.medal === "gold" ? 10 : s.medal === "silver" ? 5 : 0;
-        const tickets = Math.max(0, Math.min(capLeft, s.tickets * 2 + bonus));
-        setDone({ status: s, tickets });
-        onFinish(map.id, s, tickets);
-        return; // stop the loop on the results card
+        const tickets = s.timedOut
+          ? 0
+          : Math.max(0, Math.min(capRef.current, s.tickets * 2 + bonus));
+        if (!s.timedOut) finishRef.current(map.id, s, tickets);
+        // Reaching the exit sends you straight to the next map rather than
+        // back to a menu — a level that ends in a list is a run that ends.
+        const nextIdx = MAPS.findIndex((x) => x.id === map.id) + 1;
+        setDone({
+          status: s,
+          tickets,
+          next: !s.timedOut && nextIdx < MAPS.length ? MAPS[nextIdx] : null,
+        });
+        return;
       }
       raf = requestAnimationFrame(tick);
     };
@@ -136,7 +173,7 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
       cancelAnimationFrame(raf);
       runRef.current = null;
     };
-  }, [map, look, capLeft, onFinish]);
+  }, [map]);
 
   const hold = useCallback((key: "left" | "right" | "jump", down: boolean) => {
     input.current[key] = down;
@@ -198,7 +235,9 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
     return (
       <div className="flex flex-col gap-4">
         <div className="text-center">
-          <p className="micro text-[10px] text-muted">{map.name.toUpperCase()} — CLEARED</p>
+          <p className="micro text-[10px] text-muted">
+            {map.name.toUpperCase()} — {done.status.timedOut ? "OUT OF TIME" : "CLEARED"}
+          </p>
           <p className="font-display text-5xl leading-none">{secs(s.time)}</p>
           {s.medal !== "none" && (
             <p
@@ -234,17 +273,32 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
           </span>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setDone(null);
-              setStatus(null);
-              setMap({ ...map });
-            }}
-            className="flex-1 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-accent-strong"
-          >
-            Run it again
-          </button>
+          {done.next ? (
+            <button
+              type="button"
+              onClick={() => {
+                const nx = done.next;
+                setDone(null);
+                setStatus(null);
+                setMap(nx);
+              }}
+              className="flex-1 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-accent-strong"
+            >
+              Next: {done.next.name}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setDone(null);
+                setStatus(null);
+                setMap({ ...map });
+              }}
+              className="flex-1 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-accent-strong"
+            >
+              Run it again
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {
@@ -266,7 +320,13 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-display text-base leading-none">{map.name}</span>
         <span className="flex items-center gap-4 font-mono text-xs text-muted">
-          <span>{secs(status?.time ?? 0)}</span>
+          <span
+            className={`font-display text-lg leading-none ${
+              (status?.left ?? TIME_LIMIT) <= 5 ? "text-accent" : "text-ink"
+            }`}
+          >
+            {(status?.left ?? TIME_LIMIT).toFixed(1)}
+          </span>
           <span className="flex items-center gap-1">
             <TicketIcon size={11} />
             {status?.tickets ?? 0}/{status?.ticketsTotal ?? 0}

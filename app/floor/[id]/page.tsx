@@ -27,7 +27,13 @@ import { questStates, unlockedEmotes } from "@/lib/data/quests";
 import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
 import StallPanel from "@/components/StallPanel";
-import { GuideStall, PorterStall, RegisterStall, TicketStall } from "@/components/StallContents";
+import {
+  GuideStall,
+  PorterStall,
+  RecordsStall,
+  RegisterStall,
+  TicketStall,
+} from "@/components/StallContents";
 import Arcade from "@/components/Arcade";
 import Parkour from "@/components/Parkour";
 import QuizRoom from "@/components/QuizRoom";
@@ -799,8 +805,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     if (m) setOpenStall(m);
   }, [floor]);
 
-  /** Which room of the arcade is open: the hub, the parkour or the quizzes. */
-  const [arcadeRoom, setArcadeRoom] = useState<"hub" | "parkour" | "quiz">("hub");
+  /** Which room of the arcade is open — the door itself, or one of the three. */
+  const [arcadeRoom, setArcadeRoom] = useState<"hub" | "parkour" | "quiz" | "quick">("hub");
   /** Everything playable in the quiz room: shipped plus anything written here. */
   const quizzes = useMemo<Quiz[]>(
     () => [
@@ -1656,6 +1662,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           {openStall.action === "porter" && (
             <PorterStall floorId={floor?.id ?? ""} presence={floorCounts} tier={state.sub} />
           )}
+          {openStall.action === "records" && <RecordsStall state={state} />}
           {openStall.action === "arcade" && arcadeRoom === "parkour" && (
             <Parkour
               look={state.profile.look}
@@ -1683,38 +1690,71 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               onExit={() => setArcadeRoom("hub")}
             />
           )}
-          {openStall.action === "arcade" && arcadeRoom === "hub" && (
+          {openStall.action === "arcade" && arcadeRoom === "quick" && (
             <Arcade
               wonToday={arcadeWonToday}
               hallRecord={state.arcadeBest ?? null}
               onPayout={(tickets, total) => actions.earnArcade(tickets, total)}
-              extra={
-                <div className="flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setArcadeRoom("parkour")}
-                    className="rounded-lg border border-line px-4 py-3 text-left transition-colors hover:border-accent hover:bg-paper"
-                  >
-                    <span className="font-display text-lg leading-tight">After Hours</span>
-                    <span className="mt-0.5 block text-xs leading-snug text-muted">
-                      Four parkour maps across the scaffolding, played as your own
-                      character. Collect tickets on the way.
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setArcadeRoom("quiz")}
-                    className="rounded-lg border border-line px-4 py-3 text-left transition-colors hover:border-accent hover:bg-paper"
-                  >
-                    <span className="font-display text-lg leading-tight">The Quiz Room</span>
-                    <span className="mt-0.5 block text-xs leading-snug text-muted">
-                      Buzzer quizzes on business. Play the shipped ones, or write
-                      your own and put it in the room.
-                    </span>
-                  </button>
-                </div>
-              }
+              onExit={() => setArcadeRoom("hub")}
             />
+          )}
+          {/* The arcade is three rooms, so the door is a list of three rooms.
+              It used to be the quick run with the other two bolted above it,
+              which read as one game with links stuck on top. */}
+          {openStall.action === "arcade" && arcadeRoom === "hub" && (
+            <div className="flex flex-col gap-4">
+              <p className="text-sm leading-relaxed text-muted">
+                Three rooms out the back. Everything pays tickets, up to{" "}
+                {Math.max(0, 60 - arcadeWonToday)} more today.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {(
+                  [
+                    {
+                      room: "parkour" as const,
+                      name: "After Hours",
+                      what: "Four parkour maps across the scaffolding, run as your own character. 25 seconds a level.",
+                      meta: `${Object.keys(state.parkourBests ?? {}).length}/4 cleared`,
+                    },
+                    {
+                      room: "quiz" as const,
+                      name: "The Quiz Room",
+                      what: "Buzzer quizzes on business. Play the shipped ones, or write your own and put it in the room.",
+                      meta: `${quizzes.length} to play`,
+                    },
+                    {
+                      room: "quick" as const,
+                      name: "The Quick Run",
+                      what: "Three short games back to back — reactions, questions, memory — for one score.",
+                      meta:
+                        state.arcadeBest != null
+                          ? `hall record ${state.arcadeBest}/300`
+                          : "record unset",
+                    },
+                  ]
+                ).map((r) => (
+                  <button
+                    key={r.room}
+                    type="button"
+                    onClick={() => setArcadeRoom(r.room)}
+                    className="flex flex-col rounded-lg border border-line px-4 py-3 text-left transition-colors hover:border-accent hover:bg-paper"
+                  >
+                    <span className="font-display text-lg leading-tight">{r.name}</span>
+                    <span className="mt-1 block flex-1 text-xs leading-snug text-muted">
+                      {r.what}
+                    </span>
+                    <span className="micro mt-2 block text-[9px] text-muted">
+                      {r.meta.toUpperCase()}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs leading-relaxed text-muted">
+                Playing at the same time as somebody else? Start together and
+                compare totals at the end — same games, same order. Your times
+                go up on the records board across the fountain.
+              </p>
+            </div>
           )}
           {openStall.action === "editor" &&
             (myStartup ? (

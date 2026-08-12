@@ -40,6 +40,19 @@ export const PT = 16;
 //   S  start            G  goal (the exit)    B  spring
 //   -  moving platform, horizontal            |  moving platform, vertical
 //   x  crumbling block (falls away a beat after you stand on it)
+//
+// ─── HOW THE MAPS BELOW ARE LAID OUT ──────────────────────────────────
+// All four are 40x13. Rows 11-12 are the ground, row 10 is the tile you
+// walk along, and every ledge is a one-way platform three rows above a
+// surface you can already stand on. Three rows, because a jump rises 4.45
+// tiles and the horizontal reach shrinks fast with height: 4 tiles across
+// at the same level, but only about 3 when climbing 3. Spike runs are
+// three wide, which is a four-tile hop with the take-off and landing tile
+// — inside the 4.4 the jump actually buys.
+//
+// None of that is guesswork: scripts/parkour-check.mjs reads these
+// constants, works out the jump budget and walks every map from the start
+// flag to the exit before anything ships. Change a number here and run it.
 
 export type MapDef = {
   id: string;
@@ -56,94 +69,89 @@ export const MAPS: MapDef[] = [
   {
     id: "load-in",
     name: "Load-In",
-    blurb: "Crates on the dock, before the doors open. Learn the jump.",
+    blurb: "Crates on the dock. Learn the jump, mind the pallet nails.",
     hard: 1,
-    par: 28,
+    par: 12,
     rows: [
-      "..............................................",
-      "..............................................",
-      "...........................o..o..o............",
-      ".........................#########............",
-      "..............................................",
-      "................o.o...........................",
-      "..............######..............o.....G.....",
-      "..........................=====.......#####...",
-      "....o.........................................",
-      "...###......^^^.....o.........................",
-      "..............................................",
-      ".S....#############...####...####.............",
-      "##########################################...",
-      "##########################################...",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "....o..........o.........o..............",
+      "...===........===.......===.............",
+      "........................................",
+      ".S.......^^^.......^^^.......^^^....G...",
+      "########################################",
+      "########################################",
     ],
   },
   {
     id: "the-scaffold",
     name: "The Scaffold",
-    blurb: "Straight up the tower. Mind the platforms that move.",
+    blurb: "Straight up the tower, along the gantry, out the fire door.",
     hard: 2,
-    par: 42,
+    par: 11,
     rows: [
-      "...........................................G..",
-      ".........................................#####",
-      "..............................................",
-      ".......................o...........-----......",
-      "....................########..................",
-      "..............................................",
-      "...........o......----........o...............",
-      ".......#######............#######.............",
-      "..............................................",
-      "...o.....................o....................",
-      "..####.......^^^^^....########................",
-      "..............................................",
-      ".S...#####..#########...........####...o......",
-      "##########################################...",
-      "##########################################...",
+      "........................................",
+      ".................o.......o.G............",
+      "................====...########.........",
+      "........................................",
+      "...........o............................",
+      "..........====..........................",
+      "........................................",
+      ".....o..................................",
+      "....====................................",
+      "........................................",
+      ".S................................^^^...",
+      "########################################",
+      "########################################",
     ],
   },
   {
     id: "cable-run",
     name: "Cable Run",
-    blurb: "Springs, long gaps and live cable. Do not touch the cable.",
+    blurb: "Live cable across the floor. Three hops, and a gantry if you want the lot.",
     hard: 3,
-    par: 52,
+    par: 15,
     rows: [
-      "..............................................",
-      "...................o......o...................",
-      "..............................................",
-      "..........####..........####..........o....G..",
-      "..................................#########...",
-      "......o.......................................",
-      "....####.........B..........B.................",
-      "................###........###................",
-      "..........o...................................",
-      "........####..............o...................",
-      "..............................xxxx............",
-      ".S...B.......^^^^^^^^^.................^^^^...",
-      "#####################...##################...",
-      "#####################...##################...",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      ".............o.........o................",
+      "............===.......===...............",
+      "........................................",
+      "...o.........o.........o.........o......",
+      "..===.......===.......===.......===.....",
+      "........................................",
+      ".S.....^^^.......^^^.......^^^.....G....",
+      "########################################",
+      "########################################",
     ],
   },
   {
     id: "after-hours",
     name: "After Hours",
-    blurb: "Lights off, floor empty. Everything moves and nothing waits.",
+    blurb: "Lights off. Crates that do not hold, and a hoist over the loading pit.",
     hard: 3,
-    par: 64,
+    par: 16,
     rows: [
-      "..............................................",
-      "......................................o....G..",
-      "...................................########...",
-      "..........|.........|.........................",
-      "..............................................",
-      "......o.......o.......o.......................",
-      "....####....####....####....xxxx..............",
-      "..............................................",
-      "..........................................o...",
-      "...B..............^^^^^^..............#####...",
-      "..###.........................B...............",
-      ".S..........xxxx.............###..............",
-      "#######...###################.................",
-      "#######...###################.................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "........................................",
+      "..o..........o..........o...............",
+      ".====.......xxxx........====............",
+      "........................................",
+      ".S.....^^^............-........^^^..G...",
+      "####################........############",
+      "####################........############",
     ],
   },
 ];
@@ -157,8 +165,15 @@ const RUN = 138;
 const ACCEL = 1200;
 const AIR_ACCEL = 780;
 const FRICTION = 1500;
-const JUMP_V = 375;
-const SPRING_V = 610;
+const JUMP_V = 410;
+/**
+ * Springs. 660 threw you 11.5 tiles up, which is taller than a map, so a
+ * spring near the floor fired you off the top of the world. 560 tops out
+ * around eight tiles — high enough to be a shortcut, low enough to stay
+ * in shot. No shipped map uses one yet; this is here so the tile works
+ * when one does.
+ */
+const SPRING_V = 560;
 const COYOTE = 0.1;
 const BUFFER = 0.13;
 /** Releasing the jump key cuts the remaining rise to this fraction. */
@@ -172,6 +187,13 @@ const CRUMBLE_BACK = 2.6;
 const MOVER_SPAN = 3.2 * PT;
 const MOVER_SPEED = 44;
 
+/**
+ * Seconds on the clock per level. Short on purpose: a level you can dawdle
+ * through is a level nobody replays, and every map is authored to be
+ * runnable in well under this (scripts/parkour-check.mjs asserts it).
+ */
+export const TIME_LIMIT = 25;
+
 export interface ParkourInput {
   left: boolean;
   right: boolean;
@@ -180,6 +202,10 @@ export interface ParkourInput {
 
 export interface ParkourStatus {
   time: number;
+  /** Seconds left on the clock. Zero means the run is over. */
+  left: number;
+  /** True when the clock ran out rather than the exit being reached. */
+  timedOut: boolean;
   deaths: number;
   tickets: number;
   ticketsTotal: number;
@@ -257,6 +283,7 @@ export class ParkourRun {
   private deaths = 0;
   private got = 0;
   private finished = false;
+  private timedOut = false;
   private shake = 0;
   private camX = 0;
   private camY = 0;
@@ -299,6 +326,8 @@ export class ParkourRun {
   get status(): ParkourStatus {
     return {
       time: this.time,
+      left: Math.max(0, TIME_LIMIT - this.time),
+      timedOut: this.timedOut,
       deaths: this.deaths,
       tickets: this.got,
       ticketsTotal: this.coins.length,
@@ -308,14 +337,18 @@ export class ParkourRun {
   }
 
   private medal(): "gold" | "silver" | "none" {
-    if (!this.finished) return "none";
+    if (!this.finished || this.timedOut) return "none";
     if (this.time <= this.map.par && this.got === this.coins.length) return "gold";
     if (this.time <= this.map.par * 1.6) return "silver";
     return "none";
   }
 
   private at(tx: number, ty: number): string {
-    if (ty < 0 || ty >= this.grid.length) return ty < 0 ? "." : "#";
+    // Off the sides is wall, off the top is open sky, and off the BOTTOM is
+    // nothing at all — it used to return solid, which gave every pit an
+    // invisible floor you landed on and stood about on forever instead of
+    // falling out of the world and respawning.
+    if (ty < 0 || ty >= this.grid.length) return ".";
     const row = this.grid[ty];
     if (tx < 0 || tx >= row.length) return "#";
     return row[tx];
@@ -370,6 +403,12 @@ export class ParkourRun {
   step(dt: number, input: ParkourInput): void {
     if (this.finished) return;
     this.time += dt;
+    if (this.time >= TIME_LIMIT) {
+      this.time = TIME_LIMIT;
+      this.timedOut = true;
+      this.finished = true;
+      return;
+    }
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt);
 
     // horizontal

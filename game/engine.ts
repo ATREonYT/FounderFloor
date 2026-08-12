@@ -1126,6 +1126,45 @@ export function createGame(opts: GameOptions): GameHandle {
         ctx.strokeStyle = "#E4DFD3";
       }
     }
+    // The middle of the hall. Without this the map was 24 coloured blocks
+    // and no landmark, so it told you where the stands were and nothing
+    // about where YOU were heading — and the two stalls people actually
+    // look for (the arcade and the records board) were invisible on it.
+    if (floor.plaza) {
+      const pz = floor.plaza;
+      const rx = mx + pz.rect.x0 * TILE * k;
+      const ry = my + pz.rect.y0 * TILE * k;
+      const rw = (pz.rect.x1 - pz.rect.x0 + 1) * TILE * k;
+      const rh = (pz.rect.y1 - pz.rect.y0 + 1) * TILE * k;
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillRect(rx, ry, rw, rh);
+
+      const f = pz.fountain;
+      const fx = mx + ((f.x0 + f.x1 + 1) / 2) * TILE * k;
+      const fy = my + ((f.y0 + f.y1 + 1) / 2) * TILE * k;
+      const fr = Math.max(2.5, ((f.x1 - f.x0 + 1) / 2) * TILE * k);
+      ctx.beginPath();
+      ctx.ellipse(fx, fy, fr, fr * 0.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#7FA8B8";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(35,32,26,0.35)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    // Merchant stalls, in their own awning colour with a paper ring so they
+    // read as places rather than as another person-dot.
+    for (const m of merchants) {
+      const kx = mx + (m.x + 1.5) * TILE * k;
+      const ky = my + (m.y + 1) * TILE * k;
+      ctx.beginPath();
+      ctx.arc(kx, ky, 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(kx, ky, 2.2, 0, Math.PI * 2);
+      ctx.fillStyle = m.color;
+      ctx.fill();
+    }
     // people
     ctx.fillStyle = "#23201A";
     for (const r of remotes.values()) ctx.fillRect(mx + r.x * k - 1, my + r.y * k - 1, 2, 2);

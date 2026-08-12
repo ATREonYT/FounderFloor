@@ -309,7 +309,13 @@ export interface PlazaDef {
 }
 
 /** What a merchant stall does when you press the interact key at it. */
-export type MerchantAction = "tickets" | "editor" | "register" | "porter" | "arcade";
+export type MerchantAction =
+  | "tickets"
+  | "editor"
+  | "register"
+  | "porter"
+  | "arcade"
+  | "records";
 
 export interface MerchantDef {
   id: string;
@@ -690,20 +696,20 @@ export interface AppState {
   claimedQuests: string[];
   /** Local date (YYYY-MM-DD) of the last counted visit day. */
   lastVisitDay?: string;
-  /** Consecutive visit days, current and best-ever (drives the habit quest). */
+  /** Quizzes this visitor wrote. Sanitised on every load and save. */
+  quizzes?: unknown[];
+  /** Best parkour time per map id, in seconds. */
+  parkourBests?: Record<string, number>;
   /**
    * The arcade: which day `arcadeWon` refers to, how many tickets it has
    * paid you that day, and your best run total. The cap is enforced in the
    * store, not in the panel — a payout ceiling that only exists in the UI
    * is not a ceiling.
    */
-  /** Quizzes this visitor wrote. Sanitised on every load and save. */
-  quizzes?: unknown[];
-  /** Best parkour time per map id, in seconds. */
-  parkourBests?: Record<string, number>;
   arcadeDay?: string;
   arcadeWon?: number;
   arcadeBest?: number;
+  /** Consecutive visit days, current and best-ever (drives the habit quest). */
   visitStreak: number;
   bestStreak: number;
   /** When THIS session first opened the app (ms). */

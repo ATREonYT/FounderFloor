@@ -579,6 +579,24 @@ stand is reachable and no tile is cut off:
 node scripts/floor-geom.mjs
 ```
 
+### Parkour maps
+
+The maps in `game/parkour.ts` have two checks of their own, and both have
+caught levels nobody could have finished. Run BOTH after touching a map or
+a physics constant:
+
+```
+node scripts/parkour-check.mjs   # geometry: is a route even possible?
+node scripts/parkour-play.mjs    # play it: does a bot actually finish?
+```
+
+`parkour-check` works out what a jump can do from the constants and
+searches the standable tiles for a route. `parkour-play` runs the real
+`ParkourRun` class at a fixed 60Hz with a bot on the controls and reports
+the time, the deaths and the tickets — a model of the physics can be
+wrong, a run of the actual engine cannot. It also fails a map whose par is
+tighter than a clean run, since nobody would ever get gold on it.
+
 ## 3. Launch-day checklist
 
 - [ ] `https://floor.yourdomain.com/health` returns ok

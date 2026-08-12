@@ -3,7 +3,7 @@
 /**
  * What each merchant stall shows, once you have walked up and opened it.
  *
- * All four render inside StallPanel, on the floor, without unmounting the
+ * They all render inside StallPanel, on the floor, without unmounting the
  * game — so none of them navigate. Where a thing genuinely lives off the
  * floor (a Stripe checkout, say) the control says so before it takes you.
  */
@@ -11,6 +11,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { FLOORS } from "@/lib/data/floors";
+import { MAPS } from "@/game/parkour";
 import { EARN, dailyTickets, walletBalance } from "@/lib/data/shop";
 import { TIER_ORDER } from "@/lib/types";
 import type { AppState, BoothInstance, SubTier } from "@/lib/types";
@@ -225,8 +226,13 @@ const GUIDE: GuideRow[] = [
   },
   {
     where: "The Arcade",
-    what: "Three games, one run, tickets for a good score.",
-    how: "South-east corner, past the porter.",
+    what: "Quick games, four parkour maps and the quiz room. Tickets for a good run.",
+    how: "Just south-east of the fountain — you can see it from the water.",
+  },
+  {
+    where: "The Records",
+    what: "Your times, your runs, how far you have got.",
+    how: "Opposite the arcade, south-west of the fountain.",
   },
 ];
 
@@ -251,6 +257,118 @@ export function GuideStall() {
         <p className="text-xs leading-relaxed text-muted">
           WASD or the arrow keys to walk, or click where you want to go. E to
           use whatever you are standing at. M for the map. 1–5 to react.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- records
+
+/**
+ * The Records — the hall's board of standings, next to the fountain.
+ *
+ * Everything here is a number the site can actually prove: your own bests,
+ * held on your own state and synced with your account. A hall-wide weekly
+ * table needs the server to collect times from everyone, which it does not
+ * do yet, and inventing one would mean showing you strangers who do not
+ * exist. So this says what it knows and says plainly what it does not.
+ */
+
+const fmt = (s: number): string => {
+  const m = Math.floor(s / 60);
+  const rest = s - m * 60;
+  return m > 0
+    ? `${m}:${rest.toFixed(2).padStart(5, "0")}`
+    : `${rest.toFixed(2)}s`;
+};
+
+export function RecordsStall({ state }: { state: AppState }) {
+  const bests = state.parkourBests ?? {};
+  const cleared = MAPS.filter((m) => typeof bests[m.id] === "number");
+  const golds = cleared.filter((m) => bests[m.id] <= m.par);
+
+  // A connection with a peerId is a live person; the rest are sample stands.
+  const people = state.connections.filter((c) => c.peerId).length;
+
+  const cards: { label: string; value: string; note: string }[] = [
+    {
+      label: "Connections",
+      value: String(state.connections.length),
+      note: people > 0 ? `${people} with someone live` : "sample stands so far",
+    },
+    {
+      label: "Days running",
+      value: String(state.visitStreak),
+      note: `best streak ${state.bestStreak}`,
+    },
+    {
+      label: "Best arcade run",
+      value: state.arcadeBest != null ? String(state.arcadeBest) : "—",
+      note: state.arcadeBest != null ? "points over three games" : "not played yet",
+    },
+    {
+      label: "Maps cleared",
+      value: `${cleared.length}/${MAPS.length}`,
+      note: golds.length > 0 ? `${golds.length} inside par` : "none inside par yet",
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-2 gap-2">
+        {cards.map((c) => (
+          <div key={c.label} className="rounded-lg border border-line bg-paper px-3 py-2.5">
+            <p className="micro text-[9px] text-muted">{c.label.toUpperCase()}</p>
+            <p className="mt-0.5 font-display text-2xl leading-none">{c.value}</p>
+            <p className="mt-1 text-[11px] leading-snug text-muted">{c.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <p className="micro mb-2 text-[10px] text-muted">AFTER HOURS — YOUR TIMES</p>
+        <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
+          {MAPS.map((m) => {
+            const t = bests[m.id];
+            const gold = typeof t === "number" && t <= m.par;
+            return (
+              <li key={m.id} className="flex items-baseline gap-3 px-4 py-2.5">
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-sm">{m.name}</span>
+                    {gold && <span className="micro text-[9px] text-gold">INSIDE PAR</span>}
+                  </span>
+                  <span className="block text-xs leading-snug text-muted">
+                    par {m.par}s · {"●".repeat(m.hard)}
+                    {"○".repeat(3 - m.hard)}
+                  </span>
+                </span>
+                <span
+                  className={`shrink-0 font-mono text-sm ${
+                    typeof t === "number" ? "text-ink" : "text-muted"
+                  }`}
+                >
+                  {typeof t === "number" ? fmt(t) : "—"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <p className="text-sm leading-relaxed text-muted">
+        The arcade is the stall on the other side of the fountain. Beat par on
+        a map and it shows up here with the mark against it.
+      </p>
+
+      <div className="rounded-lg border border-line bg-paper px-4 py-3">
+        <p className="micro mb-1.5 text-[10px] text-muted">THE HALL TABLE</p>
+        <p className="text-xs leading-relaxed text-muted">
+          Everyone&rsquo;s times, ranked, with the top three of the week getting
+          a mark on their stand — that needs enough people playing for a table
+          to mean anything, so it goes up when the hall is busy rather than
+          showing you a list of one.
         </p>
       </div>
     </div>
