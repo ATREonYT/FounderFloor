@@ -130,38 +130,87 @@ for (const f of FLOORS) {
       }
       return false;
     };
-    const onFountain = (x, y, w = 1) => {
-      for (let d = 0; d < w; d++) if (inRect(x + d, y, p.fountain)) return true;
-      return false;
-    };
-    const onAvenue = (x, y, w = 1) => {
-      for (let d = 0; d < w; d++) {
-        for (const a of p.avenues) if (inRect(x + d, y, a)) return true;
-      }
+    const onAvenue = (x, y) => {
+      for (const a of p.avenues) if (inRect(x, y, a)) return true;
       return false;
     };
 
+    // Widths must match DECOR_WIDTH in game/decor.ts. Lamps line the
+    // avenues on purpose; everything else solid must keep out of them.
+    const WIDTH = {
+      planter: 1, lamp: 1, stanchion: 1, table: 2, kiosk: 2,
+      tree: 1, sofa: 2, bar: 3, board: 2, crates: 1, sign: 1, bench: 2,
+    };
+    const WALK_THROUGH = new Set(["stanchion"]);
+    const AVENUE_OK = new Set(["lamp"]);
+
     const clashes = [];
     const blocking = [];
-    const place = (list, w, label, isSolidProp, avenueOk) => {
-      for (const d of list ?? []) {
-        if (onBooth(d.x, d.y, w)) clashes.push(`${label}(${d.x},${d.y}) on a stand`);
-        if (onFountain(d.x, d.y, w)) clashes.push(`${label}(${d.x},${d.y}) in the fountain`);
-        if (isSolidProp && !avenueOk && onAvenue(d.x, d.y, w)) {
-          blocking.push(`${label}(${d.x},${d.y})`);
-        }
-        if (isSolidProp) for (let i = 0; i < w; i++) set(d.x + i, d.y);
+    const offMap = [];
+    const occupied = new Map();
+    for (const d of p.furniture ?? []) {
+      const wd = WIDTH[d.kind];
+      if (wd === undefined) {
+        clashes.push(`unknown kind "${d.kind}" at (${d.x},${d.y})`);
+        continue;
       }
-    };
-    // lamps live IN the avenues on purpose — they line them. They sit on the
-    // outer tiles, which the connectivity flood below has to prove is fine.
-    place(p.lamps, 1, "lamp", true, true);
-    place(p.planters, 1, "planter", true, false);
-    place(p.tables, 2, "table", true, false);
-    place(p.kiosks, 2, "kiosk", true, false);
-    place(p.stanchions, 1, "stanchion", false, false); // walk-through
-    check(clashes.length === 0, "no decoration lands on a stand or the fountain", clashes.join(", "));
-    check(blocking.length === 0, "no solid decoration blocks an avenue", blocking.join(", "));
+      const solidProp = !WALK_THROUGH.has(d.kind);
+      const tag = `${d.kind}(${d.x},${d.y})`;
+      for (let i = 0; i < wd; i++) {
+        const x = d.x + i;
+        if (x < 1 || x > W - 2 || d.y < 1 || d.y > H - 2) offMap.push(tag);
+        if (onBooth(x, d.y)) clashes.push(`${tag} on a stand`);
+        if (inRect(x, d.y, p.fountain)) clashes.push(`${tag} in the fountain`);
+        if (solidProp && !AVENUE_OK.has(d.kind) && onAvenue(x, d.y)) blocking.push(tag);
+        if (solidProp) {
+          const k = `${x},${d.y}`;
+          if (occupied.has(k)) clashes.push(`${tag} overlaps ${occupied.get(k)}`);
+          occupied.set(k, tag);
+          set(x, d.y);
+        }
+      }
+    }
+    check(offMap.length === 0, "every piece of furniture is inside the walls", [...new Set(offMap)].join(", "));
+    check(
+      clashes.length === 0,
+      "no furniture lands on a stand, the fountain, or another piece",
+      [...new Set(clashes)].slice(0, 8).join(", "),
+    );
+    check(blocking.length === 0, "no solid furniture blocks an avenue", [...new Set(blocking)].join(", "));
+
+    // runners are decoration only — they must never be laid under a stand
+    const overRun = new Set();
+    for (const r of p.runners ?? []) {
+      for (let y = r.y0; y <= r.y1; y++) {
+        for (let x = r.x0; x <= r.x1; x++) if (onBooth(x, y)) overRun.add(`(${x},${y})`);
+      }
+    }
+    check(overRun.size === 0, "no aisle runner is laid under a stand", [...overRun].slice(0, 4).join(", "));
+
+    // The fountain has to be CENTRED in the plaza, or the inlaid rings in
+    // the paving and the stonework inside them sit at different middles —
+    // which is exactly what "the fountain looks off-centre" turned out to be.
+    const pcx = (p.rect.x0 + p.rect.x1 + 1) / 2;
+    const pcy = (p.rect.y0 + p.rect.y1 + 1) / 2;
+    const fcx = (p.fountain.x0 + p.fountain.x1 + 1) / 2;
+    const fcy = (p.fountain.y0 + p.fountain.y1 + 1) / 2;
+    check(
+      Math.abs(pcx - fcx) < 0.01 && Math.abs(pcy - fcy) < 0.01,
+      "the fountain is centred in the plaza",
+      `plaza centre ${pcx},${pcy} vs fountain ${fcx},${fcy}`,
+    );
+
+    // and no stand may sit ON the paving: the plaza edge running into the
+    // northern rank is what made those stands look pasted down
+    const touching = new Set();
+    for (const s of f.boothSpots) {
+      for (let y = s.y; y <= s.y + 3; y++) {
+        for (let x = s.x; x <= s.x + 3; x++) {
+          if (inRect(x, y, p.rect)) touching.add(`stand(${s.x},${s.y})`);
+        }
+      }
+    }
+    check(touching.size === 0, "no stand overlaps the plaza paving", [...touching].join(", "));
   }
 
   // ---- 7: spawn ----

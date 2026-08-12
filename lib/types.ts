@@ -232,25 +232,52 @@ export interface TileRect {
   y1: number;
 }
 
+/**
+ * A piece of hall furniture. Widths live in one table in game/decor.ts so a
+ * layout only ever names a kind and a corner tile.
+ */
+export type DecorKind =
+  | "planter"
+  | "lamp"
+  | "stanchion"
+  | "table"
+  | "kiosk"
+  | "tree"
+  | "sofa"
+  | "bar"
+  | "board"
+  | "crates"
+  | "sign"
+  | "bench";
+
+export interface DecorItem {
+  kind: DecorKind;
+  x: number;
+  y: number;
+  /** Wayfinding text; only "sign" reads it. */
+  label?: string;
+}
+
 export interface PlazaDef {
-  /** The paved area. Walkable; painted over the checkerboard. */
+  /** The paved area. Walkable; painted over the hall floor. */
   rect: TileRect;
-  /** The fountain's footprint. Solid, and must sit inside `rect`. */
+  /**
+   * The fountain's footprint. Solid, must sit inside `rect`, and the art
+   * centres the basin inside it — so to centre the fountain in the plaza,
+   * centre this rect in `rect`.
+   */
   fountain: TileRect;
   /** Walkways out of the plaza. Paved, and kept clear of ambient props. */
   avenues: TileRect[];
   /** Overhead entrance sign, hung across the top edge of this rect. */
   arch?: TileRect;
-  /** Formal planters (1 tile, solid). */
-  planters?: { x: number; y: number }[];
-  /** Standing lamps (1 tile, solid). */
-  lamps?: { x: number; y: number }[];
-  /** Rope-and-post stanchions marking the plaza rim (1 tile, walk-through). */
-  stanchions?: { x: number; y: number }[];
-  /** Café tables with chairs (2x1, solid). */
-  tables?: { x: number; y: number }[];
-  /** The hall directory board (2x1, solid). */
-  kiosks?: { x: number; y: number }[];
+  /**
+   * Carpeted aisles laid over the hall floor between the banks of stands.
+   * Decoration only — they never block anything.
+   */
+  runners?: TileRect[];
+  /** Everything standing on the floor, by kind and top-left tile. */
+  furniture?: DecorItem[];
 }
 
 // ---------- chat ----------

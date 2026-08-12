@@ -17,7 +17,7 @@
  */
 
 import { TILE } from "../lib/types";
-import type { PlazaDef, TileRect } from "../lib/types";
+import type { DecorItem, DecorKind, PlazaDef, TileRect } from "../lib/types";
 import { shade } from "./sprites";
 import type { Cam, Drawable } from "./tilemap";
 
@@ -31,11 +31,16 @@ const STONE_MID = "#A29A88";
 const STONE_DARK = "#847C6C";
 const STONE_DEEP = "#666052";
 
-const WATER_DEEP = "#2F6B84";
-const WATER = "#3F87A2";
-const WATER_LIGHT = "#63A9C0";
-const FOAM = "#BFE0EA";
-const SPARK = "#F2FAFC";
+// Water, pulled back toward the hall's warm stone palette. The first pass
+// used a saturated swimming-pool blue that was the only pure hue in the
+// room and read as clip-art dropped into a hand-drawn scene. These are
+// greener, greyer, and only four steps — a small palette is most of what
+// makes pixel art look drawn rather than generated.
+const WATER_DEEP = "#3C6670";
+const WATER = "#57909A";
+const WATER_LIGHT = "#7CB0B6";
+const FOAM = "#AFD0D0";
+const SPARK = "#E4F0EC";
 
 const BRASS = "#B08D2E";
 const BRASS_BRIGHT = "#DCC06B";
@@ -53,6 +58,7 @@ const POT = "#A6633C";
 
 const WOOD_TOP = "#D9C79B";
 const WOOD_FRONT = "#A28457";
+const CARD = "#FAF7EF";
 
 const ROPE = "#8C2F2F";
 
@@ -69,9 +75,13 @@ function box(r: TileRect): { x: number; y: number; w: number; h: number } {
 // ---------- pixel curve helpers ----------
 
 /**
- * Scanline-filled ellipse. Every row is one integer fillRect, so the edge
- * steps in whole pixels exactly like the rest of the art instead of
- * feathering the way ctx.ellipse would.
+ * Scanline-filled ellipse, drawn on a coarse pixel grid.
+ *
+ * `q` is the size of one "pixel": rows are filled in bands q tall and the
+ * half-width snaps to a multiple of q. At q=1 this is a smooth curve, which
+ * is exactly what made the first fountain look machine-made next to booths
+ * whose curves are all hand-stepped. At q=2 the arc visibly staircases, and
+ * that staircase is most of what reads as drawn by a person.
  */
 function pixEllipse(
   ctx: CanvasRenderingContext2D,
@@ -79,18 +89,56 @@ function pixEllipse(
   cy: number,
   rx: number,
   ry: number,
+  color: string,
+  q = 2
+): void {
+  ctx.fillStyle = color;
+  const top = Math.floor((cy - ry) / q) * q;
+  const bot = Math.ceil((cy + ry) / q) * q;
+  for (let y = top; y <= bot; y += q) {
+    // measure at the band's middle so the top and bottom caps stay even
+    const dy = (y + q / 2 - cy) / ry;
+    const k = 1 - dy * dy;
+    if (k <= 0) continue;
+    const half = Math.round((rx * Math.sqrt(k)) / q) * q;
+    if (half <= 0) continue;
+    ctx.fillRect(cx - half, y, half * 2, q);
+  }
+}
+
+/**
+ * Ordered 2x2 dither between two colours across an elliptical band — the
+ * gradient tool of a palette that has four blues in it. Used where the
+ * water shades from deep to shallow; a smooth alpha ramp there was the
+ * other half of the plastic look.
+ */
+function ditherEllipseBand(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  rxOuter: number,
+  ryOuter: number,
+  rxInner: number,
+  ryInner: number,
   color: string
 ): void {
   ctx.fillStyle = color;
-  const top = Math.round(cy - ry);
-  const bot = Math.round(cy + ry);
-  for (let y = top; y <= bot; y++) {
-    const dy = (y + 0.5 - cy) / ry;
+  const top = Math.floor((cy - ryOuter) / 2) * 2;
+  const bot = Math.ceil((cy + ryOuter) / 2) * 2;
+  for (let y = top; y <= bot; y += 2) {
+    const dy = (y + 1 - cy) / ryOuter;
     const k = 1 - dy * dy;
     if (k <= 0) continue;
-    const half = Math.round(rx * Math.sqrt(k));
-    if (half <= 0) continue;
-    ctx.fillRect(Math.round(cx - half), y, half * 2, 1);
+    const outer = Math.round((rxOuter * Math.sqrt(k)) / 2) * 2;
+    const dyi = (y + 1 - cy) / ryInner;
+    const ki = 1 - dyi * dyi;
+    const inner = ki > 0 ? Math.round((rxInner * Math.sqrt(ki)) / 2) * 2 : 0;
+    const row = ((y / 2) | 0) & 1;
+    for (let x = cx - outer; x < cx + outer; x += 4) {
+      const px = x + (row ? 2 : 0);
+      if (Math.abs(px + 1 - cx) < inner) continue;
+      ctx.fillRect(px, y, 2, 2);
+    }
   }
 }
 
@@ -103,32 +151,65 @@ function pixEllipseRing(
   ry: number,
   w: number,
   color: string,
-  alpha = 1
+  alpha = 1,
+  q = 2
 ): void {
   if (rx <= w || ry <= w) return;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.fillStyle = color;
-  const top = Math.round(cy - ry);
-  const bot = Math.round(cy + ry);
+  const top = Math.floor((cy - ry) / q) * q;
+  const bot = Math.ceil((cy + ry) / q) * q;
   const irx = rx - w;
   const iry = ry - w;
-  for (let y = top; y <= bot; y++) {
-    const dy = (y + 0.5 - cy) / ry;
+  for (let y = top; y <= bot; y += q) {
+    const dy = (y + q / 2 - cy) / ry;
     const k = 1 - dy * dy;
     if (k <= 0) continue;
-    const outer = Math.round(rx * Math.sqrt(k));
-    const dyi = (y + 0.5 - cy) / iry;
+    const outer = Math.round((rx * Math.sqrt(k)) / q) * q;
+    const dyi = (y + q / 2 - cy) / iry;
     const ki = 1 - dyi * dyi;
-    const inner = ki > 0 ? Math.round(irx * Math.sqrt(ki)) : 0;
+    const inner = ki > 0 ? Math.round((irx * Math.sqrt(ki)) / q) * q : 0;
     if (inner <= 0) {
-      ctx.fillRect(Math.round(cx - outer), y, outer * 2, 1);
+      ctx.fillRect(cx - outer, y, outer * 2, q);
     } else {
-      ctx.fillRect(Math.round(cx - outer), y, outer - inner, 1);
-      ctx.fillRect(Math.round(cx + inner), y, outer - inner, 1);
+      ctx.fillRect(cx - outer, y, outer - inner, q);
+      ctx.fillRect(cx + inner, y, outer - inner, q);
     }
   }
   ctx.restore();
+}
+
+/**
+ * Radial joints cut across a rim band, so the stonework reads as blocks
+ * somebody laid rather than an extruded ring. This is the single detail
+ * that stops a large curved object looking machine-turned.
+ */
+function masonryJoints(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+  band: number,
+  count: number,
+  color: string
+): void {
+  ctx.fillStyle = color;
+  for (let i = 0; i < count; i++) {
+    // the half-step offset keeps a joint off the dead centre of the front,
+    // where the plaque goes
+    const a = ((i + 0.5) / count) * Math.PI * 2;
+    const ca = Math.cos(a);
+    const sa = Math.sin(a);
+    for (let d = 0; d <= band; d += 2) {
+      const k = 1 - d / (rx * 0.9);
+      const px = Math.round((cx + ca * (rx - d)) / 2) * 2;
+      const py = Math.round((cy + sa * (ry - d * (ry / rx))) / 2) * 2;
+      if (k <= 0) continue;
+      ctx.fillRect(px - 1, py, 2, 2);
+    }
+  }
 }
 
 /** An offscreen canvas, or null under SSR / a dead 2d context. */
@@ -156,6 +237,164 @@ const PAVE_LINE = "#A79F8D";
 const PAVE_INLAY = "#9C9482";
 const RUNNER = "#B4A98F";
 const RUNNER_EDGE = "#9A8F76";
+
+// Aisle carpet — warmer and darker than the stone, so an aisle reads as a
+// laid runner rather than another shade of floor. Pulled back from the
+// first, brighter terracotta: at three tiles deep and the full width of
+// the hall it was the loudest thing in the room, which is not what a
+// carpet is for.
+const CARPET = "#8A6551";
+const CARPET_WEFT = "#82604D";
+const CARPET_EDGE = "#6B4F3F";
+const CARPET_LINE = "#AE8B72";
+
+/**
+ * The floor of the hall itself.
+ *
+ * It used to be a plain two-tone checkerboard, which at 32px reads as a
+ * chessboard and made every unfurnished part of the room look like a
+ * placeholder waiting for art. This lays it as 2x2-tile stone slabs with
+ * grout, four tones of variation, and a darker, finer border course two
+ * tiles deep along the walls — the same move a real hall makes to stop a
+ * big floor reading as one flat plane.
+ *
+ * One 8x8-tile patch is baked and tiled, so a viewport costs ~20 blits
+ * instead of a few thousand fills. The patch is aligned to world
+ * coordinates, never to the camera, so it does not crawl when you walk.
+ */
+export class HallFloor {
+  private patch: HTMLCanvasElement | null = null;
+  private baked = false;
+  private readonly slab: string[];
+  private readonly grout: string;
+  private readonly groutSoft: string;
+  private readonly edge: string[];
+  private readonly edgeGrout: string;
+
+  /** 8x8 tiles: big enough that the repeat is not readable while walking. */
+  static readonly PATCH = 8 * T;
+
+  constructor(
+    theme: { floorA: string; floorB: string },
+    private w: number,
+    private h: number
+  ) {
+    const a = theme.floorA;
+    const b = theme.floorB;
+    this.slab = [shade(a, 0.025), a, shade(a, -0.03), shade(b, 0.015)];
+    this.grout = shade(b, -0.17);
+    this.groutSoft = shade(b, -0.07);
+    this.edge = [shade(b, -0.07), shade(b, -0.03)];
+    this.edgeGrout = shade(b, -0.22);
+  }
+
+  private bake(): HTMLCanvasElement | null {
+    if (this.baked) return this.patch;
+    this.baked = true;
+    const P = HallFloor.PATCH;
+    const off = offscreen(P, P);
+    if (!off) return null;
+    const { ctx } = off;
+    // A hand-picked 4x4 arrangement of the four tones rather than a hash:
+    // it tiles without a readable seam and never clumps, which random
+    // per-slab picking does about one patch in five.
+    const TONES = [
+      [1, 0, 2, 1],
+      [2, 1, 1, 3],
+      [0, 3, 1, 0],
+      [1, 1, 3, 2],
+    ];
+    for (let sy = 0; sy < 4; sy++) {
+      for (let sx = 0; sx < 4; sx++) {
+        ctx.fillStyle = this.slab[TONES[sy][sx]];
+        ctx.fillRect(sx * 2 * T, sy * 2 * T, 2 * T, 2 * T);
+      }
+    }
+    // grout on the slab joints, a fainter score line inside each slab
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = this.groutSoft;
+      ctx.fillRect(i * 2 * T + T - 1, 0, 1, P);
+      ctx.fillRect(0, i * 2 * T + T - 1, P, 1);
+    }
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = this.grout;
+      ctx.fillRect(i * 2 * T + 2 * T - 2, 0, 2, P);
+      ctx.fillRect(0, i * 2 * T + 2 * T - 2, P, 2);
+    }
+    this.patch = off.cv;
+    return this.patch;
+  }
+
+  draw(ctx: CanvasRenderingContext2D, cam: Cam): void {
+    const img = this.bake();
+    const P = HallFloor.PATCH;
+    const x0 = Math.max(0, Math.floor(cam.x));
+    const y0 = Math.max(0, Math.floor(cam.y));
+    const x1 = Math.min(this.w * T, Math.ceil(cam.x + cam.w));
+    const y1 = Math.min(this.h * T, Math.ceil(cam.y + cam.h));
+    if (img) {
+      for (let py = Math.floor(y0 / P) * P; py < y1; py += P) {
+        for (let px = Math.floor(x0 / P) * P; px < x1; px += P) {
+          ctx.drawImage(img, px, py);
+        }
+      }
+    } else {
+      ctx.fillStyle = this.slab[1];
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    }
+
+    // Border course: finer, darker slabs two tiles deep along every wall.
+    // Painted per tile, but only for the perimeter tiles actually in view,
+    // so it is a rounding error next to the blits above.
+    const tx0 = Math.max(0, Math.floor(x0 / T));
+    const ty0 = Math.max(0, Math.floor(y0 / T));
+    const tx1 = Math.min(this.w - 1, Math.floor((x1 - 1) / T));
+    const ty1 = Math.min(this.h - 1, Math.floor((y1 - 1) / T));
+    for (let ty = ty0; ty <= ty1; ty++) {
+      const nearY = ty <= 2 || ty >= this.h - 3;
+      for (let tx = tx0; tx <= tx1; tx++) {
+        if (!nearY && !(tx <= 2 || tx >= this.w - 3)) continue;
+        ctx.fillStyle = this.edge[(tx + ty) & 1];
+        ctx.fillRect(tx * T, ty * T, T, T);
+        ctx.fillStyle = this.edgeGrout;
+        ctx.fillRect(tx * T, ty * T + T - 2, T, 2);
+        ctx.fillRect(tx * T + T - 2, ty * T, 2, T);
+      }
+    }
+  }
+}
+
+/**
+ * The stone platform every stand sits on.
+ *
+ * Without it a stand's carpet is a rectangle of colour lying flat on the
+ * floor, and where it met the plaza paving it looked pasted on rather than
+ * built — worst at the plaza rim, where the octagon's edge ran straight
+ * into it. A kerb plus a contact shadow is all it takes for the eye to
+ * read the whole stand as a thing standing on the ground.
+ */
+export function drawStandPlinth(ctx: CanvasRenderingContext2D, bx: number, by: number): void {
+  const w = 4 * T;
+  const h = 4 * T;
+  // Contact shadow, down and slightly right. This is what actually seats
+  // the stand on the floor; the kerb below is trim.
+  ctx.save();
+  ctx.globalAlpha = 0.17;
+  ctx.fillStyle = "#2A251D";
+  ctx.fillRect(bx - 2, by + h + 1, w + 9, 6);
+  ctx.fillRect(bx + w + 1, by + 2, 6, h - 1);
+  ctx.restore();
+  // A THIN kerb, four pixels of it. The first attempt filled the whole
+  // footprint with stone before laying the carpet on top, which turned
+  // every stand into a pale slab bigger than the stand — twenty of those
+  // read far worse than the problem being fixed.
+  ctx.fillStyle = STONE_MID;
+  ctx.fillRect(bx - 4, by - 4, w + 8, h + 8);
+  ctx.fillStyle = STONE_LIGHT;
+  ctx.fillRect(bx - 4, by - 4, w + 8, 2);
+  ctx.fillStyle = STONE_DARK;
+  ctx.fillRect(bx - 4, by + h + 2, w + 8, 2);
+}
 
 /**
  * The plaza floor, baked once: octagonal stone paving, a double inlaid ring
@@ -262,12 +501,19 @@ export class PlazaGround {
     ctx.closePath();
     ctx.stroke();
 
-    // two inlaid rings around where the fountain will stand
+    // Two inlaid rings around where the fountain will stand. They take the
+    // BASIN's radii and aspect, not the tile footprint's — rings drawn to
+    // the footprint sat at a different ellipse ratio from the stonework
+    // inside them, which is the sort of near-miss that reads as sloppy
+    // without anyone being able to say why.
     const fb = box(this.plaza.fountain);
     const fcx = fb.x - this.bx + fb.w / 2;
     const fcy = fb.y - this.by + fb.h / 2;
-    pixEllipseRing(ctx, fcx, fcy, fb.w * 0.78, fb.h * 0.52, 3, PAVE_INLAY, 0.9);
-    pixEllipseRing(ctx, fcx, fcy, fb.w * 0.9, fb.h * 0.6, 2, PAVE_LINE, 0.75);
+    const frx = fb.w / 2 - 4;
+    const fry = fb.h / 2 - 3;
+    pixEllipseRing(ctx, fcx, fcy, frx * 1.28, fry * 1.28, 4, PAVE_INLAY, 0.9);
+    pixEllipseRing(ctx, fcx, fcy, frx * 1.52, fry * 1.52, 2, PAVE_LINE, 0.8);
+    pixEllipseRing(ctx, fcx, fcy, frx * 2.1, fry * 2.1, 2, PAVE_LINE, 0.55);
 
     this.baked = off.cv;
     return this.baked;
@@ -345,28 +591,65 @@ interface FountainGeom {
   finialY: number;
 }
 
+/**
+ * The basin is centred in its own footprint, and the footprint hugs the
+ * basin. That is what makes "centre the fountain in the plaza" a matter of
+ * centring one tile rect inside another.
+ *
+ * The first version had the basin sitting two thirds of the way down a
+ * square footprint while the paving rings were drawn around the footprint's
+ * middle, so the stonework and the inlay were thirty pixels apart and the
+ * whole thing looked nudged off its mark. Everything below hangs off `cy`.
+ */
 function fountainGeom(rect: TileRect): FountainGeom {
   const b = box(rect);
   const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
   const bottom = b.y + b.h;
-  // the basin sits low in the footprint; the tiers rise out of the top of it
-  const baseY = b.y + b.h * 0.66;
-  const rx = b.w / 2 - 5;
-  const ry = b.h * 0.27;
+  const rx = b.w / 2 - 4;
+  const ry = b.h / 2 - 3;
+  const midY = cy - ry - 22;
+  const topY = midY - 34;
   return {
     cx,
-    baseY,
+    baseY: cy,
     rx,
     ry,
     bottom,
-    midY: baseY - ry - 22,
-    midRx: rx * 0.5,
-    midRy: ry * 0.34,
-    topY: baseY - ry - 60,
-    topRx: rx * 0.28,
-    topRy: ry * 0.2,
-    finialY: baseY - ry - 78,
+    midY,
+    midRx: rx * 0.46,
+    midRy: rx * 0.46 * 0.36,
+    topY,
+    topRx: rx * 0.24,
+    topRy: rx * 0.24 * 0.36,
+    finialY: topY - 16,
   };
+}
+
+/** A tapered stone shaft, drawn in 2px courses with a lit and a shaded face. */
+function stoneColumn(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  yTop: number,
+  yBot: number,
+  halfTop: number,
+  halfBot: number
+): void {
+  for (let y = Math.round(yTop / 2) * 2; y < yBot; y += 2) {
+    const k = (y - yTop) / Math.max(1, yBot - yTop);
+    const half = Math.round((halfTop + k * (halfBot - halfTop)) / 2) * 2;
+    ctx.fillStyle = STONE;
+    ctx.fillRect(cx - half, y, half * 2, 2);
+    ctx.fillStyle = shade(STONE, 0.17);
+    ctx.fillRect(cx - half, y, 4, 2);
+    ctx.fillStyle = STONE_DARK;
+    ctx.fillRect(cx + half - 4, y, 4, 2);
+    // a course line every four rows, so the shaft reads as stacked blocks
+    if (((y / 2) | 0) % 4 === 0) {
+      ctx.fillStyle = STONE_MID;
+      ctx.fillRect(cx - half, y, half * 2, 1);
+    }
+  }
 }
 
 /** Basin and everything BEHIND the water surface. */
@@ -374,30 +657,45 @@ function bakeBasin(g: FountainGeom, w: number, h: number, ox: number, oy: number
   const off = offscreen(w, h);
   if (!off) return null;
   const { ctx } = off;
-  const cx = g.cx - ox;
-  const by = g.baseY - oy;
+  const cx = Math.round((g.cx - ox) / 2) * 2;
+  const by = Math.round((g.baseY - oy) / 2) * 2;
 
-  // contact shadow on the paving
+  // contact shadow, dithered rather than a soft blob
   ctx.save();
-  ctx.globalAlpha = 0.18;
-  pixEllipse(ctx, cx, by + g.ry * 0.75, g.rx + 6, g.ry * 0.5, "#000000");
+  ctx.globalAlpha = 0.22;
+  ditherEllipseBand(ctx, cx, by + g.ry * 0.62, g.rx + 8, g.ry * 0.62, g.rx * 0.5, g.ry * 0.3, "#3A352C");
   ctx.restore();
 
-  // the basin's front wall: the same ellipse dropped a few px, in shadow
-  pixEllipse(ctx, cx, by + 12, g.rx, g.ry, STONE_DEEP);
-  pixEllipse(ctx, cx, by + 8, g.rx, g.ry, STONE_DARK);
-  // the rim itself
-  pixEllipse(ctx, cx, by, g.rx, g.ry, STONE_LIGHT);
-  pixEllipseRing(ctx, cx, by, g.rx, g.ry, 4, STONE, 1);
-  // moulding: a brass band let into the rim
-  pixEllipseRing(ctx, cx, by, g.rx - 5, g.ry - 3, 2, BRASS, 0.75);
-  // the inner wall of the bowl, darker as it goes down
-  pixEllipse(ctx, cx, by + 2, g.rx - 9, g.ry - 6, STONE_MID);
-  pixEllipse(ctx, cx, by + 3, g.rx - 12, g.ry - 8, STONE_DARK);
+  // the basin wall, dropped to give the rim thickness
+  pixEllipse(ctx, cx, by + 14, g.rx, g.ry, STONE_DEEP);
+  pixEllipse(ctx, cx, by + 9, g.rx, g.ry, STONE_DARK);
+  masonryJoints(ctx, cx, by + 9, g.rx, g.ry, 8, 18, shade(STONE_DEEP, -0.15));
 
-  // still water, before the animation goes on top
-  pixEllipse(ctx, cx, by + 3, g.rx - 14, g.ry - 9, WATER_DEEP);
-  pixEllipse(ctx, cx, by + 4, g.rx - 16, g.ry - 11, WATER);
+  // the rim: laid stones, not an extruded band
+  pixEllipse(ctx, cx, by, g.rx, g.ry, STONE);
+  pixEllipseRing(ctx, cx, by, g.rx, g.ry, 4, STONE_LIGHT);
+  pixEllipseRing(ctx, cx, by, g.rx, g.ry, 2, STONE_MID);
+  masonryJoints(ctx, cx, by, g.rx, g.ry, 12, 18, STONE_MID);
+  // a thin brass moulding let into the inner lip
+  pixEllipseRing(ctx, cx, by, g.rx - 12, g.ry - 7, 2, BRASS, 0.85);
+
+  // the inside face of the bowl, in shadow under the near rim
+  pixEllipse(ctx, cx, by + 2, g.rx - 14, g.ry - 8, STONE_MID);
+  pixEllipse(ctx, cx, by + 3, g.rx - 17, g.ry - 10, STONE_DARK);
+
+  // Water, shallow at the edge and deep in the middle, stepped through
+  // three colours. The dither is a NARROW join between bands, not a wash
+  // over the whole surface — a 2px checker spread across a basin this size
+  // stops reading as shading and starts reading as static.
+  const wrx = g.rx - 19;
+  const wry = g.ry - 11;
+  pixEllipse(ctx, cx, by + 4, wrx, wry, WATER_LIGHT);
+  ditherEllipseBand(ctx, cx, by + 4, wrx * 0.9, wry * 0.9, wrx * 0.8, wry * 0.8, WATER);
+  pixEllipse(ctx, cx, by + 4, wrx * 0.8, wry * 0.8, WATER);
+  ditherEllipseBand(ctx, cx, by + 4, wrx * 0.56, wry * 0.56, wrx * 0.46, wry * 0.46, WATER_DEEP);
+  pixEllipse(ctx, cx, by + 4, wrx * 0.46, wry * 0.46, WATER_DEEP);
+  // a green line of algae where the water meets the stone
+  pixEllipseRing(ctx, cx, by + 4, wrx, wry, 2, "#4E7A6B", 0.4);
 
   return off.cv;
 }
@@ -407,67 +705,61 @@ function bakeTiers(g: FountainGeom, w: number, h: number, ox: number, oy: number
   const off = offscreen(w, h);
   if (!off) return null;
   const { ctx } = off;
-  const cx = g.cx - ox;
-  const by = g.baseY - oy;
-  const midY = g.midY - oy;
-  const topY = g.topY - oy;
-  const finY = g.finialY - oy;
+  const cx = Math.round((g.cx - ox) / 2) * 2;
+  const by = Math.round((g.baseY - oy) / 2) * 2;
+  const midY = Math.round((g.midY - oy) / 2) * 2;
+  const topY = Math.round((g.topY - oy) / 2) * 2;
+  const finY = Math.round((g.finialY - oy) / 2) * 2;
 
-  // lower column, tapered
-  for (let y = midY; y < by + 6; y++) {
-    const k = (y - midY) / Math.max(1, by + 6 - midY);
-    const half = Math.round(11 + k * 9);
-    ctx.fillStyle = STONE;
-    ctx.fillRect(Math.round(cx - half), y, half * 2, 1);
-    ctx.fillStyle = shade(STONE, 0.16);
-    ctx.fillRect(Math.round(cx - half), y, 3, 1);
-    ctx.fillStyle = STONE_DARK;
-    ctx.fillRect(Math.round(cx + half - 3), y, 3, 1);
-  }
+  // plinth the whole thing stands on, inside the water
+  pixEllipse(ctx, cx, by + 8, 26, 10, STONE_DARK);
+  pixEllipse(ctx, cx, by + 5, 26, 10, STONE);
+  pixEllipseRing(ctx, cx, by + 5, 26, 10, 2, STONE_LIGHT);
+
+  stoneColumn(ctx, cx, midY, by + 6, 12, 20);
 
   // middle bowl
-  pixEllipse(ctx, cx, midY + 7, g.midRx, g.midRy, STONE_DARK);
-  pixEllipse(ctx, cx, midY, g.midRx, g.midRy, STONE_LIGHT);
-  pixEllipseRing(ctx, cx, midY, g.midRx, g.midRy, 3, STONE, 1);
-  pixEllipse(ctx, cx, midY + 1, g.midRx - 6, g.midRy - 3, WATER);
-  pixEllipse(ctx, cx, midY + 1, g.midRx - 9, g.midRy - 5, WATER_LIGHT);
+  pixEllipse(ctx, cx, midY + 8, g.midRx, g.midRy, STONE_DEEP);
+  pixEllipse(ctx, cx, midY + 4, g.midRx, g.midRy, STONE_DARK);
+  pixEllipse(ctx, cx, midY, g.midRx, g.midRy, STONE);
+  pixEllipseRing(ctx, cx, midY, g.midRx, g.midRy, 3, STONE_LIGHT);
+  masonryJoints(ctx, cx, midY, g.midRx, g.midRy, 6, 10, STONE_MID);
+  pixEllipse(ctx, cx, midY + 2, g.midRx - 7, g.midRy - 4, WATER);
+  pixEllipse(ctx, cx, midY + 2, g.midRx - 12, g.midRy - 6, WATER_LIGHT);
 
-  // upper column
-  for (let y = topY; y < midY; y++) {
-    const k = (y - topY) / Math.max(1, midY - topY);
-    const half = Math.round(5 + k * 5);
-    ctx.fillStyle = STONE;
-    ctx.fillRect(Math.round(cx - half), y, half * 2, 1);
-    ctx.fillStyle = shade(STONE, 0.16);
-    ctx.fillRect(Math.round(cx - half), y, 2, 1);
-    ctx.fillStyle = STONE_DARK;
-    ctx.fillRect(Math.round(cx + half - 2), y, 2, 1);
-  }
+  stoneColumn(ctx, cx, topY, midY, 6, 11);
 
   // top bowl
   pixEllipse(ctx, cx, topY + 5, g.topRx, g.topRy, STONE_DARK);
-  pixEllipse(ctx, cx, topY, g.topRx, g.topRy, STONE_LIGHT);
-  pixEllipse(ctx, cx, topY + 1, g.topRx - 4, g.topRy - 2, WATER_LIGHT);
+  pixEllipse(ctx, cx, topY, g.topRx, g.topRy, STONE);
+  pixEllipseRing(ctx, cx, topY, g.topRx, g.topRy, 2, STONE_LIGHT);
+  pixEllipse(ctx, cx, topY + 2, g.topRx - 5, g.topRy - 2, WATER_LIGHT);
 
-  // finial: a small brass star on a stem
+  // finial: a small brass sun on a stem
   ctx.fillStyle = STONE;
-  ctx.fillRect(Math.round(cx - 2), Math.round(finY + 6), 4, Math.round(topY - finY - 5));
+  ctx.fillRect(cx - 2, finY + 6, 4, Math.max(2, topY - finY - 4));
+  ctx.fillStyle = BRASS_DEEP;
+  ctx.fillRect(cx - 6, finY, 12, 8);
   ctx.fillStyle = BRASS;
-  ctx.fillRect(Math.round(cx - 5), Math.round(finY + 2), 10, 4);
-  ctx.fillRect(Math.round(cx - 2), Math.round(finY - 2), 4, 12);
+  ctx.fillRect(cx - 6, finY, 12, 6);
+  ctx.fillRect(cx - 2, finY - 6, 4, 6);
+  ctx.fillRect(cx - 10, finY + 1, 4, 4);
+  ctx.fillRect(cx + 6, finY + 1, 4, 4);
   ctx.fillStyle = BRASS_BRIGHT;
-  ctx.fillRect(Math.round(cx - 4), Math.round(finY + 2), 3, 2);
-  ctx.fillRect(Math.round(cx - 1), Math.round(finY - 1), 2, 3);
+  ctx.fillRect(cx - 5, finY + 1, 4, 2);
+  ctx.fillRect(cx - 1, finY - 5, 2, 3);
 
-  // brass plaque on the front of the basin
-  const px = Math.round(cx - 20);
-  const py = Math.round(by + g.ry - 4);
+  // brass plaque, centred on the front of the basin
+  const px = cx - 22;
+  const py = by + Math.round(g.ry) - 6;
   ctx.fillStyle = BRASS_DEEP;
-  ctx.fillRect(px, py, 40, 11);
+  ctx.fillRect(px, py, 44, 13);
   ctx.fillStyle = BRASS;
-  ctx.fillRect(px + 1, py + 1, 38, 9);
+  ctx.fillRect(px + 2, py + 2, 40, 9);
+  ctx.fillStyle = BRASS_BRIGHT;
+  ctx.fillRect(px + 2, py + 2, 40, 1);
   ctx.fillStyle = BRASS_DEEP;
-  for (let i = 0; i < 3; i++) ctx.fillRect(px + 6, py + 3 + i * 3, 28 - i * 6, 1);
+  for (let i = 0; i < 3; i++) ctx.fillRect(px + 8, py + 4 + i * 3, 28 - i * 7, 1);
 
   return off.cv;
 }
@@ -482,10 +774,10 @@ export function fountainDrawable(rect: TileRect): Drawable {
   const g = fountainGeom(rect);
   const b = box(rect);
   // the tiers rise well above the tile footprint, so the bake is taller
-  const ox = b.x - 8;
-  const oy = g.finialY - 12;
-  const w = b.w + 16;
-  const h = b.y + b.h - oy + 8;
+  const ox = b.x - 10;
+  const oy = g.finialY - 16;
+  const w = b.w + 20;
+  const h = b.y + b.h - oy + 12;
 
   let basin: HTMLCanvasElement | null = null;
   let tiers: HTMLCanvasElement | null = null;
@@ -515,15 +807,15 @@ export function fountainDrawable(rect: TileRect): Drawable {
       if (basin) ctx.drawImage(basin, ox, oy);
 
       // ---- animated water in the main basin ----
-      const wx = g.cx;
-      const wy = g.baseY + 4;
-      const wrx = g.rx - 16;
+      const wx = Math.round(g.cx / 2) * 2;
+      const wy = Math.round((g.baseY + 4) / 2) * 2;
+      const wrx = g.rx - 19;
       const wry = g.ry - 11;
 
       // three ripple rings, each expanding from the pedestal and fading out
       for (let i = 0; i < 3; i++) {
-        const phase = ((t * 0.42 + i / 3) % 1 + 1) % 1;
-        const k = 0.22 + phase * 0.78;
+        const phase = ((t * 0.4 + i / 3) % 1 + 1) % 1;
+        const k = 0.3 + phase * 0.7;
         pixEllipseRing(
           ctx,
           wx,
@@ -532,55 +824,64 @@ export function fountainDrawable(rect: TileRect): Drawable {
           wry * k,
           2,
           i === 1 ? FOAM : WATER_LIGHT,
-          (1 - phase) * 0.5
+          (1 - phase) * 0.45
         );
       }
-      // a lighter crescent where the light falls
-      pixEllipseRing(ctx, wx, wy - 1, wrx * 0.92, wry * 0.9, 2, WATER_LIGHT, 0.35);
 
-      // sparkles
+      // sparkles — two pixels, never one, so they read at the hall's scale
       ctx.save();
       for (const s of sparks) {
-        const tw = Math.sin(t * 2.4 + s.p);
-        if (tw < 0.35) continue;
-        ctx.globalAlpha = Math.min(1, (tw - 0.35) / 0.65) * 0.85;
+        const tw = Math.sin(t * 2.2 + s.p);
+        if (tw < 0.4) continue;
+        ctx.globalAlpha = Math.min(1, (tw - 0.4) / 0.6) * 0.8;
         ctx.fillStyle = SPARK;
-        const px = Math.round(wx + Math.cos(s.a) * wrx * s.r);
-        const py = Math.round(wy + Math.sin(s.a) * wry * s.r);
+        const px = Math.round((wx + Math.cos(s.a) * wrx * s.r) / 2) * 2;
+        const py = Math.round((wy + Math.sin(s.a) * wry * s.r) / 2) * 2;
         ctx.fillRect(px, py, 2, 2);
-        ctx.fillRect(px - 1, py + 1, 1, 1);
       }
       ctx.restore();
 
       if (tiers) ctx.drawImage(tiers, ox, oy);
 
       // ---- falling water, drawn over the stonework ----
-      // sheets spilling off both bowl rims
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = FOAM;
-      const wob = Math.sin(t * 3.1) * 1.2;
+      // Sheets spilling off both bowl rims, broken into 4px segments that
+      // scroll downward. A solid bar of translucent white is the tell of a
+      // fountain nobody drew; a stuttering column of chunks is water.
+      const wob = Math.sin(t * 2.6) * 2;
+      const scroll = Math.round(((t * 44) % 8) / 2) * 2;
       for (const side of [-1, 1]) {
-        const mx = Math.round(g.cx + side * (g.midRx - 3) + wob * side);
-        ctx.fillRect(mx - 1, Math.round(g.midY + g.midRy - 2), 3, Math.round(g.baseY - g.midY - g.midRy - 2));
-        const tx = Math.round(g.cx + side * (g.topRx - 2) - wob * side);
-        ctx.fillRect(tx - 1, Math.round(g.topY + g.topRy - 1), 2, Math.round(g.midY - g.topY - g.topRy));
+        const mx = Math.round((g.cx + side * (g.midRx - 4) + wob * side) / 2) * 2;
+        const mTop = Math.round((g.midY + g.midRy - 2) / 2) * 2;
+        const mBot = Math.round((g.baseY - 2) / 2) * 2;
+        for (let y = mTop + scroll - 8; y < mBot; y += 8) {
+          if (y < mTop) continue;
+          ctx.fillStyle = FOAM;
+          ctx.fillRect(mx - 2, y, 4, 4);
+          ctx.fillStyle = WATER_LIGHT;
+          ctx.fillRect(mx - 2, y + 4, 4, 2);
+        }
+        const tx = Math.round((g.cx + side * (g.topRx - 2) - wob * side) / 2) * 2;
+        const tTop = Math.round((g.topY + g.topRy - 1) / 2) * 2;
+        const tBot = Math.round((g.midY - 2) / 2) * 2;
+        for (let y = tTop + scroll - 8; y < tBot; y += 8) {
+          if (y < tTop) continue;
+          ctx.fillStyle = FOAM;
+          ctx.fillRect(tx - 1, y, 3, 4);
+        }
       }
-      ctx.restore();
 
       // droplets peeling off the top bowl and arcing into the basin
       ctx.fillStyle = SPARK;
       for (let i = 0; i < 6; i++) {
-        const ph = ((t * 0.9 + i / 6) % 1 + 1) % 1;
+        const ph = ((t * 0.85 + i / 6) % 1 + 1) % 1;
         const side = i % 2 === 0 ? -1 : 1;
-        const spread = g.topRx + 4 + ph * (g.rx * 0.5);
-        const dx = g.cx + side * spread;
-        // parabola from the top bowl down to the water line
+        const spread = g.topRx + 4 + ph * (g.rx * 0.45);
+        const dx = Math.round((g.cx + side * spread) / 2) * 2;
         const fall = g.baseY - g.topY;
-        const dy = g.topY + ph * ph * fall;
-        if (dy > g.baseY + 2) continue;
-        ctx.globalAlpha = 0.9 - ph * 0.5;
-        ctx.fillRect(Math.round(dx), Math.round(dy), 2, 3);
+        const dy = Math.round((g.topY + ph * ph * fall) / 2) * 2;
+        if (dy > g.baseY) continue;
+        ctx.globalAlpha = 0.85 - ph * 0.45;
+        ctx.fillRect(dx, dy, 2, 2);
       }
       ctx.globalAlpha = 1;
     },
@@ -905,6 +1206,430 @@ export function kioskDrawable(tx: number, ty: number): Drawable {
       ctx.fillText("HALL DIRECTORY", x + T, y - 11, 2 * T - 12);
     },
   };
+}
+
+/**
+ * A double-sided plaza bench: one central back rail, a seat either side.
+ * Double-sided on purpose — benches ringing a fountain have to face inward,
+ * and a one-sided bench is right on the north side and backwards on the
+ * south. This one is right everywhere and is what real squares use.
+ */
+export function benchDrawable(tx: number, ty: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const w = 2 * T - 4;
+  return {
+    sortY: y + T,
+    minX: x - 2,
+    maxX: x + 2 * T + 2,
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = "#2A251D";
+      ctx.fillRect(x + 4, y + 25, w, 4);
+      ctx.restore();
+      // cast-iron legs
+      ctx.fillStyle = "#3B3830";
+      ctx.fillRect(x + 5, y + 16, 4, 10);
+      ctx.fillRect(x + 2 * T - 9, y + 16, 4, 10);
+      ctx.fillStyle = "#555146";
+      ctx.fillRect(x + 5, y + 16, 2, 10);
+      // far seat
+      ctx.fillStyle = shade(WOOD_TOP, -0.24);
+      ctx.fillRect(x + 2, y + 8, w, 6);
+      ctx.fillStyle = shade(WOOD_TOP, -0.1);
+      ctx.fillRect(x + 2, y + 8, w, 4);
+      // central back rail
+      ctx.fillStyle = shade(WOOD_FRONT, -0.2);
+      ctx.fillRect(x + 2, y + 1, w, 8);
+      ctx.fillStyle = WOOD_FRONT;
+      ctx.fillRect(x + 2, y + 1, w, 6);
+      ctx.fillStyle = shade(WOOD_FRONT, 0.18);
+      ctx.fillRect(x + 2, y + 1, w, 2);
+      // near seat
+      ctx.fillStyle = WOOD_TOP;
+      ctx.fillRect(x + 2, y + 14, w, 7);
+      ctx.fillStyle = shade(WOOD_TOP, -0.14);
+      ctx.fillRect(x + 2, y + 18, w, 1);
+      ctx.fillStyle = shade(WOOD_TOP, -0.28);
+      ctx.fillRect(x + 2, y + 21, w, 2);
+      // arm scrolls
+      ctx.fillStyle = "#3B3830";
+      ctx.fillRect(x, y + 6, 3, 14);
+      ctx.fillRect(x + 2 * T - 3, y + 6, 3, 14);
+    },
+  };
+}
+
+/** A big potted tree — the tall vertical the wings were missing. */
+export function treeDrawable(tx: number, ty: number, seed: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const lean = seed % 3 === 0 ? -2 : seed % 3 === 1 ? 2 : 0;
+  return {
+    sortY: y + T,
+    minX: x - 10,
+    maxX: x + T + 10,
+    draw(ctx) {
+      // pot
+      ctx.fillStyle = shade(POT, -0.3);
+      ctx.fillRect(x + 6, y + 23, 20, 5);
+      ctx.fillStyle = POT;
+      ctx.fillRect(x + 7, y + 13, 18, 11);
+      ctx.fillStyle = shade(POT, 0.15);
+      ctx.fillRect(x + 5, y + 10, 22, 4);
+      ctx.fillStyle = shade(POT, -0.18);
+      ctx.fillRect(x + 7, y + 19, 18, 2);
+      ctx.fillStyle = "#4A3A2A";
+      ctx.fillRect(x + 9, y + 11, 14, 2);
+      // trunk
+      ctx.fillStyle = "#6E5334";
+      ctx.fillRect(x + 14 + lean / 2, y - 16, 5, 28);
+      ctx.fillStyle = "#8A6A44";
+      ctx.fillRect(x + 14 + lean / 2, y - 16, 2, 28);
+      // canopy, three overlapping clumps so it is not a lollipop
+      const cx = x + 16 + lean;
+      ctx.fillStyle = LEAF_B;
+      ctx.fillRect(cx - 15, y - 34, 30, 16);
+      ctx.fillRect(cx - 10, y - 42, 20, 12);
+      ctx.fillStyle = LEAF_A;
+      ctx.fillRect(cx - 12, y - 38, 12, 12);
+      ctx.fillRect(cx + 1, y - 40, 12, 13);
+      ctx.fillRect(cx - 16, y - 28, 10, 9);
+      ctx.fillRect(cx + 7, y - 27, 10, 9);
+      ctx.fillStyle = LEAF_HI;
+      ctx.fillRect(cx - 8, y - 40, 6, 5);
+      ctx.fillRect(cx + 4, y - 34, 5, 4);
+      ctx.fillRect(cx - 13, y - 26, 4, 3);
+    },
+  };
+}
+
+/** A two-seat lounge sofa. */
+export function sofaDrawable(tx: number, ty: number, seed: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const FABRIC = seed % 2 === 0 ? "#7C6A58" : "#6B6A5A";
+  return {
+    sortY: y + T,
+    minX: x - 2,
+    maxX: x + 2 * T + 2,
+    draw(ctx) {
+      const w = 2 * T - 6;
+      // back
+      ctx.fillStyle = shade(FABRIC, -0.28);
+      ctx.fillRect(x + 3, y + 2, w, 14);
+      ctx.fillStyle = FABRIC;
+      ctx.fillRect(x + 3, y + 2, w, 11);
+      ctx.fillStyle = shade(FABRIC, 0.14);
+      ctx.fillRect(x + 3, y + 2, w, 2);
+      // seat
+      ctx.fillStyle = shade(FABRIC, 0.06);
+      ctx.fillRect(x + 3, y + 14, w, 9);
+      ctx.fillStyle = shade(FABRIC, -0.16);
+      ctx.fillRect(x + 3 + w / 2 - 1, y + 14, 2, 9);
+      // arms
+      ctx.fillStyle = shade(FABRIC, -0.2);
+      ctx.fillRect(x + 1, y + 8, 6, 16);
+      ctx.fillRect(x + w - 1, y + 8, 6, 16);
+      ctx.fillStyle = shade(FABRIC, 0.1);
+      ctx.fillRect(x + 1, y + 8, 6, 2);
+      ctx.fillRect(x + w - 1, y + 8, 6, 2);
+      // feet
+      ctx.fillStyle = "#4A3A2A";
+      ctx.fillRect(x + 5, y + 24, 4, 4);
+      ctx.fillRect(x + w, y + 24, 4, 4);
+      // a cushion, because empty furniture reads as a showroom
+      ctx.fillStyle = ACCENT;
+      ctx.fillRect(x + 10, y + 8, 9, 8);
+      ctx.fillStyle = shade(ACCENT, -0.25);
+      ctx.fillRect(x + 10, y + 14, 9, 2);
+    },
+  };
+}
+
+/** The refreshment counter: three tiles of bar with an urn and cups. */
+export function barDrawable(tx: number, ty: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const w = 3 * T;
+  return {
+    sortY: y + T,
+    minX: x - 4,
+    maxX: x + w + 4,
+    draw(ctx) {
+      // back gantry with a menu slate
+      ctx.fillStyle = STONE_DARK;
+      ctx.fillRect(x + 4, y - 26, w - 8, 20);
+      ctx.fillStyle = "#2E2A22";
+      ctx.fillRect(x + 7, y - 23, w - 14, 14);
+      ctx.fillStyle = BRASS;
+      ctx.fillRect(x + 7, y - 23, w - 14, 1);
+      ctx.fillStyle = "#8E8974";
+      for (let i = 0; i < 3; i++) ctx.fillRect(x + 12, y - 19 + i * 4, w - 30 - i * 8, 2);
+      // counter body
+      ctx.fillStyle = "#7A5F3E";
+      ctx.fillRect(x + 2, y + 6, w - 4, 18);
+      ctx.fillStyle = shade("#7A5F3E", -0.28);
+      ctx.fillRect(x + 2, y + 22, w - 4, 3);
+      // panel lines
+      ctx.fillStyle = shade("#7A5F3E", -0.14);
+      for (let i = 1; i < 3; i++) ctx.fillRect(x + i * T, y + 8, 2, 14);
+      // counter top
+      ctx.fillStyle = WOOD_TOP;
+      ctx.fillRect(x, y + 1, w, 7);
+      ctx.fillStyle = shade(WOOD_TOP, -0.22);
+      ctx.fillRect(x, y + 8, w, 2);
+      // brass foot rail
+      ctx.fillStyle = BRASS;
+      ctx.fillRect(x + 4, y + 20, w - 8, 2);
+      // urn, cups, a jar
+      ctx.fillStyle = "#4A4640";
+      ctx.fillRect(x + 10, y - 8, 12, 10);
+      ctx.fillStyle = "#6B6660";
+      ctx.fillRect(x + 10, y - 8, 4, 10);
+      ctx.fillStyle = BRASS;
+      ctx.fillRect(x + 15, y + 1, 3, 2);
+      ctx.fillStyle = CARD;
+      for (let i = 0; i < 3; i++) ctx.fillRect(x + 34 + i * 7, y - 3, 5, 5);
+      ctx.fillStyle = "#B4762E";
+      ctx.fillRect(x + w - 22, y - 6, 9, 8);
+      ctx.fillStyle = shade("#B4762E", 0.2);
+      ctx.fillRect(x + w - 22, y - 6, 3, 8);
+    },
+  };
+}
+
+/** A freestanding poster board — two panels on an A-frame. */
+export function boardDrawable(tx: number, ty: number, seed: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const POSTERS = ["#C4562B", "#4E6E4E", "#3B5B92", "#6B4E71", "#A98C5B"];
+  const a = POSTERS[seed % POSTERS.length];
+  const b = POSTERS[(seed + 2) % POSTERS.length];
+  return {
+    sortY: y + T,
+    minX: x - 4,
+    maxX: x + 2 * T + 4,
+    draw(ctx) {
+      // legs
+      ctx.fillStyle = "#4A3A2A";
+      ctx.fillRect(x + 6, y + 18, 4, 10);
+      ctx.fillRect(x + 2 * T - 10, y + 18, 4, 10);
+      ctx.fillStyle = shade("#4A3A2A", 0.2);
+      ctx.fillRect(x + 4, y + 26, 2 * T - 8, 3);
+      // frame
+      ctx.fillStyle = "#6E5334";
+      ctx.fillRect(x + 2, y - 22, 2 * T - 4, 42);
+      ctx.fillStyle = "#8A6A44";
+      ctx.fillRect(x + 2, y - 22, 2 * T - 4, 2);
+      // two pinned posters
+      ctx.fillStyle = shade(a, -0.3);
+      ctx.fillRect(x + 6, y - 18, 22, 32);
+      ctx.fillStyle = a;
+      ctx.fillRect(x + 5, y - 19, 22, 32);
+      ctx.fillStyle = shade(b, -0.3);
+      ctx.fillRect(x + 34, y - 16, 22, 30);
+      ctx.fillStyle = b;
+      ctx.fillRect(x + 33, y - 17, 22, 30);
+      // headline blocks and text rules
+      ctx.fillStyle = "#FFFDF5";
+      ctx.fillRect(x + 8, y - 15, 15, 4);
+      ctx.fillRect(x + 36, y - 13, 15, 3);
+      ctx.fillStyle = shade(a, 0.35);
+      for (let i = 0; i < 4; i++) ctx.fillRect(x + 8, y - 7 + i * 4, 16 - i * 2, 1);
+      ctx.fillStyle = shade(b, 0.35);
+      for (let i = 0; i < 3; i++) ctx.fillRect(x + 36, y - 5 + i * 4, 15 - i * 3, 1);
+      // pins
+      ctx.fillStyle = BRASS_BRIGHT;
+      ctx.fillRect(x + 15, y - 19, 2, 2);
+      ctx.fillRect(x + 43, y - 17, 2, 2);
+    },
+  };
+}
+
+/** A stack of shipping crates — the backstage of any expo hall. */
+export function cratesDrawable(tx: number, ty: number, seed: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const tall = seed % 2 === 0;
+  return {
+    sortY: y + T,
+    minX: x - 2,
+    maxX: x + T + 2,
+    draw(ctx) {
+      const crate = (cx: number, cy: number, w: number, h: number): void => {
+        ctx.fillStyle = shade(WOOD_FRONT, -0.32);
+        ctx.fillRect(cx, cy, w, h);
+        ctx.fillStyle = WOOD_FRONT;
+        ctx.fillRect(cx, cy, w - 2, h - 2);
+        ctx.fillStyle = shade(WOOD_FRONT, 0.16);
+        ctx.fillRect(cx, cy, w - 2, 2);
+        // braces
+        ctx.fillStyle = shade(WOOD_FRONT, -0.2);
+        ctx.fillRect(cx, cy + h / 2 - 1, w - 2, 2);
+        ctx.fillRect(cx + w / 2 - 1, cy, 2, h - 2);
+      };
+      crate(x + 3, y + 12, 24, 15);
+      if (tall) {
+        crate(x + 6, y - 1, 18, 13);
+        ctx.fillStyle = ACCENT;
+        ctx.fillRect(x + 9, y + 2, 8, 3);
+      } else {
+        ctx.fillStyle = ACCENT;
+        ctx.fillRect(x + 7, y + 16, 9, 3);
+      }
+    },
+  };
+}
+
+/** A wayfinding sign on a weighted post. */
+export function signDrawable(tx: number, ty: number, label: string): Drawable {
+  const x = tx * T + T / 2;
+  const y = ty * T + T - 6;
+  return {
+    sortY: ty * T + T,
+    minX: x - 22,
+    maxX: x + 22,
+    draw(ctx) {
+      // base
+      ctx.fillStyle = STONE_DEEP;
+      ctx.fillRect(x - 8, y - 4, 17, 5);
+      ctx.fillStyle = STONE_MID;
+      ctx.fillRect(x - 8, y - 4, 17, 2);
+      // post
+      ctx.fillStyle = shade(BRASS_DEEP, -0.15);
+      ctx.fillRect(x - 2, y - 30, 5, 27);
+      ctx.fillStyle = BRASS;
+      ctx.fillRect(x - 2, y - 30, 2, 27);
+      // the plate, pointing off to one side like a real wayfinder
+      ctx.fillStyle = INK;
+      ctx.fillRect(x - 20, y - 44, 40, 15);
+      ctx.fillStyle = "#2E2A22";
+      ctx.fillRect(x - 19, y - 43, 38, 13);
+      ctx.fillStyle = BRASS;
+      ctx.fillRect(x - 19, y - 43, 38, 1);
+      ctx.fillStyle = PAPER;
+      ctx.font = "700 7px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, x, y - 36, 34);
+      // arrow
+      ctx.fillStyle = BRASS_BRIGHT;
+      ctx.fillRect(x + 13, y - 38, 5, 2);
+      ctx.fillRect(x + 15, y - 40, 2, 2);
+      ctx.fillRect(x + 15, y - 36, 2, 2);
+    },
+  };
+}
+
+/**
+ * A carpeted aisle laid over the hall floor. This is the cheapest fix for
+ * a room that reads as empty: bare floor between two banks of stands looks
+ * like nothing has been finished, and the same floor with a runner down it
+ * looks like somebody laid a runner down it.
+ */
+export function drawRunner(ctx: CanvasRenderingContext2D, r: TileRect, cam: Cam): void {
+  const b = box(r);
+  if (b.x + b.w < cam.x || b.x > cam.x + cam.w) return;
+  if (b.y + b.h < cam.y || b.y > cam.y + cam.h) return;
+  const x = Math.max(b.x, Math.floor(cam.x));
+  const w = Math.min(b.x + b.w, Math.ceil(cam.x + cam.w)) - x;
+  const y = Math.max(b.y, Math.floor(cam.y));
+  const h = Math.min(b.y + b.h, Math.ceil(cam.y + cam.h)) - y;
+  if (w <= 0 || h <= 0) return;
+
+  ctx.fillStyle = CARPET;
+  ctx.fillRect(x, y, w, h);
+  // woven texture: a 4px grid of slightly darker weft
+  ctx.fillStyle = CARPET_WEFT;
+  const gx = Math.floor(x / 8) * 8;
+  const gy = Math.floor(y / 8) * 8;
+  for (let sy = gy; sy < y + h; sy += 8) {
+    for (let sx = gx + (((sy / 8) | 0) & 1 ? 4 : 0); sx < x + w; sx += 8) {
+      if (sx < x || sy < y) continue;
+      ctx.fillRect(sx, sy, 4, 4);
+    }
+  }
+  const horizontal = b.w >= b.h;
+  ctx.fillStyle = CARPET_EDGE;
+  if (horizontal) {
+    ctx.fillRect(x, b.y, w, 4);
+    ctx.fillRect(x, b.y + b.h - 4, w, 4);
+    ctx.fillStyle = CARPET_LINE;
+    ctx.fillRect(x, b.y + 6, w, 2);
+    ctx.fillRect(x, b.y + b.h - 8, w, 2);
+  } else {
+    ctx.fillRect(b.x, y, 4, h);
+    ctx.fillRect(b.x + b.w - 4, y, 4, h);
+    ctx.fillStyle = CARPET_LINE;
+    ctx.fillRect(b.x + 6, y, 2, h);
+    ctx.fillRect(b.x + b.w - 8, y, 2, h);
+  }
+}
+
+// ---------- one table, so a layout only names a kind and a corner ----------
+
+/** Footprint in tiles. Everything is one tile tall. */
+export const DECOR_WIDTH: Record<DecorKind, number> = {
+  planter: 1,
+  lamp: 1,
+  stanchion: 1,
+  table: 2,
+  kiosk: 2,
+  tree: 1,
+  sofa: 2,
+  bar: 3,
+  board: 2,
+  crates: 1,
+  sign: 1,
+  bench: 2,
+};
+
+/**
+ * Stanchions are the one walk-through kind: a solid rim of them would fence
+ * the plaza off, and their job is to say "this is the middle of the room",
+ * not to stop anybody.
+ */
+export function decorBlocks(kind: DecorKind): boolean {
+  return kind !== "stanchion";
+}
+
+/**
+ * Build the drawable for one piece of furniture.
+ * `ropeRight` only means anything for stanchions; `label` only for signs.
+ */
+export function decorDrawable(
+  item: DecorItem,
+  seed: number,
+  opts: { ropeRight?: boolean; label?: string } = {}
+): Drawable {
+  switch (item.kind) {
+    case "planter":
+      return planterDrawable(item.x, item.y, seed);
+    case "lamp":
+      return lampDrawable(item.x, item.y);
+    case "stanchion":
+      return stanchionDrawable(item.x, item.y, opts.ropeRight === true);
+    case "table":
+      return tableDrawable(item.x, item.y, seed);
+    case "kiosk":
+      return kioskDrawable(item.x, item.y);
+    case "tree":
+      return treeDrawable(item.x, item.y, seed);
+    case "sofa":
+      return sofaDrawable(item.x, item.y, seed);
+    case "bar":
+      return barDrawable(item.x, item.y);
+    case "board":
+      return boardDrawable(item.x, item.y, seed);
+    case "crates":
+      return cratesDrawable(item.x, item.y, seed);
+    case "sign":
+      return signDrawable(item.x, item.y, opts.label ?? "THIS WAY");
+    case "bench":
+      return benchDrawable(item.x, item.y);
+  }
 }
 
 /** Tall cloth banners hung either side of an avenue mouth on the top wall. */

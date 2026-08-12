@@ -134,46 +134,94 @@ export const FLOORS: FloorDef[] = [
     startupIds: [],
     ambientBots: 9,
     plaza: {
-      rect: { x0: 21, y0: 14, x1: 36, y1: 27 },
-      fountain: { x0: 26, y0: 18, x1: 31, y1: 23 },
+      // The plaza clears BOTH inner stand rows by exactly one row (14 above,
+      // 28 below). It used to butt straight up against the northern row's
+      // carpet, so the octagon's cut corner ran into the stands and they
+      // looked pasted onto the paving instead of standing on the floor.
+      rect: { x0: 21, y0: 15, x1: 36, y1: 27 },
+      // Centred in the plaza, and the art centres the basin inside this —
+      // 6x3 tiles is the basin's own 2:1 footprint, so the stonework, the
+      // tile block and the inlaid rings all share one middle.
+      fountain: { x0: 26, y0: 20, x1: 31, y1: 22 },
       avenues: [
-        { x0: 27, y0: 1, x1: 30, y1: 13 }, // north
+        { x0: 27, y0: 1, x1: 30, y1: 14 }, // north
         { x0: 27, y0: 28, x1: 30, y1: 40 }, // south
         { x0: 1, y0: 19, x1: 20, y1: 22 }, // west
         { x0: 37, y0: 19, x1: 56, y1: 22 }, // east
       ],
       // hung across the south avenue, in front of where everyone arrives
       arch: { x0: 26, y0: 33, x1: 31, y1: 33 },
-      planters: [
-        { x: 22, y: 15 }, { x: 35, y: 15 }, // plaza corners
-        { x: 22, y: 26 }, { x: 35, y: 26 },
-        { x: 19, y: 18 }, { x: 19, y: 23 }, // west avenue mouth
-        { x: 38, y: 18 }, { x: 38, y: 23 }, // east avenue mouth
+      // Carpet down the two cross-aisles. Bare floor between two banks of
+      // stands is the single thing that made the hall read as unfinished.
+      runners: [
+        { x0: 1, y0: 7, x1: 56, y1: 9 },
+        { x0: 1, y0: 33, x1: 56, y1: 35 },
       ],
-      lamps: [
-        { x: 27, y: 7 }, { x: 30, y: 7 }, // north avenue
-        { x: 27, y: 34 }, { x: 30, y: 34 }, // south avenue, under the sign
-        { x: 7, y: 19 }, { x: 7, y: 22 }, // west avenue
-        { x: 15, y: 19 }, { x: 15, y: 22 },
-        { x: 42, y: 19 }, { x: 42, y: 22 }, // east avenue
-        { x: 50, y: 19 }, { x: 50, y: 22 },
+      furniture: [
+        // --- plaza rim: rope posts, leaving every avenue mouth open ---
+        { kind: "stanchion", x: 21, y: 15 }, { kind: "stanchion", x: 23, y: 15 },
+        { kind: "stanchion", x: 25, y: 15 },
+        { kind: "stanchion", x: 32, y: 15 }, { kind: "stanchion", x: 34, y: 15 },
+        { kind: "stanchion", x: 36, y: 15 },
+        { kind: "stanchion", x: 21, y: 27 }, { kind: "stanchion", x: 23, y: 27 },
+        { kind: "stanchion", x: 25, y: 27 },
+        { kind: "stanchion", x: 32, y: 27 }, { kind: "stanchion", x: 34, y: 27 },
+        { kind: "stanchion", x: 36, y: 27 },
+        { kind: "stanchion", x: 21, y: 17 }, { kind: "stanchion", x: 21, y: 24 },
+        { kind: "stanchion", x: 36, y: 17 }, { kind: "stanchion", x: 36, y: 24 },
+        // --- inside the plaza: somewhere to sit and look at the water ---
+        // The benches are double-sided, so the pair north of the fountain
+        // and the pair south of it are both the right way round.
+        { kind: "bench", x: 22, y: 18 }, { kind: "bench", x: 33, y: 18 },
+        { kind: "bench", x: 22, y: 24 }, { kind: "bench", x: 33, y: 24 },
+        { kind: "tree", x: 24, y: 16 }, { kind: "tree", x: 33, y: 16 },
+        { kind: "tree", x: 24, y: 26 }, { kind: "tree", x: 33, y: 26 },
+        // --- plaza corners and the two side avenue mouths ---
+        { kind: "planter", x: 22, y: 16 }, { kind: "planter", x: 35, y: 16 },
+        { kind: "planter", x: 22, y: 26 }, { kind: "planter", x: 35, y: 26 },
+        { kind: "planter", x: 19, y: 18 }, { kind: "planter", x: 19, y: 23 },
+        { kind: "planter", x: 38, y: 18 }, { kind: "planter", x: 38, y: 23 },
+        // --- lamps down every avenue ---
+        { kind: "lamp", x: 27, y: 5 }, { kind: "lamp", x: 30, y: 5 },
+        { kind: "lamp", x: 27, y: 12 }, { kind: "lamp", x: 30, y: 12 },
+        { kind: "lamp", x: 27, y: 31 }, { kind: "lamp", x: 30, y: 31 },
+        { kind: "lamp", x: 27, y: 38 }, { kind: "lamp", x: 30, y: 38 },
+        { kind: "lamp", x: 5, y: 19 }, { kind: "lamp", x: 5, y: 22 },
+        { kind: "lamp", x: 12, y: 19 }, { kind: "lamp", x: 12, y: 22 },
+        { kind: "lamp", x: 45, y: 19 }, { kind: "lamp", x: 45, y: 22 },
+        { kind: "lamp", x: 52, y: 19 }, { kind: "lamp", x: 52, y: 22 },
+        // --- WEST WING: café above the avenue, lounge below ---
+        { kind: "tree", x: 2, y: 11 }, { kind: "tree", x: 13, y: 11 },
+        { kind: "table", x: 4, y: 11 }, { kind: "table", x: 9, y: 11 },
+        { kind: "table", x: 4, y: 15 }, { kind: "table", x: 9, y: 15 },
+        { kind: "bar", x: 2, y: 17 },
+        { kind: "kiosk", x: 17, y: 16 },
+        { kind: "sign", x: 19, y: 12, label: "PLAZA" },
+        { kind: "sofa", x: 3, y: 25 }, { kind: "sofa", x: 3, y: 29 },
+        { kind: "tree", x: 7, y: 27 },
+        { kind: "table", x: 10, y: 25 }, { kind: "table", x: 10, y: 29 },
+        { kind: "board", x: 15, y: 25 },
+        { kind: "crates", x: 2, y: 31 }, { kind: "crates", x: 14, y: 31 },
+        { kind: "tree", x: 19, y: 30 },
+        // --- EAST WING: mirrored, different furniture so it is not a copy ---
+        { kind: "tree", x: 44, y: 11 }, { kind: "tree", x: 55, y: 11 },
+        { kind: "sofa", x: 46, y: 11 }, { kind: "sofa", x: 51, y: 11 },
+        { kind: "board", x: 46, y: 15 },
+        { kind: "table", x: 51, y: 15 },
+        { kind: "kiosk", x: 39, y: 16 },
+        { kind: "sign", x: 38, y: 12, label: "STANDS" },
+        { kind: "table", x: 45, y: 25 }, { kind: "table", x: 50, y: 25 },
+        { kind: "bar", x: 53, y: 27 },
+        { kind: "tree", x: 43, y: 27 },
+        { kind: "sofa", x: 45, y: 29 }, { kind: "sofa", x: 50, y: 29 },
+        { kind: "board", x: 39, y: 25 },
+        { kind: "crates", x: 43, y: 31 }, { kind: "crates", x: 55, y: 31 },
+        // --- corners of the hall, so the outer band is not bare ---
+        { kind: "tree", x: 1, y: 1 }, { kind: "tree", x: 56, y: 1 },
+        { kind: "tree", x: 1, y: 40 }, { kind: "tree", x: 56, y: 40 },
+        { kind: "crates", x: 25, y: 1 }, { kind: "crates", x: 32, y: 1 },
+        { kind: "board", x: 24, y: 40 }, { kind: "board", x: 32, y: 40 },
       ],
-      // rope posts along the plaza rim, leaving every avenue mouth open
-      stanchions: [
-        { x: 21, y: 14 }, { x: 23, y: 14 }, { x: 25, y: 14 },
-        { x: 32, y: 14 }, { x: 34, y: 14 }, { x: 36, y: 14 },
-        { x: 21, y: 27 }, { x: 23, y: 27 }, { x: 25, y: 27 },
-        { x: 32, y: 27 }, { x: 34, y: 27 }, { x: 36, y: 27 },
-        { x: 21, y: 16 }, { x: 21, y: 18 }, { x: 21, y: 23 }, { x: 21, y: 25 },
-        { x: 36, y: 16 }, { x: 36, y: 18 }, { x: 36, y: 23 }, { x: 36, y: 25 },
-      ],
-      // the café wings, either side of the plaza
-      tables: [
-        { x: 4, y: 9 }, { x: 10, y: 9 }, { x: 4, y: 15 }, { x: 10, y: 15 },
-        { x: 44, y: 9 }, { x: 50, y: 9 }, { x: 44, y: 15 }, { x: 50, y: 15 },
-        { x: 4, y: 26 }, { x: 10, y: 26 }, { x: 44, y: 26 }, { x: 50, y: 26 },
-      ],
-      kiosks: [{ x: 17, y: 16 }, { x: 38, y: 16 }],
     },
   },
   {

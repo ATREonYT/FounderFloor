@@ -550,12 +550,30 @@ ambientBots: 9,   // 0 turns them off entirely
 Redeploy Vercel; the floor server needs nothing, this is client-side
 scenery. Worth turning down once the hall has regulars of its own.
 
-The plaza itself — fountain, avenues, lamps, planters, café tables and the
-MAIN HALL sign — is the `plaza:` block on the same floor. Deleting it
-renders that floor as a plain hall again and the stands are unaffected.
-After ANY layout change run the geometry check, which asserts that no
-decoration landed on a stand, no avenue got blocked, and every tile is
-still walkable:
+The plaza itself is the `plaza:` block on the same floor:
+
+- `rect` — the paved area. Must not overlap any stand; leave at least one
+  clear row between the paving and a stand's carpet, or the paving edge
+  runs into the stand and it looks pasted on rather than built.
+- `fountain` — a tile rect that must be **centred inside `rect`**. The art
+  centres the basin inside this rect, so centring one rect in the other is
+  what centres the fountain in the plaza.
+- `avenues` — the walkways. Kept clear of everything except lamps.
+- `runners` — carpeted cross-aisles, decoration only.
+- `furniture` — one flat list of `{ kind, x, y }`. Kinds: `planter`, `lamp`,
+  `stanchion`, `table`, `kiosk`, `tree`, `sofa`, `bar`, `board`, `crates`,
+  `sign` (takes a `label`), `bench`. Widths live in `DECOR_WIDTH` in
+  `game/decor.ts`; everything is one tile deep and only `stanchion` is
+  walk-through.
+
+Deleting the whole block renders that floor as a plain hall again and the
+stands are unaffected.
+
+After ANY layout change run the geometry check. It asserts the things that
+do not throw an error but do make a room feel broken — nothing sitting on
+a stand or on another prop, no avenue blocked, the fountain actually
+centred, no stand overlapping the paving, and a flood fill proving every
+stand is reachable and no tile is cut off:
 
 ```
 node scripts/floor-geom.mjs

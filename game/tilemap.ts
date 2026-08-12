@@ -12,15 +12,16 @@ import type { BoothClaim, BoothInstance, FloorDef, Startup, TileRect } from "../
 import { shade } from "./sprites";
 import { drawBoothBanner, drawBoothCounter, drawCarpet as paintCarpet } from "./boothArt";
 import {
+  DECOR_WIDTH,
+  HallFloor,
   PlazaGround,
   archDrawable,
+  decorBlocks,
+  decorDrawable,
   drawAvenue,
+  drawRunner,
+  drawStandPlinth,
   fountainDrawable,
-  kioskDrawable,
-  lampDrawable,
-  planterDrawable,
-  stanchionDrawable,
-  tableDrawable,
   wallBannerDrawable,
 } from "./decor";
 
@@ -103,12 +104,38 @@ const LEAF_B = "#3A6440";
 const CARD = "#FAF7EF";
 const CARD_LINE = "#C6BCA4";
 const VACANT_FACE = "#CFC8B8";
-// dressing for an unclaimed slot: slate board, brass fittings, stone posts
+// The floor of an unlet stand: shell-scheme carpet. Deliberately darker
+// AND warmer than the hall's paving — the old near-white made every empty
+// stand a bright rectangle, and a grey one merged into the grey stall
+// walls, which read as one flat box with a sign on it.
+const VACANT_SLAB = "#9E947C";
+// dressing for an unclaimed slot: slate board with brass fittings, hung on
+// a built stall shell — panelled back wall, two side returns, open front
 const SLOT_FACE = "#3A3830";
 const SLOT_FRAME = "#26241E";
 const SLOT_BRASS = "#B08D2E";
-const SLOT_POST = "#B9B1A0";
-const SLOT_POST_DARK = "#847C6C";
+const STALL_BACK = "#BDB6A5";
+const STALL_BACK_HI = "#D2CCBC";
+const STALL_BACK_DARK = "#948D7D";
+const STALL_SIDE = "#A69F8F";
+const STALL_SIDE_HI = "#C0B9A8";
+const STALL_SIDE_DARK = "#7E7768";
+const STALL_TRIM = "#8A8272";
+/**
+ * The organiser's shell scheme. A real expo sells bare stands with a
+ * coloured fascia over the back wall, and the reason is the same one that
+ * applies here: twenty identical grey booths is a warehouse, and the same
+ * twenty with a colour running along the top is a hall. Muted on purpose —
+ * these must never out-shout a stand somebody has actually dressed.
+ */
+const SHELL_COLORS = [
+  "#8C6E5A", // clay
+  "#5F7360", // moss
+  "#5E6B80", // slate blue
+  "#8A7A52", // ochre
+  "#7A6070", // plum
+  "#4F6E6B", // teal
+];
 const MUTED = "#6F6A5E";
 const ACCENT = "#D9480F";
 
@@ -238,32 +265,23 @@ export function buildFloor(
     }
     drawables.push(fountainDrawable(plaza.fountain));
 
-    for (const p of plaza.planters ?? []) {
-      mark(p.x, p.y);
-      drawables.push(planterDrawable(p.x, p.y, hashStr(`${floor.id}:planter:${p.x}:${p.y}`)));
-    }
-    for (const l of plaza.lamps ?? []) {
-      mark(l.x, l.y);
-      drawables.push(lampDrawable(l.x, l.y));
-    }
-    for (const tb of plaza.tables ?? []) {
-      mark(tb.x, tb.y);
-      mark(tb.x + 1, tb.y);
-      drawables.push(tableDrawable(tb.x, tb.y, hashStr(`${floor.id}:table:${tb.x}:${tb.y}`)));
-    }
-    for (const k of plaza.kiosks ?? []) {
-      mark(k.x, k.y);
-      mark(k.x + 1, k.y);
-      drawables.push(kioskDrawable(k.x, k.y));
-    }
-    // Stanchions stay walk-through — a solid rim would fence the plaza off.
     // A post slings its rope to the right only when the next post along is
-    // exactly two tiles away, which is what keeps the rope out of the
-    // avenue mouths without listing the gaps by hand.
-    const posts = plaza.stanchions ?? [];
-    const postAt = new Set(posts.map((p) => `${p.x},${p.y}`));
-    for (const p of posts) {
-      drawables.push(stanchionDrawable(p.x, p.y, postAt.has(`${p.x + 2},${p.y}`)));
+    // exactly two tiles away, which keeps rope out of the avenue mouths
+    // without having to list the gaps by hand.
+    const furniture = plaza.furniture ?? [];
+    const postAt = new Set(
+      furniture.filter((f) => f.kind === "stanchion").map((f) => `${f.x},${f.y}`)
+    );
+    for (const item of furniture) {
+      if (decorBlocks(item.kind)) {
+        for (let d = 0; d < DECOR_WIDTH[item.kind]; d++) mark(item.x + d, item.y);
+      }
+      drawables.push(
+        decorDrawable(item, hashStr(`${floor.id}:${item.kind}:${item.x}:${item.y}`), {
+          ropeRight: postAt.has(`${item.x + 2},${item.y}`),
+          label: item.label,
+        })
+      );
     }
 
     if (plaza.arch) {
@@ -438,6 +456,7 @@ export function buildFloor(
   drawables.sort((a, b) => a.sortY - b.sortY);
 
   // ----- under-layer -----
+  const hallFloor = new HallFloor(floor.theme, w, h);
   const matFill = shade(floor.theme.floorB, -0.1);
   const matRib = shade(floor.theme.floorB, -0.18);
   const matLine = shade(floor.theme.floorB, -0.26);
@@ -446,16 +465,12 @@ export function buildFloor(
     const y0 = Math.max(0, Math.floor(cam.y / T));
     const x1 = Math.min(w - 1, Math.floor((cam.x + cam.w) / T));
     const y1 = Math.min(h - 1, Math.floor((cam.y + cam.h) / T));
-    for (let ty = y0; ty <= y1; ty++) {
-      for (let tx = x0; tx <= x1; tx++) {
-        ctx.fillStyle = (tx + ty) & 1 ? floor.theme.floorB : floor.theme.floorA;
-        ctx.fillRect(tx * T, ty * T, T, T);
-      }
-    }
-    // Avenues first, then the plaza on top: the plaza is the destination and
-    // its border course should close over the runners meeting it, not the
-    // other way round.
+    hallFloor.draw(ctx, cam);
+    // Aisle runners, then avenues, then the plaza on top: each is a bigger
+    // destination than the last, and the more important surface should
+    // close over the one meeting it rather than the other way round.
     if (plaza) {
+      for (const r of plaza.runners ?? []) drawRunner(ctx, r, cam);
       for (const a of plaza.avenues) drawAvenue(ctx, a, cam);
       plazaGround?.draw(ctx, cam);
     }
@@ -468,8 +483,12 @@ export function buildFloor(
       if (bx + 4 * T < cam.x || bx > cam.x + cam.w || by + 4 * T < cam.y || by > cam.y + cam.h) {
         continue;
       }
+      // The plinth goes under BOTH kinds of stand — a claimed stand and an
+      // open one are the same piece of built furniture, and only one of
+      // them having a base is what made the rim of the plaza look wrong.
+      drawStandPlinth(ctx, bx, by);
       if (b.startup) drawCarpet(ctx, b.spot.x, b.spot.y, b.startup.booth.carpet, b.startup.booth.pattern);
-      else drawCarpet(ctx, b.spot.x, b.spot.y, VACANT_FACE, "border");
+      else drawVacantCarpet(ctx, bx, by);
     }
     // mats — woven doormats, not flat rectangles (a plain fill at 2x zoom
     // reads as an unfinished placeholder)
@@ -510,6 +529,33 @@ export function buildFloor(
 }
 
 // ---------- booth pieces ----------
+
+/**
+ * Shell-scheme carpet for an unlet stand: a woven texture and a bound edge
+ * rather than a flat fill. A rank of twenty flat rectangles is the single
+ * biggest reason an early hall looks unfinished, and weave costs one extra
+ * pass of 4px squares.
+ */
+function drawVacantCarpet(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  const cw = 4 * T;
+  const ch = 4 * T;
+  ctx.fillStyle = VACANT_SLAB;
+  ctx.fillRect(x, y, cw, ch);
+  ctx.fillStyle = shade(VACANT_SLAB, -0.05);
+  for (let yy = y; yy < y + ch; yy += 8) {
+    for (let xx = x + (((yy - y) / 8) & 1 ? 4 : 0); xx < x + cw; xx += 8) {
+      ctx.fillRect(xx, yy, 4, 4);
+    }
+  }
+  // bound edge, taped down like a real stand's carpet
+  ctx.fillStyle = shade(VACANT_SLAB, -0.2);
+  ctx.fillRect(x, y, cw, 3);
+  ctx.fillRect(x, y + ch - 3, cw, 3);
+  ctx.fillRect(x, y, 3, ch);
+  ctx.fillRect(x + cw - 3, y, 3, ch);
+  ctx.fillStyle = shade(VACANT_SLAB, 0.1);
+  ctx.fillRect(x + 3, y + 3, cw - 6, 1);
+}
 
 /** Tile coords in, world pixels out — the art itself lives in boothArt. */
 function drawCarpet(
@@ -589,29 +635,118 @@ function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawa
   const by = v.y * T;
   const w = 4 * T;
   const no = String(index + 1).padStart(2, "0");
+  const shell = SHELL_COLORS[index % SHELL_COLORS.length];
   return {
     sortY: (v.y + 1) * T,
-    minX: bx - 2,
-    maxX: bx + w + 2,
+    minX: bx - 4,
+    maxX: bx + w + 4,
     draw(ctx) {
-      // back wall of the stall, so the slot still has depth
-      ctx.fillStyle = shade(VACANT_FACE, -0.32);
-      ctx.fillRect(bx, by, w, T);
-      ctx.fillStyle = shade(VACANT_FACE, -0.18);
-      ctx.fillRect(bx, by, w, 4);
+      // ---- the shell of the stall ----
+      // An empty stand used to be a sign standing on a rectangle of carpet,
+      // which is why a rank of them read as flat cards rather than as
+      // built stalls. It is now a booth: back wall, two returns down each
+      // side, and an open front you look into.
+      const backTop = by - 12;
+      const lane = by + 2 * T; // where the counter starts
 
-      // the two posts the board hangs between
-      ctx.fillStyle = SLOT_POST_DARK;
-      ctx.fillRect(bx + 5, by - 12, 6, T + 8);
-      ctx.fillRect(bx + w - 11, by - 12, 6, T + 8);
-      ctx.fillStyle = SLOT_POST;
-      ctx.fillRect(bx + 5, by - 12, 3, T + 8);
-      ctx.fillRect(bx + w - 11, by - 12, 3, T + 8);
+      // side returns first, so the back wall closes over their inner edge
+      for (const side of [0, 1]) {
+        const rx = side === 0 ? bx : bx + w - 12;
+        ctx.fillStyle = STALL_SIDE_DARK;
+        ctx.fillRect(rx, backTop, 12, lane - backTop);
+        ctx.fillStyle = STALL_SIDE;
+        ctx.fillRect(rx + (side === 0 ? 0 : 3), backTop, 9, lane - backTop);
+        ctx.fillStyle = STALL_SIDE_HI;
+        ctx.fillRect(rx + (side === 0 ? 0 : 9), backTop, 3, lane - backTop);
+        // the fascia colour carries round the returns
+        ctx.fillStyle = shade(shell, -0.12);
+        ctx.fillRect(rx, backTop, 12, 7);
+        // a foot rail where the return meets the floor
+        ctx.fillStyle = STALL_TRIM;
+        ctx.fillRect(rx, lane - 4, 12, 3);
+      }
+
+      // back wall panel
+      ctx.fillStyle = STALL_BACK_DARK;
+      ctx.fillRect(bx + 6, backTop, w - 12, T + 14);
+      ctx.fillStyle = STALL_BACK;
+      ctx.fillRect(bx + 6, backTop, w - 12, T + 10);
+      // panel seams — a wall built from boards, not one flat fill
+      ctx.fillStyle = STALL_BACK_DARK;
+      for (let i = 1; i < 3; i++) {
+        ctx.fillRect(bx + 6 + i * ((w - 12) / 3), backTop + 3, 1, T + 7);
+      }
+      // the shell scheme's coloured fascia across the top of the wall
+      ctx.fillStyle = shell;
+      ctx.fillRect(bx + 6, backTop, w - 12, 7);
+      ctx.fillStyle = shade(shell, 0.22);
+      ctx.fillRect(bx + 6, backTop, w - 12, 2);
+      ctx.fillStyle = shade(shell, -0.3);
+      ctx.fillRect(bx + 6, backTop + 7, w - 12, 2);
+      // two downlights on the underside of the fascia
+      ctx.fillStyle = STALL_TRIM;
+      ctx.fillRect(bx + 30, backTop + 9, 7, 4);
+      ctx.fillRect(bx + w - 37, backTop + 9, 7, 4);
+      ctx.fillStyle = "#F6E2B0";
+      ctx.fillRect(bx + 31, backTop + 12, 5, 2);
+      ctx.fillRect(bx + w - 36, backTop + 12, 5, 2);
+
+      // shadow the wall throws onto its own floor
+      ctx.save();
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = "#2A251D";
+      ctx.fillRect(bx + 6, by + T + 2, w - 12, 7);
+      ctx.restore();
+
+      // The kit that comes with a bare stand: a folding chair and a bin.
+      // An empty stall with nothing in it reads as a hole in the wall; the
+      // same stall with a chair in it reads as ready for somebody. Sides
+      // alternate by spot so a rank of them is not a rhythm of identical
+      // furniture.
+      const chairLeft = index % 2 === 0;
+      const cyp = by + T + 12;
+
+      // Chair: legs, a seat, and a GAP under the backrest. The gap is the
+      // whole silhouette — without it a chair and a bin are two grey lumps
+      // of the same size and neither reads as anything.
+      const cxp = chairLeft ? bx + 22 : bx + w - 42;
+      ctx.fillStyle = "#3B3830";
+      ctx.fillRect(cxp + 2, cyp + 9, 3, 8);
+      ctx.fillRect(cxp + 14, cyp + 9, 3, 8);
+      ctx.fillStyle = "#57534A";
+      ctx.fillRect(cxp, cyp + 4, 19, 5);
+      ctx.fillStyle = "#6E6A60";
+      ctx.fillRect(cxp, cyp + 4, 19, 2);
+      // backrest, floating two pixels clear of the seat
+      ctx.fillStyle = "#3B3830";
+      ctx.fillRect(cxp + 2, cyp - 9, 3, 12);
+      ctx.fillRect(cxp + 14, cyp - 9, 3, 12);
+      ctx.fillStyle = "#57534A";
+      ctx.fillRect(cxp + 1, cyp - 9, 17, 6);
+      ctx.fillStyle = "#7C786C";
+      ctx.fillRect(cxp + 1, cyp - 9, 17, 2);
+
+      // Bin: narrow, tapered, with a rim — a different silhouette entirely.
+      const bxp = chairLeft ? bx + w - 30 : bx + 18;
+      ctx.fillStyle = "#4E4A42";
+      ctx.fillRect(bxp + 1, cyp - 1, 11, 17);
+      ctx.fillStyle = "#666158";
+      ctx.fillRect(bxp + 2, cyp - 1, 5, 17);
+      ctx.fillStyle = "#3B3830";
+      ctx.fillRect(bxp + 2, cyp + 14, 9, 3);
+      // rim
+      ctx.fillStyle = "#7A7568";
+      ctx.fillRect(bxp - 1, cyp - 4, 15, 4);
+      ctx.fillStyle = "#938E7E";
+      ctx.fillRect(bxp - 1, cyp - 4, 15, 1);
+      // a dark mouth, so it is obviously open
+      ctx.fillStyle = "#2A2721";
+      ctx.fillRect(bxp + 2, cyp - 3, 9, 2);
 
       // board
-      const sx = bx + 10;
-      const sy = by - 10;
-      const sw = w - 20;
+      const sx = bx + 14;
+      const sy = by - 8;
+      const sw = w - 28;
       const sh = T + 2;
       ctx.fillStyle = SLOT_FRAME;
       ctx.fillRect(sx - 2, sy - 2, sw + 4, sh + 4);
