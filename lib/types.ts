@@ -309,7 +309,7 @@ export interface PlazaDef {
 }
 
 /** What a merchant stall does when you press the interact key at it. */
-export type MerchantAction = "tickets" | "editor" | "directory" | "lobby";
+export type MerchantAction = "tickets" | "editor" | "register" | "porter" | "arcade";
 
 export interface MerchantDef {
   id: string;
@@ -691,6 +691,15 @@ export interface AppState {
   /** Local date (YYYY-MM-DD) of the last counted visit day. */
   lastVisitDay?: string;
   /** Consecutive visit days, current and best-ever (drives the habit quest). */
+  /**
+   * The arcade: which day `arcadeWon` refers to, how many tickets it has
+   * paid you that day, and your best run total. The cap is enforced in the
+   * store, not in the panel — a payout ceiling that only exists in the UI
+   * is not a ceiling.
+   */
+  arcadeDay?: string;
+  arcadeWon?: number;
+  arcadeBest?: number;
   visitStreak: number;
   bestStreak: number;
   /** When THIS session first opened the app (ms). */

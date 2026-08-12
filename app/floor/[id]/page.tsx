@@ -26,6 +26,11 @@ import type {
 import { questStates, unlockedEmotes } from "@/lib/data/quests";
 import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
+import StallPanel from "@/components/StallPanel";
+import { GuideStall, PorterStall, RegisterStall, TicketStall } from "@/components/StallContents";
+import Arcade from "@/components/Arcade";
+import { usePresence } from "@/components/usePresence";
+import { seedIdAt } from "@/game/tilemap";
 import { acquireFloorLock } from "@/lib/tabLock";
 import RequestCard from "@/components/RequestCard";
 import MailToast, { type MailToastData } from "@/components/MailToast";
@@ -120,6 +125,10 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [editingStand, setEditingStand] = useState(false);
   /** The merchant stall you are standing at, for the HUD prompt. */
   const [nearMerchant, setNearMerchant] = useState<MerchantDef | null>(null);
+  /** The stall whose panel is open over the hall, or null. */
+  const [openStall, setOpenStall] = useState<MerchantDef | null>(null);
+  /** The hall guide, opened from the HUD rather than from a stall. */
+  const [guideOpen, setGuideOpen] = useState(false);
   /**
    * What a stall does. The stalls are shortcuts to pages that already
    * exist, put in the hall so the two side avenues have a reason to be
@@ -127,15 +136,12 @@ export default function FloorPage({ params }: { params: { id: string } }) {
    * a phone and a keyboard cannot drift apart.
    */
   const useMerchantRef = useRef<(m: MerchantDef) => void>(() => {});
-  const useMerchant = useCallback(
-    (m: MerchantDef) => {
-      if (m.action === "tickets") router.push("/profile#tickets");
-      else if (m.action === "directory") router.push("/directory");
-      else if (m.action === "lobby") router.push("/lobby");
-      else if (m.action === "editor") router.push("/profile#stand");
-    },
-    [router],
-  );
+  const useMerchant = useCallback((m: MerchantDef) => {
+    // Open the stall ON the floor. Pressing E at the porter used to
+    // router.push() you to /lobby, which threw you off the floor and cost
+    // you your spot — the opposite of what walking up to somebody should do.
+    setOpenStall(m);
+  }, []);
   useMerchantRef.current = useMerchant;
   /**
    * One game at a time. "mine" = this tab runs it; "blocked" = another TAB
@@ -752,6 +758,37 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     [actions],
   );
 
+  /** Live head-count per floor, for the porter's lodge. */
+  const floorCounts = usePresence();
+  /**
+   * The register's list. Built from the floor def rather than from the
+   * engine's own booths: the engine keeps that private, and this only needs
+   * what is on the map plus your own stand.
+   */
+  const hallBooths = useMemo<BoothInstance[]>(() => {
+    const f = floor;
+    if (!f) return [];
+    return f.boothSpots.map((spot, i) => {
+      const seedId = seedIdAt(f, i);
+      const seeded = seedId ? STARTUPS[seedId] : undefined;
+      const mineHere =
+        state.myStartup && state.claims[f.id] === i ? state.myStartup : undefined;
+      return {
+        spot,
+        spotIndex: i,
+        startup: mineHere ?? seeded ?? null,
+        isYours: Boolean(mineHere),
+        ownerId: mineHere ? state.profile.id : undefined,
+      };
+    });
+  }, [floor, state.myStartup, state.claims, state.profile.id]);
+  /** Arcade tickets already taken today, so the panel can say what is left. */
+  const arcadeWonToday = useMemo(() => {
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return state.arcadeDay === today ? (state.arcadeWon ?? 0) : 0;
+  }, [state.arcadeDay, state.arcadeWon]);
+
   const handleFocusChange = useCallback((focused: boolean) => {
     handleRef.current?.setInputEnabled(!focused);
   }, []);
@@ -1366,6 +1403,18 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           has room for one status chip, not two. */}
       <div className="pointer-events-none absolute inset-x-3 top-3 flex items-start justify-between gap-2">
         <div className="pointer-events-auto flex min-w-0 items-center gap-2">
+          {/* Where to go. A cross-shaped hall with traders down the sides is
+              not self-explanatory on the first visit, and "walk about until
+              you find it" is not wayfinding. */}
+          <button
+            type="button"
+            onClick={() => setGuideOpen(true)}
+            aria-label="Where to go"
+            title="Where to go"
+            className="glass flex h-9 w-9 shrink-0 items-center justify-center font-display text-lg leading-none shadow-float transition-colors hover:text-accent"
+          >
+            ?
+          </button>
           <span className="glass flex min-w-0 items-center gap-2 px-3 py-2 shadow-float">
             {coarse && (
               <span
@@ -1557,6 +1606,64 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             }}
           />
         </div>
+      )}
+
+      {/* A stall, open over the hall. The game keeps running behind it and
+          the player keeps standing where they were — closing puts you back
+          in the room rather than reloading the floor. */}
+      {openStall && (
+        <StallPanel
+          sign={openStall.sign}
+          keeper={openStall.keeper}
+          blurb={openStall.blurb}
+          color={openStall.color}
+          onClose={() => setOpenStall(null)}
+          onFocusChange={handleFocusChange}
+        >
+          {openStall.action === "tickets" && <TicketStall state={state} />}
+          {openStall.action === "register" && <RegisterStall booths={hallBooths} />}
+          {openStall.action === "porter" && (
+            <PorterStall floorId={floor?.id ?? ""} presence={floorCounts} tier={state.sub} />
+          )}
+          {openStall.action === "arcade" && (
+            <Arcade
+              wonToday={arcadeWonToday}
+              hallRecord={state.arcadeBest ?? null}
+              onPayout={(tickets, total) => actions.earnArcade(tickets, total)}
+            />
+          )}
+          {openStall.action === "editor" &&
+            (myStartup ? (
+              <EditStandPanel
+                startup={myStartup}
+                state={state}
+                onBuy={actions.buyItem}
+                onApply={applyStandLive}
+                onSave={handleEditSave}
+                onClose={() => setOpenStall(null)}
+                onFocusChange={handleFocusChange}
+              />
+            ) : (
+              <p className="text-sm leading-relaxed text-muted">
+                Nothing to repaint yet — put a stand up first and Alder will
+                gladly do the sign for it.
+              </p>
+            ))}
+        </StallPanel>
+      )}
+
+      {/* the hall guide, from the HUD */}
+      {guideOpen && (
+        <StallPanel
+          sign="WHERE TO GO"
+          keeper="The hall"
+          blurb="What is in this room and how to find it."
+          color="#B08D2E"
+          onClose={() => setGuideOpen(false)}
+          onFocusChange={handleFocusChange}
+        >
+          <GuideStall />
+        </StallPanel>
       )}
 
       {/* merchant hint — same pill as a booth's, one rung lower priority:

@@ -28,6 +28,7 @@ import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
 import { FLOORS, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { QUESTS } from "@/lib/data/quests";
 import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
+import { ARCADE_DAILY_CAP } from "@/components/Arcade";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
 import type { PaidEntitlement, Perks } from "@/lib/sync";
 import { billingLive } from "@/lib/pricing";
@@ -82,6 +83,12 @@ export interface StoreActions {
    * owned, or unaffordable — callers show the honest reason.
    */
   buyItem(itemId: string): boolean;
+  /**
+   * Bank an arcade run. `tickets` is what the panel thinks was earned and
+   * `runTotal` the score; both are clamped here, and the daily ceiling is
+   * applied against what has actually been paid out today.
+   */
+  earnArcade(tickets: number, runTotal: number): void;
   /**
    * Switch to a server-issued identity (sign-in) or back to a fresh guest id
    * (sign-out). Sign-in keeps local progress and merges it into the account;
@@ -168,6 +175,13 @@ export function onCelebration(cb: (e: CelebrationEvent) => void): () => void {
   return () => {
     if (celebrationCb === cb) celebrationCb = null;
   };
+}
+
+/** Local calendar day, YYYY-MM-DD. Local on purpose: a daily reset should
+ * happen at the visitor's midnight, not at UTC's. */
+function dayKey(ms: number): string {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** One ceremony per grant per device: remembers the last entitlement shown. */
@@ -310,6 +324,15 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
   };
   // the visit-day marker must move forward with the streak, or a pull from
   // a device that hasn't visited today re-arms today's daily grant
+  // the best arcade run is a high-water mark, like the streak
+  merged.arcadeBest = Math.max(merged.arcadeBest ?? 0, local.arcadeBest ?? 0);
+  if (local.arcadeDay && (!merged.arcadeDay || local.arcadeDay > merged.arcadeDay)) {
+    merged.arcadeDay = local.arcadeDay;
+    merged.arcadeWon = local.arcadeWon ?? 0;
+  } else if (local.arcadeDay && local.arcadeDay === merged.arcadeDay) {
+    // same day on two devices: the ceiling is per day, so take the larger
+    merged.arcadeWon = Math.max(merged.arcadeWon ?? 0, local.arcadeWon ?? 0);
+  }
   if (local.lastVisitDay && (!merged.lastVisitDay || local.lastVisitDay > merged.lastVisitDay)) {
     merged.lastVisitDay = local.lastVisitDay;
   }
@@ -712,6 +735,15 @@ function sanitize(raw: unknown): AppState {
 
   base.claimedQuests = strList(r.claimedQuests, 32, 50);
 
+  if (typeof r.arcadeDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.arcadeDay)) {
+    base.arcadeDay = r.arcadeDay;
+  }
+  if (typeof r.arcadeWon === "number" && Number.isFinite(r.arcadeWon)) {
+    base.arcadeWon = Math.max(0, Math.min(ARCADE_DAILY_CAP, Math.floor(r.arcadeWon)));
+  }
+  if (typeof r.arcadeBest === "number" && Number.isFinite(r.arcadeBest)) {
+    base.arcadeBest = Math.max(0, Math.min(300, Math.floor(r.arcadeBest)));
+  }
   if (typeof r.lastVisitDay === "string" && /^\d{4}-\d{2}-\d{2}$/.test(r.lastVisitDay)) {
     base.lastVisitDay = r.lastVisitDay;
   }
@@ -1013,6 +1045,21 @@ const ACTIONS: StoreActions = {
       ...state,
       claimedQuests: [...state.claimedQuests, q],
       wallet: credited(state.wallet, bounty),
+    });
+  },
+
+  earnArcade(tickets, runTotal) {
+    const today = dayKey(Date.now());
+    const already = state.arcadeDay === today ? (state.arcadeWon ?? 0) : 0;
+    const room = Math.max(0, ARCADE_DAILY_CAP - already);
+    const pay = Math.min(room, Math.max(0, Math.floor(tickets)));
+    const best = Math.max(state.arcadeBest ?? 0, Math.max(0, Math.min(300, Math.floor(runTotal))));
+    setState({
+      ...state,
+      arcadeDay: today,
+      arcadeWon: already + pay,
+      arcadeBest: best,
+      wallet: pay > 0 ? credited(state.wallet, pay) : state.wallet,
     });
   },
 

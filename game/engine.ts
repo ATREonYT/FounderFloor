@@ -207,14 +207,21 @@ export function createGame(opts: GameOptions): GameHandle {
   }));
 
   let nearMerchant: MerchantDef | null = null;
-  /** The stall you are standing at: within one tile of its front. */
+  /**
+   * The stall you are standing at. Three rows of standing room in front of
+   * it, for the same reason the booth ring got deeper: a one-tile target
+   * that you have to find by feel reads as a stall that does not work.
+   */
+  const merchantRing = (m: MerchantDef, tx: number, ty: number): boolean =>
+    tx >= m.x - 1 && tx <= m.x + 3 && ty >= m.y && ty <= m.y + 3;
+
   const computeNearMerchant = (): MerchantDef | null => {
     const tx = Math.floor(player.x / TILE);
     const ty = Math.floor(player.y / TILE);
     let best: MerchantDef | null = null;
     let bestD = Infinity;
     for (const m of merchants) {
-      if (tx < m.x - 1 || tx > m.x + 3 || ty < m.y || ty > m.y + 2) continue;
+      if (!merchantRing(m, tx, ty)) continue;
       const cx = (m.x + 1.5) * TILE;
       const cy = (m.y + 1) * TILE;
       const d = (player.x - cx) ** 2 + (player.y - cy) ** 2;
@@ -469,8 +476,20 @@ export function createGame(opts: GameOptions): GameHandle {
 
   // ---------- booth proximity ----------
 
+  /**
+   * Close enough to a stand to talk to it.
+   *
+   * This used to stop at spot.y + 3 — the carpet apron — so you had to be
+   * standing on one specific tile, and every approach from the aisle in
+   * front (rows +4 and +5) silently did nothing. That is what "not all of
+   * them work" was: they all worked, from a strip one tile deep.
+   *
+   * Stand rows are seven apart, so reaching two rows further forward is
+   * free: booth y=3 covers 2..8 and booth y=10 covers 9..15, which do not
+   * meet. computeNear() picks the nearest anyway.
+   */
   const withinRing = (b: BoothInstance, tx: number, ty: number): boolean =>
-    tx >= b.spot.x - 1 && tx <= b.spot.x + 4 && ty >= b.spot.y - 1 && ty <= b.spot.y + 3;
+    tx >= b.spot.x - 1 && tx <= b.spot.x + 4 && ty >= b.spot.y - 1 && ty <= b.spot.y + 5;
 
   let nearBooth: BoothInstance | null = null;
   const computeNear = (): BoothInstance | null => {
@@ -611,9 +630,21 @@ export function createGame(opts: GameOptions): GameHandle {
         return;
       }
     }
-    // 2) a booth you're already close to -> interact
     const tx = Math.floor(wx / TILE);
     const ty = Math.floor(wy / TILE);
+    // 1b) a stall you're already standing at -> use it. Without this the
+    // stalls were keyboard-only, i.e. absent on every phone.
+    for (const m of merchants) {
+      if (tx < m.x || tx > m.x + 2 || ty < m.y - 1 || ty > m.y + 1) continue;
+      const ptx = Math.floor(player.x / TILE);
+      const pty = Math.floor(player.y / TILE);
+      if (merchantRing(m, ptx, pty)) {
+        clearPath();
+        cb.onMerchant?.(m);
+        return;
+      }
+    }
+    // 2) a booth you're already close to -> interact
     const b = boothAtTile(tx, ty);
     if (b) {
       const ptx = Math.floor(player.x / TILE);
