@@ -131,7 +131,17 @@ export const FLOORS: FloorDef[] = [
       { x: 3, y: 36 },
       { x: 51, y: 36 },
     ],
-    startupIds: [],
+    // Sixteen sample stands (see lib/data/startups.ts), placed on the OUTER
+    // bands only. seedSpots is what keeps them off indices 0-7 — the inner
+    // ring on the plaza rim, which stays open so the first real founders
+    // through the door get the best places in the hall rather than the back.
+    startupIds: [
+      "soup-ticket", "night-shift-audio", "crate-and-pallet", "zine-machine",
+      "sheet-metal", "on-call-room", "lower-third", "second-stove",
+      "pocket-notary", "grave-matters", "kerb-appeal", "second-fiddle",
+      "damp-patrol", "the-long-table", "pothole-index", "ferrule-repairs",
+    ],
+    seedSpots: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
     ambientBots: 9,
     plaza: {
       // The plaza clears BOTH inner stand rows by exactly one row (14 above,
@@ -181,15 +191,18 @@ export const FLOORS: FloorDef[] = [
         { kind: "planter", x: 22, y: 26 }, { kind: "planter", x: 35, y: 26 },
         { kind: "planter", x: 19, y: 18 }, { kind: "planter", x: 19, y: 23 },
         { kind: "planter", x: 38, y: 18 }, { kind: "planter", x: 38, y: 23 },
-        // --- lamps down every avenue ---
-        { kind: "lamp", x: 27, y: 5 }, { kind: "lamp", x: 30, y: 5 },
-        { kind: "lamp", x: 27, y: 12 }, { kind: "lamp", x: 30, y: 12 },
-        { kind: "lamp", x: 27, y: 31 }, { kind: "lamp", x: 30, y: 31 },
-        { kind: "lamp", x: 27, y: 38 }, { kind: "lamp", x: 30, y: 38 },
-        { kind: "lamp", x: 5, y: 19 }, { kind: "lamp", x: 5, y: 22 },
-        { kind: "lamp", x: 12, y: 19 }, { kind: "lamp", x: 12, y: 22 },
-        { kind: "lamp", x: 45, y: 19 }, { kind: "lamp", x: 45, y: 22 },
-        { kind: "lamp", x: 52, y: 19 }, { kind: "lamp", x: 52, y: 22 },
+        // --- lamps ALONGSIDE every avenue, never in one ---
+        // They used to stand on the avenues' outer tiles, which looked like
+        // lining a street and walked like an obstacle course. Nothing solid
+        // belongs on a walkway; the geometry check now refuses it outright.
+        { kind: "lamp", x: 26, y: 5 }, { kind: "lamp", x: 31, y: 5 },
+        { kind: "lamp", x: 26, y: 12 }, { kind: "lamp", x: 31, y: 12 },
+        { kind: "lamp", x: 26, y: 31 }, { kind: "lamp", x: 31, y: 31 },
+        { kind: "lamp", x: 26, y: 38 }, { kind: "lamp", x: 31, y: 38 },
+        { kind: "lamp", x: 5, y: 18 }, { kind: "lamp", x: 5, y: 23 },
+        { kind: "lamp", x: 12, y: 18 }, { kind: "lamp", x: 12, y: 23 },
+        { kind: "lamp", x: 45, y: 18 }, { kind: "lamp", x: 45, y: 23 },
+        { kind: "lamp", x: 52, y: 18 }, { kind: "lamp", x: 52, y: 23 },
         // --- WEST WING: café above the avenue, lounge below ---
         { kind: "tree", x: 2, y: 11 }, { kind: "tree", x: 13, y: 11 },
         { kind: "table", x: 4, y: 11 }, { kind: "table", x: 9, y: 11 },
@@ -221,6 +234,57 @@ export const FLOORS: FloorDef[] = [
         { kind: "tree", x: 1, y: 40 }, { kind: "tree", x: 56, y: 40 },
         { kind: "crates", x: 25, y: 1 }, { kind: "crates", x: 32, y: 1 },
         { kind: "board", x: 24, y: 40 }, { kind: "board", x: 32, y: 40 },
+      ],
+      // Four traders along the east and west avenues. They are the only
+      // decor you can walk up to and use, and they exist so the two long
+      // side approaches have a reason to be walked down: the shop, the
+      // sign painter, the records board and the way to the directory are
+      // all things in the hall now, not only entries in a menu.
+      merchants: [
+        {
+          id: "tickets",
+          x: 8,
+          y: 17,
+          action: "tickets",
+          sign: "TICKET BOOTH",
+          keeper: "Wren",
+          blurb: "Buy tickets, or see the ways to earn them.",
+          color: "#B4762E",
+          look: { skin: 2, outfit: 2, hair: 5 },
+        },
+        {
+          id: "signwright",
+          x: 8,
+          y: 24,
+          action: "editor",
+          sign: "SIGN PAINTER",
+          keeper: "Alder",
+          blurb: "Repaint your stand — colours, banner, sign, props.",
+          color: "#5E7C93",
+          look: { skin: 4, outfit: 6, hair: 1 },
+        },
+        {
+          id: "porter",
+          x: 46,
+          y: 17,
+          action: "lobby",
+          sign: "PORTER'S LODGE",
+          keeper: "Halloway",
+          blurb: "Which floors are open, and who is on them right now.",
+          color: "#4F6E6B",
+          look: { skin: 1, outfit: 3, hair: 4 },
+        },
+        {
+          id: "register",
+          x: 46,
+          y: 24,
+          action: "directory",
+          sign: "THE REGISTER",
+          keeper: "Odile",
+          blurb: "Every stand in the hall, listed and searchable.",
+          color: "#7A6070",
+          look: { skin: 5, outfit: 5, hair: 2 },
+        },
       ],
     },
   },

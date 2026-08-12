@@ -1632,6 +1632,135 @@ export function decorDrawable(
   }
 }
 
+/**
+ * A merchant stall: awning, sign board, counter, goods on top.
+ *
+ * Three tiles wide and one deep, facing down like a booth. These are the
+ * only decor you can walk up to and use — they put the shop, the sign
+ * painter, the records board and the register in the hall itself, and
+ * they give the two long side avenues a reason to be walked down.
+ *
+ * Drawn in two parts, like a booth: the awning and sign sort at the back
+ * of the stall, the counter at the front, so the keeper standing between
+ * them is drawn in the right order.
+ */
+export function merchantBackDrawable(tx: number, ty: number, sign: string, color: string): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const w = 3 * T;
+  return {
+    sortY: y + 2,
+    minX: x - 6,
+    maxX: x + w + 6,
+    draw(ctx) {
+      // posts holding the awning up
+      ctx.fillStyle = shade(WOOD_FRONT, -0.35);
+      ctx.fillRect(x + 2, y - 44, 6, 48);
+      ctx.fillRect(x + w - 8, y - 44, 6, 48);
+      ctx.fillStyle = WOOD_FRONT;
+      ctx.fillRect(x + 2, y - 44, 3, 48);
+      ctx.fillRect(x + w - 8, y - 44, 3, 48);
+
+      // sign board slung under the awning
+      const sw = w - 26;
+      const sx = x + 13;
+      const sy = y - 40;
+      ctx.fillStyle = INK;
+      ctx.fillRect(sx - 2, sy - 2, sw + 4, 20);
+      ctx.fillStyle = "#2E2A22";
+      ctx.fillRect(sx, sy, sw, 16);
+      ctx.fillStyle = color;
+      ctx.fillRect(sx, sy, sw, 2);
+      ctx.fillRect(sx, sy + 14, sw, 2);
+      ctx.fillStyle = PAPER;
+      ctx.font = "700 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(sign, x + w / 2, sy + 8, sw - 8);
+
+      // scalloped striped awning above the sign
+      const ah = 13;
+      const ay = y - 58;
+      for (let i = 0; i < w; i += 12) {
+        ctx.fillStyle = (i / 12) & 1 ? "#F2EFE7" : color;
+        ctx.fillRect(x + i, ay, Math.min(12, w - i), ah);
+      }
+      ctx.fillStyle = shade(color, -0.4);
+      ctx.fillRect(x, ay + ah, w, 2);
+      // scallops along the front edge
+      for (let i = 0; i < w; i += 12) {
+        ctx.fillStyle = (i / 12) & 1 ? "#F2EFE7" : color;
+        ctx.fillRect(x + i + 2, ay + ah + 2, 8, 3);
+      }
+      ctx.fillStyle = shade(color, 0.25);
+      ctx.fillRect(x, ay, w, 2);
+    },
+  };
+}
+
+export function merchantFrontDrawable(tx: number, ty: number, color: string, seed: number): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const w = 3 * T;
+  return {
+    sortY: y + T,
+    minX: x - 6,
+    maxX: x + w + 6,
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = "#2A251D";
+      ctx.fillRect(x - 2, y + T - 2, w + 8, 6);
+      ctx.restore();
+      // counter body
+      ctx.fillStyle = "#7A5F3E";
+      ctx.fillRect(x + 2, y + 12, w - 4, T - 14);
+      ctx.fillStyle = shade("#7A5F3E", -0.3);
+      ctx.fillRect(x + 2, y + T - 4, w - 4, 4);
+      ctx.fillStyle = shade("#7A5F3E", -0.14);
+      for (let i = 1; i < 3; i++) ctx.fillRect(x + i * T, y + 14, 2, T - 18);
+      // counter top
+      ctx.fillStyle = WOOD_TOP;
+      ctx.fillRect(x, y + 6, w, 8);
+      ctx.fillStyle = shade(WOOD_TOP, -0.24);
+      ctx.fillRect(x, y + 14, w, 2);
+      // a bunting swag along the counter's front edge
+      ctx.fillStyle = color;
+      for (let i = 4; i < w - 8; i += 10) {
+        ctx.fillRect(x + i, y + 18, 6, 4);
+        ctx.fillRect(x + i + 1, y + 22, 4, 3);
+        ctx.fillRect(x + i + 2, y + 25, 2, 2);
+      }
+      // goods on the counter, varied by seed so no two stalls match
+      const kind = seed % 3;
+      if (kind === 0) {
+        ctx.fillStyle = CARD;
+        for (let i = 0; i < 4; i++) ctx.fillRect(x + 10 + i * 9, y + 1, 7, 6);
+        ctx.fillStyle = color;
+        ctx.fillRect(x + 10, y + 1, 7, 2);
+      } else if (kind === 1) {
+        ctx.fillStyle = "#4A4640";
+        ctx.fillRect(x + 12, y - 6, 11, 12);
+        ctx.fillStyle = "#6B6660";
+        ctx.fillRect(x + 12, y - 6, 4, 12);
+        ctx.fillStyle = BRASS;
+        ctx.fillRect(x + w - 30, y - 2, 16, 8);
+        ctx.fillStyle = BRASS_BRIGHT;
+        ctx.fillRect(x + w - 30, y - 2, 16, 2);
+      } else {
+        ctx.fillStyle = "#B4762E";
+        ctx.fillRect(x + 14, y - 4, 9, 10);
+        ctx.fillStyle = shade("#B4762E", 0.22);
+        ctx.fillRect(x + 14, y - 4, 3, 10);
+        ctx.fillStyle = CARD;
+        ctx.fillRect(x + w - 32, y, 12, 6);
+        ctx.fillStyle = MUTED;
+        ctx.fillRect(x + w - 30, y + 2, 8, 1);
+      }
+    },
+  };
+}
+
 /** Tall cloth banners hung either side of an avenue mouth on the top wall. */
 export function wallBannerDrawable(tx: number, color: string): Drawable {
   const x = tx * T;

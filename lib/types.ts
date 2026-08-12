@@ -155,6 +155,18 @@ export interface Startup {
    * free members and all seed startups.
    */
   tier?: "pro" | "founder";
+  /**
+   * A sample stand shipped with the hall, not a company anybody runs.
+   *
+   * These exist so a young floor reads as a trade show rather than a car
+   * park. Everything that could mislead somebody is gated on this flag:
+   * the booth wears a SAMPLE tag in its corner and the booth card says so
+   * in as many words. They are also structurally absent from /directory,
+   * which lists only stands the server has registered — a made-up company
+   * must never appear on a public, indexed page beside real ones, and the
+   * safest way to guarantee that is for it to have no route there at all.
+   */
+  demo?: boolean;
   /** Absent for user-created startups — replyFor() falls back to generic replies. */
   dialogue?: DialogueScript;
   booth: BoothTheme;
@@ -206,6 +218,16 @@ export interface FloorDef {
   hidden?: boolean;
   /** Assigned to boothSpots in order; may be shorter than boothSpots. */
   startupIds: string[];
+  /**
+   * Which boothSpots indices the seeded startups occupy, in order.
+   *
+   * Without this, seeds fill from index 0 and take whichever spots happen
+   * to be first in the array — which on a hall ordered best-spot-first
+   * means the demo stands would sit in the prime places on the plaza and
+   * real founders would get the back rows. Listing the indices explicitly
+   * keeps the good spots for people.
+   */
+  seedSpots?: number[];
   /** Index into boothSpots reserved for the local user's own booth, if any. */
   reservedSpot?: number;
   /**
@@ -278,6 +300,33 @@ export interface PlazaDef {
   runners?: TileRect[];
   /** Everything standing on the floor, by kind and top-left tile. */
   furniture?: DecorItem[];
+  /**
+   * Merchant stalls: solid, three tiles wide, and the one kind of decor you
+   * can walk up to and use. They put the shop, the stand editor and the
+   * records board in the hall itself instead of only in a menu.
+   */
+  merchants?: MerchantDef[];
+}
+
+/** What a merchant stall does when you press the interact key at it. */
+export type MerchantAction = "tickets" | "editor" | "directory" | "lobby";
+
+export interface MerchantDef {
+  id: string;
+  /** Top-left tile. Three tiles wide, one deep; faces down like a booth. */
+  x: number;
+  y: number;
+  action: MerchantAction;
+  /** Name on the stall's sign board, <= 16 chars. */
+  sign: string;
+  /** The keeper's name on their label. */
+  keeper: string;
+  /** One line, shown on the prompt when you are standing at the stall. */
+  blurb: string;
+  /** Awning and sign colour. */
+  color: string;
+  /** The keeper's look, so each stall has a different person behind it. */
+  look: AvatarLook;
 }
 
 // ---------- chat ----------
@@ -499,6 +548,10 @@ export interface GameCallbacks {
   onPlayerClick?(player: { id: string; name: string }): void;
   /** First-session progress: fired once per action kind ("move" | "emote"). */
   onFirstAction?(kind: "move" | "emote"): void;
+  /** Entered/left a merchant stall's interaction ring (null = left). */
+  onNearMerchant?(m: MerchantDef | null): void;
+  /** Pressed the interact key, or tapped, at a merchant stall. */
+  onMerchant?(m: MerchantDef): void;
 }
 
 export interface GameOptions {

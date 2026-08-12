@@ -120,6 +120,17 @@ export default function BoothCard({
           {s.oneLiner}
         </p>
         <p className="text-sm leading-relaxed text-muted">{s.pitch}</p>
+        {/* Said plainly, above the fold of the card. A sample stand is
+            there so the hall does not read as empty; it is not a company
+            anybody runs, and nobody should have to work that out. */}
+        {s.demo && (
+          <p className="rounded-md border border-line bg-paper px-3 py-2 text-xs leading-relaxed text-muted">
+            <span className="micro mr-1 text-ink">SAMPLE STAND</span>
+            One of sixteen examples dressing the hall while it fills up. Not a
+            real company, and not listed in the directory — the founder here is
+            a character, not a person you can reach.
+          </p>
+        )}
 
         <div>
           <div className="mb-1 flex items-baseline justify-between gap-2">

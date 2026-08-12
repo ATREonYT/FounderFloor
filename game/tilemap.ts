@@ -22,6 +22,8 @@ import {
   drawRunner,
   drawStandPlinth,
   fountainDrawable,
+  merchantBackDrawable,
+  merchantFrontDrawable,
   wallBannerDrawable,
 } from "./decor";
 
@@ -181,19 +183,36 @@ function logoImage(dataUrl: string): HTMLImageElement | null {
  */
 export function isClaimableSpot(floor: FloorDef, idx: number): boolean {
   if (!Number.isInteger(idx) || idx < 0 || idx >= floor.boothSpots.length) return false;
+  return seedIdAt(floor, idx) === undefined;
+}
+
+/**
+ * Which seeded startup, if any, stands at this spot index.
+ *
+ * With `seedSpots` the mapping is explicit, which is how the sample stands
+ * stay on the outer bands and leave the plaza rim open for real founders.
+ * Without it, the old behaviour: fill in array order, skipping the
+ * reserved spot.
+ */
+export function seedIdAt(floor: FloorDef, idx: number): string | undefined {
+  if (floor.seedSpots) {
+    const k = floor.seedSpots.indexOf(idx);
+    return k >= 0 ? floor.startupIds[k] : undefined;
+  }
   let assigned = 0;
   for (let i = 0; i < floor.boothSpots.length && assigned < floor.startupIds.length; i++) {
     if (i === floor.reservedSpot) continue;
-    if (i === idx) return false; // covered by a seed startup
+    if (i === idx) return floor.startupIds[assigned];
     assigned++;
   }
-  return true;
+  return undefined;
 }
 
-/** The boothSpots index a seed startup renders at (skips reservedSpot). */
+/** The boothSpots index a seed startup renders at. */
 export function seedSpotIndex(floor: FloorDef, startupId: string): number {
   const order = floor.startupIds.indexOf(startupId);
   if (order < 0) return -1;
+  if (floor.seedSpots) return floor.seedSpots[order] ?? -1;
   let assigned = 0;
   for (let i = 0; i < floor.boothSpots.length; i++) {
     if (i === floor.reservedSpot) continue;
@@ -284,6 +303,14 @@ export function buildFloor(
       );
     }
 
+    for (const m of plaza.merchants ?? []) {
+      for (let d = 0; d < 3; d++) mark(m.x + d, m.y);
+      drawables.push(
+        merchantBackDrawable(m.x, m.y, m.sign, m.color),
+        merchantFrontDrawable(m.x, m.y, m.color, hashStr(m.id))
+      );
+    }
+
     if (plaza.arch) {
       // the two posts are solid; the beam and board hang over the walkway
       mark(plaza.arch.x0, plaza.arch.y0);
@@ -337,14 +364,13 @@ export function buildFloor(
   for (const c of claims) claimBySpot.set(c.claim.spotIndex, c);
 
   const booths: BoothInstance[] = [];
-  let nextStartup = 0;
   floor.boothSpots.forEach((spot, i) => {
     // solid: banner wall, founder lane (players keep out) and counter
     for (let dy = 0; dy < 3; dy++) for (let dx = 0; dx < 4; dx++) mark(spot.x + dx, spot.y + dy);
     const base = { spot: { x: spot.x, y: spot.y }, spotIndex: i };
     // seed booths own their spots outright; the reserved spot skips seeding
     if (i !== floor.reservedSpot) {
-      const id = floor.startupIds[nextStartup++];
+      const id = seedIdAt(floor, i);
       const s = id !== undefined ? startups[id] : undefined;
       if (s) {
         booths.push({ ...base, startup: s, isYours: false });
@@ -588,6 +614,18 @@ function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {
         ownerLamp: b.ownerId ? { online: b.ownerOnline === true } : null,
         seed: hashStr(b.startup.id),
       });
+      // A sample stand says so on the stand. Small, in the corner, and not
+      // negotiable: a made-up company on a floor full of real ones has to
+      // be legible as made up without anybody having to click it.
+      if (b.startup.demo) {
+        ctx.fillStyle = "rgba(35,32,26,0.82)";
+        ctx.fillRect(bx + 4 * T - 46, by - 7, 42, 11);
+        ctx.fillStyle = "#EDE7D8";
+        ctx.font = "700 7px ui-monospace, SFMono-Regular, Menlo, monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("SAMPLE", bx + 4 * T - 25, by - 1, 38);
+      }
     },
   };
 }

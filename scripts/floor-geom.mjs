@@ -142,7 +142,9 @@ for (const f of FLOORS) {
       tree: 1, sofa: 2, bar: 3, board: 2, crates: 1, sign: 1, bench: 2,
     };
     const WALK_THROUGH = new Set(["stanchion"]);
-    const AVENUE_OK = new Set(["lamp"]);
+    // Nothing solid may stand on a walkway. Lamps used to be exempt and
+    // lined the avenues; walking one then felt like a slalom.
+    const AVENUE_OK = new Set();
 
     const clashes = [];
     const blocking = [];
@@ -186,6 +188,23 @@ for (const f of FLOORS) {
       }
     }
     check(overRun.size === 0, "no aisle runner is laid under a stand", [...overRun].slice(0, 4).join(", "));
+
+    // merchant stalls: three tiles wide, solid, and never on a walkway
+    const mBad = [];
+    for (const m of p.merchants ?? []) {
+      const tag = `merchant ${m.id}(${m.x},${m.y})`;
+      for (let i = 0; i < 3; i++) {
+        const x = m.x + i;
+        if (x < 1 || x > W - 2 || m.y < 1 || m.y > H - 2) mBad.push(`${tag} off map`);
+        if (onBooth(x, m.y)) mBad.push(`${tag} on a stand`);
+        if (onAvenue(x, m.y)) mBad.push(`${tag} blocks an avenue`);
+        const k = `${x},${m.y}`;
+        if (occupied.has(k)) mBad.push(`${tag} overlaps ${occupied.get(k)}`);
+        occupied.set(k, tag);
+        set(x, m.y);
+      }
+    }
+    check(mBad.length === 0, "merchant stalls are clear of stands and walkways", [...new Set(mBad)].join(", "));
 
     // The fountain has to be CENTRED in the plaza, or the inlaid rings in
     // the paving and the stonework inside them sit at different middles —

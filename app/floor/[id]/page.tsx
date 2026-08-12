@@ -11,6 +11,7 @@ import { createGame } from "@/game/engine";
 import { isClaimableSpot } from "@/game/tilemap";
 import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
 import type {
+  MerchantDef,
   ActivityItem,
   BoothClaim,
   BoothInstance,
@@ -117,6 +118,25 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [nearBooth, setNearBooth] = useState<BoothInstance | null>(null);
   const [activeBooth, setActiveBooth] = useState<BoothInstance | null>(null);
   const [editingStand, setEditingStand] = useState(false);
+  /** The merchant stall you are standing at, for the HUD prompt. */
+  const [nearMerchant, setNearMerchant] = useState<MerchantDef | null>(null);
+  /**
+   * What a stall does. The stalls are shortcuts to pages that already
+   * exist, put in the hall so the two side avenues have a reason to be
+   * walked down. Shared by the interact key and by tapping the prompt, so
+   * a phone and a keyboard cannot drift apart.
+   */
+  const useMerchantRef = useRef<(m: MerchantDef) => void>(() => {});
+  const useMerchant = useCallback(
+    (m: MerchantDef) => {
+      if (m.action === "tickets") router.push("/profile#tickets");
+      else if (m.action === "directory") router.push("/directory");
+      else if (m.action === "lobby") router.push("/lobby");
+      else if (m.action === "editor") router.push("/profile#stand");
+    },
+    [router],
+  );
+  useMerchantRef.current = useMerchant;
   /**
    * One game at a time. "mine" = this tab runs it; "blocked" = another TAB
    * of this browser holds the lock; "elsewhere" = the SERVER replaced this
@@ -1122,6 +1142,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             lastNpcBoothRef.current = { spotIndex: b.spotIndex, startupId: b.startup.id };
           }
         },
+        onNearMerchant: (m) => setNearMerchant(m),
+        onMerchant: (m) => useMerchantRef.current(m),
         onPresence: (count, online) => setPresence({ count, online }),
         onHover: (t) => setHover(t),
         onPlayerClick: (p) => openPlayerThread(p.id, p.name),
@@ -1320,7 +1342,14 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     // alone sizes to the layout viewport, which iOS grows and shrinks with
     // the address bar — and every one of those steps reallocated the
     // canvas's backing store mid-animation.
-    <div className="floor-viewport fixed inset-x-0 top-0 z-50 overflow-hidden bg-paper">
+    <div
+      className="floor-viewport fixed inset-x-0 top-0 z-50 overflow-hidden bg-paper"
+      // Everything else on this page is painted into a canvas, so an
+      // end-to-end test has no way to ask "what is the player standing at".
+      // This is that handle, and it costs one attribute.
+      data-near-merchant={nearMerchant?.id ?? ""}
+      data-near-booth={nearBooth ? String(nearBooth.spotIndex) : ""}
+    >
       <canvas
         ref={canvasRef}
         className="pixelated absolute inset-0 h-full w-full"
@@ -1527,6 +1556,26 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               );
             }}
           />
+        </div>
+      )}
+
+      {/* merchant hint — same pill as a booth's, one rung lower priority:
+          a stand you are standing at always wins the prompt */}
+      {!nearBooth && nearMerchant && !activeBooth && (
+        <div className="pointer-events-none absolute bottom-44 left-1/2 -translate-x-1/2 sm:bottom-24">
+          <button
+            type="button"
+            onClick={() => useMerchant(nearMerchant)}
+            className="glass pointer-events-auto px-3 py-1.5 text-sm shadow-float"
+          >
+            {controls.interactKey && (
+              <kbd className="micro mr-2 rounded-sm border border-line px-1 py-0.5 text-muted">
+                {controls.interactKey}
+              </kbd>
+            )}
+            <span className="font-medium">{nearMerchant.sign}</span>
+            <span className="ml-2 text-muted">{nearMerchant.blurb}</span>
+          </button>
         </div>
       )}
 

@@ -114,6 +114,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "soup-ticket": {
     id: "soup-ticket",
+    demo: true,
     name: "Soup Ticket",
     oneLiner: "Prepaid meal passes for lunch counters.",
     pitch:
@@ -180,6 +181,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "night-shift-audio": {
     id: "night-shift-audio",
+    demo: true,
     name: "Night Shift Audio",
     oneLiner: "Over-ear headphones you can fix with one screwdriver.",
     pitch:
@@ -245,6 +247,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "crate-and-pallet": {
     id: "crate-and-pallet",
+    demo: true,
     name: "Crate & Pallet",
     oneLiner: "A marketplace for used pallets and shipping crates.",
     pitch:
@@ -707,6 +710,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "zine-machine": {
     id: "zine-machine",
+    demo: true,
     name: "Zine Machine",
     oneLiner: "Risograph print-on-demand for zines and art prints.",
     pitch:
@@ -1035,6 +1039,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "sheet-metal": {
     id: "sheet-metal",
+    demo: true,
     name: "Sheet Metal",
     oneLiner: "We turn load-bearing spreadsheets into real software.",
     pitch:
@@ -1166,6 +1171,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "on-call-room": {
     id: "on-call-room",
+    demo: true,
     name: "On-Call Room",
     oneLiner: "Shift swaps for nurses that clear in minutes, not group texts.",
     pitch:
@@ -1230,6 +1236,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "lower-third": {
     id: "lower-third",
+    demo: true,
     name: "Lower Third",
     oneLiner: "Broadcast-grade graphics for streamers and tiny newsrooms.",
     pitch:
@@ -1365,6 +1372,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "second-stove": {
     id: "second-stove",
+    demo: true,
     name: "Second Stove",
     oneLiner: "Scheduling and billing for shared commercial kitchens.",
     pitch:
@@ -1562,6 +1570,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "pocket-notary": {
     id: "pocket-notary",
+    demo: true,
     name: "Pocket Notary",
     oneLiner: "Book a licensed online notary in under ten minutes.",
     pitch:
@@ -1628,6 +1637,7 @@ export const STARTUPS: Record<string, Startup> = {
 
   "grave-matters": {
     id: "grave-matters",
+    demo: true,
     name: "Grave Matters",
     oneLiner: "Buy a headstone online without the funeral-home markup.",
     pitch:
@@ -1757,7 +1767,298 @@ export const STARTUPS: Record<string, Startup> = {
         "Connected! Excellent form. Roll your shoulders back twice a day and check on the pilot in a month — both are good for you.",
     },
   },
+
+  // ======================================================================
+  // Six more sample stands, added for the same reason as the ten above: a
+  // hall with sixteen dressed stands in it reads as a trade show, and an
+  // empty one reads as a car park nobody came to. Every one is flagged
+  // demo:true, wears a SAMPLE tag on its booth, and is kept out of the
+  // public directory.
+  // ======================================================================
+
+  "kerb-appeal": {
+    id: "kerb-appeal",
+    demo: true,
+    name: "Kerb Appeal",
+    oneLiner: "Resident parking permits that don't need a phone call.",
+    pitch:
+      "Councils still run resident parking on paper forms and a Tuesday phone line. We give them a page that issues a permit in ninety seconds and a warden app that reads plates. Eleven boroughs, all of them small, all of them relieved.",
+    founder: "Dele Okonkwo",
+    founderLook: { skin: 5, outfit: 3, hair: 1 },
+    category: "Civic",
+    goal: "Reach 25 councils",
+    goalProgress: 0.44,
+    verifiedRevenue: 3100,
+    seekingCofounder: true,
+    booth: {
+      carpet: "#3F5B72",
+      banner: "#5E7C93",
+      sign: "KERB APPEAL",
+      glyph: "cube",
+      trim: "stripes",
+    },
+    dialogue: {
+      greeting:
+        "Kerb Appeal. We do resident parking permits for councils still doing it on paper. Yes, that is most of them. Ask away.",
+      topics: [
+        {
+          keywords: ["council", "customer", "borough", "who", "buy"],
+          reply:
+            "Eleven boroughs, none of them large. Small councils are the good ones to sell to: one person owns the decision, and that person is usually the one currently answering the Tuesday phone line.",
+        },
+        {
+          keywords: ["cofounder", "co-founder", "hire", "hiring", "join", "team"],
+          reply:
+            "Looking, genuinely. I can sell to a council and I can build the warden app, but not in the same week. Somebody who likes procurement paperwork would change my life.",
+        },
+        {
+          keywords: ["revenue", "money", "mrr", "price", "charge"],
+          reply:
+            "Per resident per year, billed to the council. About £3,100 a month across the eleven. It is not a rocket. It renews though, and councils renew for a very long time.",
+        },
+      ],
+      fallback:
+        "Not my area. Try me on councils, the warden app, or why procurement takes nine months. I have opinions about all three.",
+      connectReply:
+        "Connected. If you ever need a parking ticket appealed, I know exactly which form does it.",
+    },
+  },
+
+  "second-fiddle": {
+    id: "second-fiddle",
+    demo: true,
+    name: "Second Fiddle",
+    oneLiner: "Rents orchestral instruments to schools by the term.",
+    pitch:
+      "A school cello costs £900 and gets played by one child for one year. We rent them by the term with repairs included, and take them back when the child moves on to the drums. Forty-two schools, about six hundred instruments out.",
+    founder: "Ruth Ellery",
+    founderLook: { skin: 1, outfit: 6, hair: 4 },
+    category: "Education",
+    goal: "1,000 instruments out",
+    goalProgress: 0.6,
+    verifiedRevenue: 4400,
+    seekingCofounder: false,
+    booth: {
+      carpet: "#6B4630",
+      banner: "#9C6B30",
+      sign: "SECOND FIDDLE",
+      glyph: "wave",
+      style: "garden",
+    },
+    dialogue: {
+      greeting:
+        "Second Fiddle. We rent orchestral instruments to schools by the term. Mostly violins. Distressingly many trombones.",
+      topics: [
+        {
+          keywords: ["instrument", "violin", "cello", "repair", "damage"],
+          reply:
+            "Children are hard on instruments and everybody assumes that kills the model. It doesn't. A school violin needs about £14 of work a year and lasts nine. The trombones are the problem. Ask me about the trombones.",
+        },
+        {
+          keywords: ["trombone", "trombones"],
+          reply:
+            "A trombone has one moving part a child can destroy and they find it every time. We now rent them at double and I still lose money. I keep doing it because a school with no trombone has no jazz band.",
+        },
+        {
+          keywords: ["revenue", "money", "mrr", "price", "charge"],
+          reply:
+            "£28 a term per instrument, six hundred out, so about £4,400 a month averaged. Schools pay in September and January and nowhere in between, which makes my cashflow chart look like a heartbeat.",
+        },
+      ],
+      fallback: "Try me on the instruments, the schools, or the trombones. Especially the trombones.",
+      connectReply:
+        "Connected. If you played something at school and stopped, pick it back up. Everyone says that. Everyone is right.",
+    },
+  },
+
+  "damp-patrol": {
+    id: "damp-patrol",
+    demo: true,
+    name: "Damp Patrol",
+    oneLiner: "Cheap sensors that catch a leak before the ceiling does.",
+    pitch:
+      "A £19 sensor under the sink, behind the boiler and in the loft, all talking to one hub. When something gets wet at 3am your phone knows before your plaster does. Sold to landlords by the building, not to homeowners by the unit.",
+    founder: "Tomás Braga",
+    founderLook: { skin: 4, outfit: 1, hair: 2 },
+    category: "Hardware",
+    goal: "Reach $8k MRR",
+    goalProgress: 0.29,
+    verifiedRevenue: 2300,
+    seekingCofounder: true,
+    booth: {
+      carpet: "#2F5E52",
+      banner: "#3E7A66",
+      sign: "DAMP PATROL",
+      glyph: "bolt",
+      trim: "dots",
+    },
+    dialogue: {
+      greeting:
+        "Damp Patrol. Little sensors, big ceilings. We tell landlords about a leak while it is still a leak and not yet a claim.",
+      topics: [
+        {
+          keywords: ["sensor", "hardware", "build", "product", "how"],
+          reply:
+            "£19 to make, sold at £34. A moisture pad, a radio and a coin cell that lasts four years. The clever part is not the sensor, it is convincing a hub in a damp loft to keep talking.",
+        },
+        {
+          keywords: ["landlord", "customer", "who", "sell", "insurance"],
+          reply:
+            "Landlords with more than thirty units. They already pay for escape-of-water claims, so I am not selling a gadget, I am selling a smaller excess. Insurers are the obvious next call and I have not made it yet.",
+        },
+        {
+          keywords: ["cofounder", "co-founder", "hire", "join", "team"],
+          reply:
+            "Yes. I am a firmware person pretending to be a salesperson and it shows in the numbers. If you have sold anything to a property manager and enjoyed it, I would like a word.",
+        },
+      ],
+      fallback: "Ask me about the sensors, the landlords, or the coin cell. The coin cell took eight months.",
+      connectReply:
+        "Connected. Go and put your hand behind your boiler tonight. Just checking. That is the whole pitch.",
+    },
+  },
+
+  "the-long-table": {
+    id: "the-long-table",
+    demo: true,
+    name: "The Long Table",
+    oneLiner: "Books one big supper a month in a town that needs one.",
+    pitch:
+      "We rent a hall, hire a local cook, sell forty seats at cost plus five pounds, and put strangers from the same postcode at one table. Eleven towns running. The only metric I trust is how many come back a second time: 61%.",
+    founder: "Priya Raman",
+    founderLook: { skin: 3, outfit: 5, hair: 6 },
+    category: "Community",
+    goal: "30 towns",
+    goalProgress: 0.37,
+    verifiedRevenue: 1200,
+    seekingCofounder: false,
+    booth: {
+      carpet: "#7A3F52",
+      banner: "#A85A6E",
+      sign: "LONG TABLE",
+      glyph: "heart",
+      style: "bigtop",
+    },
+    dialogue: {
+      greeting:
+        "The Long Table. One big supper a month, forty strangers from the same postcode, one very long table. Hello.",
+      topics: [
+        {
+          keywords: ["work", "how", "supper", "dinner", "table", "seat"],
+          reply:
+            "Hall, cook, forty seats, one seating. No phones on the table, no name badges, and you do not choose where you sit. The not-choosing is the entire product, and it took me four towns to be brave enough to enforce it.",
+        },
+        {
+          keywords: ["metric", "number", "growth", "retention", "return"],
+          reply:
+            "61% come to a second supper. It is the only number I look at. Ticket revenue is £1,200 a month and will never be a lot, which is a thing I have made peace with and my last investor did not.",
+        },
+        {
+          keywords: ["money", "revenue", "profit", "business", "scale"],
+          reply:
+            "Cost plus five pounds a seat. It scales the boring way, one town at a time, each needing somebody who already knows the hall's caretaker. There is no growth hack for knowing the caretaker.",
+        },
+      ],
+      fallback: "Try me on the suppers, the 61%, or why you do not get to choose your seat.",
+      connectReply: "Connected. Come to one. Sit wherever you are put. That is the deal.",
+    },
+  },
+
+  "pothole-index": {
+    id: "pothole-index",
+    demo: true,
+    name: "Pothole Index",
+    oneLiner: "Dashcam footage turned into road-repair evidence.",
+    pitch:
+      "Delivery fleets already have dashcams. We read the footage for road defects, rank them by how expensive they are about to become, and sell the list to the highways authority. The fleets get it free; the councils pay.",
+    founder: "Ivy Castellan",
+    founderLook: { skin: 2, outfit: 7, hair: 3 },
+    category: "Civic",
+    goal: "Reach $12k MRR",
+    goalProgress: 0.51,
+    verifiedRevenue: 6100,
+    seekingCofounder: false,
+    booth: {
+      carpet: "#5A5140",
+      banner: "#8A7A52",
+      sign: "POTHOLE IDX",
+      glyph: "chip",
+      style: "arcade",
+    },
+    dialogue: {
+      greeting:
+        "Pothole Index. We watch dashcam footage so highways engineers don't have to. Ask me about roads. People rarely do.",
+      topics: [
+        {
+          keywords: ["road", "pothole", "defect", "detect", "how", "model"],
+          reply:
+            "The detector is unremarkable, they are a solved problem. The moat is the ranking: a crack that will be a £4,000 hole in eleven weeks matters more than a hole that has finished happening. That took two winters of data.",
+        },
+        {
+          keywords: ["fleet", "council", "customer", "sell", "who", "pay"],
+          reply:
+            "Fleets give us footage for nothing because they get their own damage report out of it. Councils pay per road-kilometre surveyed. Nine authorities, £6,100 a month, and the sales cycle is exactly as long as you fear.",
+        },
+        {
+          keywords: ["cofounder", "hire", "join", "team", "alone"],
+          reply:
+            "Two of us and a very patient contractor. Not looking, but if you have ever worked inside a highways department, buy me a drink and I will buy you two.",
+        },
+      ],
+      fallback: "Roads, footage, or councils. Those are my three. I am dull at parties and excellent at this.",
+      connectReply:
+        "Connected. You will now notice every crack in every road forever. I am sorry. It does not switch off.",
+    },
+  },
+
+  "ferrule-repairs": {
+    id: "ferrule-repairs",
+    demo: true,
+    name: "Ferrule",
+    oneLiner: "Repairs the things shops refuse to repair.",
+    pitch:
+      "Send us the kettle, the lamp, the food processor. We fix it for a flat £24 plus parts, or tell you honestly that it cannot be fixed and recycle it properly. Four hundred jobs a month out of one railway arch in Leeds.",
+    founder: "Ash Morrow",
+    founderLook: { skin: 0, outfit: 4, hair: 7 },
+    category: "Consumer",
+    goal: "1,000 repairs a month",
+    goalProgress: 0.4,
+    verifiedRevenue: 5200,
+    seekingCofounder: true,
+    booth: {
+      carpet: "#4A4436",
+      banner: "#6E6A44",
+      sign: "FERRULE",
+      glyph: "leaf",
+      trim: "checker",
+    },
+    dialogue: {
+      greeting:
+        "Ferrule. We fix the kettle. Flat £24 plus parts, or we tell you it's dead and say so plainly. What have you broken?",
+      topics: [
+        {
+          keywords: ["repair", "fix", "kettle", "how", "work", "job"],
+          reply:
+            "Four hundred jobs a month, one railway arch, three benches. Sixty percent are one of nine faults, which is the only reason a flat fee works at all. The other forty percent is where the margin goes to die.",
+        },
+        {
+          keywords: ["glue", "glued", "unfixable", "cannot", "dead"],
+          reply:
+            "About one in six arrives glued shut by design. Those go back with a note naming the manufacturer. People are angrier about the note than about the £24, and that anger is slowly becoming our marketing.",
+        },
+        {
+          keywords: ["cofounder", "hire", "join", "team", "scale"],
+          reply:
+            "Wanted: somebody who wants to open arch number two. I know how to run one bench room. I have no idea how to run four, and I would rather admit that now than in eighteen months.",
+        },
+      ],
+      fallback: "Try me on repairs, the glue problem, or opening a second arch.",
+      connectReply:
+        "Connected. Bring me the thing in your cupboard you keep meaning to throw out. I bet it's the switch.",
+    },
+  },
 };
+
 
 // ======================================================================
 // Conversation engine

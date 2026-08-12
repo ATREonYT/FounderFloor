@@ -18,6 +18,7 @@ import type {
   GameHandle,
   GameOptions,
   HoverTarget,
+  MerchantDef,
   MoveState,
   NetEvent,
   RemotePlayer,
@@ -190,6 +191,39 @@ export function createGame(opts: GameOptions): GameHandle {
       bubbles.showChat(bot.bubbleId, line, performance.now()),
     emote: (bot: { bubbleId: string }, kind: EmoteKind): void =>
       bubbles.showEmote(bot.bubbleId, kind, performance.now()),
+  };
+
+  // ---------- merchant stalls ----------
+  // The keeper stands behind their counter and never moves, so there is no
+  // state to tick — just a sprite, a name and a fixed spot. The stall art
+  // itself is scenery in the tilemap; this is the person and the prompt.
+  const merchants = floor.plaza?.merchants ?? [];
+  const keepers = merchants.map((m) => ({
+    def: m,
+    frames: bank.makeAvatar(m.look),
+    // centred on the three-tile stall, standing just behind the counter top
+    x: (m.x + 1.5) * TILE,
+    y: m.y * TILE + 10,
+  }));
+
+  let nearMerchant: MerchantDef | null = null;
+  /** The stall you are standing at: within one tile of its front. */
+  const computeNearMerchant = (): MerchantDef | null => {
+    const tx = Math.floor(player.x / TILE);
+    const ty = Math.floor(player.y / TILE);
+    let best: MerchantDef | null = null;
+    let bestD = Infinity;
+    for (const m of merchants) {
+      if (tx < m.x - 1 || tx > m.x + 3 || ty < m.y || ty > m.y + 2) continue;
+      const cx = (m.x + 1.5) * TILE;
+      const cy = (m.y + 1) * TILE;
+      const d = (player.x - cx) ** 2 + (player.y - cy) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = m;
+      }
+    }
+    return best;
   };
 
   // ---------- click/tap-to-walk path ----------
@@ -414,6 +448,9 @@ export function createGame(opts: GameOptions): GameHandle {
       if (nearBooth) {
         e.preventDefault();
         cb.onInteract(nearBooth);
+      } else if (nearMerchant) {
+        e.preventDefault();
+        cb.onMerchant?.(nearMerchant);
       }
       return;
     }
@@ -868,7 +905,7 @@ export function createGame(opts: GameOptions): GameHandle {
 
     updateNpcs(npcs, dt, player.x, player.y);
     director.update(dt, npcs);
-    // the robots stand down as real people arrive — see HallCrowd.setCrowd
+    // staff go off duty as real people arrive — see HallCrowd.setCrowd
     crowd.setCrowd(remotes.size);
     crowd.update(dt, player.x, player.y, crowdHooks);
 
@@ -877,6 +914,11 @@ export function createGame(opts: GameOptions): GameHandle {
     if (nb !== nearBooth) {
       nearBooth = nb;
       cb.onNearBooth(nb);
+    }
+    const nm = computeNearMerchant();
+    if (nm !== nearMerchant) {
+      nearMerchant = nm;
+      cb.onNearMerchant?.(nm);
     }
   };
 
@@ -1057,8 +1099,8 @@ export function createGame(opts: GameOptions): GameHandle {
     ctx.fillStyle = "#23201A";
     for (const r of remotes.values()) ctx.fillRect(mx + r.x * k - 1, my + r.y * k - 1, 2, 2);
     for (const n of npcs) ctx.fillRect(mx + n.x * k - 1, my + n.y * k - 1, 2, 2);
-    // robots are a paler dot — the minimap should not imply the hall is
-    // fuller of people than it is
+    // staff are a paler dot — the minimap should not imply the hall is
+    // fuller of visitors than it is
     ctx.fillStyle = "#8A8272";
     for (const b of crowd.active) ctx.fillRect(mx + b.x * k - 1, my + b.y * k - 1, 2, 2);
     ctx.fillStyle = "#D9480F";
@@ -1131,6 +1173,9 @@ export function createGame(opts: GameOptions): GameHandle {
     for (const b of bots) {
       dyn.push({ sortY: b.sortY, draw: (c) => b.draw(c, t) });
     }
+    for (const k of keepers) {
+      dyn.push({ sortY: k.y, draw: () => drawAvatar(k.frames, k.x, k.y, "down", 0) });
+    }
     dyn.sort((a, b) => a.sortY - b.sortY);
 
     const lo = cam.y - 3 * TILE;
@@ -1157,9 +1202,11 @@ export function createGame(opts: GameOptions): GameHandle {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     for (const r of remotes.values()) drawLabel(r.name, r.status, r.title, r.x, r.y);
     for (const n of npcs) drawLabel(n.name, undefined, undefined, n.x, n.y);
-    // "hall robot" on the second line of every one of their pills: nothing
-    // walking this floor should be mistakable for a person, at any zoom
-    for (const b of bots) drawLabel(b.name, "hall robot", undefined, b.x, b.y);
+    // "hall staff" on the second line of every one of their pills. They are
+    // drawn as people now, so this line is the only thing separating a
+    // steward from a visitor — it is load-bearing, not decoration.
+    for (const b of bots) drawLabel(b.name, "hall staff", undefined, b.x, b.y);
+    for (const k of keepers) drawLabel(k.def.keeper, k.def.sign, undefined, k.x, k.y);
     // your own label appears once there's something on it worth seeing —
     // a status line or an equipped quest title
     if (me.status || me.title) drawLabel(me.name, me.status, me.title, player.x, player.y);
@@ -1205,9 +1252,14 @@ export function createGame(opts: GameOptions): GameHandle {
       );
     }
 
-    if (nearBooth) {
-      const wx = (nearBooth.spot.x + 2) * TILE;
-      const wy = nearBooth.spot.y * TILE - 12;
+    const nudge = nearBooth
+      ? { wx: (nearBooth.spot.x + 2) * TILE, wy: nearBooth.spot.y * TILE - 12 }
+      : nearMerchant
+        ? { wx: (nearMerchant.x + 1.5) * TILE, wy: nearMerchant.y * TILE - 64 }
+        : null;
+    if (nudge) {
+      const wx = nudge.wx;
+      const wy = nudge.wy;
       const bx = (wx - cam.x) * zoom;
       const by = (wy - cam.y) * zoom + Math.sin(t * 3) * 3;
       ctx.fillStyle = "rgba(255,253,245,0.95)";

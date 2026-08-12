@@ -1,36 +1,38 @@
 /**
- * FounderFloor — hall robots.
+ * FounderFloor — the hall staff.
  *
- * These are the maintenance bots that keep the hall lit while it is quiet:
- * they walk the avenues, stop at the fountain, look at the empty stands,
- * and talk to each other about very little. An expo hall with nothing
- * moving in it reads as closed, and "closed" is the single fastest way to
- * lose somebody who has just arrived.
+ * Stewards who keep the hall lit while it is quiet: they walk the avenues,
+ * stop at the fountain, look at the empty stands, and talk to each other
+ * about very little. An expo hall with nothing moving in it reads as
+ * closed, and "closed" is the single fastest way to lose somebody who has
+ * just arrived.
  *
- * THE HONESTY RULE, because it is easy to lose in a refactor:
- *   - they are drawn as robots (visor, chassis, antenna — see sprites.ts)
- *   - every label says "hall robot" under the name
- *   - their names are hardware, not people
+ * They used to be drawn as robots so nothing could be mistaken for a
+ * person. They are drawn as people now because a hall full of robots is
+ * not the hall this is meant to be — so the honesty moved into the parts
+ * that still carry it, and those parts are NOT decoration:
+ *   - every label reads "hall staff" under the name
  *   - their dialogue never claims to be a founder, and several lines say
- *     out loud that they aren't
- *   - they own no stand, appear in no directory, and are counted by nothing
- *     that reports how many people are here
- * Their population also SHRINKS as real people arrive (see setCrowd), so
- * the busier the hall genuinely is, the less of this there is.
+ *     out loud that they only work here
+ *   - they own no stand, appear in no directory, cannot be connected with,
+ *     and are counted by nothing that reports how many people are here
+ *   - their number SHRINKS as real people arrive (see setCrowd), so the
+ *     busier the hall genuinely is, the less of this there is
+ * If you change one thing in this file, do not let it be the label.
  */
 
 import { TILE } from "../lib/types";
-import type { Dir, EmoteKind } from "../lib/types";
+import type { AvatarLook, Dir, EmoteKind } from "../lib/types";
 import { SPRITE_H, SPRITE_W } from "./sprites";
-import type { AvatarFrames, RobotLook, SpriteBank } from "./sprites";
+import type { AvatarFrames, SpriteBank } from "./sprites";
 import { findPath } from "./path";
 import type { TilePoint } from "./path";
 import { hashStr, mulberry32 } from "./tilemap";
 
-/** Hardware, not people. */
+/** Stewards, cleaners and a barista. First names only — they are staff. */
 const NAMES = [
-  "Rivet", "Bolt", "Gasket", "Sprocket", "Filament", "Grommet",
-  "Ratchet", "Ferrule", "Cotter", "Dowel", "Shim", "Flange",
+  "Marguerite", "Tomasz", "Bea", "Idris", "Noor", "Callum",
+  "Ines", "Rafa", "Sunny", "Delphine", "Otto", "Mira",
 ];
 
 /**
@@ -39,33 +41,33 @@ const NAMES = [
  */
 const EXCHANGES: string[][] = [
   ["I have swept this square four times today.", "It was clean after the first.", "It was cleaner after the fourth."],
-  ["Stand eleven is still open.", "Stand eleven has been open since we booted.", "I keep the light on anyway."],
-  ["Fountain pressure is nominal.", "You say that every hour.", "It is nominal every hour."],
-  ["Someone real walked past me earlier.", "How did it go?", "I waved. I think it went well."],
+  ["Stand eleven is still open.", "Stand eleven has been open since we opened.", "I keep the light on anyway."],
+  ["Fountain pressure is fine.", "You say that every hour.", "It is fine every hour."],
+  ["Somebody came in earlier.", "How did it go?", "I waved. I think it went well."],
   ["Do you ever wonder what is behind the north wall?", "More wall.", "Right. More wall."],
-  ["I have rehearsed my greeting.", "Let's hear it.", "'Welcome to the hall.'", "Needs work."],
+  ["I have been practising my greeting.", "Let's hear it.", "'Welcome to the hall.'", "Needs work."],
   ["The banners want straightening.", "The banners are straight.", "The banners want straightening."],
-  ["I counted the tiles again.", "Same number?", "Same number. Very reassuring."],
-  ["We are not founders, you know.", "I know. We are the furniture that walks.", "I find that dignified."],
-  ["A guest is due at some point.", "How do you know?", "I don't. It is a nice thing to say."],
-  ["Polish, then patrol, then polish.", "You forgot standing near the fountain looking useful.", "That is part of patrol."],
-  ["What is a cap table?", "No idea. I sweep.", "It sounds like furniture."],
-  ["The plaza looks well today.", "The plaza looks the same as yesterday.", "Yes. Well."],
+  ["I counted the floor tiles again.", "Same number?", "Same number. Very reassuring."],
+  ["We are not founders, you know.", "I know. We work here.", "I find that restful."],
+  ["Somebody is due in at some point.", "How do you know?", "I don't. It is a nice thing to say."],
+  ["Sweep, patrol, sweep.", "You forgot standing by the fountain looking useful.", "That is part of patrol."],
+  ["What is a cap table?", "No idea. I do the floors.", "It sounds like furniture."],
+  ["The plaza is looking well today.", "The plaza looks the same as yesterday.", "Yes. Well."],
   ["I moved a chair two centimetres.", "Which chair?", "You would not notice. That is the craft."],
 ];
 
 /** Said alone, when nobody is close enough to talk to. */
 const SOLO: string[] = [
-  "Beep. All clear.",
-  "Fountain on. Lights on. Me on.",
+  "Morning.",
+  "Fountain is on, lights are on, I am on.",
   "Mind the wet paving.",
-  "Every stand here belongs to a real person. Not me.",
-  "Directory board is that way. Probably.",
+  "Every stand here belongs to a real person. Not me — I only work here.",
+  "The register is that way. Probably.",
   "I like this hall. It has good corners.",
   "Just passing through. Professionally.",
   "Sweeping.",
   "Twenty-four stands. I know them all by number.",
-  "If you claim one, I will keep it tidy.",
+  "Claim one and I will keep it tidy for you.",
 ];
 
 const SPEED_MIN = 26;
@@ -114,11 +116,11 @@ export class Wanderer {
   private animT = 0;
   private bobSeed: number;
 
-  constructor(id: string, name: string, look: RobotLook, bank: SpriteBank, start: TilePoint) {
+  constructor(id: string, name: string, look: AvatarLook, bank: SpriteBank, start: TilePoint) {
     this.id = id;
     this.name = name;
     this.bubbleId = `bot:${id}`;
-    this.frames = bank.makeRobot(look);
+    this.frames = bank.makeAvatar(look);
     this.rng = mulberry32(hashStr(id));
     this.speed = SPEED_MIN + this.rng() * (SPEED_MAX - SPEED_MIN);
     this.bobSeed = this.rng() * Math.PI * 2;
@@ -152,7 +154,7 @@ export class Wanderer {
   update(dt: number, world: WorldQuery, playerX: number, playerY: number, pickGoal: () => TilePoint, clock: number): void {
     if (this.moving) this.animT += dt;
 
-    // A person walking up gets attention: stop, turn, hold a beat. This is
+    // A visitor walking up gets attention: stop, turn, hold a beat. This is
     // the cheapest thing in the whole file and the one people notice.
     const pdx = playerX - this.x;
     const pdy = playerY - this.y;
@@ -222,7 +224,7 @@ export class Wanderer {
     ctx.beginPath();
     ctx.ellipse(px, py - 1, 8, 3, 0, 0, Math.PI * 2);
     ctx.fill();
-    // idle hover-bob, a touch slower than the founders' so a crowd of both
+    // idle bob, a touch slower than the stand founders' so a crowd of both
     // never falls into step
     const bob = this.moving ? 0 : Math.round(Math.sin(timeSec * 1.7 + this.bobSeed) * 0.9);
     const frame = this.moving ? 1 + (Math.floor(this.animT * 6) % 2) : 0;
@@ -257,7 +259,7 @@ export class HallCrowd {
     private world: WorldQuery,
     bank: SpriteBank,
     count: number,
-    /** Places worth loitering: the fountain rim, stand fronts, avenue ends. */
+    /** Places worth standing: the fountain rim, stand fronts, avenue ends. */
     private haunts: TilePoint[],
     spawn: TilePoint
   ) {
@@ -270,7 +272,11 @@ export class HallCrowd {
         new Wanderer(
           id,
           NAMES[i % NAMES.length],
-          { chassis: (hashStr(id) >>> 3) % 6, visor: (hashStr(id) >>> 7) % 4 },
+          {
+            skin: (hashStr(id) >>> 3) % 6,
+            outfit: (hashStr(id) >>> 7) % 8,
+            hair: (hashStr(id) >>> 11) % 8,
+          },
           bank,
           seat
         )
@@ -281,11 +287,11 @@ export class HallCrowd {
   }
 
   /**
-   * Thin the robots out as real people turn up: two robots stand down for
+   * Send staff home as real people turn up: two stewards go off duty for
    * every other person in the hall. The room should feel busy when it is
-   * empty and be honest when it isn't — with nine robots that means the
-   * last one leaves once there are five other people here, and from then
-   * on everything moving on this floor is a person.
+   * empty and be honest when it isn't — with nine on the roster that means
+   * the last one leaves once there are five other people here, and from
+   * then on everyone on this floor is a visitor.
    */
   setCrowd(realPlayers: number): void {
     const want = Math.max(0, this.all.length - Math.max(0, realPlayers) * 2);
@@ -307,10 +313,10 @@ export class HallCrowd {
   }
 
   private pickGoal = (): TilePoint => {
-    // A third of the time, go and stand near another robot. Without this
-    // they diffuse evenly across a 58x42 hall, and two robots are then
-    // almost never close enough to talk — the conversations existed but
-    // nobody ever saw one. Gathering is what makes the hall feel attended.
+    // A third of the time, go and stand near a colleague. Without this they
+    // diffuse evenly across a 58x42 hall and are almost never close enough
+    // to talk — the conversations existed but nobody ever saw one.
+    // Gathering is what makes the hall feel attended.
     const bots = this.active;
     if (bots.length > 1 && this.rng() < 0.34) {
       const other = bots[Math.floor(this.rng() * bots.length)];
@@ -408,7 +414,7 @@ export class HallCrowd {
     }
   }
 
-  /** The player waved; robots close by wave back, on a cooldown each. */
+  /** The player waved; staff close by wave back, on a cooldown each. */
   onPlayerEmote(kind: EmoteKind, playerX: number, playerY: number, hooks: CrowdHooks): void {
     if (kind !== "wave") return;
     for (const b of this.active) {
