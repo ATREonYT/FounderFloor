@@ -23,6 +23,7 @@
  * Remove any one and the maps below stop being fair.
  */
 
+import { TIME_LIMIT } from "../lib/data/parkour-limits.mjs";
 import { TILE as HALL_TILE } from "../lib/types";
 import type { AvatarLook } from "../lib/types";
 import { SPRITE_H, SPRITE_W, SpriteBank } from "./sprites";
@@ -191,8 +192,11 @@ const MOVER_SPEED = 44;
  * Seconds on the clock per level. Short on purpose: a level you can dawdle
  * through is a level nobody replays, and every map is authored to be
  * runnable in well under this (scripts/parkour-check.mjs asserts it).
+ *
+ * Re-exported from lib/data/parkour-limits.mjs, which the floor server also
+ * reads to decide whether a reported time is possible. One number, one file.
  */
-export const TIME_LIMIT = 25;
+export { TIME_LIMIT } from "../lib/data/parkour-limits.mjs";
 
 export interface ParkourInput {
   left: boolean;

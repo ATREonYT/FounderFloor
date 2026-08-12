@@ -16,6 +16,7 @@
  *   7. the route is short enough to run inside the time limit
  */
 import { readFileSync } from "node:fs";
+import { MIN_TIME, TIME_LIMIT } from "../lib/data/parkour-limits.mjs";
 
 const SRC = new URL("../game/parkour.ts", import.meta.url).pathname;
 const raw = readFileSync(SRC, "utf8");
@@ -30,7 +31,6 @@ const GRAVITY = num("GRAVITY");
 const FALL_GRAVITY = num("FALL_GRAVITY");
 const RUN = num("RUN");
 const JUMP_V = num("JUMP_V");
-const TIME_LIMIT = num("TIME_LIMIT");
 const MOVER_SPAN = 3.2; // tiles either side of where a '-' or '|' is written
 
 /**
@@ -231,6 +231,19 @@ for (const m of MAPS) {
     `the map is runnable inside the ${TIME_LIMIT}s limit`,
     `needs about ${runSeconds.toFixed(1)}s`);
   check(m.par <= TIME_LIMIT, "par is inside the time limit", `${m.par}s`);
+
+  // 8: the leaderboard rejects times under MIN_TIME as fabricated, so that
+  // floor has to sit BELOW the fastest possible honest run — straight from
+  // the start flag to the exit at full speed, no jumps, no hazards. Set it
+  // too high and a genuinely quick player gets called a cheat.
+  const floor = MIN_TIME[m.id];
+  const dash = (Math.abs(exit.x - start.x) * PT) / RUN;
+  check(typeof floor === "number", `${m.id} has an entry in MIN_TIME`);
+  check(
+    typeof floor !== "number" || floor < dash,
+    "the cheat floor is under the fastest possible run",
+    `floor ${floor}s vs ${dash.toFixed(2)}s of pure sprinting`,
+  );
 
   if (bad === before) console.log("  ok    beatable\n");
   else console.log("");

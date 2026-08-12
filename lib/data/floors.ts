@@ -299,7 +299,7 @@ export const FLOORS: FloorDef[] = [
           action: "records",
           sign: "THE RECORDS",
           keeper: "Bea",
-          blurb: "Best times, best runs, and who is top of the hall.",
+          blurb: "Who is top of the hall this week, and what you are holding.",
           color: "#B08D2E",
           look: { skin: 0, outfit: 1, hair: 3 },
         },

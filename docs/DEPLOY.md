@@ -597,6 +597,44 @@ the time, the deaths and the tickets — a model of the physics can be
 wrong, a run of the actual engine cannot. It also fails a map whose par is
 tighter than a clean run, since nobody would ever get gold on it.
 
+### The hall boards
+
+`GET /leaderboard` (open, no auth) returns four weekly tables plus last
+week's podium. Nothing needs configuring; the server keeps them itself.
+
+Where the numbers come from matters, because only one of the four is
+trustworthy and the Records stall says so to visitors:
+
+| board | source | fakeable from a browser? |
+| --- | --- | --- |
+| time in the building | measured server-side, ws join to ws close | no |
+| after hours (parkour) | reported on state sync | a plausible time, yes |
+| the quick run (arcade) | reported, capped at 300 | a plausible score, yes |
+| connections | counted from synced connections with a peer id | yes |
+
+Reported parkour times are checked against `MIN_TIME` in
+`lib/data/parkour-limits.mjs` — the straight-line sprint across each map —
+and anything faster is dropped rather than clamped, because a clamped cheat
+still tops the table. If you change a map's length, re-run
+`node scripts/parkour-check.mjs`: it asserts each floor stays below what
+the map actually allows.
+
+Weeks start Monday 00:00 **UTC** and roll over lazily — on the next read,
+write or credential sweep after the boundary, so a restart cannot make the
+hall miss one. Closing a week mints the awards: top three of each table get
+a rank, a rolled title that is in no shop, and 40/25/15 tickets. Awards ride
+back to the client on `GET /state` and are folded in idempotently, so a
+dropped request never costs anybody a prize.
+
+Board rows are kept for 120 days after a player's last activity
+(`BOARD_TTL_MS`), independently of their state blob.
+
+Test the lot with:
+
+```
+node server/test/leaderboard.mjs
+```
+
 ## 3. Launch-day checklist
 
 - [ ] `https://floor.yourdomain.com/health` returns ok

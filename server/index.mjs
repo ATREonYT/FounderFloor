@@ -48,6 +48,14 @@
 
 import { createHash, createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { windowInWords } from "../lib/data/event-window.mjs";
+import {
+  MAX_ARCADE,
+  MAX_WEEK_MS,
+  MIN_TIME,
+  TIME_LIMIT,
+  weekEndsAt,
+  weekKey,
+} from "../lib/data/parkour-limits.mjs";
 import { availableParallelism } from "node:os";
 import { closeSync, copyFileSync, fsyncSync, openSync, readFileSync, renameSync, writeSync } from "node:fs";
 import { createServer } from "node:http";
@@ -152,6 +160,13 @@ const STATE_KEYS = new Set([
   "profile", "sub", "connections", "myStartup", "claims", "onboarding",
   "tutorialDone", "badges", "quest", "claimedQuests", "lastVisitDay",
   "visitStreak", "bestStreak", "wallet",
+  // The arcade half. These were missing, which meant signing in on a second
+  // device silently dropped your parkour records and the quizzes you wrote —
+  // and reset arcadeDay/arcadeWon, so the daily ticket ceiling could be
+  // walked straight past by opening a different browser.
+  "parkourBests", "arcadeDay", "arcadeWon", "arcadeBest", "quizzes",
+  // Podium awards, granted by the server at the weekly rollover.
+  "awards",
 ]);
 
 /**
@@ -163,6 +178,60 @@ const STATE_KEYS = new Set([
 const registry = new Map();
 const MAX_REGISTRY = 2000;
 const REGISTRY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+/**
+ * boards: profileId -> one player's standing in the hall.
+ *
+ *   { name, parkour: { mapId: seconds }, arcade, conns, playMs,
+ *     weekParkour, weekArcade, weekConns, weekPlayMs,
+ *     awards: [{ week, board, rank, title, tickets }], updated }
+ *
+ * Where the numbers come from, and how far each can be trusted:
+ *
+ *   playMs      MEASURED HERE — wall time between a ws join and its close,
+ *               summed. The one board a client cannot lie about, which is
+ *               exactly why "most time in the building" is worth having.
+ *   parkour     Reported by the client on state sync, then checked against
+ *               lib/data/parkour-limits.mjs: a time under the physical
+ *               minimum for that map is dropped, not clamped, because a
+ *               clamped cheat still sits at the top of the board.
+ *   arcade      Reported, capped at the 300 three games can total.
+ *   conns       Counted from the synced connection list, live people only
+ *               (a peerId means somebody was on the other end).
+ *
+ * Weekly counters run alongside the all-time ones and reset on the Monday
+ * boundary from parkour-limits.mjs. Rolling over is what mints the awards:
+ * the top three of each board keep a rank and a title nobody can buy.
+ */
+const boards = new Map();
+const MAX_BOARDS = 5000;
+const BOARD_TTL_MS = 120 * 24 * 60 * 60 * 1000;
+/** Rows returned per board. Ten is a board; fifty is a phone directory. */
+const BOARD_TOP = 10;
+/** Last week's podium, kept so the hall can see who won after the reset. */
+let lastPodium = null;
+/** The week `boards` is counting. A different one means it is time to roll. */
+let currentWeek = "";
+
+/**
+ * Titles a week's winners can be handed. None is in the shop and there is
+ * no other way to get one, which is the point — a prize you can buy is a
+ * price. Which one you get is rolled, so two winners rarely match.
+ */
+const AWARD_TITLES = [
+  "Hall record",
+  "Nightwatch",
+  "Ran it clean",
+  "First on the floor",
+  "Last to leave",
+  "Knows everybody",
+  "Fixture",
+  "Off the clock",
+];
+/** Tickets that come with a podium finish, by rank. */
+const AWARD_TICKETS = [40, 25, 15];
+/** Awards kept per player. Two years of podiums is plenty. */
+const MAX_AWARDS = 24;
 
 /** reports: flat list for the operator to review by hand, cap 500. */
 let reports = [];
@@ -1523,6 +1592,66 @@ function loadData() {
     }
   }
 
+  if (parsed.boards && typeof parsed.boards === "object") {
+    const cutoff = Date.now() - BOARD_TTL_MS;
+    const num = (v, cap) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? Math.min(n, cap) : 0;
+    };
+    const times = (v) => {
+      const out = {};
+      if (!v || typeof v !== "object" || Array.isArray(v)) return out;
+      for (const [mapId, raw] of Object.entries(v)) {
+        const floor = MIN_TIME[mapId];
+        const t = Number(raw);
+        if (typeof floor === "number" && Number.isFinite(t) && t >= floor && t <= TIME_LIMIT) {
+          out[mapId] = t;
+        }
+      }
+      return out;
+    };
+    for (const [pid, v] of Object.entries(parsed.boards)) {
+      if (boards.size >= MAX_BOARDS) break;
+      if (!v || typeof v !== "object" || typeof v.updated !== "number" || v.updated <= cutoff) continue;
+      boards.set(pid.slice(0, MAX_ID_LEN), {
+        name: sanitizeStr(v.name, MAX_NAME_LEN) || "Someone",
+        parkour: times(v.parkour),
+        arcade: num(v.arcade, MAX_ARCADE),
+        conns: num(v.conns, 100000),
+        playMs: num(v.playMs, MAX_WEEK_MS * 520),
+        weekParkour: times(v.weekParkour),
+        weekArcade: num(v.weekArcade, MAX_ARCADE),
+        weekConns: num(v.weekConns, 100000),
+        weekPlayMs: num(v.weekPlayMs, MAX_WEEK_MS),
+        awards: Array.isArray(v.awards)
+          ? v.awards
+              .filter(
+                (a) =>
+                  a &&
+                  typeof a === "object" &&
+                  typeof a.week === "string" &&
+                  typeof a.board === "string" &&
+                  typeof a.title === "string" &&
+                  Number.isInteger(a.rank) &&
+                  a.rank >= 1 &&
+                  a.rank <= 3,
+              )
+              .slice(0, MAX_AWARDS)
+              .map((a) => ({
+                week: a.week.slice(0, 12),
+                board: a.board.slice(0, 16),
+                rank: a.rank,
+                title: a.title.slice(0, 24),
+                tickets: num(a.tickets, 100),
+              }))
+          : [],
+        updated: v.updated,
+      });
+    }
+  }
+  if (typeof parsed.currentWeek === "string") currentWeek = parsed.currentWeek.slice(0, 12);
+  if (parsed.lastPodium && typeof parsed.lastPodium === "object") lastPodium = parsed.lastPodium;
+
   if (parsed.guestSecrets && typeof parsed.guestSecrets === "object") {
     const cutoff = Date.now() - GUEST_SECRET_TTL_MS;
     for (const [pid, v] of Object.entries(parsed.guestSecrets)) {
@@ -1671,6 +1800,9 @@ function saveNow() {
     pendingPaid: Object.fromEntries(pendingPaid),
     processedSessions: [...processedSessions],
     banned: Object.fromEntries(banned),
+    boards: Object.fromEntries(boards),
+    lastPodium,
+    currentWeek,
   };
   const tmp = `${DATA_FILE}.tmp`;
   try {
@@ -2122,6 +2254,202 @@ function sanitizeStartup(s) {
   };
 }
 
+// ---------------------------------------------------------------- boards
+
+/** The row for one player, made on demand. */
+function boardFor(id, name) {
+  let b = boards.get(id);
+  if (!b) {
+    if (boards.size >= MAX_BOARDS) return null;
+    b = {
+      name: name || "Someone",
+      parkour: {},
+      arcade: 0,
+      conns: 0,
+      playMs: 0,
+      weekParkour: {},
+      weekArcade: 0,
+      weekConns: 0,
+      weekPlayMs: 0,
+      awards: [],
+      updated: Date.now(),
+    };
+    boards.set(id, b);
+  }
+  if (name) b.name = name;
+  b.updated = Date.now();
+  return b;
+}
+
+/** Total seconds across cleared maps, and how many were cleared. */
+function parkourTotal(times) {
+  const ids = Object.keys(times);
+  let total = 0;
+  for (const id of ids) total += times[id];
+  return { cleared: ids.length, total };
+}
+
+/**
+ * Rank a board. More maps cleared always beats a faster time on fewer —
+ * otherwise the top of the parkour table is whoever has only ever played
+ * the easiest level once.
+ */
+function rankParkour(rows) {
+  return rows
+    .filter((r) => r.cleared > 0)
+    .sort((a, b) => b.cleared - a.cleared || a.total - b.total)
+    .slice(0, BOARD_TOP);
+}
+
+/**
+ * The four tables, built from this week's counters.
+ *
+ * Both the live read and the weekly close need exactly this, and they had a
+ * copy each — which is how the two ended up with different thresholds.
+ */
+function weeklyTables() {
+  const rows = [...boards].map(([id, b]) => ({ id, b }));
+  return {
+    parkour: rankParkour(
+      rows.map(({ id, b }) => ({ id, name: b.name, ...parkourTotal(b.weekParkour) })),
+    ),
+    arcade: rows
+      .filter(({ b }) => b.weekArcade > 0)
+      .map(({ id, b }) => ({ id, name: b.name, score: b.weekArcade }))
+      .sort((a, z) => z.score - a.score)
+      .slice(0, BOARD_TOP),
+    connections: rows
+      .filter(({ b }) => b.weekConns > 0)
+      .map(({ id, b }) => ({ id, name: b.name, count: b.weekConns }))
+      .sort((a, z) => z.count - a.count)
+      .slice(0, BOARD_TOP),
+    // No minimum stay: the table only shows ten names, so a threshold buys
+    // nothing except an empty board on a quiet week — which is exactly the
+    // week a small hall is having.
+    time: rows
+      .filter(({ b }) => b.weekPlayMs > 0)
+      .map(({ id, b }) => ({ id, name: b.name, ms: b.weekPlayMs }))
+      .sort((a, z) => z.ms - a.ms)
+      .slice(0, BOARD_TOP),
+  };
+}
+
+/**
+ * Move to the current week, minting last week's awards on the way.
+ *
+ * Called before every read and every write rather than on a timer: a timer
+ * that has to fire on a quiet Monday morning is a timer that gets missed by
+ * a restart, and then the week never turns over at all.
+ */
+function rollWeek(now = Date.now()) {
+  const week = weekKey(now);
+  if (week === currentWeek) return;
+  const closing = currentWeek;
+  currentWeek = week;
+  if (!closing || boards.size === 0) return;
+
+  const podium = { week: closing, endedAt: now, boards: {} };
+  const tables = weeklyTables();
+
+  for (const [name, table] of Object.entries(tables)) {
+    podium.boards[name] = table.slice(0, 3);
+    table.slice(0, 3).forEach((row, i) => {
+      const b = boards.get(row.id);
+      if (!b) return;
+      // Rolled, not assigned: two people topping two boards in the same
+      // week should not walk away with the same words on their card.
+      const title = AWARD_TITLES[Math.floor(Math.random() * AWARD_TITLES.length)];
+      b.awards.unshift({
+        week: closing,
+        board: name,
+        rank: i + 1,
+        title,
+        tickets: AWARD_TICKETS[i],
+      });
+      b.awards.length = Math.min(b.awards.length, MAX_AWARDS);
+    });
+  }
+  lastPodium = podium;
+
+  for (const b of boards.values()) {
+    b.weekParkour = {};
+    b.weekArcade = 0;
+    b.weekConns = 0;
+    b.weekPlayMs = 0;
+  }
+  console.log(`[boards] week ${closing} closed — ${boards.size} players ranked`);
+  scheduleSave();
+}
+
+/**
+ * Fold a freshly synced state into this player's standing.
+ *
+ * Everything here is client-reported, so everything here is checked. A
+ * parkour time under the map's physical minimum is dropped rather than
+ * clamped — clamping a fabricated 0.01s to 3.6s still puts the faker top
+ * of the table.
+ */
+function noteBoardState(id, state) {
+  if (!state || typeof state !== "object") return;
+  rollWeek();
+  const name = typeof state.profile?.name === "string" ? state.profile.name.slice(0, MAX_NAME_LEN) : "";
+  const b = boardFor(id, name);
+  if (!b) return;
+
+  const times = state.parkourBests;
+  if (times && typeof times === "object" && !Array.isArray(times)) {
+    for (const [mapId, raw] of Object.entries(times)) {
+      const floor = MIN_TIME[mapId];
+      const t = Number(raw);
+      if (typeof floor !== "number") continue; // a map we do not ship
+      if (!Number.isFinite(t) || t < floor || t > TIME_LIMIT) continue;
+      if (!(b.parkour[mapId] <= t)) b.parkour[mapId] = t;
+      if (!(b.weekParkour[mapId] <= t)) b.weekParkour[mapId] = t;
+    }
+  }
+
+  const arcade = Number(state.arcadeBest);
+  if (Number.isFinite(arcade) && arcade > 0 && arcade <= MAX_ARCADE) {
+    b.arcade = Math.max(b.arcade, arcade);
+    b.weekArcade = Math.max(b.weekArcade, arcade);
+  }
+
+  if (Array.isArray(state.connections)) {
+    // Live people only. Sample stands are set dressing and would let a
+    // visitor who talked to nobody top the connections board.
+    const real = state.connections.filter(
+      (c) => c && typeof c === "object" && typeof c.peerId === "string" && c.peerId,
+    ).length;
+    b.conns = Math.max(b.conns, real);
+    b.weekConns = Math.max(b.weekConns, real);
+  }
+}
+
+/** Add measured floor time. Called when a socket closes, never by a client. */
+function noteBoardTime(id, name, ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return;
+  // A session longer than a week is a clock change or a wedged socket.
+  if (ms > MAX_WEEK_MS) return;
+  rollWeek();
+  const b = boardFor(id, name);
+  if (!b) return;
+  b.playMs += ms;
+  b.weekPlayMs += ms;
+  scheduleSave();
+}
+
+/** The four tables as they stand right now. */
+function leaderboardNow() {
+  rollWeek();
+  return {
+    week: currentWeek,
+    endsAt: weekEndsAt(Date.now()),
+    players: boards.size,
+    boards: weeklyTables(),
+    lastWeek: lastPodium,
+  };
+}
+
 /**
  * Keep only the allowlisted top-level keys of a synced app state and enforce
  * the size cap. Deep validation happens client-side on apply (sanitize() in
@@ -2294,6 +2622,17 @@ function pruneCredentials() {
       changed = true;
     }
   }
+  // Board rows outlive their state blob on purpose — a name that stopped
+  // showing up should still hold its record for a while — but not forever.
+  for (const [pid, v] of boards) {
+    if (now - v.updated > BOARD_TTL_MS) {
+      boards.delete(pid);
+      changed = true;
+    }
+  }
+  // The week turns over on a Monday nobody is watching. Nudging it from the
+  // sweep means the podium is minted even if nobody loads a page for days.
+  rollWeek(now);
   // Expired reset tokens: without this sweep they linger until redeemed or
   // reissued, and 500 abandoned links would wedge the MAX_RESET_TOKENS gate,
   // silently disabling password reset for everyone.
@@ -3833,6 +4172,16 @@ const server = createServer((req, res) => {
     return;
   }
 
+  // The four boards, as they stand this week, plus last week's podium.
+  //
+  // Open to anyone — a leaderboard behind a login is a leaderboard nobody
+  // sees. It returns display names and profile ids, both of which are
+  // already public on the floor and in the directory, and nothing else.
+  if (req.method === "GET" && url.pathname === "/leaderboard") {
+    sendJson(res, leaderboardNow());
+    return;
+  }
+
   // Every community startup on the site: claimed stands across all floors
   // (live or away) plus registry entries for founders who created a startup
   // but haven't claimed a spot yet. Everything was sanitized on the way in,
@@ -4091,11 +4440,17 @@ const server = createServer((req, res) => {
           },
         }
       : null;
+    // Podium awards ride along with the entitlement: they are granted here,
+    // at the weekly rollover, and the client has no way to know about one
+    // until it asks. Sent every time, folded in idempotently — an ack
+    // protocol would just be a way to lose an award to a dropped request.
+    rollWeek();
+    const awards = boards.get(me)?.awards ?? [];
     sendJson(
       res,
       entry
-        ? { state: entry.state, savedAt: entry.savedAt, paid, coins, perks }
-        : { state: null, savedAt: 0, paid, coins, perks },
+        ? { state: entry.state, savedAt: entry.savedAt, paid, coins, perks, awards }
+        : { state: null, savedAt: 0, paid, coins, perks, awards },
     );
     return;
   }
@@ -4119,6 +4474,7 @@ const server = createServer((req, res) => {
       }
       const savedAt = Date.now();
       profileStates.set(me, { state, savedAt });
+      noteBoardState(me, state);
       scheduleSave();
       sendJson(res, { ok: true, savedAt });
     })();
@@ -4446,7 +4802,7 @@ wss.on("connection", (ws, req) => {
     let id = rawId;
     for (let n = 2; room.has(id); n++) id = `${rawId}-${n}`;
 
-    client = { ws, id, rawId, name, look, s, status, title, claim: null };
+    client = { ws, id, rawId, name, look, s, status, title, claim: null, joinedAt: Date.now() };
     room.set(id, client);
 
     // social push registry + keep the display name fresh for inboxes
@@ -4839,6 +5195,12 @@ wss.on("connection", (ws, req) => {
       joinTimer = null;
     }
     if (!client || !room) return;
+    // Time in the building, measured rather than reported. The practice
+    // hall and the invisible "__inbox" connection do not count: one is a
+    // tutorial, the other is a background socket nobody is sitting at.
+    if (isRealFloor(floorId) && typeof client.joinedAt === "number") {
+      noteBoardTime(client.rawId, client.name, Date.now() - client.joinedAt);
+    }
     const socks = socketsByProfile.get(client.rawId);
     if (socks) {
       socks.delete(ws);

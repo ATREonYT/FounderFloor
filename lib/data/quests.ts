@@ -331,6 +331,12 @@ export function earnedTitles(state: AppState): string[] {
   for (const q of questStates(state)) {
     if (q.done && q.def.reward.title) titles.push(q.def.reward.title);
   }
+  // Podium titles. These are the only ones with no route through the shop
+  // or the quest board — you finish top three of a week's table or you do
+  // not get one — so they go last, where the newest earned things sit.
+  for (const a of state.awards ?? []) {
+    if (a.title && !titles.includes(a.title)) titles.push(a.title);
+  }
   return titles;
 }
 

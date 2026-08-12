@@ -55,6 +55,48 @@ export interface Perks {
   };
 }
 
+/**
+ * A podium finish the server handed out at a weekly rollover.
+ *
+ * Granted server-side and re-sent on every pull rather than acknowledged
+ * once: an ack protocol is just a way to lose somebody's prize to a dropped
+ * request. The client folds each one in idempotently, keyed by week+board.
+ */
+export interface Award {
+  /** e.g. "2026-W33" */
+  week: string;
+  /** which table: "parkour" | "arcade" | "connections" | "time" */
+  board: string;
+  rank: number;
+  /** An unbuyable title, rolled when the week closed. */
+  title: string;
+  tickets: number;
+}
+
+/** Shape-check awards; anything malformed is dropped rather than trusted. */
+export function readAwards(v: unknown): Award[] {
+  if (!Array.isArray(v)) return [];
+  const out: Award[] = [];
+  for (const raw of v) {
+    if (!raw || typeof raw !== "object") continue;
+    const a = raw as Record<string, unknown>;
+    if (typeof a.week !== "string" || typeof a.board !== "string") continue;
+    if (typeof a.title !== "string" || !a.title) continue;
+    const rank = Number(a.rank);
+    if (!Number.isInteger(rank) || rank < 1 || rank > 3) continue;
+    const tickets = Number(a.tickets);
+    out.push({
+      week: a.week.slice(0, 12),
+      board: a.board.slice(0, 16),
+      rank,
+      title: a.title.slice(0, 24),
+      tickets: Number.isFinite(tickets) && tickets > 0 ? Math.min(tickets, 100) : 0,
+    });
+    if (out.length >= 24) break;
+  }
+  return out;
+}
+
 /** Shape-check the perks blob; anything malformed becomes null, not a crash. */
 function readPerks(v: unknown): Perks | null {
   if (!v || typeof v !== "object") return null;
@@ -90,6 +132,8 @@ export async function pullState(
   coins: number | null;
   /** Trial and referral facts (null for guests). */
   perks: Perks | null;
+  /** Weekly podium finishes the server has granted this profile. */
+  awards: Award[];
 } | null> {
   const base = httpBase();
   if (!base || !me) return null;
@@ -107,6 +151,7 @@ export async function pullState(
       paid?: unknown;
       coins?: unknown;
       perks?: unknown;
+      awards?: unknown;
     };
     const paid =
       data.paid && typeof data.paid === "object" ? (data.paid as PaidEntitlement) : null;
@@ -116,6 +161,7 @@ export async function pullState(
       paid,
       coins: typeof data.coins === "number" && Number.isFinite(data.coins) ? data.coins : null,
       perks: readPerks(data.perks),
+      awards: readAwards(data.awards),
     };
   } catch {
     return null; // offline — local-only until the server is back

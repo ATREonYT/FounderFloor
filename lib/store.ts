@@ -20,6 +20,7 @@ import type {
   BoothStyle,
   Connection,
   OnboardingStep,
+  PodiumAward,
   Startup,
   SubTier,
   Wallet,
@@ -32,7 +33,7 @@ import { ARCADE_DAILY_CAP } from "@/components/Arcade";
 import { MAX_OWN_QUIZZES, QUIZ_COST, sanitizeQuiz } from "@/lib/data/quiz";
 import type { Quiz } from "@/lib/data/quiz";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
-import type { PaidEntitlement, Perks } from "@/lib/sync";
+import type { Award, PaidEntitlement, Perks } from "@/lib/sync";
 import { billingLive } from "@/lib/pricing";
 
 const STORAGE_KEY = "founderfloor:v1";
@@ -181,6 +182,24 @@ export function onCelebration(cb: (e: CelebrationEvent) => void): () => void {
   }
   return () => {
     if (celebrationCb === cb) celebrationCb = null;
+  };
+}
+
+/**
+ * Fired when a weekly podium award lands on this profile. Same hold-the-
+ * moment trick as the celebration above: an award that arrives before the
+ * watcher mounts waits rather than being lost.
+ */
+let awardCb: ((a: PodiumAward) => void) | null = null;
+let pendingAward: PodiumAward | null = null;
+export function onAward(cb: (a: PodiumAward) => void): () => void {
+  awardCb = cb;
+  if (pendingAward) {
+    cb(pendingAward);
+    pendingAward = null;
+  }
+  return () => {
+    if (awardCb === cb) awardCb = null;
   };
 }
 
@@ -485,6 +504,34 @@ function applyCoinCredits(coins: number | null): void {
 }
 
 /**
+ * Fold in weekly podium awards the server has granted.
+ *
+ * The server re-sends the whole list on every pull rather than expecting an
+ * acknowledgement, so this has to be idempotent: an award is identified by
+ * its week and board, and one already held is skipped. That also means the
+ * ticket bonus is paid exactly once even though the grant arrives on every
+ * sync for as long as the award exists.
+ */
+function applyAwards(incoming: Award[]): void {
+  if (incoming.length === 0) return;
+  const held = state.awards ?? [];
+  const seen = new Set(held.map((a) => `${a.week}|${a.board}`));
+  const fresh = incoming.filter((a) => !seen.has(`${a.week}|${a.board}`));
+  if (fresh.length === 0) return;
+  const bonus = fresh.reduce((sum, a) => sum + a.tickets, 0);
+  setState({
+    ...state,
+    awards: [...fresh, ...held].slice(0, 24),
+    wallet: { ...state.wallet, earned: state.wallet.earned + bonus },
+  });
+  // Announce the best of them — winning two boards in one week is one
+  // moment, not two modals stacked on each other.
+  const best = fresh.reduce((a, b) => (b.rank < a.rank ? b : a));
+  if (awardCb) awardCb(best);
+  else pendingAward = best;
+}
+
+/**
  * Pull-and-apply for the current identity, then push if the server had
  * nothing newer. Called on load and after sign-in; safe to call anytime.
  */
@@ -504,6 +551,7 @@ export function syncNow(): void {
     // payment changes `paid` without touching savedAt.
     if (remote) applyEntitlement(remote.paid, remote.perks);
     if (remote) applyCoinCredits(remote.coins);
+    if (remote) applyAwards(remote.awards);
     // Follow with a push ONLY when the pull answered. It's hash-guarded, so
     // it's a no-op unless a merge folded local work into the pulled state or
     // this device has unsynced changes. After a FAILED pull, pushing blind
@@ -733,6 +781,35 @@ function sanitize(raw: unknown): AppState {
   }
 
   base.tutorialDone = r.tutorialDone === true;
+
+  // Podium awards. Same defensive read as everything else here: this blob
+  // may have come off localStorage, where anyone can edit it. A fabricated
+  // award only buys a title on your own screen — the boards themselves are
+  // the server's — but it should still have to be well formed.
+  if (Array.isArray(r.awards)) {
+    const awards: PodiumAward[] = [];
+    const seen = new Set<string>();
+    for (const v of r.awards) {
+      if (!v || typeof v !== "object") continue;
+      const a = v as Record<string, unknown>;
+      if (typeof a.week !== "string" || typeof a.board !== "string") continue;
+      if (typeof a.title !== "string" || !a.title.trim()) continue;
+      const rank = Math.trunc(numOr(a.rank, 0));
+      if (rank < 1 || rank > 3) continue;
+      const key = `${a.week}|${a.board}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      awards.push({
+        week: a.week.slice(0, 12),
+        board: a.board.slice(0, 16),
+        rank,
+        title: a.title.trim().slice(0, 24),
+        tickets: Math.max(0, Math.min(100, Math.trunc(numOr(a.tickets, 0)))),
+      });
+      if (awards.length >= 24) break;
+    }
+    if (awards.length) base.awards = awards;
+  }
 
   const strList = (v: unknown, maxLen: number, cap: number): string[] => {
     if (!Array.isArray(v)) return [];

@@ -676,6 +676,19 @@ export interface Wallet {
   earnedBase: number;
 }
 
+/** One weekly podium finish. See AppState.awards. */
+export interface PodiumAward {
+  /** e.g. "2026-W33" */
+  week: string;
+  /** "parkour" | "arcade" | "connections" | "time" */
+  board: string;
+  /** 1, 2 or 3. */
+  rank: number;
+  /** An unbuyable title, rolled when the week closed. */
+  title: string;
+  tickets: number;
+}
+
 export interface AppState {
   profile: PlayerProfile;
   sub: SubTier;
@@ -709,6 +722,13 @@ export interface AppState {
   arcadeDay?: string;
   arcadeWon?: number;
   arcadeBest?: number;
+  /**
+   * Weekly podium finishes, granted by the floor server when a week closes
+   * and re-sent on every pull. Folded in by week+board so applying the same
+   * list twice is a no-op. The titles are not in the shop and there is no
+   * other way to earn one.
+   */
+  awards?: PodiumAward[];
   /** Consecutive visit days, current and best-ever (drives the habit quest). */
   visitStreak: number;
   bestStreak: number;

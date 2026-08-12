@@ -37,11 +37,15 @@ writeFileSync(
    export class SpriteBank { makeAvatar() { return { idle: [], walk: [], jump: null }; } }`,
 );
 writeFileSync(join(dir, "types.js"), "export const TILE = 32;");
+// The engine imports the shared limits table (TIME_LIMIT); point it at the
+// real file rather than stubbing, or this would be testing a made-up limit.
+const LIMITS = new URL("../lib/data/parkour-limits.mjs", import.meta.url).href;
 const js = ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext },
 }).outputText
   .replace(/["']\.\.\/lib\/types["']/g, '"./types.js"')
-  .replace(/["']\.\/sprites["']/g, '"./sprites.js"');
+  .replace(/["']\.\/sprites["']/g, '"./sprites.js"')
+  .replace(/["']\.\.\/lib\/data\/parkour-limits\.mjs["']/g, JSON.stringify(LIMITS));
 writeFileSync(join(dir, "parkour.js"), js);
 
 const { MAPS, ParkourRun, PT, TIME_LIMIT } = await import(

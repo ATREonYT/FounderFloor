@@ -8,11 +8,13 @@
  * floor (a Stripe checkout, say) the control says so before it takes you.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { FLOORS } from "@/lib/data/floors";
 import { MAPS } from "@/game/parkour";
 import { EARN, dailyTickets, walletBalance } from "@/lib/data/shop";
+import { fetchLeaderboard, humanMs, untilWords } from "@/lib/leaderboard";
+import type { Leaderboard } from "@/lib/leaderboard";
 import { TIER_ORDER } from "@/lib/types";
 import type { AppState, BoothInstance, SubTier } from "@/lib/types";
 import TicketIcon from "@/components/TicketIcon";
@@ -231,7 +233,7 @@ const GUIDE: GuideRow[] = [
   },
   {
     where: "The Records",
-    what: "Your times, your runs, how far you have got.",
+    what: "The hall's four weekly boards, and your own numbers against them.",
     how: "Opposite the arcade, south-west of the fountain.",
   },
 ];
@@ -263,33 +265,100 @@ export function GuideStall() {
   );
 }
 
+
 // ---------------------------------------------------------------- records
 
 /**
  * The Records — the hall's board of standings, next to the fountain.
  *
- * Everything here is a number the site can actually prove: your own bests,
- * held on your own state and synced with your account. A hall-wide weekly
- * table needs the server to collect times from everyone, which it does not
- * do yet, and inventing one would mean showing you strangers who do not
- * exist. So this says what it knows and says plainly what it does not.
+ * Four weekly tables from the floor server, your own card above them, and
+ * last week's podium. The one thing this screen owes anybody is not
+ * pretending: the server cannot verify a reported score, so the stall says
+ * which board is measured and which is taken on trust rather than dressing
+ * all four up as facts.
  */
 
 const fmt = (s: number): string => {
   const m = Math.floor(s / 60);
   const rest = s - m * 60;
-  return m > 0
-    ? `${m}:${rest.toFixed(2).padStart(5, "0")}`
-    : `${rest.toFixed(2)}s`;
+  return m > 0 ? `${m}:${rest.toFixed(2).padStart(5, "0")}` : `${rest.toFixed(2)}s`;
 };
 
+/**
+ * Podium colours for TEXT, not for fills. Plain gold (#B08D2E) is 2.7:1 on
+ * paper — it fails AA at this size, and these are the smallest numbers on
+ * the screen. See the note beside `gold-deep` in tailwind.config.ts.
+ */
+const MEDAL = ["#7A611F", "#5C5850", "#8A5324"];
+
+function Table<T extends { id: string; name: string }>({
+  title,
+  note,
+  rows,
+  me,
+  value,
+  empty,
+}: {
+  title: string;
+  note: string;
+  rows: T[];
+  me: string;
+  value: (row: T) => string;
+  empty: string;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <p className="micro text-[10px] text-muted">{title}</p>
+        <p className="text-[10px] leading-none text-muted">{note}</p>
+      </div>
+      <ol className="flex flex-col divide-y divide-line rounded-lg border border-line">
+        {rows.map((r, i) => (
+          <li
+            key={r.id}
+            className={`flex items-baseline gap-3 px-4 py-2 ${r.id === me ? "bg-paper" : ""}`}
+          >
+            <span
+              className="w-5 shrink-0 font-mono text-xs"
+              style={{ color: i < 3 ? MEDAL[i] : undefined }}
+            >
+              {i + 1}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {r.name}
+              {r.id === me && <span className="micro ml-2 text-[9px] text-accent">YOU</span>}
+            </span>
+            <span className="shrink-0 font-mono text-sm">{value(r)}</span>
+          </li>
+        ))}
+        {rows.length === 0 && <li className="px-4 py-3 text-xs text-muted">{empty}</li>}
+      </ol>
+    </div>
+  );
+}
+
 export function RecordsStall({ state }: { state: AppState }) {
+  const [board, setBoard] = useState<Leaderboard | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    void fetchLeaderboard().then((b) => {
+      if (!alive) return;
+      setBoard(b);
+      setLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const me = state.profile.id;
   const bests = state.parkourBests ?? {};
   const cleared = MAPS.filter((m) => typeof bests[m.id] === "number");
   const golds = cleared.filter((m) => bests[m.id] <= m.par);
-
-  // A connection with a peerId is a live person; the rest are sample stands.
   const people = state.connections.filter((c) => c.peerId).length;
+  const awards = state.awards ?? [];
 
   const cards: { label: string; value: string; note: string }[] = [
     {
@@ -326,51 +395,119 @@ export function RecordsStall({ state }: { state: AppState }) {
         ))}
       </div>
 
-      <div>
-        <p className="micro mb-2 text-[10px] text-muted">AFTER HOURS — YOUR TIMES</p>
-        <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
-          {MAPS.map((m) => {
-            const t = bests[m.id];
-            const gold = typeof t === "number" && t <= m.par;
-            return (
-              <li key={m.id} className="flex items-baseline gap-3 px-4 py-2.5">
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="text-sm">{m.name}</span>
-                    {gold && <span className="micro text-[9px] text-gold">INSIDE PAR</span>}
-                  </span>
-                  <span className="block text-xs leading-snug text-muted">
-                    par {m.par}s · {"●".repeat(m.hard)}
-                    {"○".repeat(3 - m.hard)}
-                  </span>
+      {awards.length > 0 && (
+        <div className="rounded-lg border border-gold bg-paper px-4 py-3">
+          <p className="micro mb-2 text-[10px] text-muted">WHAT YOU HAVE WON</p>
+          <ul className="flex flex-col gap-1.5">
+            {awards.slice(0, 4).map((a) => (
+              <li key={`${a.week}|${a.board}`} className="flex items-baseline gap-2 text-sm">
+                <span className="font-mono text-xs" style={{ color: MEDAL[a.rank - 1] }}>
+                  #{a.rank}
                 </span>
-                <span
-                  className={`shrink-0 font-mono text-sm ${
-                    typeof t === "number" ? "text-ink" : "text-muted"
-                  }`}
-                >
-                  {typeof t === "number" ? fmt(t) : "—"}
+                <span className="min-w-0 flex-1">
+                  &ldquo;{a.title}&rdquo;
+                  <span className="ml-2 text-xs text-muted">
+                    {a.board}, {a.week}
+                  </span>
                 </span>
               </li>
-            );
-          })}
-        </ul>
-      </div>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            Those titles are yours to wear — pick one on your profile. There is
+            no other way to get one.
+          </p>
+        </div>
+      )}
 
-      <p className="text-sm leading-relaxed text-muted">
-        The arcade is the stall on the other side of the fountain. Beat par on
-        a map and it shows up here with the mark against it.
-      </p>
+      {loading && <p className="text-sm text-muted">Reading the board…</p>}
 
-      <div className="rounded-lg border border-line bg-paper px-4 py-3">
-        <p className="micro mb-1.5 text-[10px] text-muted">THE HALL TABLE</p>
-        <p className="text-xs leading-relaxed text-muted">
-          Everyone&rsquo;s times, ranked, with the top three of the week getting
-          a mark on their stand — that needs enough people playing for a table
-          to mean anything, so it goes up when the hall is busy rather than
-          showing you a list of one.
+      {!loading && !board && (
+        <p className="text-sm leading-relaxed text-muted">
+          The board is kept by the floor server, and it is not answering right
+          now. Your own numbers above are stored on this device, so they are
+          still right.
         </p>
-      </div>
+      )}
+
+      {board && (
+        <>
+          <p className="text-sm leading-relaxed text-muted">
+            This week&rsquo;s standings — {board.week}, resetting{" "}
+            {untilWords(board.endsAt)}. Top three of each table keep a rank and
+            a title that is not for sale.
+          </p>
+
+          <Table
+            title="TIME IN THE BUILDING"
+            note="measured here"
+            rows={board.boards.time}
+            me={me}
+            value={(r) => humanMs(r.ms)}
+            empty="Nobody has clocked a minute yet this week."
+          />
+          <Table
+            title="CONNECTIONS MADE"
+            note="live people only"
+            rows={board.boards.connections}
+            me={me}
+            value={(r) => String(r.count)}
+            empty="No introductions yet this week."
+          />
+          <Table
+            title="AFTER HOURS"
+            note="maps cleared, then time"
+            rows={board.boards.parkour}
+            me={me}
+            value={(r) => `${r.cleared}/${MAPS.length} · ${fmt(r.total)}`}
+            empty="Nobody has finished a map yet this week."
+          />
+          <Table
+            title="THE QUICK RUN"
+            note="out of 300"
+            rows={board.boards.arcade}
+            me={me}
+            value={(r) => String(r.score)}
+            empty="No runs yet this week."
+          />
+
+          {board.lastWeek && (
+            <div>
+              <p className="micro mb-2 text-[10px] text-muted">
+                LAST WEEK ({board.lastWeek.week})
+              </p>
+              <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
+                {Object.entries(board.lastWeek.boards).map(([name, rows]) => (
+                  <li key={name} className="px-4 py-2.5">
+                    <p className="text-xs text-muted">{name}</p>
+                    <p className="text-sm">
+                      {(rows ?? []).map((r) => r.name).join(" · ") || "nobody"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="rounded-lg border border-line bg-paper px-4 py-3">
+            <p className="micro mb-1.5 text-[10px] text-muted">HOW MUCH TO TRUST THIS</p>
+            <p className="text-xs leading-relaxed text-muted">
+              Time in the building is measured by the server, from the moment
+              you walk in to the moment you close the tab, so it is the one
+              table nobody can talk their way onto. The other three are
+              reported by your own browser: impossible parkour times are
+              thrown out and arcade scores are capped, but a patient liar
+              could still post a plausible number. Worth knowing before you
+              take second place personally.
+            </p>
+          </div>
+
+          <p className="text-xs text-muted">
+            {board.players} {board.players === 1 ? "person" : "people"} tracked
+            in the hall.
+          </p>
+        </>
+      )}
     </div>
   );
 }
