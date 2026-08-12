@@ -153,6 +153,45 @@ and exposes it at `/debug/emails`) — never set it in production.
    sender. Keeping the contact address on the sending domain
    (`founderfloor.net`) avoids this — see `lib/contact.ts`.
 
+### Changing settings without root, ever again
+
+Every `Environment=` line above lives in a file only root can edit, so a
+one-word config change needs a sudo password — which is exactly the thing
+that goes missing six months later. Move them into a file the app user
+owns, once, while you still have root:
+
+    Environment=PORT_WS=3001
+    EnvironmentFile=-/home/founderfloor/app/.env
+
+(The `-` means "carry on if the file isn't there", so a missing .env can
+never stop the server booting.) Then:
+
+    sudo -u founderfloor touch /home/founderfloor/app/.env
+    sudo chmod 600 /home/founderfloor/app/.env
+    sudo systemctl daemon-reload && sudo systemctl restart founderfloor
+
+From then on the file holds the secrets — one KEY=value per line, no
+`export`, quotes only if the value contains spaces:
+
+    RESEND_API_KEY=re_xxxxxxxxx
+    EMAIL_FROM=FounderFloor <noreply@founderfloor.net>
+    EMAIL_REPLY_TO=you@yourworkmail.com
+
+and changing one is an edit as the `founderfloor` user plus
+`systemctl restart founderfloor`. Values in the .env win over
+`Environment=` lines only if you remove the duplicates from the unit —
+systemd applies `Environment=` last, so delete the ones you move.
+
+### Locked out of the VPS itself
+
+If `sudo` asks for a password you don't have: check `whoami` first. On a
+Hetzner or DigitalOcean box you are usually logged in AS root, and root
+never needs `sudo` — drop the word and the command runs. If you are some
+other user and its password is unknown, reset the root password from the
+provider's web console (Hetzner: the server → Rescue → Reset root
+password), then log in as root directly. Nothing on the box is lost; the
+service keeps running throughout.
+
 ### The emails say FounderFloor but show a personal address
 
 Open `/admin` and read the line under the account count: it prints the
