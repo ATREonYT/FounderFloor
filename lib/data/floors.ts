@@ -48,64 +48,133 @@ export const PRACTICE_FLOOR_ID = "tutorial-hall";
  */
 export const FLOORS: FloorDef[] = [
   {
-    // 50x38. Four rows of six stands, all claimable.
+    // 58x42. A fountain plaza with four avenues running out of it, and the
+    // twenty-four stands ringed around it in two bands per side.
     //
-    // GROWN FROM 34x28 / 12 STANDS, BY APPENDING ONLY. A claim is stored as
-    // an index into boothSpots (ClaimEntry.spotIndex), so moving or
-    // reordering an entry silently moves somebody's stand to a different
-    // part of the hall. The original twelve keep their exact coordinates
-    // AND their positions in this array; everything new is added after them.
-    // Any future growth has to follow the same rule.
+    // ─── WHY THIS REPLACED THE OLD GRID ────────────────────────────────
+    // The old hall was four straight rows of six on a 50x38 rectangle. It
+    // was efficient and it read as a car park: nothing drew the eye, so
+    // with two or three stands claimed the room looked abandoned rather
+    // than early. A plaza gives the room a middle to point at, and the
+    // spot ORDER below fills that middle first — with four stands taken
+    // the hall reads as a busy centre, not four dots in a field.
     //
-    // Rows: y=3 / 13 / 21 / 29 (zone rows y..y+2, carpet apron y+3).
-    // Cols: x=3 / 11 / 19 / 27 / 35 / 43 (zones 4 wide, so 4 clear tiles
-    // between them; the rightmost ends at col 46, wall at 49).
-    // The last apron is row 32 and the bottom wall is 37, which leaves four
-    // rows of open floor along the bottom — that band is where players spawn
-    // (engine.ts uses height - 5), and spawning inside a booth alley reads
-    // as being dumped behind somebody's counter.
+    // ─── THE ONE RULE THAT MATTERS ─────────────────────────────────────
+    // A claim is stored as an index into boothSpots (ClaimEntry.spotIndex),
+    // so an entry's POSITION IN THIS ARRAY is its identity. Reordering
+    // moves somebody's stand somewhere else in the hall. This redesign
+    // knowingly spent that once — the layout changed underneath, so every
+    // index had to be re-pointed anyway, and a stand only lives on a floor
+    // while its owner is standing there. From here on the old rule holds
+    // again: append, never reorder.
+    //
+    // ─── GEOMETRY ──────────────────────────────────────────────────────
+    // Plaza      x 21..36, y 14..27   (paved, walkable)
+    // Fountain   x 26..31, y 18..23   (solid; centre 29, 21 — dead centre
+    //                                  of both the plaza and the avenues)
+    // Avenues    N x27..30 y1..13   S x27..30 y28..40
+    //            W x1..20 y19..22   E x37..56 y19..22
+    // Booth rows y=3 (zone 3-5, apron 6)    outer north
+    //            y=10 (zone 10-12, apron 13) inner north, on the plaza rim
+    //            y=29 (zone 29-31, apron 32) inner south, on the plaza rim
+    //            y=36 (zone 36-38, apron 39) outer south
+    // Columns    x = 3 / 9 / 15 / 21 | avenue | 33 / 39 / 45 / 51
+    //            — zones are 4 wide, so every gap is exactly 2 clear tiles,
+    //            and the avenue keeps 2 clear on each side of it too.
+    //
+    // The player spawns at (width/2, height-5) = tile (29, 37), which is
+    // inside the south avenue: you arrive at the bottom of the hall looking
+    // straight up the avenue, under the MAIN HALL sign, at the fountain.
+    // The east and west wings are deliberately stand-free — they are the
+    // lounge and café side of a real expo hall, and they give the eye
+    // somewhere to rest between two dense banks of stands.
     id: "main-hall",
     name: "Main Hall",
     tagline: "The free floor. Twenty-four stands, first come first served. Everyone starts here.",
     tier: "free",
-    width: 50,
-    height: 38,
+    width: 58,
+    height: 42,
     theme: {
       floorA: "#D8D2C4",
       floorB: "#D1CABA",
       wall: "#8A8272",
       trim: "#6F6A5E",
     },
+    // Ordered inner ring first, alternating north/south so the hall fills
+    // outward from the fountain and stays visually balanced while it does.
     boothSpots: [
-      // --- the original twelve. Do not move, reorder or renumber. ---
+      // inner ring — the four stands flanking the avenues on the plaza rim
+      { x: 21, y: 10 },
+      { x: 33, y: 10 },
+      { x: 21, y: 29 },
+      { x: 33, y: 29 },
+      // inner ring — the outer pair on each rim
+      { x: 15, y: 10 },
+      { x: 39, y: 10 },
+      { x: 15, y: 29 },
+      { x: 39, y: 29 },
+      // outer band, working away from the avenues
+      { x: 21, y: 3 },
+      { x: 33, y: 3 },
+      { x: 21, y: 36 },
+      { x: 33, y: 36 },
+      { x: 15, y: 3 },
+      { x: 39, y: 3 },
+      { x: 15, y: 36 },
+      { x: 39, y: 36 },
+      { x: 9, y: 3 },
+      { x: 45, y: 3 },
+      { x: 9, y: 36 },
+      { x: 45, y: 36 },
       { x: 3, y: 3 },
-      { x: 11, y: 3 },
-      { x: 19, y: 3 },
-      { x: 27, y: 3 },
-      { x: 3, y: 13 },
-      { x: 11, y: 13 },
-      { x: 19, y: 13 },
-      { x: 27, y: 13 },
-      { x: 3, y: 21 },
-      { x: 11, y: 21 },
-      { x: 19, y: 21 },
-      { x: 27, y: 21 },
-      // --- added when the hall grew: two more columns on the east side ---
-      { x: 35, y: 3 },
-      { x: 43, y: 3 },
-      { x: 35, y: 13 },
-      { x: 43, y: 13 },
-      { x: 35, y: 21 },
-      { x: 43, y: 21 },
-      // --- and a fourth row across the bottom ---
-      { x: 3, y: 29 },
-      { x: 11, y: 29 },
-      { x: 19, y: 29 },
-      { x: 27, y: 29 },
-      { x: 35, y: 29 },
-      { x: 43, y: 29 },
+      { x: 51, y: 3 },
+      { x: 3, y: 36 },
+      { x: 51, y: 36 },
     ],
     startupIds: [],
+    ambientBots: 9,
+    plaza: {
+      rect: { x0: 21, y0: 14, x1: 36, y1: 27 },
+      fountain: { x0: 26, y0: 18, x1: 31, y1: 23 },
+      avenues: [
+        { x0: 27, y0: 1, x1: 30, y1: 13 }, // north
+        { x0: 27, y0: 28, x1: 30, y1: 40 }, // south
+        { x0: 1, y0: 19, x1: 20, y1: 22 }, // west
+        { x0: 37, y0: 19, x1: 56, y1: 22 }, // east
+      ],
+      // hung across the south avenue, in front of where everyone arrives
+      arch: { x0: 26, y0: 33, x1: 31, y1: 33 },
+      planters: [
+        { x: 22, y: 15 }, { x: 35, y: 15 }, // plaza corners
+        { x: 22, y: 26 }, { x: 35, y: 26 },
+        { x: 19, y: 18 }, { x: 19, y: 23 }, // west avenue mouth
+        { x: 38, y: 18 }, { x: 38, y: 23 }, // east avenue mouth
+      ],
+      lamps: [
+        { x: 27, y: 7 }, { x: 30, y: 7 }, // north avenue
+        { x: 27, y: 34 }, { x: 30, y: 34 }, // south avenue, under the sign
+        { x: 7, y: 19 }, { x: 7, y: 22 }, // west avenue
+        { x: 15, y: 19 }, { x: 15, y: 22 },
+        { x: 42, y: 19 }, { x: 42, y: 22 }, // east avenue
+        { x: 50, y: 19 }, { x: 50, y: 22 },
+      ],
+      // rope posts along the plaza rim, leaving every avenue mouth open
+      stanchions: [
+        { x: 21, y: 14 }, { x: 23, y: 14 }, { x: 25, y: 14 },
+        { x: 32, y: 14 }, { x: 34, y: 14 }, { x: 36, y: 14 },
+        { x: 21, y: 27 }, { x: 23, y: 27 }, { x: 25, y: 27 },
+        { x: 32, y: 27 }, { x: 34, y: 27 }, { x: 36, y: 27 },
+        { x: 21, y: 16 }, { x: 21, y: 18 }, { x: 21, y: 23 }, { x: 21, y: 25 },
+        { x: 36, y: 16 }, { x: 36, y: 18 }, { x: 36, y: 23 }, { x: 36, y: 25 },
+      ],
+      // the café wings, either side of the plaza
+      tables: [
+        { x: 4, y: 9 }, { x: 10, y: 9 }, { x: 4, y: 15 }, { x: 10, y: 15 },
+        { x: 44, y: 9 }, { x: 50, y: 9 }, { x: 44, y: 15 }, { x: 50, y: 15 },
+        { x: 4, y: 26 }, { x: 10, y: 26 }, { x: 44, y: 26 }, { x: 50, y: 26 },
+      ],
+      kiosks: [{ x: 17, y: 16 }, { x: 38, y: 16 }],
+    },
   },
   {
     // 26x26. Two rows of three stands plus two below — all claimable.

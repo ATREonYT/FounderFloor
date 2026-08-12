@@ -269,12 +269,121 @@ function buildGrid(look: AvatarLook, dir: Dir, frame: number): Grid {
   return g;
 }
 
+// ---------- hall robots ----------
+
+/**
+ * The hall's guide robots are drawn to be unmistakable at a glance: a visor
+ * instead of a face, a chassis instead of clothes, an antenna on top. That
+ * is a product requirement, not a style choice — every stand on a floor
+ * belongs to a real person, and nothing wandering between them may be
+ * mistakable for one.
+ */
+export interface RobotLook {
+  chassis: number;
+  visor: number;
+}
+
+export const CHASSIS_COLORS: string[] = [
+  "#9AA3AA", // steel
+  "#B7A98F", // brass-grey
+  "#8C99A6", // slate blue
+  "#A79A9A", // warm grey
+  "#93A398", // sage steel
+  "#AAA2B0", // pewter violet
+];
+
+export const VISOR_COLORS: string[] = [
+  "#4FC3D9", // cyan
+  "#E8A33D", // amber
+  "#7ED08A", // green
+  "#E2726E", // coral
+];
+
+function buildRobotGrid(look: RobotLook, dir: Dir, frame: number): Grid {
+  const g = newGrid();
+  const body = CHASSIS_COLORS[((look.chassis % CHASSIS_COLORS.length) + CHASSIS_COLORS.length) % CHASSIS_COLORS.length];
+  const visor = VISOR_COLORS[((look.visor % VISOR_COLORS.length) + VISOR_COLORS.length) % VISOR_COLORS.length];
+  const joint = shade(body, -0.45);
+  const plate = shade(body, -0.16);
+  const hi = shade(body, 0.2);
+  const isSide = dir === "left" || dir === "right";
+
+  // antenna — the silhouette read, present in every direction
+  const antX = isSide ? 8 : 9;
+  rect(g, antX, 2, 2, 2, joint);
+  rect(g, antX, 0, 2, 2, visor);
+
+  if (!isSide) {
+    const liftL = frame === 1 ? 2 : 0;
+    const liftR = frame === 2 ? 2 : 0;
+    // legs
+    rect(g, 6, 21, 3, 5 - liftL, joint);
+    rect(g, 6, 26 - liftL, 4, 2, plate);
+    rect(g, 11, 21, 3, 5 - liftR, joint);
+    rect(g, 11, 26 - liftR, 4, 2, plate);
+    // torso
+    rect(g, 5, 13, 10, 8, body);
+    rect(g, 5, 13, 10, 1, hi);
+    rect(g, 6, 20, 8, 1, joint);
+    // arms, counter-swinging
+    const swing = frame === 1 ? -1 : frame === 2 ? 1 : 0;
+    rect(g, 3, 13 + swing, 2, 6, plate);
+    rect(g, 3, 19 + swing, 2, 2, joint);
+    rect(g, 15, 13 - swing, 2, 6, plate);
+    rect(g, 15, 19 - swing, 2, 2, joint);
+    // head
+    rect(g, 5, 4, 10, 8, body);
+    rect(g, 5, 4, 10, 1, hi);
+    rect(g, 4, 6, 1, 3, joint); // ear bolts
+    rect(g, 15, 6, 1, 3, joint);
+    rect(g, 8, 12, 4, 1, joint); // neck
+    if (dir === "down") {
+      rect(g, 6, 6, 8, 3, joint);
+      rect(g, 6, 7, 8, 2, visor);
+      rect(g, 7, 7, 2, 1, shade(visor, 0.45));
+      // chest panel + core light
+      rect(g, 7, 15, 6, 4, plate);
+      rect(g, 9, 16, 2, 2, visor);
+    } else {
+      // seen from behind: a vent grille and a back panel, no visor
+      rect(g, 7, 6, 6, 4, plate);
+      for (let i = 0; i < 3; i++) rect(g, 7, 6 + i * 2, 6, 1, joint);
+      rect(g, 7, 15, 6, 4, plate);
+      rect(g, 8, 16, 4, 1, joint);
+    }
+  } else {
+    // profile, facing right (mirrored later for "left")
+    const back = frame === 1 ? 5 : frame === 2 ? 9 : 7;
+    const front = frame === 1 ? 12 : frame === 2 ? 9 : 10;
+    rect(g, back, 21, 3, 5, shade(joint, -0.12));
+    rect(g, back, 26, 4, 2, shade(plate, -0.12));
+    rect(g, front, 21, 3, 5, joint);
+    rect(g, front, 26, 4, 2, plate);
+    // torso
+    rect(g, 6, 13, 9, 8, body);
+    rect(g, 6, 13, 9, 1, hi);
+    rect(g, 6, 20, 9, 1, joint);
+    const armX = frame === 1 ? 12 : frame === 2 ? 8 : 10;
+    rect(g, armX, 13, 2, 6, plate);
+    rect(g, armX, 19, 2, 2, joint);
+    // head with the visor wrapping round to the front edge
+    rect(g, 5, 4, 10, 8, body);
+    rect(g, 5, 4, 10, 1, hi);
+    rect(g, 12, 6, 3, 3, joint);
+    rect(g, 13, 7, 2, 2, visor);
+    rect(g, 4, 7, 1, 3, joint);
+    rect(g, 8, 12, 4, 1, joint);
+  }
+  return g;
+}
+
 // ---------- sprite bank ----------
 
 const DIRS: Dir[] = ["down", "up", "left", "right"];
 
 export class SpriteBank {
   private cache = new Map<string, AvatarFrames>();
+  private robots = new Map<string, AvatarFrames>();
 
   /** Build (or fetch cached) idle + 2 walk frames for all four directions. */
   makeAvatar(look: AvatarLook): AvatarFrames {
@@ -287,6 +396,20 @@ export class SpriteBank {
       frames[dir] = [0, 1, 2].map((f) => renderGrid(buildGrid(look, src, f), dir === "left"));
     }
     this.cache.set(key, frames);
+    return frames;
+  }
+
+  /** Same shape as makeAvatar, so a robot drops into any avatar draw path. */
+  makeRobot(look: RobotLook): AvatarFrames {
+    const key = `${look.chassis}|${look.visor}`;
+    const hit = this.robots.get(key);
+    if (hit) return hit;
+    const frames = {} as AvatarFrames;
+    for (const dir of DIRS) {
+      const src: Dir = dir === "left" ? "right" : dir;
+      frames[dir] = [0, 1, 2].map((f) => renderGrid(buildRobotGrid(look, src, f), dir === "left"));
+    }
+    this.robots.set(key, frames);
     return frames;
   }
 }

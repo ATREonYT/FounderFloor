@@ -523,6 +523,44 @@ Links and webhook secrets. Do one dry run with test links + card
 `4242 4242 4242 4242`, watch the plan flip on your own account, then
 swap in the live link URLs and live `whsec_`.
 
+## The hall robots (and how to switch them off)
+
+The Main Hall wanders a handful of maintenance robots around the plaza so
+an early floor reads as a place rather than a closed building. They are
+deliberately, visibly machines — a visor and antenna instead of a face,
+hardware names, "hall robot" printed under every one of them — because
+every stand on a floor belongs to a real person and nothing walking about
+may be mistakable for one. They own no stand, appear in no directory, and
+are counted by nothing that reports how many people are here: the "N here"
+pill and every stat on the site stay strictly human.
+
+They also stand down as the hall fills. Two robots leave for every other
+person present, so with the shipped count of nine the last one goes once
+five other people are in the room, and from then on everything moving on
+that floor is a person.
+
+**To change or remove them**, edit one number in `lib/data/floors.ts`:
+
+```ts
+id: "main-hall",
+...
+ambientBots: 9,   // 0 turns them off entirely
+```
+
+Redeploy Vercel; the floor server needs nothing, this is client-side
+scenery. Worth turning down once the hall has regulars of its own.
+
+The plaza itself — fountain, avenues, lamps, planters, café tables and the
+MAIN HALL sign — is the `plaza:` block on the same floor. Deleting it
+renders that floor as a plain hall again and the stands are unaffected.
+After ANY layout change run the geometry check, which asserts that no
+decoration landed on a stand, no avenue got blocked, and every tile is
+still walkable:
+
+```
+node scripts/floor-geom.mjs
+```
+
 ## 3. Launch-day checklist
 
 - [ ] `https://floor.yourdomain.com/health` returns ok

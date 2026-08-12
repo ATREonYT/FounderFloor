@@ -208,6 +208,49 @@ export interface FloorDef {
   startupIds: string[];
   /** Index into boothSpots reserved for the local user's own booth, if any. */
   reservedSpot?: number;
+  /**
+   * A set-dressed centrepiece: paved plaza, a fountain in the middle of it,
+   * and avenues running out to the walls. Everything here is decoration
+   * except the fountain, which is solid — you walk around it, like a
+   * roundabout. Floors without a plaza render exactly as they did before.
+   */
+  plaza?: PlazaDef;
+  /**
+   * How many guide robots wander this floor. They are set dressing — drawn
+   * as robots, named as robots and tagged "bot" on their labels — so an
+   * empty hall still reads as a place rather than a car park. They are NOT
+   * counted anywhere that reports how many people are here.
+   */
+  ambientBots?: number;
+}
+
+/** Inclusive tile bounds. */
+export interface TileRect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+export interface PlazaDef {
+  /** The paved area. Walkable; painted over the checkerboard. */
+  rect: TileRect;
+  /** The fountain's footprint. Solid, and must sit inside `rect`. */
+  fountain: TileRect;
+  /** Walkways out of the plaza. Paved, and kept clear of ambient props. */
+  avenues: TileRect[];
+  /** Overhead entrance sign, hung across the top edge of this rect. */
+  arch?: TileRect;
+  /** Formal planters (1 tile, solid). */
+  planters?: { x: number; y: number }[];
+  /** Standing lamps (1 tile, solid). */
+  lamps?: { x: number; y: number }[];
+  /** Rope-and-post stanchions marking the plaza rim (1 tile, walk-through). */
+  stanchions?: { x: number; y: number }[];
+  /** Café tables with chairs (2x1, solid). */
+  tables?: { x: number; y: number }[];
+  /** The hall directory board (2x1, solid). */
+  kiosks?: { x: number; y: number }[];
 }
 
 // ---------- chat ----------

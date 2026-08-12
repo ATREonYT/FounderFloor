@@ -8,9 +8,21 @@
  */
 
 import { TILE } from "../lib/types";
-import type { BoothClaim, BoothInstance, FloorDef, Startup } from "../lib/types";
+import type { BoothClaim, BoothInstance, FloorDef, Startup, TileRect } from "../lib/types";
 import { shade } from "./sprites";
 import { drawBoothBanner, drawBoothCounter, drawCarpet as paintCarpet } from "./boothArt";
+import {
+  PlazaGround,
+  archDrawable,
+  drawAvenue,
+  fountainDrawable,
+  kioskDrawable,
+  lampDrawable,
+  planterDrawable,
+  stanchionDrawable,
+  tableDrawable,
+  wallBannerDrawable,
+} from "./decor";
 
 // ---------- shared shapes ----------
 
@@ -91,7 +103,12 @@ const LEAF_B = "#3A6440";
 const CARD = "#FAF7EF";
 const CARD_LINE = "#C6BCA4";
 const VACANT_FACE = "#CFC8B8";
-const INK = "#23201A";
+// dressing for an unclaimed slot: slate board, brass fittings, stone posts
+const SLOT_FACE = "#3A3830";
+const SLOT_FRAME = "#26241E";
+const SLOT_BRASS = "#B08D2E";
+const SLOT_POST = "#B9B1A0";
+const SLOT_POST_DARK = "#847C6C";
 const MUTED = "#6F6A5E";
 const ACCENT = "#D9480F";
 
@@ -202,12 +219,77 @@ export function buildFloor(
     });
   }
 
+  // ----- the plaza: paved centre, fountain, avenues and their furniture ---
+  // Placed before the ambient props below so the random scatter sees these
+  // tiles as taken and never drops a pot plant in the fountain.
+  const plaza = floor.plaza;
+  const plazaGround = plaza ? new PlazaGround(plaza) : null;
+  const inRect = (tx: number, ty: number, r: TileRect): boolean =>
+    tx >= r.x0 && tx <= r.x1 && ty >= r.y0 && ty <= r.y1;
+  const onAvenue = (tx: number, ty: number): boolean => {
+    if (!plaza) return false;
+    for (const a of plaza.avenues) if (inRect(tx, ty, a)) return true;
+    return false;
+  };
+
+  if (plaza) {
+    for (let ty = plaza.fountain.y0; ty <= plaza.fountain.y1; ty++) {
+      for (let tx = plaza.fountain.x0; tx <= plaza.fountain.x1; tx++) mark(tx, ty);
+    }
+    drawables.push(fountainDrawable(plaza.fountain));
+
+    for (const p of plaza.planters ?? []) {
+      mark(p.x, p.y);
+      drawables.push(planterDrawable(p.x, p.y, hashStr(`${floor.id}:planter:${p.x}:${p.y}`)));
+    }
+    for (const l of plaza.lamps ?? []) {
+      mark(l.x, l.y);
+      drawables.push(lampDrawable(l.x, l.y));
+    }
+    for (const tb of plaza.tables ?? []) {
+      mark(tb.x, tb.y);
+      mark(tb.x + 1, tb.y);
+      drawables.push(tableDrawable(tb.x, tb.y, hashStr(`${floor.id}:table:${tb.x}:${tb.y}`)));
+    }
+    for (const k of plaza.kiosks ?? []) {
+      mark(k.x, k.y);
+      mark(k.x + 1, k.y);
+      drawables.push(kioskDrawable(k.x, k.y));
+    }
+    // Stanchions stay walk-through — a solid rim would fence the plaza off.
+    // A post slings its rope to the right only when the next post along is
+    // exactly two tiles away, which is what keeps the rope out of the
+    // avenue mouths without listing the gaps by hand.
+    const posts = plaza.stanchions ?? [];
+    const postAt = new Set(posts.map((p) => `${p.x},${p.y}`));
+    for (const p of posts) {
+      drawables.push(stanchionDrawable(p.x, p.y, postAt.has(`${p.x + 2},${p.y}`)));
+    }
+
+    if (plaza.arch) {
+      // the two posts are solid; the beam and board hang over the walkway
+      mark(plaza.arch.x0, plaza.arch.y0);
+      mark(plaza.arch.x1, plaza.arch.y0);
+      drawables.push(archDrawable(plaza.arch, floor.name, "YOU ARE HERE"));
+    }
+
+    // banners either side of whichever avenue meets the top wall
+    for (const a of plaza.avenues) {
+      if (a.y0 > 1) continue;
+      drawables.push(wallBannerDrawable(a.x0 - 2, floor.theme.trim));
+      drawables.push(wallBannerDrawable(a.x1 + 2, ACCENT));
+    }
+  }
+
   // ----- posters along the top wall: cheap set dressing so the hall reads
   // as a real expo, not an empty corridor. Deterministic per floor. -----
   const posterRng = mulberry32(hashStr(floor.id) ^ 0x51ab);
   const POSTER_FACES = ["#C4562B", "#4E6E4E", "#3B5B92", "#A98C5B", "#6B4E71", "#2F6F6A"];
   for (let px = 2; px < w - 3; px += 5 + Math.floor(posterRng() * 3)) {
     if (posterRng() < 0.25) continue; // gaps keep it casual
+    // leave the avenue mouth and its two banners alone — a poster tucked
+    // behind a hanging banner is just a smear of colour
+    if (plaza && plaza.avenues.some((a) => a.y0 <= 1 && px >= a.x0 - 4 && px <= a.x1 + 4)) continue;
     const face = POSTER_FACES[Math.floor(posterRng() * POSTER_FACES.length)]!;
     const tall = posterRng() > 0.5;
     const x0 = px * T + 6 + Math.floor(posterRng() * 8);
@@ -272,7 +354,7 @@ export function buildFloor(
       const occupied = { ...b, startup: b.startup };
       drawables.push(bannerDrawable(occupied), counterDrawable(occupied));
     } else {
-      drawables.push(vacantBannerDrawable(b.spot), vacantCounterDrawable(b.spot));
+      drawables.push(vacantBannerDrawable(b.spot, b.spotIndex), vacantCounterDrawable(b.spot));
     }
   }
 
@@ -295,6 +377,10 @@ export function buildFloor(
     tx % 4 >= 2 &&
     ty % 4 >= 2 &&
     !nearBoothRing(tx, ty) &&
+    // the plaza is composed, not scattered, and the avenues have to stay
+    // clear or the walk to the fountain turns into a slalom
+    !(plaza && inRect(tx, ty, plaza.rect)) &&
+    !onAvenue(tx, ty) &&
     grid[ty * w + tx] === 0 &&
     !taken.has(ty * w + tx);
 
@@ -366,6 +452,13 @@ export function buildFloor(
         ctx.fillRect(tx * T, ty * T, T, T);
       }
     }
+    // Avenues first, then the plaza on top: the plaza is the destination and
+    // its border course should close over the runners meeting it, not the
+    // other way round.
+    if (plaza) {
+      for (const a of plaza.avenues) drawAvenue(ctx, a, cam);
+      plazaGround?.draw(ctx, cam);
+    }
     // carpets: booth zone + 1-tile apron row below (4 x 4 tiles) — only the
     // ones actually in view; painting every booth's carpet each frame is
     // most of the ground cost on wide floors
@@ -376,7 +469,7 @@ export function buildFloor(
         continue;
       }
       if (b.startup) drawCarpet(ctx, b.spot.x, b.spot.y, b.startup.booth.carpet, b.startup.booth.pattern);
-      else drawCarpet(ctx, b.spot.x, b.spot.y, VACANT_FACE);
+      else drawCarpet(ctx, b.spot.x, b.spot.y, VACANT_FACE, "border");
     }
     // mats — woven doormats, not flat rectangles (a plain fill at 2x zoom
     // reads as an unfinished placeholder)
@@ -484,27 +577,71 @@ function drawCounterBase(ctx: CanvasRenderingContext2D, bx: number, y0: number):
   ctx.fillRect(bx, y0 + 12, 4 * T, 2);
 }
 
-function vacantBannerDrawable(v: { x: number; y: number }): Drawable {
+/**
+ * An unclaimed pitch. This used to be a flat grey board reading OPEN SPOT,
+ * which made two thirds of a young hall look like scaffolding. It is now a
+ * dressed slot: a slate board in a brass-cornered frame on two posts, hung
+ * with the spot's number, waiting for somebody. Empty should read as
+ * *available*, not as unfinished.
+ */
+function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawable {
   const bx = v.x * T;
   const by = v.y * T;
-  const dark = shade(VACANT_FACE, -0.35);
+  const w = 4 * T;
+  const no = String(index + 1).padStart(2, "0");
   return {
     sortY: (v.y + 1) * T,
     minX: bx - 2,
-    maxX: bx + 4 * T + 2,
+    maxX: bx + w + 2,
     draw(ctx) {
-      ctx.fillStyle = dark;
-      ctx.fillRect(bx, by, 4 * T, T);
-      ctx.fillStyle = VACANT_FACE;
-      ctx.fillRect(bx + 3, by - 8, 4 * T - 6, T + 4);
-      ctx.strokeStyle = dark;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(bx + 4, by - 7, 4 * T - 8, T + 2);
-      ctx.fillStyle = INK;
-      ctx.font = "700 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+      // back wall of the stall, so the slot still has depth
+      ctx.fillStyle = shade(VACANT_FACE, -0.32);
+      ctx.fillRect(bx, by, w, T);
+      ctx.fillStyle = shade(VACANT_FACE, -0.18);
+      ctx.fillRect(bx, by, w, 4);
+
+      // the two posts the board hangs between
+      ctx.fillStyle = SLOT_POST_DARK;
+      ctx.fillRect(bx + 5, by - 12, 6, T + 8);
+      ctx.fillRect(bx + w - 11, by - 12, 6, T + 8);
+      ctx.fillStyle = SLOT_POST;
+      ctx.fillRect(bx + 5, by - 12, 3, T + 8);
+      ctx.fillRect(bx + w - 11, by - 12, 3, T + 8);
+
+      // board
+      const sx = bx + 10;
+      const sy = by - 10;
+      const sw = w - 20;
+      const sh = T + 2;
+      ctx.fillStyle = SLOT_FRAME;
+      ctx.fillRect(sx - 2, sy - 2, sw + 4, sh + 4);
+      ctx.fillStyle = SLOT_FACE;
+      ctx.fillRect(sx, sy, sw, sh);
+      ctx.fillStyle = shade(SLOT_FACE, 0.1);
+      ctx.fillRect(sx, sy, sw, 2);
+      // brass corner studs
+      ctx.fillStyle = SLOT_BRASS;
+      for (const [dx, dy] of [
+        [2, 2],
+        [sw - 5, 2],
+        [2, sh - 5],
+        [sw - 5, sh - 5],
+      ]) {
+        ctx.fillRect(sx + dx, sy + dy, 3, 3);
+      }
+      // hairline inner rule
+      ctx.strokeStyle = shade(SLOT_FACE, 0.18);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(sx + 5.5, sy + 5.5, sw - 11, sh - 11);
+
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText("OPEN SPOT", bx + 2 * T, by + 9, 4 * T - 20);
+      ctx.fillStyle = "#EDE7D8";
+      ctx.font = "700 9px Georgia, 'Times New Roman', serif";
+      ctx.fillText("OPEN STAND", bx + w / 2, sy + 13, sw - 14);
+      ctx.fillStyle = SLOT_BRASS;
+      ctx.font = "700 7px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.fillText(`NO. ${no}`, bx + w / 2, sy + 25, sw - 14);
     },
   };
 }
@@ -512,18 +649,34 @@ function vacantBannerDrawable(v: { x: number; y: number }): Drawable {
 function vacantCounterDrawable(v: { x: number; y: number }): Drawable {
   const bx = v.x * T;
   const y0 = (v.y + 2) * T;
+  const w = 4 * T;
   return {
     sortY: (v.y + 3) * T,
     minX: bx - 2,
-    maxX: bx + 4 * T + 2,
+    maxX: bx + w + 2,
     draw(ctx) {
       drawCounterBase(ctx, bx, y0);
-      // a single leftover flyer
+      // a brass rail along the counter top: the detail that separates
+      // "ready for you" from "nobody has been here"
+      ctx.fillStyle = SLOT_BRASS;
+      ctx.fillRect(bx + 6, y0 - 3, w - 12, 2);
+      ctx.fillStyle = shade(SLOT_BRASS, -0.35);
+      ctx.fillRect(bx + 6, y0 - 1, w - 12, 1);
+      ctx.fillStyle = SLOT_BRASS;
+      ctx.fillRect(bx + 7, y0 - 3, 3, 6);
+      ctx.fillRect(bx + w - 10, y0 - 3, 3, 6);
+      // a small easel card on the counter
+      ctx.fillStyle = shade(CARD, -0.3);
+      ctx.fillRect(bx + 2 * T + 5, y0 + 3, 14, 9);
       ctx.fillStyle = CARD;
-      ctx.fillRect(bx + 2 * T + 6, y0 + 2, 12, 8);
+      ctx.fillRect(bx + 2 * T + 4, y0 + 2, 14, 9);
       ctx.strokeStyle = CARD_LINE;
       ctx.lineWidth = 1;
-      ctx.strokeRect(bx + 2 * T + 6.5, y0 + 2.5, 11, 7);
+      ctx.strokeRect(bx + 2 * T + 4.5, y0 + 2.5, 13, 8);
+      ctx.fillStyle = ACCENT;
+      ctx.fillRect(bx + 2 * T + 6, y0 + 4, 10, 2);
+      ctx.fillStyle = MUTED;
+      ctx.fillRect(bx + 2 * T + 6, y0 + 8, 7, 1);
     },
   };
 }

@@ -28,6 +28,7 @@ import { buildFloor } from "./tilemap";
 import type { Cam, ClaimEntry, Drawable } from "./tilemap";
 import { AmbientDirector, makeNpcs, updateNpcs } from "./npc";
 import type { Npc } from "./npc";
+import { HallCrowd, hauntsFor } from "./wanderers";
 import { BubbleManager } from "./bubbles";
 import { findPath } from "./path";
 
@@ -167,6 +168,29 @@ export function createGame(opts: GameOptions): GameHandle {
   const spawn = findNearestWalkable(Math.floor(floor.width / 2), floor.height - 5);
   const player: MoveState = { x: spawn.x, y: spawn.y, dir: "up", moving: false };
   let playerAnimT = 0;
+
+  // ---------- hall robots ----------
+  // `built` is replaced on every claim, so the crowd gets a stable view that
+  // forwards to whichever floor is current rather than a captured snapshot.
+  const world = {
+    width: floor.width,
+    height: floor.height,
+    solid: (tx: number, ty: number): boolean => built.solid(tx, ty),
+  };
+  const crowd = new HallCrowd(
+    floor.id,
+    world,
+    bank,
+    floor.ambientBots ?? 0,
+    hauntsFor(world, floor.boothSpots, floor.plaza),
+    { x: Math.floor(spawn.x / TILE), y: Math.floor(spawn.y / TILE) }
+  );
+  const crowdHooks = {
+    say: (bot: { bubbleId: string }, line: string): void =>
+      bubbles.showChat(bot.bubbleId, line, performance.now()),
+    emote: (bot: { bubbleId: string }, kind: EmoteKind): void =>
+      bubbles.showEmote(bot.bubbleId, kind, performance.now()),
+  };
 
   // ---------- click/tap-to-walk path ----------
 
@@ -844,6 +868,9 @@ export function createGame(opts: GameOptions): GameHandle {
 
     updateNpcs(npcs, dt, player.x, player.y);
     director.update(dt, npcs);
+    // the robots stand down as real people arrive — see HallCrowd.setCrowd
+    crowd.setCrowd(remotes.size);
+    crowd.update(dt, player.x, player.y, crowdHooks);
 
     // proximity
     const nb = computeNear();
@@ -1030,6 +1057,10 @@ export function createGame(opts: GameOptions): GameHandle {
     ctx.fillStyle = "#23201A";
     for (const r of remotes.values()) ctx.fillRect(mx + r.x * k - 1, my + r.y * k - 1, 2, 2);
     for (const n of npcs) ctx.fillRect(mx + n.x * k - 1, my + n.y * k - 1, 2, 2);
+    // robots are a paler dot — the minimap should not imply the hall is
+    // fuller of people than it is
+    ctx.fillStyle = "#8A8272";
+    for (const b of crowd.active) ctx.fillRect(mx + b.x * k - 1, my + b.y * k - 1, 2, 2);
     ctx.fillStyle = "#D9480F";
     ctx.fillRect(mx + player.x * k - 1.5, my + player.y * k - 1.5, 3, 3);
     // camera viewport
@@ -1096,6 +1127,10 @@ export function createGame(opts: GameOptions): GameHandle {
     for (const n of npcs) {
       dyn.push({ sortY: n.sortY, draw: (c) => n.draw(c, t) });
     }
+    const bots = crowd.active;
+    for (const b of bots) {
+      dyn.push({ sortY: b.sortY, draw: (c) => b.draw(c, t) });
+    }
     dyn.sort((a, b) => a.sortY - b.sortY);
 
     const lo = cam.y - 3 * TILE;
@@ -1122,6 +1157,9 @@ export function createGame(opts: GameOptions): GameHandle {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     for (const r of remotes.values()) drawLabel(r.name, r.status, r.title, r.x, r.y);
     for (const n of npcs) drawLabel(n.name, undefined, undefined, n.x, n.y);
+    // "hall robot" on the second line of every one of their pills: nothing
+    // walking this floor should be mistakable for a person, at any zoom
+    for (const b of bots) drawLabel(b.name, "hall robot", undefined, b.x, b.y);
     // your own label appears once there's something on it worth seeing —
     // a status line or an equipped quest title
     if (me.status || me.title) drawLabel(me.name, me.status, me.title, player.x, player.y);
@@ -1154,6 +1192,17 @@ export function createGame(opts: GameOptions): GameHandle {
     }
     for (const n of npcs) {
       bubbles.draw(ctx, n.bubbleId, (n.x - cam.x) * zoom, bubbleTailY(n.y, LABEL_H), nowMs, cssW, cssH);
+    }
+    for (const b of bots) {
+      bubbles.draw(
+        ctx,
+        b.bubbleId,
+        (b.x - cam.x) * zoom,
+        bubbleTailY(b.y, LABEL_H_STATUS),
+        nowMs,
+        cssW,
+        cssH
+      );
     }
 
     if (nearBooth) {
@@ -1388,6 +1437,7 @@ export function createGame(opts: GameOptions): GameHandle {
       bubbles.showEmote("me", kind, performance.now());
       net.sendEmote(kind); // the echo is ignored above, so no double-render
       director.onPlayerEmote(kind, player.x, player.y, npcs);
+      crowd.onPlayerEmote(kind, player.x, player.y, crowdHooks);
       if (!firstEmoteDone) {
         firstEmoteDone = true;
         cb.onFirstAction?.("emote");
