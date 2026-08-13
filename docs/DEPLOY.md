@@ -583,6 +583,27 @@ do not throw an error but do make a room feel broken:
 
 ### Leaderboards on the floor
 
+> **THE FLOOR SERVER IS NOT AUTO-DEPLOYED.** Pushing to main deploys the
+> web app and nothing else. Every number on a leaderboard comes from
+> `server/index.mjs` on the VPS, so until that file is copied over and the
+> unit restarted, the boards are drawn but empty and the Records panel
+> says the server is not answering. Ship it with:
+>
+> ```
+> scripts/deploy-floor.sh
+> ```
+>
+> and check which side is behind with one request:
+>
+> ```
+> curl -s https://floor.founderfloor.net/health
+> ```
+>
+> `"features":{"boards":true,...}` means the running process has the
+> leaderboard. No `features` key at all means the VPS is on an older build
+> and that is the whole bug.
+
+
 A merchant with `style: "board"` renders as a notice board instead of a
 stall: no keeper, and the top three of one table painted straight onto it.
 Which table comes from `board: "time" | "connections" | "parkour" |

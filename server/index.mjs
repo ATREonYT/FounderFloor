@@ -4013,6 +4013,12 @@ const server = createServer((req, res) => {
       online,
       uptimeSec: Math.floor(process.uptime()),
       emailLive: EMAIL_ECHO || !!RESEND_API_KEY,
+      // Which features THIS process has. The web app deploys itself from
+      // main; this file is copied to the VPS by hand, so the two halves
+      // drift, and the symptom is always the same — the new UI calls an
+      // endpoint the old server has never heard of and shows an empty
+      // panel. One curl on /health now says which side is behind.
+      features: { boards: true, awards: true, playtime: true },
     });
     return;
   }
