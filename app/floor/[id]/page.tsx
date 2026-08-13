@@ -13,6 +13,7 @@ import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
 import type {
   MerchantDef,
   ActivityItem,
+  BoardRow,
   BoothClaim,
   BoothInstance,
   ChatMsg,
@@ -27,6 +28,7 @@ import { questStates, unlockedEmotes } from "@/lib/data/quests";
 import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
 import StallPanel from "@/components/StallPanel";
+import { fetchLeaderboard, humanMs } from "@/lib/leaderboard";
 import {
   GuideStall,
   PorterStall,
@@ -362,6 +364,65 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     const cardOpen = Boolean(activeBooth || incomingReq);
     handleRef.current?.setMinimap(cardOpen ? false : minimapOn);
   }, [coarse, activeBooth, incomingReq, minimapOn]);
+
+  /**
+   * Paint the standings onto the notice boards in the plaza.
+   *
+   * The engine has no network of its own, so the boards start empty and
+   * this fills them in. Re-fetched on mount and every couple of minutes:
+   * a board showing last hour's times is worse than one that admits it is
+   * a snapshot, and the tables move slowly enough that a tighter poll
+   * would only cost requests.
+   */
+  useEffect(() => {
+    if (!floor?.plaza?.merchants?.some((m) => m.style === "board")) return;
+    let alive = true;
+    let rows: { id: string; rows: BoardRow[] }[] = [];
+
+    const push = (): boolean => {
+      const h = handleRef.current;
+      if (!h) return false;
+      for (const r of rows) h.setBoard(r.id, r.rows);
+      return true;
+    };
+
+    const paint = async (): Promise<void> => {
+      const lb = await fetchLeaderboard();
+      if (!alive || !lb) return;
+      rows = [];
+      for (const m of floor.plaza?.merchants ?? []) {
+        if (m.style !== "board" || !m.board) continue;
+        const top =
+          m.board === "time"
+            ? lb.boards.time.slice(0, 3).map((r, i) => ({ rank: i + 1, name: r.name, value: humanMs(r.ms) }))
+            : m.board === "connections"
+              ? lb.boards.connections.slice(0, 3).map((r, i) => ({ rank: i + 1, name: r.name, value: String(r.count) }))
+              : m.board === "arcade"
+                ? lb.boards.arcade.slice(0, 3).map((r, i) => ({ rank: i + 1, name: r.name, value: String(r.score) }))
+                : lb.boards.parkour
+                    .slice(0, 3)
+                    .map((r, i) => ({ rank: i + 1, name: r.name, value: `${r.cleared}/4` }));
+        rows.push({ id: m.id, rows: top });
+      }
+      // The standings usually arrive before the engine does, and the engine
+      // is created in another effect with no signal back here. So hold them
+      // and keep trying to hand them over until there is something to hand
+      // them to — otherwise the boards stay blank until the next poll.
+      if (!push()) {
+        const retry = window.setInterval(() => {
+          if (!alive || push()) window.clearInterval(retry);
+        }, 400);
+        window.setTimeout(() => window.clearInterval(retry), 20_000);
+      }
+    };
+
+    void paint();
+    const iv = window.setInterval(() => void paint(), 120_000);
+    return () => {
+      alive = false;
+      window.clearInterval(iv);
+    };
+  }, [floor]);
 
   const showToast = useCallback((text: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);

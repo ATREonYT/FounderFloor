@@ -325,14 +325,36 @@ export interface MerchantDef {
   action: MerchantAction;
   /** Name on the stall's sign board, <= 16 chars. */
   sign: string;
-  /** The keeper's name on their label. */
+  /** The keeper's name on their label. Ignored by a board. */
   keeper: string;
   /** One line, shown on the prompt when you are standing at the stall. */
   blurb: string;
   /** Awning and sign colour. */
   color: string;
-  /** The keeper's look, so each stall has a different person behind it. */
-  look: AvatarLook;
+  /**
+   * The keeper's look, so each stall has a different person behind it.
+   * Absent for a board — nobody stands behind a notice board.
+   */
+  look?: AvatarLook;
+  /**
+   * How it is built. "stall" (the default) is an awning, a counter and a
+   * keeper. "board" is a framed notice board on two legs with live rows
+   * painted on it: you read it from across the plaza and press E for the
+   * whole table.
+   */
+  style?: "stall" | "board";
+  /**
+   * Which leaderboard a board shows. Set by the floor page each time the
+   * standings are fetched — see GameHandle.setBoard.
+   */
+  board?: "time" | "connections" | "parkour" | "arcade";
+}
+
+/** One line painted on a notice board: a rank, a name and a figure. */
+export interface BoardRow {
+  rank: number;
+  name: string;
+  value: string;
 }
 
 // ---------- chat ----------
@@ -601,6 +623,12 @@ export interface GameHandle {
   showBubble(entityId: string, text: string): void;
   /** Toggle the minimap overlay (also bound to the M key in-game). */
   setMinimap(v: boolean): void;
+  /**
+   * Hand a notice board its rows. Called by the floor page after fetching
+   * the standings, and again whenever they change — the engine has no
+   * network of its own and boards start empty.
+   */
+  setBoard(id: string, rows: BoardRow[]): void;
   /** Hide chat bubbles from these wire ids (session-scoped mute list). */
   setMuted(ids: string[]): void;
   /**

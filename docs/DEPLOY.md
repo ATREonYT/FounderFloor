@@ -581,6 +581,19 @@ do not throw an error but do make a room feel broken:
 - no stand overlapping the paving
 - a flood fill proving every stand is reachable and no tile is cut off
 
+### Leaderboards on the floor
+
+A merchant with `style: "board"` renders as a notice board instead of a
+stall: no keeper, and the top three of one table painted straight onto it.
+Which table comes from `board: "time" | "connections" | "parkour" |
+"arcade"`. The rows are pushed in by the floor page after it fetches
+`/leaderboard`, and re-pushed after every floor rebuild — a rebuild throws
+the old BuiltFloor away, so the engine holds the rows and re-applies them
+rather than letting the boards blank when somebody puts a stand up.
+
+Walking up to a board and pressing E opens the same full Records panel the
+stall does.
+
 One more rule lives in `game/tilemap.ts` rather than here: a floor with an
 authored `plaza.furniture` list is COMPOSED, and the random ambient
 scatter (a coffee cart, benches, plants) is switched off for it entirely.

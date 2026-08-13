@@ -79,11 +79,15 @@ export const FLOORS: FloorDef[] = [
     // Fountain   x 26..31, y 20..22   (solid; centre 29, 21.5 — the exact
     //                                  centre of the plaza, which the
     //                                  geometry check asserts)
-    // Avenues    N x27..30 y1..16   S x27..30 y26..40
+    // Avenues    N x27..30 y1..16   S x27..30 y27..40
     //            W x1..19 y19..23   E x38..56 y19..23
     // Booth rows y=5  (zone 5-7, apron 8)     outer north
-    //            y=13 (zone 13-15, apron 16)  inner north, ON the plaza rim
-    //            y=26 (zone 26-28, apron 29)  inner south, ON the plaza rim
+    //            y=12 (zone 12-14, apron 15)  inner north, on the plaza rim
+    //            y=27 (zone 27-29, apron 30)  inner south, on the plaza rim
+    // The rim ranks clear the paving by ONE ROW (16 above, 26 below). Flush
+    // against it they read as overlapping the plaza — there is no gap for
+    // the eye to put an edge in, so the stand looks like it is standing on
+    // the stonework rather than beside it.
     //            y=34 (zone 34-36, apron 37)  outer south
     // Columns    x = 3 / 9 / 15 / 21 | avenue | 33 / 39 / 45 / 51
     //            — zones are 4 wide, so every gap is exactly 2 clear tiles,
@@ -120,16 +124,16 @@ export const FLOORS: FloorDef[] = [
       // Inner rank, flanking the two avenue mouths — the four best places
       // in the building. You cannot stand at the fountain without one of
       // these in view, and they are the ones kept open for real founders.
-      { x: 21, y: 13 },
-      { x: 33, y: 13 },
-      { x: 21, y: 26 },
-      { x: 33, y: 26 },
+      { x: 21, y: 12 },
+      { x: 33, y: 12 },
+      { x: 21, y: 27 },
+      { x: 33, y: 27 },
       // Inner rank, the outer pair on each rim — still on the plaza, one
       // stand further from the water.
-      { x: 15, y: 13 },
-      { x: 39, y: 13 },
-      { x: 15, y: 26 },
-      { x: 39, y: 26 },
+      { x: 15, y: 12 },
+      { x: 39, y: 12 },
+      { x: 15, y: 27 },
+      { x: 39, y: 27 },
       // Outer band, working away from the avenues.
       { x: 21, y: 5 },
       { x: 33, y: 5 },
@@ -177,7 +181,7 @@ export const FLOORS: FloorDef[] = [
       fountain: { x0: 26, y0: 20, x1: 31, y1: 22 },
       avenues: [
         { x0: 27, y0: 1, x1: 30, y1: 16 }, // north
-        { x0: 27, y0: 26, x1: 30, y1: 40 }, // south
+        { x0: 27, y0: 27, x1: 30, y1: 40 }, // south
         { x0: 1, y0: 19, x1: 19, y1: 23 }, // west
         { x0: 38, y0: 19, x1: 56, y1: 23 }, // east
       ],
@@ -203,12 +207,11 @@ export const FLOORS: FloorDef[] = [
         // real hall anyway. The previous version had eight solid props
         // standing in walkways and four stands you could not walk up to.
 
-        // --- plaza: four posts, one per chamfered corner, and nothing
-        //     else. The paving, its border course and the eight stands on
-        //     the rim already say where the plaza is; a bench in the
-        //     middle of it just said "somebody had furniture left over".
-        { kind: "stanchion", x: 20, y: 17 }, { kind: "stanchion", x: 37, y: 17 },
-        { kind: "stanchion", x: 20, y: 25 }, { kind: "stanchion", x: 37, y: 25 },
+        // --- plaza: posts at the two side corners only. The north edge
+        //     has the leaderboards and the south edge has the two stalls,
+        //     so the shape is already described; a rope in front of either
+        //     would just be something to walk round.
+        { kind: "stanchion", x: 20, y: 21 }, { kind: "stanchion", x: 37, y: 21 },
 
         // --- lamps: two at each avenue mouth, framing the four ways in.
         //     Beside the walkway, never on it.
@@ -295,7 +298,7 @@ export const FLOORS: FloorDef[] = [
         },
         {
           id: "arcade",
-          x: 34,
+          x: 21,
           y: 24,
           action: "arcade",
           sign: "THE ARCADE",
@@ -306,7 +309,7 @@ export const FLOORS: FloorDef[] = [
         },
         {
           id: "records",
-          x: 21,
+          x: 34,
           y: 24,
           action: "records",
           sign: "THE RECORDS",
@@ -314,6 +317,38 @@ export const FLOORS: FloorDef[] = [
           blurb: "Who is top of the hall this week, and what you are holding.",
           color: "#B08D2E",
           look: { skin: 0, outfit: 1, hair: 3 },
+        },
+        // ─── THE LEADERBOARDS ───────────────────────────────────────
+        // Two notice boards on the plaza's north edge, facing the water.
+        // The standings existed already; you had to walk to a stall and
+        // press E to see any of them, which is a leaderboard nobody looks
+        // at. These paint the top three straight onto the board, so you
+        // read them from across the plaza and press E only if you want the
+        // whole table. They have no keeper — nobody stands behind a
+        // notice board.
+        {
+          id: "board-time",
+          x: 21,
+          y: 18,
+          action: "records",
+          sign: "TIME HERE",
+          keeper: "",
+          blurb: "Longest in the building this week. Measured, not reported.",
+          color: "#4F6E6B",
+          style: "board",
+          board: "time",
+        },
+        {
+          id: "board-parkour",
+          x: 34,
+          y: 18,
+          action: "records",
+          sign: "AFTER HOURS",
+          keeper: "",
+          blurb: "This week's best runs across the scaffolding.",
+          color: "#5E7C93",
+          style: "board",
+          board: "parkour",
         },
       ],
     },

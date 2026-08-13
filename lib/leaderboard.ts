@@ -147,10 +147,16 @@ export async function fetchLeaderboard(): Promise<Leaderboard | null> {
   }
 }
 
-/** "2h 40m", "18m", "45s" — the time board's own units. */
+/**
+ * "2h 40m", "18m", "45s" — the time board's own units.
+ *
+ * Seconds up to a minute and a half, because a young hall's whole table is
+ * under two minutes and rounding all of it to "1m" makes three different
+ * visits look identical.
+ */
 export function humanMs(ms: number): string {
+  if (ms < 90_000) return `${Math.round(ms / 1000)}s`;
   const mins = Math.round(ms / 60_000);
-  if (mins < 1) return `${Math.round(ms / 1000)}s`;
   if (mins < 60) return `${mins}m`;
   const h = Math.floor(mins / 60);
   const m = mins - h * 60;

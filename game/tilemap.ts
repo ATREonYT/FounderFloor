@@ -8,7 +8,7 @@
  */
 
 import { TILE } from "../lib/types";
-import type { BoothClaim, BoothInstance, FloorDef, Startup, TileRect } from "../lib/types";
+import type { BoardRow, BoothClaim, BoothInstance, FloorDef, Startup, TileRect } from "../lib/types";
 import { shade } from "./sprites";
 import { drawBoothBanner, drawBoothCounter, drawCarpet as paintCarpet } from "./boothArt";
 import {
@@ -24,6 +24,7 @@ import {
   fountainDrawable,
   merchantBackDrawable,
   merchantFrontDrawable,
+  noticeBoardDrawable,
   wallBannerDrawable,
 } from "./decor";
 
@@ -71,6 +72,12 @@ export interface BuiltFloor {
   drawUnder(ctx: CanvasRenderingContext2D, cam: Cam): void;
   /** Walls, banners, counters, props — pre-sorted by sortY ascending. */
   drawables: Drawable[];
+  /**
+   * Hand a notice board its rows. Read at draw time, so standings that
+   * arrive over the network after the floor was built still appear —
+   * which is every time, since they always do.
+   */
+  setBoard(id: string, rows: BoardRow[]): void;
 }
 
 // ---------- deterministic randomness ----------
@@ -237,6 +244,7 @@ export function buildFloor(
     if (tx >= 0 && ty >= 0 && tx < w && ty < h) grid[ty * w + tx] = 1;
   };
   const drawables: Drawable[] = [];
+  const boardRows = new Map<string, BoardRow[]>();
 
   // ----- perimeter walls -----
   const wallTiles: { x: number; y: number }[] = [];
@@ -305,10 +313,17 @@ export function buildFloor(
 
     for (const m of plaza.merchants ?? []) {
       for (let d = 0; d < 3; d++) mark(m.x + d, m.y);
-      drawables.push(
-        merchantBackDrawable(m.x, m.y, m.sign, m.color),
-        merchantFrontDrawable(m.x, m.y, m.color, hashStr(m.id))
-      );
+      if (m.style === "board") {
+        // Rows are read at draw time from a box the floor page fills in, so
+        // the standings can land after the tilemap is built — which they
+        // always do; they come off the network.
+        drawables.push(noticeBoardDrawable(m.x, m.y, m.sign, m.color, () => boardRows.get(m.id) ?? []));
+      } else {
+        drawables.push(
+          merchantBackDrawable(m.x, m.y, m.sign, m.color),
+          merchantFrontDrawable(m.x, m.y, m.color, hashStr(m.id))
+        );
+      }
     }
 
     if (plaza.arch) {
@@ -563,6 +578,9 @@ export function buildFloor(
       tx < 0 || ty < 0 || tx >= w || ty >= h || grid[ty * w + tx] === 1,
     drawUnder,
     drawables,
+    setBoard(id, rows) {
+      boardRows.set(id, rows);
+    },
   };
 }
 

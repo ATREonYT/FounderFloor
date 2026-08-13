@@ -17,7 +17,7 @@
  */
 
 import { TILE } from "../lib/types";
-import type { DecorItem, DecorKind, PlazaDef, TileRect } from "../lib/types";
+import type { BoardRow, DecorItem, DecorKind, PlazaDef, TileRect } from "../lib/types";
 import { shade } from "./sprites";
 import type { Cam, Drawable } from "./tilemap";
 
@@ -1706,6 +1706,97 @@ export function merchantBackDrawable(tx: number, ty: number, sign: string, color
       }
       ctx.fillStyle = shade(color, 0.25);
       ctx.fillRect(x, ay, w, 2);
+    },
+  };
+}
+
+/**
+ * A standing notice board: the hall's leaderboard, painted on the floor
+ * rather than hidden behind a key press.
+ *
+ * The standings already existed — you had to walk to a stall and press E to
+ * see any of them, which is a leaderboard nobody looks at. This is the
+ * version you read from across the plaza: a framed board on two legs with
+ * the top three painted on it, live. Pressing E still opens the full table.
+ *
+ * `rows` is read at DRAW time, not captured, so the floor page can hand the
+ * board new standings whenever they arrive without rebuilding the tilemap.
+ */
+export function noticeBoardDrawable(
+  tx: number,
+  ty: number,
+  sign: string,
+  color: string,
+  rows: () => BoardRow[]
+): Drawable {
+  const x = tx * T;
+  const y = ty * T;
+  const w = 3 * T;
+  const bh = 62; // board face height
+  const top = y - bh - 10;
+  return {
+    sortY: y + T,
+    minX: x - 6,
+    maxX: x + w + 6,
+    draw(ctx) {
+      // contact shadow
+      ctx.save();
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = "#2A251D";
+      ctx.fillRect(x + 4, y + T - 4, w - 8, 5);
+      ctx.restore();
+
+      // two legs
+      ctx.fillStyle = shade(WOOD_FRONT, -0.35);
+      ctx.fillRect(x + 10, top + bh, 6, 20);
+      ctx.fillRect(x + w - 16, top + bh, 6, 20);
+      ctx.fillStyle = WOOD_FRONT;
+      ctx.fillRect(x + 10, top + bh, 3, 20);
+      ctx.fillRect(x + w - 16, top + bh, 3, 20);
+
+      // frame, then the slate face
+      ctx.fillStyle = INK;
+      ctx.fillRect(x + 4, top - 3, w - 8, bh + 6);
+      ctx.fillStyle = shade(WOOD_FRONT, -0.15);
+      ctx.fillRect(x + 5, top - 2, w - 10, bh + 4);
+      ctx.fillStyle = "#2E2A22";
+      ctx.fillRect(x + 8, top + 1, w - 16, bh - 2);
+
+      // header bar in the board's colour
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 8, top + 1, w - 16, 12);
+      ctx.fillStyle = shade(color, -0.35);
+      ctx.fillRect(x + 8, top + 12, w - 16, 1);
+
+      ctx.textBaseline = "middle";
+      ctx.font = "700 8px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.fillStyle = PAPER;
+      ctx.fillText(sign, x + w / 2, top + 7, w - 20);
+
+      // three rows: rank, name, figure
+      const list = rows();
+      const left = x + 12;
+      const right = x + w - 12;
+      ctx.font = "8px ui-monospace, SFMono-Regular, Menlo, monospace";
+      for (let i = 0; i < 3; i++) {
+        const ry = top + 25 + i * 13;
+        const r = list[i];
+        if (!r) {
+          ctx.textAlign = "left";
+          ctx.fillStyle = "#6F6A5E";
+          ctx.fillText("—", left, ry);
+          continue;
+        }
+        ctx.textAlign = "left";
+        ctx.fillStyle = i === 0 ? BRASS_BRIGHT : "#9A948A";
+        ctx.fillText(String(r.rank), left, ry);
+        ctx.fillStyle = i === 0 ? PAPER : "#C9C3B8";
+        ctx.fillText(r.name, left + 9, ry, w - 58);
+        ctx.textAlign = "right";
+        ctx.fillStyle = BRASS;
+        ctx.fillText(r.value, right, ry);
+      }
     },
   };
 }

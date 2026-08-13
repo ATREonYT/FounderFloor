@@ -11,6 +11,8 @@
 
 import { TILE } from "../lib/types";
 import type {
+  AvatarLook,
+  BoardRow,
   BoothClaim,
   BoothInstance,
   Dir,
@@ -110,6 +112,19 @@ export function createGame(opts: GameOptions): GameHandle {
   const bank = new SpriteBank();
   const myFrames = bank.makeAvatar(me.look);
   let built = buildFloor(floor, opts.startups, claimEntries());
+  /**
+   * Notice-board rows live HERE, not in the BuiltFloor.
+   *
+   * A rebuild throws the old BuiltFloor away — which happens every time a
+   * stand is claimed or comes down — and with it anything the floor page
+   * had pushed into it. Holding the rows at engine level and re-applying
+   * them after each rebuild means the leaderboards do not silently blank
+   * the moment somebody puts a stand up.
+   */
+  const boards = new Map<string, BoardRow[]>();
+  const applyBoards = (): void => {
+    for (const [id, rows] of boards) built.setBoard(id, rows);
+  };
   let npcs: Npc[] = makeNpcs(built.booths, bank);
   const mapW = built.widthPx;
   const mapH = built.heightPx;
@@ -198,13 +213,16 @@ export function createGame(opts: GameOptions): GameHandle {
   // state to tick — just a sprite, a name and a fixed spot. The stall art
   // itself is scenery in the tilemap; this is the person and the prompt.
   const merchants = floor.plaza?.merchants ?? [];
-  const keepers = merchants.map((m) => ({
-    def: m,
-    frames: bank.makeAvatar(m.look),
-    // centred on the three-tile stall, standing just behind the counter top
-    x: (m.x + 1.5) * TILE,
-    y: m.y * TILE + 10,
-  }));
+  // A board has no keeper — nobody stands behind a notice board.
+  const keepers = merchants
+    .filter((m) => m.look && m.style !== "board")
+    .map((m) => ({
+      def: m,
+      frames: bank.makeAvatar(m.look as AvatarLook),
+      // centred on the three-tile stall, standing just behind the counter top
+      x: (m.x + 1.5) * TILE,
+      y: m.y * TILE + 10,
+    }));
 
   let nearMerchant: MerchantDef | null = null;
   /**
@@ -514,6 +532,7 @@ export function createGame(opts: GameOptions): GameHandle {
 
   function rebuild(): void {
     built = buildFloor(floor, opts.startups, claimEntries());
+    applyBoards();
     npcs = makeNpcs(built.booths, bank);
     // unstick the player if a stand just appeared underfoot
     if (blocked(player.x, player.y)) {
@@ -1325,7 +1344,13 @@ export function createGame(opts: GameOptions): GameHandle {
     const nudge = nearBooth
       ? { wx: (nearBooth.spot.x + 2) * TILE, wy: nearBooth.spot.y * TILE - 12 }
       : nearMerchant
-        ? { wx: (nearMerchant.x + 1.5) * TILE, wy: nearMerchant.y * TILE - 64 }
+        ? {
+            wx: (nearMerchant.x + 1.5) * TILE,
+            // A board is taller than a stall, so the nudge has to clear a
+            // different amount of art — at the stall's offset it landed in
+            // the middle of the board's own headline.
+            wy: nearMerchant.y * TILE - (nearMerchant.style === "board" ? 88 : 64),
+          }
         : null;
     if (nudge) {
       const wx = nudge.wx;
@@ -1570,6 +1595,10 @@ export function createGame(opts: GameOptions): GameHandle {
     },
     setMinimap(v: boolean): void {
       minimapOn = v;
+    },
+    setBoard(id: string, rows): void {
+      boards.set(id, rows);
+      built.setBoard(id, rows);
     },
     setMuted(ids: string[]): void {
       muted.clear();
