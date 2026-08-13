@@ -17,9 +17,10 @@
 #   scripts/deploy-floor.sh                     # uses the defaults below
 #   FF_HOST=root@1.2.3.4 scripts/deploy-floor.sh
 #
-# It copies server/index.mjs and the shared lib/data modules the server
-# imports, restarts the unit, and then CHECKS — it does not tell you it
-# worked because scp exited 0, it tells you what /health says afterwards.
+# If the VPS has a git clone it pulls there; otherwise it copies the four
+# files the server actually needs. Either way it restarts the unit and then
+# CHECKS — it does not tell you it worked because scp exited 0, it tells you
+# what /health says afterwards.
 #
 # Safe to re-run. It never touches floor-data.json.
 
@@ -50,11 +51,19 @@ echo "syntax ok"
 echo "backing up the data file first"
 ssh "$HOST" "cd $APP && cp -a server/floor-data.json server/floor-data.pre-deploy.json 2>/dev/null || true"
 
-echo "copying to $HOST:$APP"
-ssh "$HOST" "mkdir -p $APP/server $APP/lib/data"
-scp server/index.mjs "$HOST:$APP/server/index.mjs"
-scp package.json "$HOST:$APP/package.json"
-for f in "${shared[@]}"; do scp "$f" "$HOST:$APP/$f"; done
+# Two ways the VPS can get the new code, and it already knows which one it
+# is: if somebody cloned the repo there, pulling is one command and cannot
+# miss a file. Otherwise copy the four files this server actually needs.
+if ssh "$HOST" "test -d $APP/.git"; then
+  echo "the VPS has a clone — pulling there"
+  ssh "$HOST" "cd $APP && git pull --ff-only"
+else
+  echo "no clone on the VPS — copying files to $HOST:$APP"
+  ssh "$HOST" "mkdir -p $APP/server $APP/lib/data"
+  scp server/index.mjs "$HOST:$APP/server/index.mjs"
+  scp package.json "$HOST:$APP/package.json"
+  for f in "${shared[@]}"; do scp "$f" "$HOST:$APP/$f"; done
+fi
 
 echo "restarting $UNIT"
 ssh "$HOST" "systemctl restart $UNIT"

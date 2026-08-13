@@ -593,6 +593,11 @@ do not throw an error but do make a room feel broken:
 > scripts/deploy-floor.sh
 > ```
 >
+> from a clone of this repo (the path is inside it, so `cd` there first —
+> `~/founderfloor/scripts/deploy-floor.sh` works from anywhere). It detects
+> whether the VPS has its own git clone and pulls there, or copies the four
+> files across if not.
+>
 > and check which side is behind with one request:
 >
 > ```
