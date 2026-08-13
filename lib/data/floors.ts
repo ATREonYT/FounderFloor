@@ -190,55 +190,53 @@ export const FLOORS: FloorDef[] = [
         { x0: 1, y0: 31, x1: 56, y1: 33 },
       ],
       furniture: [
-        // --- plaza rim: rope posts down the SIDES only ---
-        // There used to be a run of them along the top and bottom edges
-        // too. Now that the stands are on those edges, a rope across the
-        // front of a shop reads as "keep out" — which is the opposite of
-        // what a stand is for. The sides have no stands, so they keep
-        // theirs and the plaza still has an edge.
-        { kind: "stanchion", x: 20, y: 17 }, { kind: "stanchion", x: 20, y: 19 },
-        { kind: "stanchion", x: 20, y: 23 }, { kind: "stanchion", x: 20, y: 25 },
-        { kind: "stanchion", x: 37, y: 17 }, { kind: "stanchion", x: 37, y: 19 },
-        { kind: "stanchion", x: 37, y: 23 }, { kind: "stanchion", x: 37, y: 25 },
-        // --- inside the plaza: somewhere to sit and look at the water ---
-        // The benches are double-sided, so the pair either side of the
-        // basin are both the right way round. Level with the water rather
-        // than in front of it: they used to sit between the fountain and
-        // the two stalls, which made the middle read as furniture.
-        { kind: "bench", x: 22, y: 21 }, { kind: "bench", x: 34, y: 21 },
-        // --- lamps ALONGSIDE every avenue, never in one ---
-        // They used to stand on the avenues' outer tiles, which looked like
-        // lining a street and walked like an obstacle course. Nothing solid
-        // belongs on a walkway; the geometry check now refuses it outright.
-        { kind: "lamp", x: 26, y: 3 }, { kind: "lamp", x: 31, y: 3 },
-        { kind: "lamp", x: 26, y: 10 }, { kind: "lamp", x: 31, y: 10 },
-        { kind: "lamp", x: 26, y: 31 }, { kind: "lamp", x: 31, y: 31 },
-        { kind: "lamp", x: 26, y: 39 }, { kind: "lamp", x: 31, y: 39 },
-        { kind: "lamp", x: 5, y: 18 }, { kind: "lamp", x: 5, y: 24 },
+        // ─── WHAT IS AND IS NOT ALLOWED TO BE HERE ──────────────────
+        // Everything in this list is solid except a stanchion. So the
+        // rules, which scripts/floor-geom.mjs now enforces rather than
+        // trusting:
+        //   nothing on an avenue, nothing on an aisle runner, and nothing
+        //   in the two rows in front of a stand — that strip is how you
+        //   reach it, and a prop parked there makes a stand look
+        //   approachable and not be.
+        // What is left is the quiet band beside each walkway and the
+        // strip against each wall, which is where furniture belongs in a
+        // real hall anyway. The previous version had eight solid props
+        // standing in walkways and four stands you could not walk up to.
+
+        // --- plaza: four posts, one per chamfered corner, and nothing
+        //     else. The paving, its border course and the eight stands on
+        //     the rim already say where the plaza is; a bench in the
+        //     middle of it just said "somebody had furniture left over".
+        { kind: "stanchion", x: 20, y: 17 }, { kind: "stanchion", x: 37, y: 17 },
+        { kind: "stanchion", x: 20, y: 25 }, { kind: "stanchion", x: 37, y: 25 },
+
+        // --- lamps: two at each avenue mouth, framing the four ways in.
+        //     Beside the walkway, never on it.
+        { kind: "lamp", x: 26, y: 12 }, { kind: "lamp", x: 31, y: 12 },
+        { kind: "lamp", x: 26, y: 30 }, { kind: "lamp", x: 31, y: 30 },
         { kind: "lamp", x: 12, y: 18 }, { kind: "lamp", x: 12, y: 24 },
         { kind: "lamp", x: 45, y: 18 }, { kind: "lamp", x: 45, y: 24 },
-        { kind: "lamp", x: 52, y: 18 }, { kind: "lamp", x: 52, y: 24 },
-        // --- WEST WING: café above the side avenue, lounge below ---
-        { kind: "bar", x: 2, y: 17 },
-        { kind: "board", x: 6, y: 18 },
-        { kind: "table", x: 12, y: 17 },
-        { kind: "kiosk", x: 17, y: 17 },
-        { kind: "sign", x: 19, y: 12, label: "PLAZA" },
-        { kind: "sofa", x: 2, y: 25 }, { kind: "sofa", x: 12, y: 25 },
-        { kind: "tree", x: 6, y: 25 },
-        { kind: "tree", x: 1, y: 31 }, { kind: "tree", x: 18, y: 31 },
-        { kind: "crates", x: 2, y: 38 }, { kind: "crates", x: 14, y: 38 },
-        // --- EAST WING: mirrored, different furniture so it is not a copy ---
-        { kind: "table", x: 43, y: 17 },
-        { kind: "board", x: 50, y: 18 },
-        { kind: "bar", x: 53, y: 17 },
-        { kind: "kiosk", x: 39, y: 17 },
-        { kind: "sign", x: 38, y: 12, label: "STANDS" },
-        { kind: "sofa", x: 43, y: 25 }, { kind: "sofa", x: 53, y: 25 },
-        { kind: "tree", x: 50, y: 25 },
-        { kind: "tree", x: 39, y: 31 }, { kind: "tree", x: 56, y: 31 },
-        { kind: "crates", x: 43, y: 38 }, { kind: "crates", x: 55, y: 38 },
-        // --- corners of the hall, so the outer band is not bare ---
+
+        // --- WEST WING: café above the side avenue, lounge below it.
+        //     Each cluster is a group of things that belong together in one
+        //     band, not one of everything spread evenly across the floor.
+        { kind: "bar", x: 2, y: 17 }, { kind: "table", x: 6, y: 17 },
+        { kind: "bench", x: 10, y: 18 }, { kind: "tree", x: 13, y: 17 },
+        { kind: "sofa", x: 2, y: 24 }, { kind: "sofa", x: 5, y: 24 },
+        { kind: "planter", x: 13, y: 24 }, { kind: "tree", x: 13, y: 25 },
+        { kind: "planter", x: 3, y: 12 }, { kind: "bench", x: 9, y: 30 },
+        { kind: "crates", x: 2, y: 38 }, { kind: "crates", x: 13, y: 38 },
+
+        // --- EAST WING: the same idea, the other way round, so the two
+        //     sides are a pair rather than a copy ---
+        { kind: "sofa", x: 49, y: 17 }, { kind: "sofa", x: 52, y: 17 },
+        { kind: "bench", x: 46, y: 18 }, { kind: "tree", x: 44, y: 17 },
+        { kind: "table", x: 49, y: 24 }, { kind: "bar", x: 52, y: 24 },
+        { kind: "planter", x: 44, y: 24 }, { kind: "tree", x: 44, y: 25 },
+        { kind: "planter", x: 54, y: 12 }, { kind: "bench", x: 47, y: 30 },
+        { kind: "crates", x: 44, y: 38 }, { kind: "crates", x: 55, y: 38 },
+
+        // --- against the walls, so the outer band is not bare ---
         { kind: "tree", x: 1, y: 1 }, { kind: "tree", x: 56, y: 1 },
         { kind: "tree", x: 1, y: 40 }, { kind: "tree", x: 56, y: 40 },
         { kind: "crates", x: 25, y: 1 }, { kind: "crates", x: 32, y: 1 },

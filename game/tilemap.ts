@@ -403,15 +403,26 @@ export function buildFloor(
   }
 
   // ----- ambient props, seeded from floor.id -----
-  // Keep clear of: booth rects + their 1-tile interaction ring, the border,
-  // and a 2-tile aisle lattice (tiles with x%4<2 or y%4<2 stay empty) so
-  // every part of the hall remains reachable on foot.
+  //
+  // ─── COMPOSED FLOORS DO NOT SCATTER ────────────────────────────────
+  // A floor with an authored `plaza.furniture` list has had every prop
+  // placed on purpose, checked by scripts/floor-geom.mjs. Dropping eight
+  // more benches and eighteen plants at random on top of that is what
+  // made the Main Hall read as "everything thrown at you": a bench alone
+  // in the middle of the floor with nothing around it, because nothing
+  // put it there. Floors with no authored list still scatter — they have
+  // no other source of ambience.
+  const composed = (plaza?.furniture?.length ?? 0) > 0;
   const nearBoothRing = (tx: number, ty: number): boolean => {
     for (const s of floor.boothSpots) {
-      if (tx >= s.x - 1 && tx <= s.x + 4 && ty >= s.y - 1 && ty <= s.y + 3) return true;
+      // +5, not +3: that is how far the interaction ring reaches, so it is
+      // the strip somebody has to stand in to use the stand.
+      if (tx >= s.x - 1 && tx <= s.x + 4 && ty >= s.y - 1 && ty <= s.y + 5) return true;
     }
     return false;
   };
+  const onRunner = (tx: number, ty: number): boolean =>
+    (plaza?.runners ?? []).some((r) => inRect(tx, ty, r));
   const taken = new Set<number>();
   const canProp = (tx: number, ty: number): boolean =>
     tx >= 1 &&
@@ -425,6 +436,7 @@ export function buildFloor(
     // clear or the walk to the fountain turns into a slalom
     !(plaza && inRect(tx, ty, plaza.rect)) &&
     !onAvenue(tx, ty) &&
+    !onRunner(tx, ty) &&
     grid[ty * w + tx] === 0 &&
     !taken.has(ty * w + tx);
 
@@ -446,7 +458,7 @@ export function buildFloor(
   const area = w * h;
 
   // one coffee cart per floor, if it fits
-  const cart = tryPlace(2, 60);
+  const cart = composed ? null : tryPlace(2, 60);
   if (cart) {
     mark(cart.x, cart.y);
     mark(cart.x + 1, cart.y);
@@ -457,7 +469,7 @@ export function buildFloor(
   // Hall was 34x28, so growing the hall without raising them would have
   // spread the same furniture over twice the area and made the bigger room
   // read as an emptier one. Smaller floors are below the caps and unaffected.
-  const benchCount = Math.max(1, Math.min(8, Math.floor(area / 200)));
+  const benchCount = composed ? 0 : Math.max(1, Math.min(8, Math.floor(area / 200)));
   for (let i = 0; i < benchCount; i++) {
     const p = tryPlace(2, 40);
     if (!p) break;
@@ -465,7 +477,7 @@ export function buildFloor(
     mark(p.x + 1, p.y);
     drawables.push(benchDrawable(p.x, p.y));
   }
-  const plantCount = Math.max(3, Math.min(18, Math.floor(area / 90)));
+  const plantCount = composed ? 0 : Math.max(3, Math.min(18, Math.floor(area / 90)));
   for (let i = 0; i < plantCount; i++) {
     const p = tryPlace(1, 40);
     if (!p) break;

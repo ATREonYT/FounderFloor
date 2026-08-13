@@ -130,8 +130,12 @@ for (const f of FLOORS) {
       }
       return false;
     };
-    const onAvenue = (x, y) => {
+    // A walkway is an avenue OR an aisle runner. The runners used to be
+    // exempt, and a lamp post standing in the middle of the carpet is
+    // exactly the sort of thing you walk into and swear at.
+    const onWalkway = (x, y) => {
       for (const a of p.avenues) if (inRect(x, y, a)) return true;
+      for (const r of p.runners ?? []) if (inRect(x, y, r)) return true;
       return false;
     };
 
@@ -145,6 +149,7 @@ for (const f of FLOORS) {
     // Nothing solid may stand on a walkway. Lamps used to be exempt and
     // lined the avenues; walking one then felt like a slalom.
     const AVENUE_OK = new Set();
+
 
     const clashes = [];
     const blocking = [];
@@ -163,7 +168,7 @@ for (const f of FLOORS) {
         if (x < 1 || x > W - 2 || d.y < 1 || d.y > H - 2) offMap.push(tag);
         if (onBooth(x, d.y)) clashes.push(`${tag} on a stand`);
         if (inRect(x, d.y, p.fountain)) clashes.push(`${tag} in the fountain`);
-        if (solidProp && !AVENUE_OK.has(d.kind) && onAvenue(x, d.y)) blocking.push(tag);
+        if (solidProp && !AVENUE_OK.has(d.kind) && onWalkway(x, d.y)) blocking.push(tag);
         if (solidProp) {
           const k = `${x},${d.y}`;
           if (occupied.has(k)) clashes.push(`${tag} overlaps ${occupied.get(k)}`);
@@ -178,7 +183,20 @@ for (const f of FLOORS) {
       "no furniture lands on a stand, the fountain, or another piece",
       [...new Set(clashes)].slice(0, 8).join(", "),
     );
-    check(blocking.length === 0, "no solid furniture blocks an avenue", [...new Set(blocking)].join(", "));
+    check(blocking.length === 0, "no solid furniture stands on a walkway", [...new Set(blocking)].join(", "));
+
+    // Nothing solid may sit in the two rows in front of a stand. That strip
+    // is how you reach it: the interaction ring is spot.y..spot.y+5, and a
+    // prop parked in it makes the stand look approachable and not be.
+    const blocked = new Set();
+    for (const s2 of f.boothSpots) {
+      for (let y = s2.y + 4; y <= s2.y + 5; y++) {
+        for (let x = s2.x; x <= s2.x + 3; x++) {
+          if (occupied.has(`${x},${y}`)) blocked.add(`stand(${s2.x},${s2.y}) <- ${occupied.get(`${x},${y}`)}`);
+        }
+      }
+    }
+    check(blocked.size === 0, "the approach to every stand is clear", [...blocked].slice(0, 6).join(", "));
 
     // runners are decoration only — they must never be laid under a stand
     const overRun = new Set();
@@ -197,7 +215,7 @@ for (const f of FLOORS) {
         const x = m.x + i;
         if (x < 1 || x > W - 2 || m.y < 1 || m.y > H - 2) mBad.push(`${tag} off map`);
         if (onBooth(x, m.y)) mBad.push(`${tag} on a stand`);
-        if (onAvenue(x, m.y)) mBad.push(`${tag} blocks an avenue`);
+        if (onWalkway(x, m.y)) mBad.push(`${tag} blocks a walkway`);
         const k = `${x},${m.y}`;
         if (occupied.has(k)) mBad.push(`${tag} overlaps ${occupied.get(k)}`);
         occupied.set(k, tag);

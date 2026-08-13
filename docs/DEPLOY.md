@@ -570,10 +570,25 @@ Deleting the whole block renders that floor as a plain hall again and the
 stands are unaffected.
 
 After ANY layout change run the geometry check. It asserts the things that
-do not throw an error but do make a room feel broken — nothing sitting on
-a stand or on another prop, no avenue blocked, the fountain actually
-centred, no stand overlapping the paving, and a flood fill proving every
-stand is reachable and no tile is cut off:
+do not throw an error but do make a room feel broken:
+
+- nothing sitting on a stand, on the fountain, or on another prop
+- **nothing solid on a walkway** — that means avenues AND aisle runners
+- **the two rows in front of every stand are clear**, because that strip is
+  how you reach it; a prop parked there makes a stand look approachable
+  and not be
+- the fountain actually centred in the plaza
+- no stand overlapping the paving
+- a flood fill proving every stand is reachable and no tile is cut off
+
+One more rule lives in `game/tilemap.ts` rather than here: a floor with an
+authored `plaza.furniture` list is COMPOSED, and the random ambient
+scatter (a coffee cart, benches, plants) is switched off for it entirely.
+Floors without one still scatter — they have no other source of ambience.
+Skipping that is what put a bench on its own in the middle of the Main
+Hall: nothing placed it, so nothing could explain it.
+
+Run it with:
 
 ```
 node scripts/floor-geom.mjs

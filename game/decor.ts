@@ -397,9 +397,23 @@ export function drawStandPlinth(ctx: CanvasRenderingContext2D, bx: number, by: n
 }
 
 /**
- * The plaza floor, baked once: octagonal stone paving, a double inlaid ring
- * around the fountain, a compass rose, and a darker border course. Blitted
- * 1:1 from the bake, so the per-frame cost is one clipped drawImage.
+ * How far below the basin's rim its stonework actually meets the floor.
+ *
+ * The basin is a cylinder: the rim ellipse is drawn at the footprint's
+ * centre and the wall drops to +14, so the ring where it TOUCHES THE
+ * GROUND is 14px lower. Anything inlaid into the paving — the rings, the
+ * compass rose — is on the ground, so it has to be concentric with that
+ * lower ellipse. Drawn around the rim instead, every ring sat about seven
+ * pixels high, which is exactly the sort of near-miss that reads as
+ * "the fountain isn't centred" without anyone being able to say why.
+ */
+export const FOOTING_DROP = 14;
+
+/**
+ * The plaza floor, baked once: stone paving with chamfered corners, a
+ * double inlaid ring around the fountain's footing, a compass rose, and a
+ * darker border course. Blitted 1:1 from the bake, so the per-frame cost
+ * is one clipped drawImage.
  */
 export class PlazaGround {
   private baked: HTMLCanvasElement | null = null;
@@ -424,10 +438,13 @@ export class PlazaGround {
     const w = this.bw;
     const h = this.bh;
     const cx = w / 2;
-    const cy = h / 2;
-    // The plaza reads as an octagon: corner triangles stay checkerboard, so
-    // the paving has a shape rather than being a rectangle of a new colour.
-    const cut = Math.round(Math.min(w, h) * 0.24);
+    // Everything inlaid in the floor is centred on the fountain's FOOTING.
+    const cy = h / 2 + FOOTING_DROP;
+    // The corners are chamfered, not cut into a full octagon. At 24% of the
+    // short side the diagonal ran clean under the stands on the rim and
+    // read as a crack across the floor in front of a shop. A single tile
+    // of chamfer gives the paving a shape without touching anything.
+    const cut = 32;
 
     const inOctagon = (x: number, y: number): boolean => {
       const dx = x < cut ? cut - x : x > w - cut ? x - (w - cut) : 0;
@@ -448,29 +465,7 @@ export class PlazaGround {
       }
     }
 
-    // Compass rose: eight rays from the centre, long on the axes. Drawn
-    // BEFORE the octagon clip below — its diagonals reach past the cut
-    // corners, and unclipped they trailed off across the checkerboard like
-    // scratches on the floor.
-    ctx.save();
-    ctx.globalAlpha = 0.5;
-    const rOut = Math.min(w, h) * 0.42;
-    for (let i = 0; i < 8; i++) {
-      const a = (i * Math.PI) / 4;
-      const long = i % 2 === 0;
-      const len = long ? rOut : rOut * 0.6;
-      const spread = long ? 13 : 8;
-      ctx.fillStyle = long ? PAVE_INLAY : PAVE_LINE;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(a) * len, cy + Math.sin(a) * len);
-      ctx.lineTo(cx + Math.cos(a + Math.PI / 2) * spread, cy + Math.sin(a + Math.PI / 2) * spread);
-      ctx.lineTo(cx + Math.cos(a - Math.PI / 2) * spread, cy + Math.sin(a - Math.PI / 2) * spread);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // clip the courses back to the octagon edge, then draw a border course
+    // clip the courses back to the chamfered edge, then draw a border course
     ctx.save();
     ctx.globalCompositeOperation = "destination-in";
     ctx.fillStyle = "#000";
@@ -508,12 +503,31 @@ export class PlazaGround {
     // without anyone being able to say why.
     const fb = box(this.plaza.fountain);
     const fcx = fb.x - this.bx + fb.w / 2;
-    const fcy = fb.y - this.by + fb.h / 2;
+    const fcy = fb.y - this.by + fb.h / 2 + FOOTING_DROP;
     const frx = fb.w / 2 - 4;
     const fry = fb.h / 2 - 3;
     pixEllipseRing(ctx, fcx, fcy, frx * 1.28, fry * 1.28, 4, PAVE_INLAY, 0.9);
     pixEllipseRing(ctx, fcx, fcy, frx * 1.52, fry * 1.52, 2, PAVE_LINE, 0.8);
     pixEllipseRing(ctx, fcx, fcy, frx * 2.1, fry * 2.1, 2, PAVE_LINE, 0.55);
+
+    // Twelve inlaid studs around the outer ring.
+    //
+    // There used to be an eight-ray compass rose here. On a plaza this
+    // wide its axes ran the full width of the paving, which at ground
+    // level reads less like an inlay and more like somebody dragged
+    // something heavy across the floor. Studs give the stonework the same
+    // "this was laid on purpose" quality without any long lines.
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = PAVE_INLAY;
+    for (let i = 0; i < 12; i++) {
+      const a = (i * Math.PI) / 6;
+      const sx = Math.round((fcx + Math.cos(a) * frx * 1.8) / 2) * 2;
+      const sy = Math.round((fcy + Math.sin(a) * fry * 1.8) / 2) * 2;
+      ctx.fillRect(sx - 3, sy - 1, 6, 2);
+      ctx.fillRect(sx - 1, sy - 3, 2, 6);
+    }
+    ctx.restore();
 
     this.baked = off.cv;
     return this.baked;
@@ -585,9 +599,6 @@ interface FountainGeom {
   midY: number;
   midRx: number;
   midRy: number;
-  topY: number;
-  topRx: number;
-  topRy: number;
   finialY: number;
 }
 
@@ -608,8 +619,16 @@ function fountainGeom(rect: TileRect): FountainGeom {
   const bottom = b.y + b.h;
   const rx = b.w / 2 - 4;
   const ry = b.h / 2 - 3;
-  const midY = cy - ry - 22;
-  const topY = midY - 34;
+  // ONE raised bowl, not two.
+  //
+  // The three-tier version rose 117px — nearly four tiles — above the
+  // basin's centre, and the paving behind it is walkable. So somebody
+  // standing one row back appeared to be up on the second tier, in mid
+  // air, which is the single oddest thing in the hall. A wide basin with
+  // one bowl and a brass finial tops out just above head height for
+  // whoever is standing behind it, which is what a plaza fountain
+  // actually looks like.
+  const midY = cy - ry - 20;
   return {
     cx,
     baseY: cy,
@@ -617,12 +636,9 @@ function fountainGeom(rect: TileRect): FountainGeom {
     ry,
     bottom,
     midY,
-    midRx: rx * 0.46,
-    midRy: rx * 0.46 * 0.36,
-    topY,
-    topRx: rx * 0.24,
-    topRy: rx * 0.24 * 0.36,
-    finialY: topY - 16,
+    midRx: rx * 0.4,
+    midRy: rx * 0.4 * 0.36,
+    finialY: midY - 18,
   };
 }
 
@@ -666,10 +682,13 @@ function bakeBasin(g: FountainGeom, w: number, h: number, ox: number, oy: number
   ditherEllipseBand(ctx, cx, by + g.ry * 0.62, g.rx + 8, g.ry * 0.62, g.rx * 0.5, g.ry * 0.3, "#3A352C");
   ctx.restore();
 
-  // the basin wall, dropped to give the rim thickness
-  pixEllipse(ctx, cx, by + 14, g.rx, g.ry, STONE_DEEP);
-  pixEllipse(ctx, cx, by + 9, g.rx, g.ry, STONE_DARK);
-  masonryJoints(ctx, cx, by + 9, g.rx, g.ry, 8, 18, shade(STONE_DEEP, -0.15));
+  // The basin wall, dropped to give the rim thickness. The lowest course
+  // is FOOTING_DROP below the rim BY DEFINITION — that is the ellipse the
+  // paving inlay is drawn around, so the two must move together or the
+  // fountain stops looking centred in its own rings.
+  pixEllipse(ctx, cx, by + FOOTING_DROP, g.rx, g.ry, STONE_DEEP);
+  pixEllipse(ctx, cx, by + FOOTING_DROP - 5, g.rx, g.ry, STONE_DARK);
+  masonryJoints(ctx, cx, by + FOOTING_DROP - 5, g.rx, g.ry, 8, 18, shade(STONE_DEEP, -0.15));
 
   // the rim: laid stones, not an extruded band
   pixEllipse(ctx, cx, by, g.rx, g.ry, STONE);
@@ -708,7 +727,6 @@ function bakeTiers(g: FountainGeom, w: number, h: number, ox: number, oy: number
   const cx = Math.round((g.cx - ox) / 2) * 2;
   const by = Math.round((g.baseY - oy) / 2) * 2;
   const midY = Math.round((g.midY - oy) / 2) * 2;
-  const topY = Math.round((g.topY - oy) / 2) * 2;
   const finY = Math.round((g.finialY - oy) / 2) * 2;
 
   // plinth the whole thing stands on, inside the water
@@ -727,17 +745,9 @@ function bakeTiers(g: FountainGeom, w: number, h: number, ox: number, oy: number
   pixEllipse(ctx, cx, midY + 2, g.midRx - 7, g.midRy - 4, WATER);
   pixEllipse(ctx, cx, midY + 2, g.midRx - 12, g.midRy - 6, WATER_LIGHT);
 
-  stoneColumn(ctx, cx, topY, midY, 6, 11);
-
-  // top bowl
-  pixEllipse(ctx, cx, topY + 5, g.topRx, g.topRy, STONE_DARK);
-  pixEllipse(ctx, cx, topY, g.topRx, g.topRy, STONE);
-  pixEllipseRing(ctx, cx, topY, g.topRx, g.topRy, 2, STONE_LIGHT);
-  pixEllipse(ctx, cx, topY + 2, g.topRx - 5, g.topRy - 2, WATER_LIGHT);
-
-  // finial: a small brass sun on a stem
+  // finial: a small brass sun on a stem straight out of the bowl
   ctx.fillStyle = STONE;
-  ctx.fillRect(cx - 2, finY + 6, 4, Math.max(2, topY - finY - 4));
+  ctx.fillRect(cx - 2, finY + 6, 4, Math.max(2, midY - finY - 4));
   ctx.fillStyle = BRASS_DEEP;
   ctx.fillRect(cx - 6, finY, 12, 8);
   ctx.fillStyle = BRASS;
@@ -860,25 +870,27 @@ export function fountainDrawable(rect: TileRect): Drawable {
           ctx.fillStyle = WATER_LIGHT;
           ctx.fillRect(mx - 2, y + 4, 4, 2);
         }
-        const tx = Math.round((g.cx + side * (g.topRx - 2) - wob * side) / 2) * 2;
-        const tTop = Math.round((g.topY + g.topRy - 1) / 2) * 2;
-        const tBot = Math.round((g.midY - 2) / 2) * 2;
-        for (let y = tTop + scroll - 8; y < tBot; y += 8) {
-          if (y < tTop) continue;
-          ctx.fillStyle = FOAM;
-          ctx.fillRect(tx - 1, y, 3, 4);
-        }
       }
 
-      // droplets peeling off the top bowl and arcing into the basin
+      // A jet out of the finial, falling into the bowl below it.
+      const jx = Math.round(g.cx / 2) * 2;
+      const jTop = Math.round((g.finialY + 8) / 2) * 2;
+      const jBot = Math.round((g.midY - 2) / 2) * 2;
+      for (let y = jTop + scroll - 8; y < jBot; y += 8) {
+        if (y < jTop) continue;
+        ctx.fillStyle = FOAM;
+        ctx.fillRect(jx - 1, y, 3, 4);
+      }
+
+      // droplets peeling off the bowl and arcing into the basin
       ctx.fillStyle = SPARK;
       for (let i = 0; i < 6; i++) {
         const ph = ((t * 0.85 + i / 6) % 1 + 1) % 1;
         const side = i % 2 === 0 ? -1 : 1;
-        const spread = g.topRx + 4 + ph * (g.rx * 0.45);
+        const spread = g.midRx + 4 + ph * (g.rx * 0.4);
         const dx = Math.round((g.cx + side * spread) / 2) * 2;
-        const fall = g.baseY - g.topY;
-        const dy = Math.round((g.topY + ph * ph * fall) / 2) * 2;
+        const fall = g.baseY - g.midY;
+        const dy = Math.round((g.midY + ph * ph * fall) / 2) * 2;
         if (dy > g.baseY) continue;
         ctx.globalAlpha = 0.85 - ph * 0.45;
         ctx.fillRect(dx, dy, 2, 2);
