@@ -177,7 +177,11 @@ const presence = (base) => fetch(`${base}/presence`).then((r) => r.json());
   const dataFile = join(dir, "floor-data.json");
   const h = await boot({ dataFile, port: 3394, seats: "twenty" });
   const p = await presence(h.base);
-  check(p.founding?.total === 20, "an unparseable FOUNDING_SEATS falls back to 20",
+  // 25 is the shipping default. What this really guards is that the cap is
+  // a FINITE number at all — NaN is the shape that opens the offer forever.
+  check(Number.isInteger(p.founding?.total), "the cap is a real number, not NaN",
+    JSON.stringify(p.founding?.total));
+  check(p.founding?.total === 25, "an unparseable FOUNDING_SEATS falls back to the default",
     JSON.stringify(p.founding));
   await stop(h);
   rmSync(dir, { recursive: true, force: true });

@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * The opening offer: the first twenty accounts get Founder+ and the
- * founding badge, kept for life, for nothing.
+ * The opening offer: the first FOUNDING_SEATS accounts get Founder+ and
+ * the founding badge, kept for life, for nothing. After that it is bought.
  *
  * It is a real scarcity, not a marketing one — the server counts the seats
- * and stops at twenty (see grantFoundingSeat in server/index.mjs) — so the
+ * and stops at the cap (see grantFoundingSeat in server/index.mjs) — so the
  * number here is read from the server on every visit rather than written
  * into the copy. If the floor server is unreachable the card does not
  * render at all: better to say nothing than to advertise a count nobody
@@ -79,7 +79,7 @@ export default function FoundingSeatsCard() {
       </div>
       <Link
         href="/profile#account"
-        className="btn-press min-h-[44px] shrink-0 self-start rounded-md bg-ink px-5 py-2.5 text-center text-sm font-medium text-paper hover:bg-ink/90 sm:self-auto"
+        className="btn-press inline-flex min-h-[44px] shrink-0 items-center justify-center self-start rounded-md bg-ink px-5 py-2.5 text-center text-sm font-medium text-paper hover:bg-ink/90 sm:self-auto"
       >
         Claim a seat
       </Link>
