@@ -914,8 +914,26 @@ export function archDrawable(rect: TileRect, label: string, sub: string): Drawab
   const b = box(rect);
   const leftX = b.x + 6;
   const rightX = b.x + b.w - 16;
-  const beamY = b.y - 34;
+  const beamY = b.y - 42;
   const footY = b.y + T - 2;
+
+  // ─── WHY THE BOARD IS NARROWER THAN THE BEAM ────────────────────────
+  // It used to be the full span (bw - 4), which meant it covered both
+  // posts along almost their whole length. What you saw was a heavy stone
+  // lintel hanging in the air with two disconnected stumps under it —
+  // nothing appeared to hold the sign up, and that is exactly how it read.
+  //
+  // A gantry sign hangs BETWEEN its posts, so the board is inset inside
+  // their inner faces and dropped below the beam on two visible rods. The
+  // posts now run unbroken from beam to plinth on both sides, which is the
+  // whole reason the structure looks like a structure.
+  const POST_W = 10;
+  const innerL = leftX + POST_W;
+  const sw = rightX - innerL - 20;
+  const sx = innerL + 10;
+  const sh = 30;
+  const beamBottom = beamY + 17;
+  const sy = beamBottom + 9; // the rods live in this gap
 
   return {
     sortY: footY,
@@ -955,11 +973,17 @@ export function archDrawable(rect: TileRect, label: string, sub: string): Drawab
       ctx.fillRect(leftX - 8, beamY - 3, 6, 18);
       ctx.fillRect(rightX + 12, beamY - 3, 6, 18);
 
+      // the two rods it hangs on, drawn before the board so the board's
+      // frame laps over their bottom ends
+      ctx.fillStyle = BRASS;
+      for (const rx of [sx + 16, sx + sw - 19]) {
+        ctx.fillRect(rx, beamBottom, 3, sy - beamBottom + 3);
+        ctx.fillStyle = BRASS_BRIGHT;
+        ctx.fillRect(rx, beamBottom, 1, sy - beamBottom + 3);
+        ctx.fillStyle = BRASS;
+      }
+
       // the board itself, hung under the beam
-      const sw = bw - 4;
-      const sh = 30;
-      const sx = leftX + 2;
-      const sy = beamY + 17;
       ctx.fillStyle = INK;
       ctx.fillRect(sx - 2, sy - 2, sw + 4, sh + 4);
       ctx.fillStyle = "#2E2A22";
