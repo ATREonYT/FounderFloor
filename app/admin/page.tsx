@@ -37,6 +37,42 @@ interface Overview {
 }
 
 /**
+ * One person, as /admin/people hands them back: every id the hall knows for
+ * them, joined into a single row.
+ *
+ * Both halves of "who is this" are here on purpose. `email` is the handle
+ * you grant against and the only way to reach somebody; `id` is the handle
+ * you ban, kick and clear stands against, and it is the ONLY handle a guest
+ * has. Showing one without the other is what made this page need a data
+ * file open in another window.
+ */
+interface Person {
+  id: string;
+  kind: "account" | "guest";
+  email: string;
+  name: string;
+  /** The name they walk under, when it differs from the account's. */
+  alias: string;
+  company: string;
+  standFloor: string;
+  spotIndex: number | null;
+  link: string;
+  tier: string;
+  badge: string | null;
+  until: number | null;
+  customer: string;
+  tickets: number;
+  created: number;
+  lastSeen: number;
+  online: boolean;
+  where: string;
+  banned: { reason: string; ts: number; by: string } | null;
+  mailingList: boolean;
+  devices: number;
+  ref: string;
+}
+
+/**
  * One row of the calendar, exactly as /admin/events hands it back — declared
  * here beside Overview because this page is typed off the wire, not off the
  * app's own models.
@@ -116,6 +152,29 @@ function localZone(): string {
   }
 }
 
+/** "4m ago", "3h ago", "6d ago" — how long since the hall last saw them. */
+function ago(ms: number): string {
+  if (!ms) return "never";
+  const s = Math.max(0, Date.now() - ms) / 1000;
+  if (s < 90) return "just now";
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  if (s < 86400) return `${Math.round(s / 3600)}h ago`;
+  return `${Math.round(s / 86400)}d ago`;
+}
+
+/** A small square-cornered chip — the console's own tag, not the site's pills. */
+function Tag({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "gold" | "verify" | "accent" }) {
+  const tones = {
+    muted: "border-line text-muted",
+    gold: "border-gold/60 text-gold-deep",
+    verify: "border-verify/50 text-verify",
+    accent: "border-accent/50 text-accent",
+  };
+  return (
+    <span className={`micro rounded-sm border px-1.5 py-0.5 ${tones[tone]}`}>{children}</span>
+  );
+}
+
 /**
  * An event's time, drawn on the operator's clock — the same clock the
  * datetime-local field writes in, so a date typed a month or twelve hours
@@ -158,6 +217,34 @@ export default function AdminPage() {
 
   const [events, setEvents] = useState<AdminEvent[]>([]);
 
+  // ---- the roster ----
+  const [people, setPeople] = useState<Person[]>([]);
+  const [peopleCount, setPeopleCount] = useState<{ total: number; accounts: number; guests: number; matched: number } | null>(null);
+  const [pq, setPq] = useState("");
+  const [pLoading, setPLoading] = useState(false);
+  /** Whose email was just copied — the button says so for a couple of seconds. */
+  const [copied, setCopied] = useState("");
+
+  const loadPeople = useCallback(async (q: string) => {
+    setPLoading(true);
+    try {
+      const r = await adminPost("/admin/people", { q, limit: 200 });
+      if (Array.isArray(r?.people)) {
+        setPeople(r.people as Person[]);
+        setPeopleCount({
+          total: Number(r.total) || 0,
+          accounts: Number(r.accounts) || 0,
+          guests: Number(r.guests) || 0,
+          matched: Number(r.matched) || 0,
+        });
+      }
+    } catch {
+      /* the gate above already reports an unreachable server */
+    } finally {
+      setPLoading(false);
+    }
+  }, []);
+
   // A bare POST (token only) is the read. Failures stay quiet: the gate
   // above already reports an unreachable server, and a second complaint
   // about the same outage is noise.
@@ -178,7 +265,8 @@ export default function AdminPage() {
     }
     void refresh();
     void loadEvents();
-  }, [refresh, loadEvents]);
+    void loadPeople("");
+  }, [refresh, loadEvents, loadPeople]);
 
   // grant form
   const [gEmail, setGEmail] = useState("");
@@ -227,10 +315,55 @@ export default function AdminPage() {
         else say("granted — they'll get the ceremony on their screen when it lands");
       }
       void refresh();
+      // A grant or a ban changes a row on the roster, so re-read it with the
+      // search still applied — the operator is usually looking at the person
+      // they just acted on and needs to see it land.
+      void loadPeople(pq);
       return r;
     } catch (err) {
       say(`${label}: ${err instanceof Error ? err.message : "failed"}`);
       return null;
+    }
+  };
+
+  /**
+   * Carry a person from the roster down into a form.
+   *
+   * Deliberately NOT a one-click ban. A roster is a list you scroll and
+   * scan, and the two things you do from it are irreversible for the person
+   * on the other end — so a row hands its ids to the form and scrolls you
+   * there, and the actual button is still one you had to aim at.
+   *
+   * Guests have no address, so the grant route is closed for them and the
+   * button says why rather than sending an empty email the server refuses.
+   */
+  const sendTo = (p: Person, where: "grant" | "moderate") => {
+    if (where === "grant") {
+      setGEmail(p.email);
+      say(`grant form loaded with ${p.email}`);
+    } else {
+      // Ban by email when there is one — it catches the account whichever
+      // browser it signs in from — and always keep the id for kick and
+      // stand-clear, which only ever work on an id.
+      setBanTarget(p.email || p.id);
+      setUnbanTarget(p.email || p.id);
+      setKickId(p.id);
+      setStandOwner(p.id);
+      if (p.standFloor) setStandFloor(p.standFloor);
+      setWallOwner(p.id);
+      say(`moderation forms loaded with ${p.email || p.id}`);
+    }
+    document.getElementById(where === "grant" ? "grant-section" : "moderation-section")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const copyEmail = async (p: Person) => {
+    try {
+      await navigator.clipboard.writeText(p.email);
+      setCopied(p.id);
+      setTimeout(() => setCopied(""), 2000);
+    } catch {
+      say("could not reach the clipboard — select the address by hand");
     }
   };
 
@@ -347,7 +480,147 @@ export default function AdminPage() {
         )}
       </section>
 
-      <section className="panel p-5" aria-label="Grants">
+      {/* The roster sits directly under the floor counts and above every
+          form, because the order of the page is the order of the job: see
+          who is here, find the one you mean, then act on them. */}
+      <section className="panel p-5" aria-label="People">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-xl">People</h2>
+          {peopleCount && (
+            <p className="micro text-muted">
+              {peopleCount.total} known · {peopleCount.accounts} with accounts ·{" "}
+              {peopleCount.guests} guests
+            </p>
+          )}
+        </div>
+        <p className="micro mt-1 text-muted">
+          Everyone the hall knows, newest first. Only you can see this page.
+        </p>
+
+        <form
+          className="mt-3 flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void loadPeople(pq.trim());
+          }}
+        >
+          <Field
+            label="Find someone"
+            value={pq}
+            onChange={setPq}
+            placeholder="name, email, company or id"
+            width="w-72"
+          />
+          <button type="submit" className={BTN} disabled={pLoading}>
+            {pLoading ? "Looking…" : "Search"}
+          </button>
+          {pq && (
+            <button
+              type="button"
+              className="micro min-h-[44px] px-2 text-muted hover:text-ink"
+              onClick={() => {
+                setPq("");
+                void loadPeople("");
+              }}
+            >
+              clear
+            </button>
+          )}
+        </form>
+
+        <ul className="mt-4 flex flex-col divide-y divide-line">
+          {people.length === 0 && (
+            <li className="py-3 text-sm text-muted">
+              {pLoading ? "Loading…" : pq ? "Nobody matches that." : "Nobody yet."}
+            </li>
+          )}
+          {people.map((p) => (
+            <li key={p.id} className="flex flex-col gap-2 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-ink">{p.name || "(no name)"}</span>
+                {p.alias && (
+                  <span className="micro text-muted">walks as &ldquo;{p.alias}&rdquo;</span>
+                )}
+                {p.online ? (
+                  <Tag tone="verify">on {p.where || "a floor"}</Tag>
+                ) : (
+                  <Tag>{ago(p.lastSeen)}</Tag>
+                )}
+                {p.kind === "guest" && <Tag tone="accent">guest — no account</Tag>}
+                {p.tier !== "free" && (
+                  <Tag tone="gold">
+                    {p.tier}
+                    {p.badge === "founding" ? " ✦ founding" : ""}
+                    {p.until ? ` · until ${new Date(p.until).toLocaleDateString()}` : ""}
+                  </Tag>
+                )}
+                {p.banned && <Tag tone="accent">banned: {p.banned.reason || "no reason"}</Tag>}
+              </div>
+
+              {/* Both handles, always. The address is what you grant to; the
+                  id is what you ban, kick and clear a stand with. */}
+              <div className="flex flex-col gap-0.5 text-xs text-muted">
+                <span className="break-all">
+                  {p.email ? (
+                    <span className="text-ink">{p.email}</span>
+                  ) : (
+                    <span className="italic">no email on file</span>
+                  )}
+                  {p.mailingList && " · on the mailing list"}
+                </span>
+                <span className="break-all font-mono text-[11px]">{p.id}</span>
+                <span>
+                  {p.company ? <span className="text-ink">{p.company}</span> : "no company"}
+                  {p.standFloor
+                    ? ` · stand on ${p.standFloor}${p.spotIndex !== null ? ` #${p.spotIndex}` : ""}`
+                    : " · no stand"}
+                  {p.tickets > 0 && ` · ${p.tickets} tickets bought`}
+                  {p.customer && ` · via ${p.customer}`}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="micro rounded-sm border border-line px-2 py-1 hover:border-ink disabled:opacity-40"
+                  disabled={!p.email}
+                  onClick={() => void copyEmail(p)}
+                >
+                  {copied === p.id ? "copied ✓" : "copy email"}
+                </button>
+                <button
+                  type="button"
+                  className="micro rounded-sm border border-line px-2 py-1 hover:border-ink disabled:opacity-40"
+                  disabled={!p.email}
+                  title={p.email ? "" : "a guest has no account to grant to"}
+                  onClick={() => sendTo(p, "grant")}
+                >
+                  give membership →
+                </button>
+                <button
+                  type="button"
+                  className="micro rounded-sm border border-line px-2 py-1 hover:border-accent hover:text-accent"
+                  onClick={() => sendTo(p, "moderate")}
+                >
+                  ban or kick →
+                </button>
+                {p.standFloor && (
+                  <a
+                    href={`/stand/${p.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="micro rounded-sm border border-line px-2 py-1 hover:border-ink"
+                  >
+                    see their stand ↗
+                  </a>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="panel p-5" id="grant-section" aria-label="Grants">
         <h2 className="font-display text-xl">Grant</h2>
         <p className="micro mt-1 text-muted">
           Set a membership, the founding badge, or add tickets to any account.
@@ -392,7 +665,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="panel p-5" aria-label="Moderation">
+      <section className="panel p-5" id="moderation-section" aria-label="Moderation">
         <h2 className="font-display text-xl">Moderation</h2>
         <div className="mt-3 flex flex-col gap-4">
           <Row>

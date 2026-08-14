@@ -425,12 +425,33 @@ so an unban restores it.
 `ADMIN_EMAILS` (comma-separated, default
 `ak@founderfloor.net,ak@founder-floor.com` — both while the operator
 account moves domains) names the
-accounts allowed to use `/admin` on the site: grants (membership, founding
-badge, tickets), bans/unbans (by email or profile id — bans kick live
-sessions, clear stands, and block both login and floor joins), kicks,
-stand clearing, wall takedowns, and floor-wide announcements. Sign in as that account and
-open `founderfloor.net/admin`. For everyone else the endpoints return the
-same 404 as any unknown path.
+accounts allowed to use `/admin` on the site: the People roster, grants
+(membership, founding badge, tickets), bans/unbans (by email or profile id
+— bans kick live sessions, clear stands, and block both login and floor
+joins), kicks, stand clearing, wall takedowns, and floor-wide
+announcements. Sign in as that account and open `founderfloor.net/admin`.
+For everyone else the endpoints return the same 404 as any unknown path.
+
+**The People roster** is the top section of the console and the answer to
+"who is actually using this". One row per person, newest first, carrying
+both handles: the **email**, which is what a grant is addressed to and the
+only way to reach somebody, and the **profile id**, which is what a ban, a
+kick and a stand-clear act on — and the only handle a guest has at all.
+Each row also shows the name they walk under, their company, which floor
+their stand is on, their live membership, how many tickets they have
+bought, where that membership came from (`admin:you`, a Stripe customer,
+`founding-seat-N`, `trial`) and whether they are already banned. Search
+matches the name, the address, the company or the id.
+
+Nothing destructive fires from the list. A row's buttons load that person
+into the Grant or Moderation form below and scroll you to it; the button
+that actually does the thing is still one you have to aim at. That is
+deliberate — a roster is a list you scan, and both actions are irreversible
+for the person on the other end.
+
+It is the most sensitive read the server has: every address the hall
+holds, in one response, behind one token. Treat a screenshot of it the way
+you would treat the data file itself.
 
 ## 2. The web app (Vercel)
 

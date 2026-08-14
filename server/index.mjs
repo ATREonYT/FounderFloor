@@ -3430,6 +3430,175 @@ async function handleAdminPost(req, res, pathname) {
       return;
     }
 
+    /**
+     * WHO IS WHO — one row per person, with the ids joined up.
+     *
+     * The console could already grant to an email and ban an id. What it
+     * could not do was tell you those were the same person. Every question
+     * an operator actually has ("who runs that stand", "what address do I
+     * grant to", "is the account that got flagged the one that just went
+     * quiet") meant three lookups in a data file over SSH. This is that
+     * join, done on the server, where the pieces already are:
+     *
+     *   accounts        the email, the display name, what they have paid for
+     *   profileStates   the name they walk under and the company they wrote
+     *   stands          which floor their stand is on, and what it says
+     *   registry        a company registered before any stand was claimed
+     *   rooms           whether they are in the building right now
+     *   banned          whether they are already dealt with
+     *
+     * Guests are in here too, and deliberately. Somebody holding a stand
+     * without an account is still somebody you may have to remove, and the
+     * fact that they have no address to grant to is exactly the thing worth
+     * seeing at a glance rather than discovering mid-refund.
+     *
+     * This is the most sensitive read in the server — every address the
+     * hall holds, in one response. It sits behind the same admin gate as
+     * the rest of /admin/*, it is POST so it cannot be linked or cached,
+     * and nothing public gained a field to build it.
+     */
+    if (pathname === "/admin/people") {
+      const q = sanitizeStr(body.q, 80).toLowerCase();
+      const limit = Math.max(1, Math.min(500, Math.trunc(Number(body.limit)) || 200));
+
+      /** profileId -> row, built up from every source that knows something. */
+      const rows = new Map();
+      const rowFor = (id) => {
+        let row = rows.get(id);
+        if (!row) {
+          row = {
+            id,
+            kind: id.startsWith(ACCT_PREFIX) ? "account" : "guest",
+            email: "",
+            name: "",
+            /** The name they walk under, when it differs from the account's. */
+            alias: "",
+            company: "",
+            standFloor: "",
+            spotIndex: null,
+            link: "",
+            tier: "free",
+            badge: null,
+            until: null,
+            /** Stripe customer, "trial", or "admin:<who>" — where the tier came from. */
+            customer: "",
+            tickets: 0,
+            created: 0,
+            lastSeen: 0,
+            online: false,
+            /** Which floor they are standing on, while they are online. */
+            where: "",
+            banned: null,
+            mailingList: false,
+            devices: 0,
+            ref: "",
+          };
+          rows.set(id, row);
+        }
+        return row;
+      };
+
+      // --- accounts: the half with an address on it
+      for (const acct of accountsById.values()) {
+        const row = rowFor(acct.id);
+        row.email = acct.email || "";
+        row.name = acct.name || "";
+        row.created = acct.created || 0;
+        row.devices = Array.isArray(acct.devices) ? acct.devices.length : 0;
+        row.ref = acct.ref || "";
+        // The LIVE entitlement, not the raw field: a lapsed trial must read
+        // as free here or the roster disagrees with the door.
+        const ent = entitlementOf(acct);
+        row.tier = ent?.tier || "free";
+        row.badge = ent?.badge || acct.paid?.badge || null;
+        row.until = typeof ent?.until === "number" ? ent.until : null;
+        row.customer = ent?.customer || acct.paid?.customer || "";
+        row.tickets = acct.ticketsPurchased || 0;
+        if (acct.created > row.lastSeen) row.lastSeen = acct.created;
+      }
+
+      // --- the name they walk under, and the company they wrote down
+      for (const [id, entry] of profileStates) {
+        const st = entry?.state;
+        if (!st || typeof st !== "object") continue;
+        const row = rowFor(id);
+        const walking = sanitizeStr(st.profile?.name, MAX_NAME_LEN);
+        if (walking) row.name = row.name || walking;
+        // A display name that differs from the account name is worth
+        // seeing: it is the one somebody would recognise on the floor.
+        if (walking && row.name !== walking) row.alias = walking;
+        const co = sanitizeStr(st.myStartup?.name, 60);
+        if (co) row.company = co;
+        const savedAt = Number(entry.savedAt) || 0;
+        if (savedAt > row.lastSeen) row.lastSeen = savedAt;
+      }
+
+      // --- a company registered before (or without) claiming a spot
+      for (const [id, entry] of registry) {
+        const row = rowFor(id);
+        if (!row.company) row.company = sanitizeStr(entry?.startup?.name, 60);
+        if (!row.link) row.link = sanitizeStr(entry?.startup?.link, 200);
+        const ts = Number(entry?.ts) || 0;
+        if (ts > row.lastSeen) row.lastSeen = ts;
+      }
+
+      // --- stands: the floor, the spot and the sign over it
+      for (const [floorId, byOwner] of stands) {
+        for (const [ownerId, st] of byOwner) {
+          const row = rowFor(ownerId);
+          if (st.ownerName) row.name = row.name || st.ownerName;
+          if (isRealFloor(floorId)) {
+            row.standFloor = floorId;
+            row.spotIndex = st.claim?.spotIndex ?? null;
+            if (st.claim?.startup?.name) row.company = st.claim.startup.name;
+            if (st.claim?.startup?.link) row.link = st.claim.startup.link;
+          }
+          const seen = Number(st.lastSeen) || 0;
+          if (seen > row.lastSeen) row.lastSeen = seen;
+        }
+      }
+
+      // --- in the building right now
+      for (const [floorId, room] of rooms) {
+        if (floorId === "__inbox") continue;
+        for (const c of room.values()) {
+          const row = rowFor(c.rawId);
+          row.online = true;
+          row.where = floorId;
+          if (c.name) row.name = row.name || c.name;
+          row.lastSeen = Date.now();
+        }
+      }
+
+      // --- already dealt with, by id or by address
+      for (const row of rows.values()) {
+        const hit = banned.get(row.id.toLowerCase()) || (row.email && banned.get(row.email));
+        if (hit) row.banned = { reason: hit.reason, ts: hit.ts, by: hit.by };
+        if (row.email && subscribers.has(row.email)) row.mailingList = true;
+      }
+
+      const all = [...rows.values()];
+      const match = q
+        ? all.filter((r) =>
+            [r.id, r.email, r.name, r.alias, r.company, r.standFloor]
+              .some((f) => typeof f === "string" && f.toLowerCase().includes(q)),
+          )
+        : all;
+      // Most recently seen first: moderating and granting are both things
+      // you do about someone who was just here.
+      match.sort((a, b) => b.lastSeen - a.lastSeen);
+
+      sendJson(res, {
+        total: all.length,
+        accounts: all.filter((r) => r.kind === "account").length,
+        guests: all.filter((r) => r.kind === "guest").length,
+        matched: match.length,
+        returned: Math.min(match.length, limit),
+        people: match.slice(0, limit),
+      });
+      return;
+    }
+
     if (pathname === "/admin/grant") {
       const email = normalizeEmail(body.email);
       const acct = email ? accountsByEmail.get(email) : undefined;
@@ -4018,7 +4187,7 @@ const server = createServer((req, res) => {
       // drift, and the symptom is always the same — the new UI calls an
       // endpoint the old server has never heard of and shows an empty
       // panel. One curl on /health now says which side is behind.
-      features: { boards: true, awards: true, playtime: true },
+      features: { boards: true, awards: true, playtime: true, people: true },
     });
     return;
   }

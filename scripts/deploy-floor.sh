@@ -77,8 +77,18 @@ if ! out="$(curl -fsS --max-time 15 "$HEALTH")"; then
 fi
 echo "$out"
 
-# The point of the whole exercise: is the leaderboard actually there?
-case "$out" in
-  *'"boards":true'*) echo "OK — the boards endpoint is live on this server" ;;
-  *) echo "WARNING — /health answered but reports no boards feature; the old file may still be running"; exit 1 ;;
-esac
+# The point of the whole exercise: did the new code actually land? Every
+# flag is written by the code that implements it, so checking them one at a
+# time names WHICH half is behind instead of just saying something is wrong.
+fail=0
+for feature in boards people; do
+  case "$out" in
+    *"\"$feature\":true"*) echo "OK — $feature is live on this server" ;;
+    *) echo "MISSING — /health reports no '$feature' feature"; fail=1 ;;
+  esac
+done
+if [ "$fail" = 1 ]; then
+  echo "the old file may still be running. Look at the log:"
+  echo "  ssh $HOST \"journalctl -u $UNIT -n 40 --no-pager\""
+  exit 1
+fi
