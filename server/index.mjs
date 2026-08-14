@@ -349,6 +349,50 @@ function isBannedOwner(id) {
   return isBannedAcct(accountsById.get(id));
 }
 
+/**
+ * The person behind a profile id, in the shape the operator console wants.
+ *
+ * /admin/stands lists BUSINESSES, but the only useful thing to do about a
+ * business is to something to the person running it — so every row carries
+ * its owner rather than an id the operator has to go and resolve. Both
+ * handles again: the email is what a grant is addressed to, the id is what
+ * a ban acts on and the only handle a guest has.
+ *
+ * Defined up here beside adminFor because it reads half the module's maps
+ * and is only ever called from behind that gate.
+ */
+function operatorCardFor(id) {
+  const acct = accountsById.get(id);
+  const st = profileStates.get(id)?.state;
+  const walking = sanitizeStr(st?.profile?.name, MAX_NAME_LEN);
+  const ent = entitlementOf(acct);
+  const hit = banned.get(id.toLowerCase()) || (acct?.email && banned.get(acct.email));
+  let online = false;
+  let where = "";
+  for (const [floorId, room] of rooms) {
+    if (floorId === "__inbox") continue;
+    if (ownerOnline(room, id)) {
+      online = true;
+      where = floorId;
+      break;
+    }
+  }
+  return {
+    id,
+    kind: id.startsWith(ACCT_PREFIX) ? "account" : "guest",
+    name: acct?.name || walking || "",
+    // Only an alias when it actually differs — a repeated name in the UI
+    // reads as a bug rather than as information.
+    alias: acct?.name && walking && acct.name !== walking ? walking : "",
+    email: acct?.email || "",
+    tier: ent?.tier || "free",
+    badge: ent?.badge || acct?.paid?.badge || null,
+    banned: hit ? { reason: hit.reason, ts: hit.ts, by: hit.by } : null,
+    online,
+    where,
+  };
+}
+
 /** Resolve an /admin/* caller: valid token AND admin-listed email, or null. */
 function adminFor(body) {
   const token = typeof body?.token === "string" ? body.token : "";
@@ -611,8 +655,10 @@ function creditReferral(acct, why) {
 }
 
 /**
- * The founding seats: the first FOUNDING_SEATS accounts to register get
- * Founder+ and the founding badge, kept for life, for nothing.
+ * The founding seats: the first FOUNDING_SEATS accounts to register (25
+ * unless the environment says otherwise) get Founder+ and the founding
+ * badge, kept for life, for nothing. Once they are gone the offer is
+ * closed and the tier is bought like any other.
  *
  * KEYED ON THE ACCOUNT, NOT AN IP. An IP is the wrong unit twice over. It
  * is not one person — an office, a university, a school and most mobile
@@ -622,8 +668,8 @@ function creditReferral(acct, why) {
  * IP a second later, so the same person can take several. And an IP is
  * personal data under the GDPR, so keeping a list of them would need a
  * lawful basis and an entry in /privacy for no gain. An account is already
- * the thing that owns an entitlement, and "the first twenty people to join"
- * means the first twenty accounts. Registration needs a working email
+ * the thing that owns an entitlement, and "the first twenty-five people to
+ * join" means the first twenty-five accounts. Registration needs a working email
  * address, which is a far better proof of a distinct person than an IP.
  *
  * The seat number lives on the account (`foundingSeat`, 1..FOUNDING_SEATS)
@@ -635,8 +681,8 @@ const FOUNDING_SEATS = (() => {
   // A garbled env var must close the offer, not open it forever: NaN makes
   // every `used >= cap` comparison false, which would hand a free lifetime
   // membership to everyone who ever registers.
-  const n = Number(process.env.FOUNDING_SEATS ?? 20);
-  return Number.isInteger(n) && n >= 0 && n <= 10_000 ? n : 20;
+  const n = Number(process.env.FOUNDING_SEATS ?? 25);
+  return Number.isInteger(n) && n >= 0 && n <= 10_000 ? n : 25;
 })();
 /** Cache of how many seats are gone. Rebuilt from the accounts at load. */
 let foundingSeatsUsed = 0;
@@ -3599,6 +3645,124 @@ async function handleAdminPost(req, res, pathname) {
       return;
     }
 
+    /**
+     * EVERY BUSINESS IN THE BUILDING, and who is running it.
+     *
+     * /admin/people answers "who is here"; this answers "what is here", which
+     * is the question moderation actually starts from — you see a stand, and
+     * then you need the person behind it. So each row is a business with its
+     * owner attached rather than an id to go and look up.
+     *
+     * Every row carries a `source`, because "all the businesses" has to mean
+     * all of them or the list is not one you can moderate from:
+     *   stand   on a floor. `practice` marks the tutorial hall — those never
+     *           reach the directory, and are easy to mistake for real ones.
+     *   wall    registered in the profile editor, never claimed a spot. It
+     *           is listed publicly on the founders wall, so it is exactly as
+     *           moderatable as a stand and exactly as easy to forget.
+     *   draft   written and synced, never pushed anywhere public. Nobody can
+     *           see it but its owner — which is why it would otherwise have
+     *           been invisible here too.
+     *
+     * `floorId` narrows it. "__registry" is the last option in that
+     * dropdown: everything with no stand anywhere.
+     */
+    if (pathname === "/admin/stands") {
+      const want = sanitizeStr(body.floorId, 64);
+      const counts = new Map();
+      const out = [];
+
+      const listing = (s) => ({
+        id: s.id,
+        name: s.name,
+        oneLiner: s.oneLiner,
+        pitch: s.pitch,
+        category: s.category,
+        goal: s.goal,
+        link: s.link,
+        seekingCofounder: s.seekingCofounder === true,
+        verifiedRevenue: s.verifiedRevenue || 0,
+        tier: s.tier || null,
+        sign: s.booth?.sign || "",
+      });
+
+      /** Owners already listed, so one company never appears twice. */
+      const seen = new Set();
+
+      for (const [floorId, byOwner] of stands) {
+        if (floorId === "__inbox") continue;
+        counts.set(floorId, byOwner.size);
+        // Every stand owner is accounted for whether or not this floor is
+        // the one being shown — otherwise a floor filter would make the
+        // no-stand passes below think they were unlisted.
+        for (const id of byOwner.keys()) seen.add(id);
+        if (want && want !== floorId) continue;
+        for (const [ownerId, st] of byOwner) {
+          const s = st.claim?.startup;
+          if (!s) continue;
+          out.push({
+            source: "stand",
+            floorId,
+            spotIndex: st.claim.spotIndex ?? null,
+            practice: !isRealFloor(floorId),
+            startup: listing(s),
+            owner: operatorCardFor(ownerId),
+            lastSeen: Number(st.lastSeen) || 0,
+          });
+        }
+      }
+
+      let noStand = 0;
+      const noFloor = (ownerId, s, ts, source) => {
+        noStand++;
+        if (want && want !== "__registry") return;
+        out.push({
+          source,
+          floorId: "",
+          spotIndex: null,
+          practice: false,
+          startup: listing(s),
+          owner: operatorCardFor(ownerId),
+          lastSeen: Number(ts) || 0,
+        });
+      };
+
+      // On the founders wall, with no stand. standElsewhere() walks the real
+      // floors only, so a practice-hall-only claim still counts as no stand
+      // — right, because nothing of theirs is where the public goes.
+      for (const [ownerId, entry] of registry) {
+        const s = entry?.startup;
+        if (!s || seen.has(ownerId) || standElsewhere(ownerId, "")) continue;
+        seen.add(ownerId);
+        noFloor(ownerId, s, entry.ts, "wall");
+      }
+
+      // Written, synced, never made public. Re-sanitised on the way out
+      // because a state blob is only key-checked on the way in — the client
+      // runs the real sanitize when it applies one, and this list must not
+      // be the one place raw synced text reaches a screen.
+      for (const [ownerId, entry] of profileStates) {
+        const raw = entry?.state?.myStartup;
+        if (!raw || typeof raw !== "object") continue;
+        if (seen.has(ownerId) || standElsewhere(ownerId, "")) continue;
+        const s = sanitizeStartup(raw);
+        if (!s) continue;
+        seen.add(ownerId);
+        noFloor(ownerId, s, entry.savedAt, "draft");
+      }
+
+      out.sort((a, b) => b.lastSeen - a.lastSeen);
+      sendJson(res, {
+        floors: [...counts.entries()]
+          .map(([floorId, count]) => ({ floorId, count }))
+          .sort((a, b) => a.floorId.localeCompare(b.floorId)),
+        noStand,
+        total: out.length,
+        stands: out,
+      });
+      return;
+    }
+
     if (pathname === "/admin/grant") {
       const email = normalizeEmail(body.email);
       const acct = email ? accountsByEmail.get(email) : undefined;
@@ -4187,7 +4351,7 @@ const server = createServer((req, res) => {
       // drift, and the symptom is always the same — the new UI calls an
       // endpoint the old server has never heard of and shows an empty
       // panel. One curl on /health now says which side is behind.
-      features: { boards: true, awards: true, playtime: true, people: true },
+      features: { boards: true, awards: true, playtime: true, people: true, stands: true },
     });
     return;
   }

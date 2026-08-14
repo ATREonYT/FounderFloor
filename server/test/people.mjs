@@ -270,11 +270,65 @@ const rowFor = (list, email) => list.find((r) => r.email === email);
   check(capped.total >= 3, "while total still reports the real size", String(capped.total));
 }
 
+/* -------------------------------------------------------------- businesses */
+{
+  group("every business in the building");
+
+  // Same gate. This one carries owner addresses too, so it is not a
+  // weaker door than /admin/people just because it is about stands.
+  const member = await post("/admin/stands", { token: grace.token });
+  check(member.status === 404, "an ordinary member gets the 404 here too", String(member.status));
+
+  const all = await postJson("/admin/stands", { token: boss.token });
+  check(Array.isArray(all.stands), "the operator gets a list");
+
+  // Neither Ada nor Grace ever claimed a spot, so both are registry rows.
+  check(all.noStand >= 1, "companies with no stand are counted", String(all.noStand));
+  const soup = all.stands.find((s) => s.startup.name === "Soup Ticket");
+  check(!!soup, "Ada's registered company is listed");
+  check(soup?.floorId === "", "with no floor, because it has no stand", soup?.floorId ?? "(unset)");
+  check(
+    soup?.owner?.email === "ada@example.com",
+    "and the owner's address is attached to the business",
+    soup?.owner?.email ?? "",
+  );
+  check(soup?.owner?.id?.startsWith("acct_") === true, "with the id a ban would use", soup?.owner?.id ?? "");
+
+  // The join again, from the other direction: Grace's company must carry
+  // Grace's owner, not Ada's.
+  const night = all.stands.find((s) => s.startup.name === "Night Shift");
+  check(
+    night?.owner?.email === "grace@example.com" && night?.owner?.id !== soup?.owner?.id,
+    "two businesses do not share an owner",
+    night?.owner?.email ?? "",
+  );
+  check(night?.owner?.alias === "Gracie", "the walking name comes along", night?.owner?.alias ?? "");
+
+  // Grace is banned by the block above only if it ran first; assert the
+  // shape rather than the value so the two blocks stay independent.
+  check(
+    night?.owner?.banned === null || typeof night?.owner?.banned?.reason === "string",
+    "the owner's ban state is on the business row",
+  );
+
+  const registryOnly = await postJson("/admin/stands", { token: boss.token, floorId: "__registry" });
+  check(
+    registryOnly.stands.length === all.noStand,
+    "the 'no stand' filter returns exactly those",
+    `${registryOnly.stands.length} vs ${all.noStand}`,
+  );
+
+  const noSuchFloor = await postJson("/admin/stands", { token: boss.token, floorId: "not-a-floor" });
+  check(noSuchFloor.stands.length === 0, "an unknown floor is empty, not everything");
+  check(Array.isArray(noSuchFloor.floors), "and the dropdown still comes back");
+}
+
 /* ------------------------------------------------------------------ health */
 {
   group("the deploy can tell whether this shipped");
   const h = await fetch(`${base}/health`).then((r) => r.json());
   check(h.features?.people === true, "/health advertises the roster");
+  check(h.features?.stands === true, "and the business list");
 }
 
 proc.kill("SIGKILL");

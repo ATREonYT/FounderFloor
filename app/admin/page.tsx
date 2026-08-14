@@ -72,6 +72,51 @@ interface Person {
   ref: string;
 }
 
+/** The owner attached to a business row by /admin/stands. */
+interface StandOwner {
+  id: string;
+  kind: "account" | "guest";
+  name: string;
+  alias: string;
+  email: string;
+  tier: string;
+  badge: string | null;
+  banned: { reason: string; ts: number; by: string } | null;
+  online: boolean;
+  where: string;
+}
+
+/** One business anywhere in the building, with the person running it. */
+interface StandRow {
+  /**
+   * Where it exists at all:
+   *   stand  on a floor
+   *   wall   on the public founders wall, no stand claimed
+   *   draft  written and synced, never made public
+   */
+  source: "stand" | "wall" | "draft";
+  /** "" for anything without a stand. */
+  floorId: string;
+  spotIndex: number | null;
+  /** A practice-hall stand: real, but never listed in the directory. */
+  practice: boolean;
+  startup: {
+    id: string;
+    name: string;
+    oneLiner: string;
+    pitch: string;
+    category: string;
+    goal: string;
+    link: string;
+    seekingCofounder: boolean;
+    verifiedRevenue: number;
+    tier: string | null;
+    sign: string;
+  };
+  owner: StandOwner;
+  lastSeen: number;
+}
+
 /**
  * One row of the calendar, exactly as /admin/events hands it back — declared
  * here beside Overview because this page is typed off the wire, not off the
@@ -225,6 +270,26 @@ export default function AdminPage() {
   /** Whose email was just copied — the button says so for a couple of seconds. */
   const [copied, setCopied] = useState("");
 
+  // ---- every business in the building ----
+  const [standRows, setStandRows] = useState<StandRow[]>([]);
+  const [standFloors, setStandFloors] = useState<{ floorId: string; count: number }[]>([]);
+  const [noStandCount, setNoStandCount] = useState(0);
+  /** "" = all floors, a floor id, or "__registry" for the ones with no stand. */
+  const [standPick, setStandPick] = useState("");
+
+  const loadStands = useCallback(async (floorId: string) => {
+    try {
+      const r = await adminPost("/admin/stands", { floorId });
+      if (Array.isArray(r?.stands)) {
+        setStandRows(r.stands as StandRow[]);
+        setStandFloors(Array.isArray(r.floors) ? (r.floors as { floorId: string; count: number }[]) : []);
+        setNoStandCount(Number(r.noStand) || 0);
+      }
+    } catch {
+      /* the gate above already reports an unreachable server */
+    }
+  }, []);
+
   const loadPeople = useCallback(async (q: string) => {
     setPLoading(true);
     try {
@@ -266,7 +331,8 @@ export default function AdminPage() {
     void refresh();
     void loadEvents();
     void loadPeople("");
-  }, [refresh, loadEvents, loadPeople]);
+    void loadStands("");
+  }, [refresh, loadEvents, loadPeople, loadStands]);
 
   // grant form
   const [gEmail, setGEmail] = useState("");
@@ -319,6 +385,7 @@ export default function AdminPage() {
       // search still applied — the operator is usually looking at the person
       // they just acted on and needs to see it land.
       void loadPeople(pq);
+      void loadStands(standPick);
       return r;
     } catch (err) {
       say(`${label}: ${err instanceof Error ? err.message : "failed"}`);
@@ -337,30 +404,34 @@ export default function AdminPage() {
    * Guests have no address, so the grant route is closed for them and the
    * button says why rather than sending an empty email the server refuses.
    */
-  const sendTo = (p: Person, where: "grant" | "moderate") => {
+  const sendTo = (
+    who: { id: string; email: string },
+    where: "grant" | "moderate",
+    floorId?: string,
+  ) => {
     if (where === "grant") {
-      setGEmail(p.email);
-      say(`grant form loaded with ${p.email}`);
+      setGEmail(who.email);
+      say(`grant form loaded with ${who.email}`);
     } else {
       // Ban by email when there is one — it catches the account whichever
       // browser it signs in from — and always keep the id for kick and
       // stand-clear, which only ever work on an id.
-      setBanTarget(p.email || p.id);
-      setUnbanTarget(p.email || p.id);
-      setKickId(p.id);
-      setStandOwner(p.id);
-      if (p.standFloor) setStandFloor(p.standFloor);
-      setWallOwner(p.id);
-      say(`moderation forms loaded with ${p.email || p.id}`);
+      setBanTarget(who.email || who.id);
+      setUnbanTarget(who.email || who.id);
+      setKickId(who.id);
+      setStandOwner(who.id);
+      if (floorId) setStandFloor(floorId);
+      setWallOwner(who.id);
+      say(`moderation forms loaded with ${who.email || who.id}`);
     }
     document.getElementById(where === "grant" ? "grant-section" : "moderation-section")
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const copyEmail = async (p: Person) => {
+  const copyEmail = async (who: { id: string; email: string }) => {
     try {
-      await navigator.clipboard.writeText(p.email);
-      setCopied(p.id);
+      await navigator.clipboard.writeText(who.email);
+      setCopied(who.id);
       setTimeout(() => setCopied(""), 2000);
     } catch {
       say("could not reach the clipboard — select the address by hand");
@@ -600,7 +671,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   className="micro rounded-sm border border-line px-2 py-1 hover:border-accent hover:text-accent"
-                  onClick={() => sendTo(p, "moderate")}
+                  onClick={() => sendTo(p, "moderate", p.standFloor)}
                 >
                   ban or kick →
                 </button>
@@ -614,6 +685,131 @@ export default function AdminPage() {
                     see their stand ↗
                   </a>
                 )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Businesses, floor by floor. /admin/people answers "who is here";
+          this answers "what is here", which is where moderation actually
+          starts — you see a stand, then you need the person behind it. */}
+      <section className="panel p-5" aria-label="Businesses">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-xl">Businesses</h2>
+          <span className="micro text-muted">{standRows.length} shown</span>
+        </div>
+        <p className="micro mt-1 text-muted">
+          Every stand in the building and who runs it. Only you can see this page.
+        </p>
+
+        <label className="mt-3 flex flex-col gap-1">
+          <span className="micro text-muted">Floor</span>
+          <select
+            value={standPick}
+            onChange={(e) => {
+              setStandPick(e.target.value);
+              void loadStands(e.target.value);
+            }}
+            className="h-11 w-full max-w-sm rounded-md border border-line bg-panel px-2 text-sm"
+          >
+            <option value="">
+              All floors ({standFloors.reduce((n, f) => n + f.count, 0) + noStandCount})
+            </option>
+            {standFloors.map((f) => (
+              <option key={f.floorId} value={f.floorId}>
+                {f.floorId} ({f.count})
+              </option>
+            ))}
+            <option value="__registry">Registered, no stand ({noStandCount})</option>
+          </select>
+        </label>
+
+        <ul className="mt-4 flex flex-col divide-y divide-line">
+          {standRows.length === 0 && (
+            <li className="py-3 text-sm text-muted">Nothing here yet.</li>
+          )}
+          {standRows.map((r) => (
+            <li key={`${r.floorId}:${r.owner.id}`} className="flex flex-col gap-2 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-ink">{r.startup.name}</span>
+                {r.startup.category && <Tag>{r.startup.category}</Tag>}
+                {r.source === "stand" ? (
+                  <Tag>
+                    {r.floorId}
+                    {r.spotIndex !== null ? ` · spot ${r.spotIndex}` : ""}
+                  </Tag>
+                ) : r.source === "wall" ? (
+                  <Tag tone="accent">no stand — on the founders wall</Tag>
+                ) : (
+                  <Tag>draft — not public anywhere</Tag>
+                )}
+                {r.practice && <Tag tone="accent">practice hall</Tag>}
+                {r.startup.seekingCofounder && <Tag tone="verify">seeking co-founder</Tag>}
+                {r.startup.tier && <Tag tone="gold">{r.startup.tier}</Tag>}
+              </div>
+
+              {r.startup.oneLiner && (
+                <p className="text-xs text-muted">{r.startup.oneLiner}</p>
+              )}
+              {r.startup.link && (
+                <a
+                  href={r.startup.link}
+                  target="_blank"
+                  rel="noreferrer nofollow"
+                  className="break-all text-xs text-accent hover:underline"
+                >
+                  {r.startup.link}
+                </a>
+              )}
+
+              {/* Who to talk to about it — the whole reason this list exists. */}
+              <div className="flex flex-col gap-0.5 border-l-2 border-line pl-3 text-xs text-muted">
+                <span>
+                  run by <span className="text-ink">{r.owner.name || "(no name)"}</span>
+                  {r.owner.alias && ` — walks as “${r.owner.alias}”`}
+                  {r.owner.online ? " · here now" : ` · ${ago(r.lastSeen)}`}
+                </span>
+                <span className="break-all">
+                  {r.owner.email ? (
+                    <span className="text-ink">{r.owner.email}</span>
+                  ) : (
+                    <span className="italic">guest — no email on file</span>
+                  )}
+                </span>
+                <span className="break-all font-mono text-[11px]">{r.owner.id}</span>
+                {r.owner.banned && (
+                  <span className="text-accent">
+                    already banned: {r.owner.banned.reason || "no reason given"}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="micro rounded-sm border border-line px-2 py-1 hover:border-ink disabled:opacity-40"
+                  disabled={!r.owner.email}
+                  onClick={() => void copyEmail(r.owner)}
+                >
+                  {copied === r.owner.id ? "copied ✓" : "copy email"}
+                </button>
+                <button
+                  type="button"
+                  className="micro rounded-sm border border-line px-2 py-1 hover:border-ink disabled:opacity-40"
+                  disabled={!r.owner.email}
+                  title={r.owner.email ? "" : "a guest has no account to grant to"}
+                  onClick={() => sendTo(r.owner, "grant")}
+                >
+                  give membership →
+                </button>
+                <button
+                  type="button"
+                  className="micro rounded-sm border border-line px-2 py-1 hover:border-accent hover:text-accent"
+                  onClick={() => sendTo(r.owner, "moderate", r.floorId)}
+                >
+                  ban, kick or take the stand down →
+                </button>
               </div>
             </li>
           ))}
