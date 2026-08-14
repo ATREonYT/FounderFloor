@@ -78,7 +78,7 @@ export default function OpenDoorsCard() {
         </div>
         <Link
           href={`/floor/${view.ev.floorId}`}
-          className="btn-press min-h-[44px] rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+          className="btn-press inline-flex min-h-[44px] items-center justify-center rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
         >
           Go to {floorName} →
         </Link>

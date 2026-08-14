@@ -58,20 +58,20 @@ export default function QuietFloorCard({
         {!hasStand && (
           <Link
             href="/profile#booth"
-            className="btn-press min-h-[44px] rounded-md bg-accent-strong px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-accent-strong/90"
+            className="btn-press flex min-h-[44px] items-center justify-center rounded-md bg-accent-strong px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-accent-strong/90"
           >
             Put your stand up
           </Link>
         )}
         <Link
           href="/lobby"
-          className="btn-press min-h-[44px] rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
+          className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
         >
           {ev.live ? "Open Doors is live — join it" : `Open Doors in ${ev.label} — get a reminder`}
         </Link>
         <Link
           href="/directory"
-          className="btn-press min-h-[44px] rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
+          className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
         >
           See who else is on the floors
         </Link>

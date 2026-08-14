@@ -740,7 +740,13 @@ export default function ProfilePage() {
             // thumb. The media query asks the real question — is the thing
             // pointing at this a finger — rather than guessing from width,
             // so a touchscreen laptop gets it right too.
-            className="min-h-[36px] shrink-0 whitespace-nowrap rounded-full border border-line bg-panel px-3.5 py-1.5 text-xs text-muted hover:border-ink hover:text-ink [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:px-4"
+            //
+            // flex + items-center is what makes the label sit in the MIDDLE
+            // of that target. min-height stretches the box; it does not move
+            // the text, which stayed at the top of a pill up to 8px taller
+            // than its own content — and worse on a phone, where the media
+            // query makes the box taller still.
+            className="flex min-h-[36px] shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-line bg-panel px-3.5 py-1.5 text-xs text-muted hover:border-ink hover:text-ink [@media(pointer:coarse)]:min-h-[44px] [@media(pointer:coarse)]:px-4"
           >
             {label}
           </a>
@@ -1692,8 +1698,8 @@ export default function ProfilePage() {
             /* No checkout link: either billing is not live yet, or the offer
                has closed. This used to offer "Simulate founding membership",
                which granted the founding badge locally — handing out, for
-               one click, the scarcest thing on the site, the thing the first
-               twenty accounts are given for actually showing up first. The
+               one click, the scarcest thing on the site, the thing the opening
+               accounts are given for actually showing up first. The
                badge is never clawed back, so it outlived the fake tier and
                unlocked the founding title on a free account. There is no
                honest button here, so there is no button. */
