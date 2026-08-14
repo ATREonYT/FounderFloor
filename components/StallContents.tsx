@@ -364,7 +364,15 @@ export function RecordsStall({ state }: { state: AppState }) {
     {
       label: "Connections",
       value: String(state.connections.length),
-      note: people > 0 ? `${people} with someone live` : "sample stands so far",
+      // The hall ships with no sample stands, so a connection made from
+      // here is a person by construction. Older saves still carry the
+      // sample ones, which is why the middle case exists at all.
+      note:
+        people > 0
+          ? `${people} with someone live`
+          : state.connections.length > 0
+            ? "none with a live person yet"
+            : "none yet",
     },
     {
       label: "Days running",

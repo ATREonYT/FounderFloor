@@ -15,8 +15,10 @@
  *   parkour      reported on sync, then rejected if the time is under the
  *                physical minimum for that map (lib/data/parkour-limits.mjs).
  *   arcade       reported, capped at the 300 three games can total.
- *   connections  counted from synced connections that have a peer id, so
- *                talking to the sample stands does not move it.
+ *   connections  counted from synced connections that have a peer id. The
+ *                public floors carry no sample stands, and the one stand
+ *                still seeded anywhere — the practice hall's guide — has no
+ *                peer id, so it does not move this either.
  */
 
 import { httpBase } from "@/lib/net";

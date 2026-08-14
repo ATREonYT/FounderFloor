@@ -238,10 +238,14 @@ export interface FloorDef {
    */
   plaza?: PlazaDef;
   /**
-   * How many guide robots wander this floor. They are set dressing — drawn
-   * as robots, named as robots and tagged "bot" on their labels — so an
-   * empty hall still reads as a place rather than a car park. They are NOT
-   * counted anywhere that reports how many people are here.
+   * How many ambient hall staff wander this floor (game/wanderers.ts).
+   *
+   * Ships UNSET everywhere, which is the same as zero: nobody is in a hall
+   * unless they walked in. The mechanism is kept because the code is
+   * written and tested and a future floor may want an attendant — but
+   * switching it on anywhere the public can reach puts figures in a room
+   * that are not people. Read the note above the Main Hall's startupIds in
+   * lib/data/floors.ts before doing that.
    */
   ambientBots?: number;
 }

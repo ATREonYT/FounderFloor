@@ -152,24 +152,28 @@ export const FLOORS: FloorDef[] = [
       { x: 3, y: 34 },
       { x: 51, y: 34 },
     ],
-    // Sixteen sample stands (see lib/data/startups.ts). seedSpots decides
-    // which of the two things the plaza rim is doing at any moment.
+    // ─── THE HALL SHIPS EMPTY ──────────────────────────────────────────
+    // No seeded sample stands and no ambient staff. Every one of the
+    // twenty-four spots below is open, and every person you see in this
+    // room is a person.
     //
-    // 2 and 3 are seeded: they are the pair you walk between coming in
-    // from the door, and two empty boards as the first thing anybody sees
-    // reads as a hall that closed down rather than one that is filling up.
-    // 0 and 1 are NOT: they face the fountain from the north side, so an
-    // OPEN STAND board is the invitation, in the place everybody looks,
-    // and the first real founders through the door get it rather than the
-    // back wall.
-    startupIds: [
-      "soup-ticket", "night-shift-audio", "crate-and-pallet", "zine-machine",
-      "sheet-metal", "on-call-room", "lower-third", "second-stove",
-      "pocket-notary", "grave-matters", "kerb-appeal", "second-fiddle",
-      "damp-patrol", "the-long-table", "pothole-index", "ferrule-repairs",
-    ],
-    seedSpots: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-    ambientBots: 9,
+    // This reverses two earlier decisions, so the reasoning they were made
+    // for is worth keeping next to the thing that overruled it. Sixteen
+    // sample stands and nine wandering stewards were here because a room
+    // with nothing in it reads as closed, and "closed" loses a first-time
+    // visitor faster than anything else on the floor.
+    //
+    // That is still true, and it is no longer the deciding argument. What
+    // this hall sells is that the people in it are real, and a visitor who
+    // works out on their own that the crowd was set dressing does not go
+    // back and re-read the SAMPLE tag charitably — they conclude the whole
+    // room is a prop. An empty hall costs a first impression once. A hall
+    // caught faking one costs the claim it is built on.
+    //
+    // startupIds stays as a mechanism (the Tutorial Hall still uses it) and
+    // ships empty here. To put the samples back, restore the sixteen ids
+    // from lib/data/startups.ts and the seedSpots list from git history.
+    startupIds: [],
     plaza: {
       // The paving runs from the northern rank's apron row to the southern
       // rank's top row, so the stands are literally on its edge: step off

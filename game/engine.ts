@@ -222,6 +222,17 @@ export function createGame(opts: GameOptions): GameHandle {
       // centred on the three-tile stall, standing just behind the counter top
       x: (m.x + 1.5) * TILE,
       y: m.y * TILE + 10,
+      /**
+       * Where the name pill hangs — above the AWNING, not above the head.
+       *
+       * A keeper stands underneath their own stall, so a pill placed off
+       * their head lands on the painted sign board and covers the one word
+       * that says what the stall is for. drawLabel subtracts SPRITE_H from
+       * whatever y it is handed, so adding it back here makes this number
+       * read straight off the stall art: the awning starts at
+       * `m.y * TILE - 58` (merchantBackDrawable), and 62 clears it.
+       */
+      labelY: m.y * TILE - 62 + SPRITE_H,
     }));
 
   let nearMerchant: MerchantDef | null = null;
@@ -1295,7 +1306,10 @@ export function createGame(opts: GameOptions): GameHandle {
     // drawn as people now, so this line is the only thing separating a
     // steward from a visitor — it is load-bearing, not decoration.
     for (const b of bots) drawLabel(b.name, "hall staff", undefined, b.x, b.y);
-    for (const k of keepers) drawLabel(k.def.keeper, k.def.sign, undefined, k.x, k.y);
+    // Name only, hung over the awning. The stall's own sign board already
+    // says THE ARCADE in paint two inches below — putting it on the pill as
+    // well printed the same words twice and covered the painted pair.
+    for (const k of keepers) drawLabel(k.def.keeper, undefined, undefined, k.x, k.labelY);
     // your own label appears once there's something on it worth seeing —
     // a status line or an equipped quest title
     if (me.status || me.title) drawLabel(me.name, me.status, me.title, player.x, player.y);
