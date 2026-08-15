@@ -15,6 +15,7 @@ import { notFound } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { httpBase } from "@/lib/net";
 import { syncNow } from "@/lib/store";
+import PickMenu from "@/components/PickMenu";
 
 interface Overview {
   floors: { floorId: string; online: number; stands: number }[];
@@ -276,6 +277,16 @@ export default function AdminPage() {
   const [noStandCount, setNoStandCount] = useState(0);
   /** "" = all floors, a floor id, or "__registry" for the ones with no stand. */
   const [standPick, setStandPick] = useState("");
+  /** "" = all categories; filtering is client-side over the loaded rows. */
+  const [catPick, setCatPick] = useState("");
+  /**
+   * Why the businesses list came back empty, when it did. An empty hall
+   * and a floor server that has never heard of /admin/stands both used to
+   * render as "Nothing here yet" — and the second one is a deploy problem
+   * wearing an empty room's clothes. The operator has to be able to tell
+   * them apart from the console itself.
+   */
+  const [standsErr, setStandsErr] = useState("");
 
   const loadStands = useCallback(async (floorId: string) => {
     try {
@@ -284,9 +295,12 @@ export default function AdminPage() {
         setStandRows(r.stands as StandRow[]);
         setStandFloors(Array.isArray(r.floors) ? (r.floors as { floorId: string; count: number }[]) : []);
         setNoStandCount(Number(r.noStand) || 0);
+        setStandsErr("");
+      } else {
+        setStandsErr(typeof r?.error === "string" ? r.error : "the server answered with something unexpected");
       }
-    } catch {
-      /* the gate above already reports an unreachable server */
+    } catch (err) {
+      setStandsErr(err instanceof Error ? err.message : "unreachable");
     }
   }, []);
 
@@ -694,42 +708,78 @@ export default function AdminPage() {
       {/* Businesses, floor by floor. /admin/people answers "who is here";
           this answers "what is here", which is where moderation actually
           starts — you see a stand, then you need the person behind it. */}
+      {(() => {
+        // The category filter runs over the rows already loaded, so the two
+        // menus compose: pick a floor, then narrow to a lane on it. Counts
+        // are computed per category from the same rows the list shows.
+        const catCounts = new Map<string, number>();
+        for (const r of standRows) {
+          const c = r.startup.category || "Uncategorized";
+          catCounts.set(c, (catCounts.get(c) ?? 0) + 1);
+        }
+        const catOptions = [
+          { value: "", label: "All categories", hint: String(standRows.length) },
+          ...[...catCounts.entries()]
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+            .map(([c, n]) => ({ value: c, label: c, hint: String(n) })),
+        ];
+        const shown = catPick
+          ? standRows.filter((r) => (r.startup.category || "Uncategorized") === catPick)
+          : standRows;
+        return (
       <section className="panel p-5" aria-label="Businesses">
         <div className="flex items-baseline justify-between gap-2">
           <h2 className="font-display text-xl">Businesses</h2>
-          <span className="micro text-muted">{standRows.length} shown</span>
+          <span className="micro text-muted">{shown.length} shown</span>
         </div>
         <p className="micro mt-1 text-muted">
           Every stand in the building and who runs it. Only you can see this page.
         </p>
 
-        <label className="mt-3 flex flex-col gap-1">
-          <span className="micro text-muted">Floor</span>
-          <select
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <PickMenu
+            label="Floor"
             value={standPick}
-            onChange={(e) => {
-              setStandPick(e.target.value);
-              void loadStands(e.target.value);
+            onChange={(v) => {
+              setStandPick(v);
+              setCatPick("");
+              void loadStands(v);
             }}
-            className="h-11 w-full max-w-sm rounded-md border border-line bg-panel px-2 text-sm"
-          >
-            <option value="">
-              All floors ({standFloors.reduce((n, f) => n + f.count, 0) + noStandCount})
-            </option>
-            {standFloors.map((f) => (
-              <option key={f.floorId} value={f.floorId}>
-                {f.floorId} ({f.count})
-              </option>
-            ))}
-            <option value="__registry">Registered, no stand ({noStandCount})</option>
-          </select>
-        </label>
+            options={[
+              {
+                value: "",
+                label: "All floors",
+                hint: String(standFloors.reduce((n, f) => n + f.count, 0) + noStandCount),
+              },
+              ...standFloors.map((f) => ({
+                value: f.floorId,
+                label: f.floorId,
+                hint: String(f.count),
+              })),
+              { value: "__registry", label: "Registered, no stand", hint: String(noStandCount) },
+            ]}
+          />
+          <PickMenu label="Category" value={catPick} onChange={setCatPick} options={catOptions} />
+        </div>
+
+        {/* An empty list and a server that has never heard of this list are
+            different problems, and only one of them is fixed by waiting. */}
+        {standsErr && (
+          <p className="mt-3 rounded-md border border-accent/40 bg-accent-soft/30 px-3 py-2 text-sm text-accent-strong">
+            The floor server didn&rsquo;t answer this ({standsErr}). If /health shows no{" "}
+            <span className="font-mono text-xs">&quot;stands&quot;:true</span> flag, the VPS is
+            still on an older build — run <span className="font-mono text-xs">scripts/deploy-floor.sh</span>{" "}
+            and refresh.
+          </p>
+        )}
 
         <ul className="mt-4 flex flex-col divide-y divide-line">
-          {standRows.length === 0 && (
-            <li className="py-3 text-sm text-muted">Nothing here yet.</li>
+          {shown.length === 0 && !standsErr && (
+            <li className="py-3 text-sm text-muted">
+              {catPick ? "Nothing in that category here." : "Nothing here yet."}
+            </li>
           )}
-          {standRows.map((r) => (
+          {shown.map((r) => (
             <li key={`${r.floorId}:${r.owner.id}`} className="flex flex-col gap-2 py-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-ink">{r.startup.name}</span>
@@ -815,6 +865,8 @@ export default function AdminPage() {
           ))}
         </ul>
       </section>
+        );
+      })()}
 
       <section className="panel p-5" id="grant-section" aria-label="Grants">
         <h2 className="font-display text-xl">Grant</h2>
