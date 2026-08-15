@@ -173,8 +173,8 @@ export interface Startup {
 }
 
 export interface BoothInstance {
-  /** Top-left tile of the 4x3 booth zone. */
-  spot: { x: number; y: number };
+  /** Top-left tile of the 4x3 booth zone, with which way it opens. */
+  spot: { x: number; y: number; face?: "up" | "down" };
   /** Index into floor.boothSpots — the stable identity used for claims. */
   spotIndex: number;
   /** null = vacant stand, open to claim. */
@@ -212,8 +212,16 @@ export interface FloorDef {
     wall: string;
     trim: string;
   };
-  /** Top-left tiles of 4x3 booth zones. Booths face down (entrance at the bottom). */
-  boothSpots: { x: number; y: number }[];
+  /**
+   * Top-left tiles of 4x3 booth zones.
+   *
+   * `face` is which way the stand OPENS: "down" (the default) puts the
+   * counter on the zone's bottom row and the carpet apron below it;
+   * "up" mirrors the rows — counter on top, apron above, sign wall at the
+   * bottom. Two rows of stands facing each other across an aisle runner is
+   * what turns a carpet with backs on one side into a shopping street.
+   */
+  boothSpots: { x: number; y: number; face?: "up" | "down" }[];
   /** Hidden floors (the tutorial hall) are reachable by URL but not listed in the lobby. */
   hidden?: boolean;
   /** Assigned to boothSpots in order; may be shorter than boothSpots. */

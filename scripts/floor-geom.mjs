@@ -97,14 +97,22 @@ for (const f of FLOORS) {
   }
   check(tightH.length === 0, ">= 2 clear tiles between stands on a row", tightH.join(", "));
 
+  // A stand's footprint is its 3 zone rows plus the carpet apron on its
+  // ENTRANCE side — below when it faces down, above when it faces up. Two
+  // facing ranks with a two-row aisle between their aprons is the tightest
+  // legal fit, and it is also the intended one: that aisle IS the street.
+  const footprint = (s) =>
+    s.face === "up" ? { top: s.y - 1, bottom: s.y + 2 } : { top: s.y, bottom: s.y + 3 };
   const rows = [...byRow.keys()].sort((a, b) => a - b);
+  const faceOfRow = new Map(f.boothSpots.map((s) => [s.y, s.face ?? "down"]));
   let tightV = [];
   for (let i = 1; i < rows.length; i++) {
-    // previous row occupies rows y..y+2 plus a carpet apron at y+3
-    const clear = rows[i] - (rows[i - 1] + 4);
-    if (clear < 3) tightV.push(`y=${rows[i - 1]}->${rows[i]} only ${clear} clear rows`);
+    const prevBottom = footprint({ y: rows[i - 1], face: faceOfRow.get(rows[i - 1]) }).bottom;
+    const nextTop = footprint({ y: rows[i], face: faceOfRow.get(rows[i]) }).top;
+    const clear = nextTop - prevBottom - 1;
+    if (clear < 2) tightV.push(`y=${rows[i - 1]}->${rows[i]} only ${clear} clear rows`);
   }
-  check(tightV.length === 0, ">= 3 clear rows between stand rows", tightV.join(", "));
+  check(tightV.length === 0, ">= 2 clear rows between stand footprints", tightV.join(", "));
 
   const p = f.plaza;
   if (p) {
@@ -124,8 +132,9 @@ for (const f of FLOORS) {
     const onBooth = (x, y, w = 1) => {
       for (let d = 0; d < w; d++) {
         for (const s of f.boothSpots) {
-          // zone plus its carpet apron row
-          if (x + d >= s.x && x + d <= s.x + 3 && y >= s.y && y <= s.y + 3) return true;
+          // zone plus its carpet apron row, on whichever side it opens
+          const { top, bottom } = footprint(s);
+          if (x + d >= s.x && x + d <= s.x + 3 && y >= top && y <= bottom) return true;
         }
       }
       return false;
@@ -190,7 +199,8 @@ for (const f of FLOORS) {
     // prop parked in it makes the stand look approachable and not be.
     const blocked = new Set();
     for (const s2 of f.boothSpots) {
-      for (let y = s2.y + 4; y <= s2.y + 5; y++) {
+      const appr = s2.face === "up" ? [s2.y - 3, s2.y - 2] : [s2.y + 4, s2.y + 5];
+      for (const y of appr) {
         for (let x = s2.x; x <= s2.x + 3; x++) {
           if (occupied.has(`${x},${y}`)) blocked.add(`stand(${s2.x},${s2.y}) <- ${occupied.get(`${x},${y}`)}`);
         }
@@ -241,7 +251,8 @@ for (const f of FLOORS) {
     // northern rank is what made those stands look pasted down
     const touching = new Set();
     for (const s of f.boothSpots) {
-      for (let y = s.y; y <= s.y + 3; y++) {
+      const { top, bottom } = footprint(s);
+      for (let y = top; y <= bottom; y++) {
         for (let x = s.x; x <= s.x + 3; x++) {
           if (inRect(x, y, p.rect)) touching.add(`stand(${s.x},${s.y})`);
         }
@@ -275,11 +286,13 @@ for (const f of FLOORS) {
       q.push(k);
     }
   }
-  // every stand must be approachable from the front (the apron row)
+  // every stand must be approachable from the front (its apron row —
+  // above the zone for a stand facing up, below it otherwise)
   const stranded = [];
   f.boothSpots.forEach((s, i) => {
+    const ay = s.face === "up" ? s.y - 1 : s.y + 3;
     let ok = false;
-    for (let dx = 0; dx < 4; dx++) if (seen[(s.y + 3) * W + s.x + dx]) ok = true;
+    for (let dx = 0; dx < 4; dx++) if (seen[ay * W + s.x + dx]) ok = true;
     if (!ok) stranded.push(`#${i}(${s.x},${s.y})`);
   });
   check(stranded.length === 0, "every stand can be walked up to", stranded.join(", "));

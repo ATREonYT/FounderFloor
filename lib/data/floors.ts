@@ -10,9 +10,11 @@
  * empty). The one exception is the hidden Tutorial Hall, staffed by a
  * clearly-labeled guide bot.
  *
- * Layout rules kept throughout:
- *   - >= 2 clear tiles between zones horizontally (gaps here are 4-5 tiles)
- *   - >= 3 clear rows between booth rows vertically (7 here, apron included)
+ * Layout rules kept throughout (scripts/floor-geom.mjs enforces them):
+ *   - >= 2 clear tiles between zones horizontally (gaps here are 2+ tiles)
+ *   - >= 2 walkable rows between one row's footprint (zone + apron) and
+ *     the next's — on the Main Hall those two rows ARE the aisle runner,
+ *     with the facing ranks' aprons on its edges
  *   - >= 2 tiles between any zone edge and the surrounding wall
  */
 
@@ -120,37 +122,48 @@ export const FLOORS: FloorDef[] = [
     },
     // Ordered inner ring first, alternating north/south so the hall fills
     // outward from the fountain and stays visually balanced while it does.
+    // ─── WHICH WAY EACH ROW FACES ──────────────────────────────────────
+    // Every aisle runner is a two-sided shopping street: the row above it
+    // faces down, the row below it faces UP, so their fronts meet across
+    // the carpet and their aprons touch its two edges symmetrically.
+    // Before this, every stand faced down — each runner had storefronts on
+    // one side and the backs of the next rank sitting on the carpet on the
+    // other, which is the "stands go onto the carpet" complaint verbatim.
+    // The flipped rows show the plaza their sign walls, which is what a
+    // town square surrounded by shop backs looks like, and the square
+    // keeps its own attractions: the fountain, the boards, the stalls.
+    //
+    // ORDER IS IDENTITY: ClaimEntry.spotIndex indexes this array. Append,
+    // never reorder. Flipping a row changes `face`, never position.
     boothSpots: [
       // Inner rank, flanking the two avenue mouths — the four best places
-      // in the building. You cannot stand at the fountain without one of
-      // these in view, and they are the ones kept open for real founders.
-      { x: 21, y: 12 },
-      { x: 33, y: 12 },
+      // in the building, one street back from the fountain.
+      { x: 21, y: 12, face: "up" },
+      { x: 33, y: 12, face: "up" },
       { x: 21, y: 27 },
       { x: 33, y: 27 },
-      // Inner rank, the outer pair on each rim — still on the plaza, one
-      // stand further from the water.
-      { x: 15, y: 12 },
-      { x: 39, y: 12 },
+      // Inner rank, the outer pair on each rim.
+      { x: 15, y: 12, face: "up" },
+      { x: 39, y: 12, face: "up" },
       { x: 15, y: 27 },
       { x: 39, y: 27 },
       // Outer band, working away from the avenues.
       { x: 21, y: 5 },
       { x: 33, y: 5 },
-      { x: 21, y: 34 },
-      { x: 33, y: 34 },
+      { x: 21, y: 34, face: "up" },
+      { x: 33, y: 34, face: "up" },
       { x: 15, y: 5 },
       { x: 39, y: 5 },
-      { x: 15, y: 34 },
-      { x: 39, y: 34 },
+      { x: 15, y: 34, face: "up" },
+      { x: 39, y: 34, face: "up" },
       { x: 9, y: 5 },
       { x: 45, y: 5 },
-      { x: 9, y: 34 },
-      { x: 45, y: 34 },
+      { x: 9, y: 34, face: "up" },
+      { x: 45, y: 34, face: "up" },
       { x: 3, y: 5 },
       { x: 51, y: 5 },
-      { x: 3, y: 34 },
-      { x: 51, y: 34 },
+      { x: 3, y: 34, face: "up" },
+      { x: 51, y: 34, face: "up" },
     ],
     // ─── THE HALL SHIPS EMPTY ──────────────────────────────────────────
     // No seeded sample stands and no ambient staff. Every one of the
@@ -191,11 +204,15 @@ export const FLOORS: FloorDef[] = [
       ],
       // hung across the south avenue, in front of where everyone arrives
       arch: { x0: 26, y0: 32, x1: 31, y1: 32 },
-      // Carpet down the two cross-aisles, in the three clear rows between
-      // each pair of stand ranks.
+      // Carpet down the two cross-aisles. Two rows wide, not three: each
+      // aisle now has a carpet apron on BOTH edges (the row above faces
+      // down, the row below faces up), and 8|9-10|11 is the exact fit —
+      // apron, carpet, carpet, apron, perfectly mirrored. Three rows of
+      // carpet would run under one rank's apron and not the other's,
+      // which is the asymmetry this whole arrangement exists to kill.
       runners: [
-        { x0: 1, y0: 9, x1: 56, y1: 11 },
-        { x0: 1, y0: 31, x1: 56, y1: 33 },
+        { x0: 1, y0: 9, x1: 56, y1: 10 },
+        { x0: 1, y0: 31, x1: 56, y1: 32 },
       ],
       furniture: [
         // ─── WHAT IS AND IS NOT ALLOWED TO BE HERE ──────────────────
@@ -248,6 +265,30 @@ export const FLOORS: FloorDef[] = [
         { kind: "tree", x: 1, y: 40 }, { kind: "tree", x: 56, y: 40 },
         { kind: "crates", x: 25, y: 1 }, { kind: "crates", x: 32, y: 1 },
         { kind: "board", x: 24, y: 40 }, { kind: "board", x: 32, y: 40 },
+
+        // --- BETWEEN THE STANDS: one plant in each two-tile gap ─────
+        //     A rank of stands with bare checkerboard between them reads
+        //     as gaps in the teeth. One tree or planter per gap, on the
+        //     zone's middle row so it stands BESIDE the stalls rather
+        //     than in front of them — never two, because the stands are
+        //     the point and the greenery is the grout. Mirror-symmetric
+        //     about the hall's centreline (x -> 57-x), trees at the outer
+        //     gaps, planters nearer the middle, and only planters on the
+        //     plaza rims where anything taller would crowd the square.
+        // outer north rank (y=5, faces down)
+        { kind: "tree", x: 7, y: 6 }, { kind: "planter", x: 13, y: 6 },
+        { kind: "tree", x: 19, y: 6 },
+        { kind: "tree", x: 38, y: 6 }, { kind: "planter", x: 44, y: 6 },
+        { kind: "tree", x: 50, y: 6 },
+        // north plaza rim (y=12, faces up)
+        { kind: "planter", x: 19, y: 13 }, { kind: "planter", x: 38, y: 13 },
+        // south plaza rim (y=27, faces down)
+        { kind: "planter", x: 19, y: 28 }, { kind: "planter", x: 38, y: 28 },
+        // outer south rank (y=34, faces up)
+        { kind: "tree", x: 7, y: 35 }, { kind: "planter", x: 13, y: 35 },
+        { kind: "tree", x: 19, y: 35 },
+        { kind: "tree", x: 38, y: 35 }, { kind: "planter", x: 44, y: 35 },
+        { kind: "tree", x: 50, y: 35 },
       ],
       // Four traders along the east and west avenues, and two in the plaza
       // itself. They are the only decor you can walk up to and use, and

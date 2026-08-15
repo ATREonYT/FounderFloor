@@ -380,9 +380,11 @@ export function buildFloor(
 
   const booths: BoothInstance[] = [];
   floor.boothSpots.forEach((spot, i) => {
-    // solid: banner wall, founder lane (players keep out) and counter
+    // solid: banner wall, founder lane (players keep out) and counter —
+    // the same three rows whichever way the stand faces; only the art and
+    // the walkable apron flip
     for (let dy = 0; dy < 3; dy++) for (let dx = 0; dx < 4; dx++) mark(spot.x + dx, spot.y + dy);
-    const base = { spot: { x: spot.x, y: spot.y }, spotIndex: i };
+    const base = { spot: { x: spot.x, y: spot.y, face: spot.face }, spotIndex: i };
     // seed booths own their spots outright; the reserved spot skips seeding
     if (i !== floor.reservedSpot) {
       const id = seedIdAt(floor, i);
@@ -430,9 +432,9 @@ export function buildFloor(
   const composed = (plaza?.furniture?.length ?? 0) > 0;
   const nearBoothRing = (tx: number, ty: number): boolean => {
     for (const s of floor.boothSpots) {
-      // +5, not +3: that is how far the interaction ring reaches, so it is
-      // the strip somebody has to stand in to use the stand.
-      if (tx >= s.x - 1 && tx <= s.x + 4 && ty >= s.y - 1 && ty <= s.y + 5) return true;
+      // As far as the interaction ring reaches on EITHER side — the strip
+      // somebody has to stand in to use the stand, whichever way it faces.
+      if (tx >= s.x - 1 && tx <= s.x + 4 && ty >= s.y - 3 && ty <= s.y + 5) return true;
     }
     return false;
   };
@@ -527,12 +529,13 @@ export function buildFloor(
       for (const a of plaza.avenues) drawAvenue(ctx, a, cam);
       plazaGround?.draw(ctx, cam);
     }
-    // carpets: booth zone + 1-tile apron row below (4 x 4 tiles) — only the
-    // ones actually in view; painting every booth's carpet each frame is
-    // most of the ground cost on wide floors
+    // carpets: booth zone + 1-tile apron row on the ENTRANCE side (4 x 4
+    // tiles) — below for a stand facing down, above for one facing up.
+    // Only the ones actually in view; painting every booth's carpet each
+    // frame is most of the ground cost on wide floors.
     for (const b of booths) {
       const bx = b.spot.x * T;
-      const by = b.spot.y * T;
+      const by = (b.spot.y - (b.spot.face === "up" ? 1 : 0)) * T;
       if (bx + 4 * T < cam.x || bx > cam.x + cam.w || by + 4 * T < cam.y || by > cam.y + cam.h) {
         continue;
       }
@@ -540,7 +543,7 @@ export function buildFloor(
       // open one are the same piece of built furniture, and only one of
       // them having a base is what made the rim of the plaza look wrong.
       drawStandPlinth(ctx, bx, by);
-      if (b.startup) drawCarpet(ctx, b.spot.x, b.spot.y, b.startup.booth.carpet, b.startup.booth.pattern);
+      if (b.startup) paintCarpet(ctx, bx, by, b.startup.booth.carpet, b.startup.booth.pattern);
       else drawVacantCarpet(ctx, bx, by);
     }
     // mats — woven doormats, not flat rectangles (a plain fill at 2x zoom
@@ -613,24 +616,22 @@ function drawVacantCarpet(ctx: CanvasRenderingContext2D, x: number, y: number): 
   ctx.fillRect(x + 3, y + 3, cw - 6, 1);
 }
 
-/** Tile coords in, world pixels out — the art itself lives in boothArt. */
-function drawCarpet(
-  ctx: CanvasRenderingContext2D,
-  sx: number,
-  sy: number,
-  color: string,
-  pattern?: "solid" | "border" | "stripes"
-): void {
-  paintCarpet(ctx, sx * T, sy * T, color, pattern);
-}
-
 function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {
   const { x: sx, y: sy } = b.spot;
+  const up = b.spot.face === "up";
   const th = b.startup.booth;
   const bx = sx * T;
-  const by = sy * T;
+  /**
+   * Where the sign wall stands. Facing down it is the zone's TOP row;
+   * facing up it moves to the BOTTOM row, so the stand reads counter,
+   * open lane, then the wall closing it off from behind — the camera
+   * never rotates, so "facing away" is drawn by rearranging rows, never
+   * by mirroring art. sortY moves to the wall's new base so a player
+   * walking the row below it is drawn in front of it, not through it.
+   */
+  const by = (sy + (up ? 2 : 0)) * T;
   return {
-    sortY: (sy + 1) * T,
+    sortY: up ? (sy + 3) * T : (sy + 1) * T,
     minX: bx - 2,
     maxX: bx + 4 * T + 2,
     draw(ctx) {
@@ -638,12 +639,19 @@ function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {
         bx,
         by,
         theme: th,
-        yours: b.isYours,
+        // the gold "yours" threshold is drawn on the entrance side by
+        // hand below — drawBoothBanner would put it under the wall, which
+        // for a flipped stand is the back
+        yours: up ? false : b.isYours,
         tier: b.startup.tier,
         logoImg: th.logo ? logoImage(th.logo) : null,
         ownerLamp: b.ownerId ? { online: b.ownerOnline === true } : null,
         seed: hashStr(b.startup.id),
       });
+      if (up && b.isYours) {
+        ctx.fillStyle = "#B08D2E";
+        ctx.fillRect(bx + 2, sy * T - 4, 4 * T - 4, 3);
+      }
       // A sample stand says so on the stand. Small, in the corner, and not
       // negotiable: a made-up company on a floor full of real ones has to
       // be legible as made up without anybody having to click it.
@@ -662,13 +670,16 @@ function bannerDrawable(b: BoothInstance & { startup: Startup }): Drawable {
 
 function counterDrawable(b: BoothInstance & { startup: Startup }): Drawable {
   const { x: sx, y: sy } = b.spot;
+  const up = b.spot.face === "up";
   const th = b.startup.booth;
   const bx = sx * T;
-  const by = sy * T;
+  // drawBoothCounter paints at by + 2 tiles, so shifting the origin up two
+  // rows lands the counter on the zone's TOP row for a stand facing up.
+  const by = (sy - (up ? 2 : 0)) * T;
   return {
     minX: bx - 2,
     maxX: bx + 4 * T + 2,
-    sortY: (sy + 3) * T,
+    sortY: up ? (sy + 1) * T : (sy + 3) * T,
     draw(ctx) {
       drawBoothCounter(ctx, {
         bx,
@@ -698,14 +709,18 @@ function drawCounterBase(ctx: CanvasRenderingContext2D, bx: number, y0: number):
  * with the spot's number, waiting for somebody. Empty should read as
  * *available*, not as unfinished.
  */
-function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawable {
+function vacantBannerDrawable(
+  v: { x: number; y: number; face?: "up" | "down" },
+  index: number,
+): Drawable {
   const bx = v.x * T;
   const by = v.y * T;
+  const up = v.face === "up";
   const w = 4 * T;
   const no = String(index + 1).padStart(2, "0");
   const shell = SHELL_COLORS[index % SHELL_COLORS.length];
   return {
-    sortY: (v.y + 1) * T,
+    sortY: up ? (v.y + 3) * T : (v.y + 1) * T,
     minX: bx - 4,
     maxX: bx + w + 4,
     draw(ctx) {
@@ -714,21 +729,29 @@ function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawa
       // which is why a rank of them read as flat cards rather than as
       // built stalls. It is now a booth: back wall, two returns down each
       // side, and an open front you look into.
-      const backTop = by - 12;
-      const lane = by + 2 * T; // where the counter starts
+      //
+      // Facing up, the rows rearrange rather than mirror (the camera
+      // never rotates): the wall moves to the BOTTOM row so it closes the
+      // stall off from behind, the returns run up from it to the counter
+      // now at the top, and the chair and bin stay in the open lane
+      // between them.
+      const backTop = up ? (v.y + 2) * T - 12 : by - 12;
+      // where the side returns stop: at the counter, whichever row it is on
+      const lane = up ? (v.y + 3) * T - 2 : by + 2 * T;
+      const retTop = up ? v.y * T + 14 : backTop;
 
       // side returns first, so the back wall closes over their inner edge
       for (const side of [0, 1]) {
         const rx = side === 0 ? bx : bx + w - 12;
         ctx.fillStyle = STALL_SIDE_DARK;
-        ctx.fillRect(rx, backTop, 12, lane - backTop);
+        ctx.fillRect(rx, retTop, 12, lane - retTop);
         ctx.fillStyle = STALL_SIDE;
-        ctx.fillRect(rx + (side === 0 ? 0 : 3), backTop, 9, lane - backTop);
+        ctx.fillRect(rx + (side === 0 ? 0 : 3), retTop, 9, lane - retTop);
         ctx.fillStyle = STALL_SIDE_HI;
-        ctx.fillRect(rx + (side === 0 ? 0 : 9), backTop, 3, lane - backTop);
+        ctx.fillRect(rx + (side === 0 ? 0 : 9), retTop, 3, lane - retTop);
         // the fascia colour carries round the returns
         ctx.fillStyle = shade(shell, -0.12);
-        ctx.fillRect(rx, backTop, 12, 7);
+        ctx.fillRect(rx, retTop, 12, 7);
         // a foot rail where the return meets the floor
         ctx.fillStyle = STALL_TRIM;
         ctx.fillRect(rx, lane - 4, 12, 3);
@@ -759,11 +782,11 @@ function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawa
       ctx.fillRect(bx + 31, backTop + 12, 5, 2);
       ctx.fillRect(bx + w - 36, backTop + 12, 5, 2);
 
-      // shadow the wall throws onto its own floor
+      // shadow the wall throws onto the floor at its base
       ctx.save();
       ctx.globalAlpha = 0.15;
       ctx.fillStyle = "#2A251D";
-      ctx.fillRect(bx + 6, by + T + 2, w - 12, 7);
+      ctx.fillRect(bx + 6, backTop + T + 14, w - 12, 7);
       ctx.restore();
 
       // The kit that comes with a bare stand: a folding chair and a bin.
@@ -772,7 +795,7 @@ function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawa
       // alternate by spot so a rank of them is not a rhythm of identical
       // furniture.
       const chairLeft = index % 2 === 0;
-      const cyp = by + T + 12;
+      const cyp = up ? (v.y + 1) * T + 2 : by + T + 12;
 
       // Chair: legs, a seat, and a GAP under the backrest. The gap is the
       // whole silhouette — without it a chair and a bin are two grey lumps
@@ -813,7 +836,7 @@ function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawa
 
       // board
       const sx = bx + 14;
-      const sy = by - 8;
+      const sy = backTop + 4;
       const sw = w - 28;
       const sh = T + 2;
       ctx.fillStyle = SLOT_FRAME;
@@ -849,12 +872,13 @@ function vacantBannerDrawable(v: { x: number; y: number }, index: number): Drawa
   };
 }
 
-function vacantCounterDrawable(v: { x: number; y: number }): Drawable {
+function vacantCounterDrawable(v: { x: number; y: number; face?: "up" | "down" }): Drawable {
   const bx = v.x * T;
-  const y0 = (v.y + 2) * T;
+  const up = v.face === "up";
+  const y0 = (v.y + (up ? 0 : 2)) * T;
   const w = 4 * T;
   return {
-    sortY: (v.y + 3) * T,
+    sortY: (v.y + (up ? 1 : 3)) * T,
     minX: bx - 2,
     maxX: bx + w + 2,
     draw(ctx) {

@@ -513,12 +513,21 @@ export function createGame(opts: GameOptions): GameHandle {
    * front (rows +4 and +5) silently did nothing. That is what "not all of
    * them work" was: they all worked, from a strip one tile deep.
    *
-   * Stand rows are seven apart, so reaching two rows further forward is
-   * free: booth y=3 covers 2..8 and booth y=10 covers 9..15, which do not
-   * meet. computeNear() picks the nearest anyway.
+   * Stand rows are far enough apart that reaching two rows further
+   * forward is free — facing ranks share the aisle between them, and
+   * computeNear() picks the nearest stand anyway.
+   *
+   * The ring follows the stand's facing: two rows beyond the apron on
+   * the ENTRANCE side, one row of slack behind the wall. Mirroring it
+   * for flipped stands is what keeps "walk up to the front and press E"
+   * true on both sides of an aisle.
    */
-  const withinRing = (b: BoothInstance, tx: number, ty: number): boolean =>
-    tx >= b.spot.x - 1 && tx <= b.spot.x + 4 && ty >= b.spot.y - 1 && ty <= b.spot.y + 5;
+  const withinRing = (b: BoothInstance, tx: number, ty: number): boolean => {
+    if (tx < b.spot.x - 1 || tx > b.spot.x + 4) return false;
+    return b.spot.face === "up"
+      ? ty >= b.spot.y - 3 && ty <= b.spot.y + 3
+      : ty >= b.spot.y - 1 && ty <= b.spot.y + 5;
+  };
 
   let nearBooth: BoothInstance | null = null;
   const computeNear = (): BoothInstance | null => {

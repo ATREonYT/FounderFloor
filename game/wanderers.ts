@@ -439,7 +439,7 @@ export class HallCrowd {
  */
 export function hauntsFor(
   world: WorldQuery,
-  boothSpots: { x: number; y: number }[],
+  boothSpots: { x: number; y: number; face?: "up" | "down" }[],
   plaza?: {
     rect: { x0: number; y0: number; x1: number; y1: number };
     fountain: { x0: number; y0: number; x1: number; y1: number };
@@ -453,10 +453,11 @@ export function hauntsFor(
     out.push({ x, y });
   };
 
-  // in front of every stand (the carpet apron row)
+  // in front of every stand (one row past the carpet apron, entrance side)
   for (const s of boothSpots) {
-    add(s.x + 1, s.y + 4);
-    add(s.x + 2, s.y + 4);
+    const fy = s.face === "up" ? s.y - 2 : s.y + 4;
+    add(s.x + 1, fy);
+    add(s.x + 2, fy);
   }
 
   if (plaza) {
