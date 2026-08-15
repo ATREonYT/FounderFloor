@@ -8,6 +8,7 @@ import { daysLeft, usePerks } from "@/lib/perks";
 import { registerStartupChecked, unregisterStartup } from "@/lib/social";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { FLOORS } from "@/lib/data/floors";
+import { CATEGORIES, isPresetCategory } from "@/lib/data/categories";
 import { earnedTitles, questStates } from "@/lib/data/quests";
 import {
   TIER_ORDER,
@@ -38,6 +39,7 @@ import BoothPreview from "@/components/BoothPreview";
 import BuyConfirm from "@/components/BuyConfirm";
 import RankBadge from "@/components/RankBadge";
 import PixelGlyph, { GLYPH_IDS } from "@/components/PixelGlyph";
+import PickMenu from "@/components/PickMenu";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
 import {
   FOUNDING_OFFER,
@@ -369,6 +371,13 @@ export default function ProfilePage() {
   const perks = usePerks();
   const [ready, setReady] = useState(false);
   const [form, setForm] = useState<BoothForm>(EMPTY_FORM);
+  /**
+   * The category write-in is open. Sticky on purpose: once someone picks
+   * "something else" the input stays until they pick a shelf label, even
+   * while the text is empty — otherwise the box vanishes mid-thought the
+   * moment they clear it to retype.
+   */
+  const [customCat, setCustomCat] = useState(false);
   const [monthly, setMonthly] = useState("");
   const [progress, setProgress] = useState(0);
   const [cycle, setCycle] = useState<BillingCycle>("annual");
@@ -1030,18 +1039,48 @@ export default function ProfilePage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="booth-category" className="micro mb-1.5 block text-muted">
-                  Category
-                </label>
-                <input
-                  id="booth-category"
-                  type="text"
-                  value={form.category}
-                  maxLength={30}
-                  onChange={(e) => set("category", e.target.value)}
-                  placeholder="Dev tools"
-                  className="w-full rounded-md border border-line px-3 py-2 text-sm placeholder:text-muted/70"
-                />
+                {/* Picked, not typed — the shelf is what lets the directory
+                    and the operator group stands instead of collecting six
+                    spellings of "fintech". The write-in stays as the last
+                    option for whatever the shelf hasn't heard of yet. */}
+                {(() => {
+                  const writing =
+                    customCat || (form.category !== "" && !isPresetCategory(form.category));
+                  return (
+                    <>
+                      <PickMenu
+                        label="Category"
+                        placeholder="Pick a category"
+                        value={writing ? "__other" : form.category}
+                        options={[
+                          ...CATEGORIES.map((c) => ({ value: c, label: c })),
+                          { value: "__other", label: "Something else — write it in" },
+                        ]}
+                        onChange={(v) => {
+                          if (v === "__other") {
+                            setCustomCat(true);
+                            if (isPresetCategory(form.category)) set("category", "");
+                          } else {
+                            setCustomCat(false);
+                            set("category", v);
+                          }
+                        }}
+                      />
+                      {writing && (
+                        <input
+                          type="text"
+                          value={isPresetCategory(form.category) ? "" : form.category}
+                          maxLength={30}
+                          autoFocus
+                          onChange={(e) => set("category", e.target.value)}
+                          placeholder="Your own words — e.g. Beekeeping software"
+                          aria-label="Your own category"
+                          className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm placeholder:text-muted/70"
+                        />
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <div>
                 <label htmlFor="booth-goal" className="micro mb-1.5 block text-muted">
