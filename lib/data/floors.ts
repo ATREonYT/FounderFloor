@@ -202,8 +202,13 @@ export const FLOORS: FloorDef[] = [
         { x0: 1, y0: 19, x1: 19, y1: 23 }, // west
         { x0: 38, y0: 19, x1: 56, y1: 23 }, // east
       ],
-      // hung across the south avenue, in front of where everyone arrives
-      arch: { x0: 26, y0: 32, x1: 31, y1: 32 },
+      // Hung across the south avenue AT THE DOOR — you spawn two rows
+      // south of it and walk in underneath. It used to stand at y=32,
+      // which put its two solid posts in the middle of what is now the
+      // south shopping street: walking the carpet meant hitting a pillar.
+      // Down here the posts flank the avenue mouth in the entrance
+      // walkway, where the only way past them is the way you were going.
+      arch: { x0: 26, y0: 35, x1: 31, y1: 35 },
       // Carpet down the two cross-aisles. Two rows wide, not three: each
       // aisle now has a carpet apron on BOTH edges (the row above faces
       // down, the row below faces up), and 8|9-10|11 is the exact fit —
