@@ -18,6 +18,7 @@ import type { Leaderboard } from "@/lib/leaderboard";
 import { TIER_ORDER } from "@/lib/types";
 import type { AppState, BoothInstance, SubTier } from "@/lib/types";
 import TicketIcon from "@/components/TicketIcon";
+import { controlCopy, useDevice } from "@/lib/device";
 
 // ---------------------------------------------------------------- tickets
 
@@ -205,6 +206,9 @@ interface GuideRow {
   how: string;
 }
 
+// The stands row names a control, so it is built per-device below —
+// telling somebody on a phone to "press E" is the exact bug lib/device.ts
+// exists to prevent, and this panel is now the phone's ONLY help surface.
 const GUIDE: GuideRow[] = [
   {
     where: "The fountain",
@@ -213,7 +217,7 @@ const GUIDE: GuideRow[] = [
   },
   {
     where: "The stands",
-    what: "Walk up to one and press E to talk to it. Empty ones show a number you can claim.",
+    what: "", // filled in from controlCopy() at render
     how: "The nearest eight are on the fountain's own edge — you pass between two on the way in. The rest are in the banks behind them.",
   },
   {
@@ -239,6 +243,12 @@ const GUIDE: GuideRow[] = [
 ];
 
 export function GuideStall() {
+  const device = useDevice();
+  const controls = controlCopy(device);
+  const standsWhat =
+    device.pointer === "touch"
+      ? "Walk up to one and tap it to talk. Empty ones show a number you can claim."
+      : "Walk up to one and press E to talk to it. Empty ones show a number you can claim.";
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm leading-relaxed text-muted">
@@ -246,20 +256,28 @@ export function GuideStall() {
         it, stands along the top and bottom, traders down the sides.
       </p>
       <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
-        {GUIDE.map((g) => (
+        {GUIDE.map((raw) => {
+          const g = raw.where === "The stands" ? { ...raw, what: standsWhat } : raw;
+          return (
           <li key={g.where} className="px-4 py-3">
             <p className="text-sm">{g.where}</p>
             <p className="mt-0.5 text-xs leading-snug text-muted">{g.what}</p>
             <p className="mt-1.5 text-xs leading-snug text-accent">{g.how}</p>
           </li>
-        ))}
+          );
+        })}
       </ul>
+      {/* Named controls come from controlCopy(), never written here —
+          this panel is the phone's only help surface, and "press E" on a
+          screen with no keyboard is the exact bug lib/device.ts exists
+          to prevent. */}
       <div className="rounded-lg border border-line bg-paper px-4 py-3">
         <p className="micro mb-1.5 text-[10px] text-muted">CONTROLS</p>
-        <p className="text-xs leading-relaxed text-muted">
-          WASD or the arrow keys to walk, or click where you want to go. E to
-          use whatever you are standing at. M for the map. 1–5 to react.
-        </p>
+        {controls.lines.map((line) => (
+          <p key={line} className="text-xs leading-relaxed text-muted">
+            {line}
+          </p>
+        ))}
       </div>
     </div>
   );

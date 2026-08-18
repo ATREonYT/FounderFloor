@@ -1500,15 +1500,17 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           {/* Where to go. A cross-shaped hall with traders down the sides is
               not self-explanatory on the first visit, and "walk about until
               you find it" is not wayfinding. */}
-          <button
-            type="button"
-            onClick={() => setGuideOpen(true)}
-            aria-label="Where to go"
-            title="Where to go"
-            className="glass flex h-9 w-9 shrink-0 items-center justify-center font-display text-lg leading-none shadow-float transition-colors hover:text-accent"
-          >
-            ?
-          </button>
+          {!coarse && (
+            <button
+              type="button"
+              onClick={() => setGuideOpen(true)}
+              aria-label="Where to go"
+              title="Where to go"
+              className="glass flex h-9 w-9 shrink-0 items-center justify-center font-display text-lg leading-none shadow-float transition-colors hover:text-accent"
+            >
+              ?
+            </button>
+          )}
           <span className="glass flex min-w-0 items-center gap-2 px-3 py-2 shadow-float">
             {coarse && (
               <span
@@ -1581,9 +1583,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           {coarse && (
             <button
               type="button"
-              onClick={() => setHelpOpen((v) => !v)}
-              aria-expanded={helpOpen}
-              aria-label="Help"
+              onClick={() => setGuideOpen(true)}
+              aria-label="Help and where to go"
               className="glass min-h-[44px] min-w-[44px] text-sm text-muted shadow-float"
             >
               ?
@@ -1599,32 +1600,6 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           </Link>
         </div>
       </div>
-
-      {/* Touch help panel. The fine-pointer one hangs off the "?" in the
-          bottom row; on a phone that button lives up top, so the panel does
-          too — anchored under it rather than floating over the reactions. */}
-      {coarse && helpOpen && (
-        <div className="pointer-events-auto absolute right-3 top-16 z-30 w-64 max-w-[calc(100vw-24px)]">
-          <div className="glass p-3 text-xs leading-relaxed text-muted shadow-float">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="micro text-ink">Controls</p>
-              <button
-                type="button"
-                onClick={() => setHelpOpen(false)}
-                className="micro -my-2 min-h-[44px] px-2 text-muted"
-              >
-                close
-              </button>
-            </div>
-            {controls.lines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-            <p className="mt-1.5 border-t border-line pt-1.5">
-              Quests live top-left. Finish them for reactions and titles.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Quest tracker — the single "what should I do?" surface (the ticker
           lives in the chat panel's header, and the tour is its own card).
@@ -1847,6 +1822,9 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           onClose={() => setGuideOpen(false)}
           onFocusChange={handleFocusChange}
         >
+          {/* On phones this panel is also the controls help — GuideStall's
+              own CONTROLS box speaks the device's language, so the header
+              row needs just one "?" and the floor name keeps its room. */}
           <GuideStall />
         </StallPanel>
       )}
@@ -1996,11 +1974,16 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
       {/* tutorial coach — one instruction at a time, above the bottom HUD */}
       {!state.tutorialDone && (
-        /* Sits on the bottom rail, above the reaction row, and never in the
-           middle of the room. In landscape the page is ~300px tall, so a
-           card floating at the vertical centre covers the floor it is
-           telling you to walk on. */
-        <div className="pointer-events-none absolute inset-x-3 bottom-40 flex justify-center sm:inset-x-auto sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2">
+        /* PORTRAIT PHONES: pinned under the header, never at the bottom.
+           The spawn is near the hall's south wall, so the camera clamps
+           and the player stands in the LOWER half of a portrait screen —
+           a bottom-anchored card sat exactly on top of them, and the
+           first instruction ("walk around") covered the person meant to
+           do the walking. The quest tracker hides while the tour runs, so
+           the top slot is free. From `sm` up (desktops, and phones held
+           sideways, where a centred card would cover the floor) it stays
+           on the bottom rail above the reaction row, as before. */
+        <div className="pointer-events-none absolute inset-x-3 top-16 flex justify-center sm:inset-x-auto sm:top-auto sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2">
           <TutorialCoach
             done={state.onboarding}
             device={device}
