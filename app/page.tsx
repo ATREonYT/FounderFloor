@@ -13,6 +13,7 @@ import RankMeter from "@/components/RankMeter";
 import Parallax from "@/components/Parallax";
 import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
 import AdmissionStubs from "@/components/AdmissionStubs";
+import LaunchBanner from "@/components/LaunchBanner";
 import FoundingSeatsCard from "@/components/FoundingSeatsCard";
 import FoundersWall from "@/components/FoundersWall";
 import WallJoin from "@/components/WallJoin";
@@ -284,6 +285,9 @@ export default function LandingPage() {
   return (
     <main>
       <ProgrammeIndex entries={PROGRAMME} />
+      {/* The grand-opening slip, pasted over everything until launch night
+          has come and gone — then it removes itself (LaunchBanner). */}
+      <LaunchBanner />
       {/* HALL BOARD — the lit sign over the doors. A fixed status chip, then
           the programme running past it. */}
       <div className="flex items-stretch border-b border-line bg-ink text-paper">
