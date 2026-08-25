@@ -81,7 +81,7 @@ echo "$out"
 # flag is written by the code that implements it, so checking them one at a
 # time names WHICH half is behind instead of just saying something is wrong.
 fail=0
-for feature in boards people; do
+for feature in boards people standPages; do
   case "$out" in
     *"\"$feature\":true"*) echo "OK — $feature is live on this server" ;;
     *) echo "MISSING — /health reports no '$feature' feature"; fail=1 ;;

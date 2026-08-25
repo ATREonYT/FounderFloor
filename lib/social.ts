@@ -463,3 +463,37 @@ export function unreadCount(inbox: InboxData, me: string): number {
   }
   return n + inbox.requests.length;
 }
+
+// ------------------------------------------------------------- build log
+
+export interface LogEntry {
+  text: string;
+  ts: number;
+}
+
+/**
+ * Write (or, with `remove`, delete) an entry in your own build log — the
+ * founder-written record the public stand page shows. The server answers
+ * with the newest five, which is exactly what the page renders, so the
+ * caller can swap its list for the reply and be showing the truth.
+ */
+export async function postBuildLog(
+  me: string,
+  body: { text?: string; remove?: number },
+): Promise<LogEntry[] | null> {
+  const base = httpBase();
+  if (!base || !me) return null;
+  try {
+    const res = await fetch(`${base}/stand/log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ me, ...body, token: tokenFor(me), gs: guestSecret() }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { ok?: boolean; log?: LogEntry[]; error?: string };
+    if (!data.ok || !Array.isArray(data.log)) return null;
+    return data.log.filter((e) => e && typeof e.text === "string" && typeof e.ts === "number");
+  } catch {
+    return null;
+  }
+}

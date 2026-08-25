@@ -180,6 +180,65 @@ const MAX_REGISTRY = 2000;
 const REGISTRY_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
+ * slugs: slug -> ownerId. The public address of a stand.
+ *
+ * Minted from the startup's name the first time its owner claims a spot or
+ * registers, and PERMANENT from then on: a rename updates the display name
+ * and never the address, because the address is the thing already sitting
+ * in somebody's bio, a tweet, a README. Links in the wild must not die on
+ * a whim they were never told about.
+ *
+ * One slug per owner (slugByOwner is the reverse index, rebuilt at load).
+ * A colliding name gets -2, -3… — first founder in keeps the clean one.
+ */
+const slugs = new Map();
+const slugByOwner = new Map();
+const MAX_SLUGS = 4000;
+/** Words that are routes or route-shaped — never a stand's address. */
+const RESERVED_SLUGS = new Set(["stand", "admin", "lobby", "floor", "api", "new", "badge"]);
+
+function slugify(name) {
+  const base = String(name || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40)
+    .replace(/-+$/g, "");
+  return base || "stand";
+}
+
+/** The owner's permanent slug, minting one from `name` if they have none. */
+function mintSlug(ownerId, name) {
+  const have = slugByOwner.get(ownerId);
+  if (have) return have;
+  if (slugs.size >= MAX_SLUGS) return null;
+  let base = slugify(name);
+  if (RESERVED_SLUGS.has(base) || ID_SHAPED.test(base)) base = `${base}-stand`;
+  let slug = base;
+  for (let n = 2; slugs.has(slug); n++) slug = `${base}-${n}`;
+  slugs.set(slug, ownerId);
+  slugByOwner.set(ownerId, slug);
+  scheduleSave();
+  return slug;
+}
+/** An id-shaped slug would make the slug/ownerId fallback ambiguous. */
+const ID_SHAPED = /^(acct-|guest-|acct_|guest_)/;
+
+/**
+ * buildLogs: ownerId -> [{ text, ts }], newest first, one log per founder.
+ *
+ * The founder's own record of what they shipped, written by them alone —
+ * the guestbook is what VISITORS write, and a page sold as "an asset the
+ * founder owns" cannot have other people's words as its centrepiece. The
+ * public stand page shows the newest five.
+ */
+const buildLogs = new Map();
+const MAX_LOG_ENTRIES = 50;
+const MAX_LOG_TEXT = 280;
+
+/**
  * boards: profileId -> one player's standing in the hall.
  *
  *   { name, parkour: { mapId: seconds }, arcade, conns, playMs,
@@ -1628,6 +1687,31 @@ function loadData() {
     }
   }
 
+  if (parsed.slugs && typeof parsed.slugs === "object") {
+    for (const [slug, owner] of Object.entries(parsed.slugs)) {
+      if (slugs.size >= MAX_SLUGS) break;
+      if (typeof owner !== "string" || !owner || typeof slug !== "string") continue;
+      const clean = slug.slice(0, 48);
+      // First mapping wins for an owner, matching mint-time permanence.
+      slugs.set(clean, owner.slice(0, MAX_ID_LEN));
+      if (!slugByOwner.has(owner)) slugByOwner.set(owner.slice(0, MAX_ID_LEN), clean);
+    }
+  }
+
+  if (parsed.buildLogs && typeof parsed.buildLogs === "object") {
+    for (const [owner, list] of Object.entries(parsed.buildLogs)) {
+      if (!Array.isArray(list)) continue;
+      const rows = [];
+      for (const v of list) {
+        if (rows.length >= MAX_LOG_ENTRIES) break;
+        if (!v || typeof v !== "object" || typeof v.ts !== "number") continue;
+        const text = sanitizeStr(v.text, MAX_LOG_TEXT);
+        if (text) rows.push({ text, ts: v.ts });
+      }
+      if (rows.length) buildLogs.set(owner.slice(0, MAX_ID_LEN), rows);
+    }
+  }
+
   if (parsed.profileStates && typeof parsed.profileStates === "object") {
     const cutoff = Date.now() - PROFILE_STATE_TTL_MS;
     for (const [pid, v] of Object.entries(parsed.profileStates)) {
@@ -1849,6 +1933,8 @@ function saveNow() {
     boards: Object.fromEntries(boards),
     lastPodium,
     currentWeek,
+    slugs: Object.fromEntries(slugs),
+    buildLogs: Object.fromEntries(buildLogs),
   };
   const tmp = `${DATA_FILE}.tmp`;
   try {
@@ -4351,7 +4437,7 @@ const server = createServer((req, res) => {
       // drift, and the symptom is always the same — the new UI calls an
       // endpoint the old server has never heard of and shows an empty
       // panel. One curl on /health now says which side is behind.
-      features: { boards: true, awards: true, playtime: true, people: true, stands: true },
+      features: { boards: true, awards: true, playtime: true, people: true, stands: true, standPages: true },
     });
     return;
   }
@@ -4613,6 +4699,67 @@ const server = createServer((req, res) => {
    * it a ban would pull the listing while the direct link kept the advert
    * up, which is the failure the comment on /startups warns about.
    */
+  /**
+   * The public stand payload — everything /stand/<slug> renders, in one
+   * unauthenticated GET, so the page can be server-rendered and read with
+   * no account and no JavaScript.
+   *
+   * Takes a slug OR a bare ownerId, because both kinds of link exist in
+   * the wild: slugs are what founders share from now on, owner ids are
+   * what every link before slugs pointed at, and a working old link is
+   * worth more than a tidy route. An id-shaped slug can never be minted
+   * (ID_SHAPED in mintSlug), so the fallback is unambiguous.
+   *
+   * Nothing private rides along: the startup card, the founder's public
+   * name and pixel look, the spot, and the newest five build-log entries —
+   * all of it already visible to anyone who walks the floor.
+   */
+  if (req.method === "GET" && url.pathname.startsWith("/public/stand/")) {
+    const ref = decodeURIComponent(url.pathname.slice("/public/stand/".length)).slice(0, 64);
+    const owner = slugs.get(ref) || (ref.startsWith(ACCT_PREFIX) || ID_KEY.test(ref) ? ref : "");
+    if (!ref || !owner || isBannedOwner(owner)) {
+      notFound(res);
+      return;
+    }
+    const log = (buildLogs.get(owner) ?? []).slice(0, 5);
+    const respond = (entry) => {
+      // A minute of cache: crawlers and shares hit this in bursts, and a
+      // stand's public face does not change second to second.
+      res.setHeader("Cache-Control", "public, max-age=60");
+      sendJson(res, { entry: { ...entry, slug: slugByOwner.get(owner) ?? null, log } });
+    };
+    for (const [floorId, byOwner] of stands) {
+      if (!isRealFloor(floorId)) continue;
+      const st = byOwner.get(owner);
+      if (!st) continue;
+      respond({
+        ownerId: owner,
+        floorId,
+        spotIndex: st.claim.spotIndex,
+        online: ownerOnline(rooms.get(floorId), owner),
+        lastSeen: st.lastSeen,
+        ownerName: st.ownerName,
+        startup: st.claim.startup,
+      });
+      return;
+    }
+    const entry = registry.get(owner);
+    if (entry) {
+      respond({
+        ownerId: owner,
+        floorId: null,
+        spotIndex: -1,
+        online: false,
+        lastSeen: entry.ts,
+        ownerName: entry.startup?.founder,
+        startup: entry.startup,
+      });
+      return;
+    }
+    notFound(res);
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/startup") {
     const owner = (url.searchParams.get("owner") || "").slice(0, MAX_ID_LEN);
     if (!owner || isBannedOwner(owner)) {
@@ -4633,6 +4780,7 @@ const server = createServer((req, res) => {
           lastSeen: st.lastSeen,
           ownerName: st.ownerName,
           startup: st.claim.startup,
+          slug: slugByOwner.get(owner) ?? null,
         },
       });
       return;
@@ -4648,6 +4796,7 @@ const server = createServer((req, res) => {
           lastSeen: entry.ts,
           ownerName: entry.startup?.founder,
           startup: entry.startup,
+          slug: slugByOwner.get(owner) ?? null,
         },
       });
       return;
@@ -4727,6 +4876,20 @@ const server = createServer((req, res) => {
         }
       }
       if (freshest) releaseOtherStands(toId, freshest.floorId);
+      // The public address and the build log follow the account. The slug
+      // string itself never changes — whoever bookmarked it lands on the
+      // same stand, now owned by the signed-in identity.
+      const oldSlug = slugByOwner.get(fromId);
+      if (oldSlug && !slugByOwner.has(toId)) {
+        slugs.set(oldSlug, toId);
+        slugByOwner.delete(fromId);
+        slugByOwner.set(toId, oldSlug);
+      }
+      const oldLog = buildLogs.get(fromId);
+      if (oldLog && !buildLogs.has(toId)) {
+        buildLogs.delete(fromId);
+        buildLogs.set(toId, oldLog);
+      }
       // the directory listing follows the same way
       const reg = registry.get(fromId);
       if (reg) {
@@ -4859,6 +5022,7 @@ const server = createServer((req, res) => {
         // startup "mine", which would collide in directory listings.
         startup.id = `reg:${me}`;
         registry.set(me, { startup, ts: Date.now() });
+        mintSlug(me, startup.name);
         // The stand IS this card: an edit saved on the profile page updates
         // the founder's stand in place — floor render, hover cards, and the
         // directory all show the new text at once. Without this the stand
@@ -4908,6 +5072,55 @@ const server = createServer((req, res) => {
    * transport differs, and a live room still gets the broadcast so anyone
    * standing there watches the note land.
    */
+  /**
+   * The founder writes their build log. Owner-verified like /state/save;
+   * requires an actual stand or listing, so a log can never exist for a
+   * startup nobody can see. `remove` (a ts) deletes one entry — a typo in
+   * the founder's own log should not need an operator.
+   */
+  if (req.method === "POST" && url.pathname === "/stand/log") {
+    void (async () => {
+      const body = await readJson(req);
+      const me = body ? sanitizeStr(body.me, MAX_ID_LEN) : "";
+      if (!body || !me || !verifyIdentity(me, body.token, body.gs) || isBannedOwner(me)) {
+        notFound(res);
+        return;
+      }
+      let owns = registry.has(me);
+      for (const [fid, byOwner] of stands) {
+        if (owns) break;
+        if (isRealFloor(fid) && byOwner.has(me)) owns = true;
+      }
+      if (!owns) {
+        sendJson(res, { error: "set up your stand first — the log hangs on it" });
+        return;
+      }
+      const list = buildLogs.get(me) ?? [];
+      const remove = Number(body.remove);
+      if (Number.isFinite(remove) && remove > 0) {
+        const kept = list.filter((e) => e.ts !== remove);
+        if (kept.length) buildLogs.set(me, kept);
+        else buildLogs.delete(me);
+        scheduleSave();
+        sendJson(res, { ok: true, log: kept.slice(0, 5) });
+        return;
+      }
+      const text = moderateField(sanitizeStr(body.text, MAX_LOG_TEXT));
+      if (!text) {
+        sendJson(res, { error: "write something first" });
+        return;
+      }
+      // Same clock, same entry: two identical timestamps would make
+      // `remove` ambiguous, so nudge forward past the newest.
+      const ts = Math.max(Date.now(), (list[0]?.ts ?? 0) + 1);
+      const next = [{ text, ts }, ...list].slice(0, MAX_LOG_ENTRIES);
+      buildLogs.set(me, next);
+      scheduleSave();
+      sendJson(res, { ok: true, log: next.slice(0, 5) });
+    })();
+    return;
+  }
+
   if (req.method === "POST" && url.pathname === "/guestbook/sign") {
     void (async () => {
       if (socialRateLimited(req)) {
@@ -5303,6 +5516,9 @@ wss.on("connection", (ws, req) => {
       return;
     }
     byOwner.set(client.rawId, { claim, ownerName: client.name, lastSeen: Date.now() });
+    // A practice claim mints nothing: the tutorial hall is rehearsal, and a
+    // rehearsal must not spend the clean slug a real claim deserves.
+    if (isRealFloor(floorId)) mintSlug(client.rawId, claim.startup.name);
     // The stand MOVES here: a deliberate claim on a real floor packs up the
     // founder's stand anywhere else (practice claims in the tutorial don't).
     if (isRealFloor(floorId)) releaseOtherStands(client.rawId, floorId);

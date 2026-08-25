@@ -201,6 +201,16 @@ function paintHair(g: Grid, style: number, dir: Dir, c: string): void {
  * Build one pose. `dir` "left" is drawn as "right" and mirrored at render time.
  * frame: 0 idle, 1 stepA, 2 stepB.
  */
+/**
+ * The still, front-facing avatar as a flat colour grid — for renders that
+ * have no <canvas> to paint into (the public stand page's server-side SVG).
+ * Same pixels as frame 0 of makeAvatar, by construction: it IS the grid
+ * renderGrid rasterizes.
+ */
+export function avatarStillGrid(look: AvatarLook): Grid {
+  return buildGrid(look, "down", 0);
+}
+
 function buildGrid(look: AvatarLook, dir: Dir, frame: number): Grid {
   const g = newGrid();
   const skin = SKIN_TONES[((look.skin % 6) + 6) % 6];
