@@ -175,6 +175,7 @@ async function standFromListing(base: string, ownerId: string): Promise<StandEnt
         lastSeen: typeof row.lastSeen === "number" ? row.lastSeen : 0,
         ownerName: row.ownerName,
         startup: row.startup,
+        slug: typeof row.slug === "string" ? row.slug : null,
       };
     }
     return null;
@@ -191,6 +192,8 @@ export interface StandEntry {
   lastSeen: number;
   ownerName?: string;
   startup: Startup;
+  /** The public address (/stand/<slug>), once the server has minted one. */
+  slug?: string | null;
 }
 
 /** The notes left at one stand. Guestbooks are keyed floor + "spot:<n>". */

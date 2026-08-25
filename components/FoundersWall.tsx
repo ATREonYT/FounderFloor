@@ -25,7 +25,9 @@
  */
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { httpBase } from "@/lib/net";
+import { ownerIdOf, standHref } from "@/lib/ownerId";
 import type { Startup } from "@/lib/types";
 import Spec from "@/components/Spec";
 
@@ -34,6 +36,8 @@ interface Row {
   online: boolean;
   lastSeen: number;
   startup: Startup;
+  ownerId?: string;
+  slug?: string | null;
 }
 
 /** The bit of a URL worth reading before you click it. */
@@ -114,7 +118,14 @@ export default function FoundersWall({
             className="flex flex-col border border-line bg-panel p-4 transition-transform duration-200 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <p className="min-w-0 truncate font-display text-lg">{s.name}</p>
+              <p className="min-w-0 truncate font-display text-lg">
+                <Link
+                  href={standHref(r.ownerId ?? ownerIdOf(s.id), r.slug)}
+                  className="underline-offset-4 hover:underline"
+                >
+                  {s.name}
+                </Link>
+              </p>
               {r.online && (
                 <Spec className="flex shrink-0 items-center gap-1.5 text-verify">
                   <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verify" />

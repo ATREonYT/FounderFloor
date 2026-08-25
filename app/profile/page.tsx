@@ -40,6 +40,7 @@ import BuyConfirm from "@/components/BuyConfirm";
 import RankBadge from "@/components/RankBadge";
 import PixelGlyph, { GLYPH_IDS } from "@/components/PixelGlyph";
 import PickMenu from "@/components/PickMenu";
+import PublicAddress from "@/components/PublicAddress";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
 import {
   FOUNDING_OFFER,
@@ -1414,6 +1415,9 @@ export default function ProfilePage() {
                 </span>
               )}
             </div>
+
+            {/* The address this stand answers at — the thing to share. */}
+            {state.myStartup && <PublicAddress ownerId={state.profile.id} />}
           </div>
 
           {/* live booth preview — the exact in-game rendering */}

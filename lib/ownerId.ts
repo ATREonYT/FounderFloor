@@ -14,7 +14,12 @@ export function ownerIdOf(startupId: string): string {
   return startupId.replace(/^(claim|reg):/, "");
 }
 
-/** The permalink to a founder's stand. */
-export function standHref(ownerId: string): string {
-  return `/stand/${encodeURIComponent(ownerId)}`;
+/**
+ * The permalink to a founder's stand — the minted slug when the listing
+ * carries one, the owner id otherwise. Both resolve to the same page; the
+ * slug is the one a founder would put in a bio, so it is the one every
+ * surface should hand out.
+ */
+export function standHref(ownerId: string, slug?: string | null): string {
+  return `/stand/${encodeURIComponent(slug || ownerId)}`;
 }

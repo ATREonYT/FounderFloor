@@ -33,6 +33,8 @@ const MIN_RANKS = RANKS.filter((r) => r.id > 0);
 interface DirRow {
   key: string;
   ownerId: string;
+  /** The minted public address; standHref() falls back to the id without it. */
+  slug: string | null;
   startup: Startup;
   floor: FloorDef | undefined;
   community: boolean;
@@ -79,6 +81,7 @@ export default function DirectoryPage() {
         key: c.startup.id,
         // Older servers don't send it; the id has always carried it.
         ownerId: c.ownerId ?? ownerIdOf(c.startup.id),
+        slug: c.slug ?? null,
         startup: c.startup,
         floor,
         community: true,
@@ -259,7 +262,7 @@ export default function DirectoryPage() {
                         on a floor right now has no hall to point at. */}
                     <h2 className="font-display text-lg leading-snug">
                       <Link
-                        href={standHref(r.ownerId)}
+                        href={standHref(r.ownerId, r.slug)}
                         className="underline-offset-4 hover:underline"
                       >
                         {s.name}
@@ -338,7 +341,7 @@ export default function DirectoryPage() {
                 )}
                 {!floor && r.community && (
                   <Link
-                    href={standHref(r.ownerId)}
+                    href={standHref(r.ownerId, r.slug)}
                     className="shrink-0 rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-ink hover:text-ink"
                   >
                     See their stand

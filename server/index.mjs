@@ -4638,6 +4638,9 @@ const server = createServer((req, res) => {
           lastSeen: st.lastSeen,
           ownerName: st.ownerName,
           startup: st.claim.startup,
+          // The public address, so every list that renders this row can
+          // link to the page a founder would actually share.
+          slug: slugByOwner.get(ownerId) ?? null,
         });
         if (out.length >= 512) break; // plenty for a directory page
       }
@@ -4655,6 +4658,7 @@ const server = createServer((req, res) => {
         lastSeen: entry.ts,
         ownerName: entry.startup?.founder,
         startup: entry.startup,
+        slug: slugByOwner.get(ownerId) ?? null,
       });
     }
     // A directory lists a startup ONCE. The same founder can appear under

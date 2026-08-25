@@ -27,6 +27,8 @@ export interface CommunityStartup {
   lastSeen: number;
   ownerName?: string;
   startup: Startup;
+  /** The public address, once minted — standHref() prefers it. */
+  slug?: string | null;
 }
 
 function isEntry(v: unknown): v is CommunityStartup {
