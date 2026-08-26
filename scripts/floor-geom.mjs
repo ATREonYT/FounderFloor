@@ -275,6 +275,25 @@ for (const f of FLOORS) {
       }
     }
     check(touching.size === 0, "no stand overlaps the plaza paving", [...touching].join(", "));
+
+    // and a rank beside the paving must CLEAR it by at least one walkable
+    // row — flush against it, the stand reads as standing on the stonework
+    // rather than beside it. (The south rim sits at exactly one row; the
+    // north rim clears by two, because facing it up moved its apron to the
+    // far side.)
+    const flushRanks = [];
+    for (const s of f.boothSpots) {
+      if (s.x + 3 < p.rect.x0 || s.x > p.rect.x1) continue; // no x overlap
+      const { top, bottom } = footprint(s);
+      const gap =
+        bottom < p.rect.y0 ? p.rect.y0 - bottom - 1 : top > p.rect.y1 ? top - p.rect.y1 - 1 : -1;
+      if (gap === 0) flushRanks.push(`${s.id}(${s.x},${s.y}) flush with the paving`);
+    }
+    check(
+      flushRanks.length === 0,
+      "every rank clears the plaza paving by >= 1 row",
+      flushRanks.join(", "),
+    );
   }
 
   // ---- 7: spawn ----

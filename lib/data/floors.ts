@@ -85,14 +85,16 @@ export const FLOORS: FloorDef[] = [
     //                                  geometry check asserts)
     // Avenues    N x27..30 y1..16   S x27..30 y27..40
     //            W x1..19 y19..23   E x38..56 y19..23
-    // Booth rows y=5  (zone 5-7, apron 8)     outer north
-    //            y=12 (zone 12-14, apron 15)  inner north, on the plaza rim
-    //            y=27 (zone 27-29, apron 30)  inner south, on the plaza rim
-    // The rim ranks clear the paving by ONE ROW (16 above, 26 below). Flush
-    // against it they read as overlapping the plaza — there is no gap for
-    // the eye to put an edge in, so the stand looks like it is standing on
-    // the stonework rather than beside it.
-    //            y=34 (zone 34-36, apron 37)  outer south
+    // Booth rows y=5  (zone 5-7, apron 8)     outer north, faces down
+    //            y=12 (zone 12-14, apron 11)  north rim, faces up
+    //            y=27 (zone 27-29, apron 30)  south rim, faces down
+    //            y=34 (zone 34-36, apron 33)  outer south, faces up
+    // The rim ranks clear the paving by AT LEAST one clear row — flush
+    // against it, a stand reads as standing on the stonework rather than
+    // beside it (there is no gap for the eye to put an edge in). The south
+    // rim sits at exactly one row (26); the north rim clears by two
+    // (15-16) because flipping it to face up moved its apron to y=11, the
+    // far side. scripts/floor-geom.mjs asserts the never-flush rule.
     // Columns    x = 3 / 9 / 15 / 21 | avenue | 33 / 39 / 45 / 51
     //            — zones are 4 wide, so every gap is exactly 2 clear tiles,
     //            and the avenue keeps 2 clear on each side of it too.
@@ -109,7 +111,42 @@ export const FLOORS: FloorDef[] = [
     // straight up the avenue, under the MAIN HALL sign, at the fountain.
     // The east and west wings are deliberately stand-free — they are the
     // lounge and café side of a real expo hall, and they give the eye
-    // somewhere to rest between two dense banks of stands.
+    // somewhere to rest between two dense banks of stands. A hall where
+    // every square metre is monetised reads as a car park; the empty wings
+    // are what make the dense parts read as dense.
+    //
+    // ─── THE VALUE GRADIENT ────────────────────────────────────────────
+    // Real exhibitions price position: a row stand and an island stand at
+    // the same show differ by ~30%, and corner premiums run 5-12%. This
+    // hall does the same, and the shape is the explanation — value falls
+    // off with distance from the two things every visitor's walk touches:
+    // the spawn tile and the fountain.
+    //
+    //   gold (6)    the inner rank flanking both avenue mouths on the
+    //               plaza rims (rim-n-inner-*, rim-s-inner-*), plus the
+    //               entrance pair (outer-s-w1/e1). You cannot arrive
+    //               without walking between the entrance pair, cannot
+    //               reach the plaza without passing the south rim pair
+    //               face-on, and cannot stand at the fountain without
+    //               seeing all four rim spots framing the two exits.
+    //   silver (8)  the rims' outer pairs (on the plaza, off the arrival
+    //               sightline), the north band's avenue-mouth pair, and
+    //               the entrance street's second pair (outer-s-w2/e2 —
+    //               everyone crosses that street; nobody has to walk the
+    //               north one).
+    //   bronze (10) the outer bands' far columns, out to the side walls —
+    //               everything the walk never touches.
+    //
+    // The asymmetry is the point: outer-s-w2/e2 outrank their mirror
+    // images outer-n-w2/e2 because the south band flanks the door and the
+    // north band is the far side of the building. If the gradient reads
+    // as unfair, it is priced correctly.
+    //
+    // IDS ARE IDENTITY: every spot's permanent `id` names the pitch, so a
+    // future relayout is free to MOVE spots — change x/y, reflow ranks —
+    // and every claim follows its id. The one remaining restriction is
+    // array ORDER (claims still travel as indexes until the TODO(spot-id)
+    // migration lands): append, never reorder.
     id: "main-hall",
     name: "Main Hall",
     tagline: "The free floor. Twenty-four stands, first come first served. Everyone starts here.",
@@ -149,34 +186,42 @@ export const FLOORS: FloorDef[] = [
     // claims will migrate onto these ids, and an id that moves a stand is
     // the same bug as a reordered array.
     boothSpots: [
-      // Inner rank, flanking the two avenue mouths — the four best places
-      // in the building, one street back from the fountain.
-      { id: "rim-n-inner-w", x: 21, y: 12, face: "up" },
-      { id: "rim-n-inner-e", x: 33, y: 12, face: "up" },
-      { id: "rim-s-inner-w", x: 21, y: 27 },
-      { id: "rim-s-inner-e", x: 33, y: 27 },
-      // Inner rank, the outer pair on each rim.
-      { id: "rim-n-outer-w", x: 15, y: 12, face: "up" },
-      { id: "rim-n-outer-e", x: 39, y: 12, face: "up" },
-      { id: "rim-s-outer-w", x: 15, y: 27 },
-      { id: "rim-s-outer-e", x: 39, y: 27 },
-      // Outer band, working away from the avenues.
-      { id: "outer-n-w1", x: 21, y: 5 },
-      { id: "outer-n-e1", x: 33, y: 5 },
-      { id: "outer-s-w1", x: 21, y: 34, face: "up" },
-      { id: "outer-s-e1", x: 33, y: 34, face: "up" },
-      { id: "outer-n-w2", x: 15, y: 5 },
-      { id: "outer-n-e2", x: 39, y: 5 },
-      { id: "outer-s-w2", x: 15, y: 34, face: "up" },
-      { id: "outer-s-e2", x: 39, y: 34, face: "up" },
-      { id: "outer-n-w3", x: 9, y: 5 },
-      { id: "outer-n-e3", x: 45, y: 5 },
-      { id: "outer-s-w3", x: 9, y: 34, face: "up" },
-      { id: "outer-s-e3", x: 45, y: 34, face: "up" },
-      { id: "outer-n-w4", x: 3, y: 5 },
-      { id: "outer-n-e4", x: 51, y: 5 },
-      { id: "outer-s-w4", x: 3, y: 34, face: "up" },
-      { id: "outer-s-e4", x: 51, y: 34, face: "up" },
+      // GOLD — the inner rank, flanking the two avenue mouths. The four
+      // best places in the building, one street back from the fountain:
+      // the south pair meets every arrival face-on, the north pair shows
+      // its sign wall across the water.
+      { id: "rim-n-inner-w", x: 21, y: 12, face: "up", tier: "gold" },
+      { id: "rim-n-inner-e", x: 33, y: 12, face: "up", tier: "gold" },
+      { id: "rim-s-inner-w", x: 21, y: 27, tier: "gold" },
+      { id: "rim-s-inner-e", x: 33, y: 27, tier: "gold" },
+      // SILVER — the inner rank's outer pair on each rim: on the plaza,
+      // off the arrival sightline.
+      { id: "rim-n-outer-w", x: 15, y: 12, face: "up", tier: "silver" },
+      { id: "rim-n-outer-e", x: 39, y: 12, face: "up", tier: "silver" },
+      { id: "rim-s-outer-w", x: 15, y: 27, tier: "silver" },
+      { id: "rim-s-outer-e", x: 39, y: 27, tier: "silver" },
+      // Outer band, working away from the avenues. SILVER at the north
+      // avenue mouth; GOLD at the south one — the entrance pair is the
+      // first thing every visitor walks between.
+      { id: "outer-n-w1", x: 21, y: 5, tier: "silver" },
+      { id: "outer-n-e1", x: 33, y: 5, tier: "silver" },
+      { id: "outer-s-w1", x: 21, y: 34, face: "up", tier: "gold" },
+      { id: "outer-s-e1", x: 33, y: 34, face: "up", tier: "gold" },
+      // SILVER second-from-the-avenue on the entrance street only; the
+      // north band's second pair is already past the traffic.
+      { id: "outer-n-w2", x: 15, y: 5, tier: "bronze" },
+      { id: "outer-n-e2", x: 39, y: 5, tier: "bronze" },
+      { id: "outer-s-w2", x: 15, y: 34, face: "up", tier: "silver" },
+      { id: "outer-s-e2", x: 39, y: 34, face: "up", tier: "silver" },
+      // BRONZE — the far columns, out toward the side walls.
+      { id: "outer-n-w3", x: 9, y: 5, tier: "bronze" },
+      { id: "outer-n-e3", x: 45, y: 5, tier: "bronze" },
+      { id: "outer-s-w3", x: 9, y: 34, face: "up", tier: "bronze" },
+      { id: "outer-s-e3", x: 45, y: 34, face: "up", tier: "bronze" },
+      { id: "outer-n-w4", x: 3, y: 5, tier: "bronze" },
+      { id: "outer-n-e4", x: 51, y: 5, tier: "bronze" },
+      { id: "outer-s-w4", x: 3, y: 34, face: "up", tier: "bronze" },
+      { id: "outer-s-e4", x: 51, y: 34, face: "up", tier: "bronze" },
     ],
     // ─── THE HALL SHIPS EMPTY ──────────────────────────────────────────
     // No seeded sample stands and no ambient staff. Every one of the
