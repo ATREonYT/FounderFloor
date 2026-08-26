@@ -1,0 +1,902 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    height: 100%;
+    scroll-behavior: smooth;
+    /* body carries the paper wash; html did not paint at all. With the body
+       floor now at 100svh, a phone with its address bar collapsed shows a
+       strip below the body — this fills it in the same colour. */
+    background-color: rgb(var(--paper));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    @apply bg-paper font-body text-ink antialiased;
+    min-height: 100%;
+    /* ambient top light — the flat paper fill read as a 2005 desktop app;
+       a barely-warmer wash falling from the top gives the page atmosphere
+       without touching the retro palette */
+    background-image: radial-gradient(
+      1400px 640px at 50% -160px,
+      #fffdf6,
+      rgba(255, 253, 246, 0.55) 45%,
+      rgba(242, 239, 231, 0) 75%
+    );
+    background-repeat: no-repeat;
+  }
+
+  ::selection {
+    @apply bg-accent-soft text-ink;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme("colors.accent");
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply bg-panel;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: theme("colors.accent");
+    box-shadow: 0 0 0 3px rgba(217, 72, 15, 0.12);
+    outline: none;
+  }
+
+  /* every interactive control settles color changes softly by default */
+  button,
+  a {
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease,
+      opacity 150ms ease;
+  }
+}
+
+@layer components {
+  /* The hall's box is pinned to the SMALL viewport.
+     `fixed inset-0` sizes to the LAYOUT viewport, which iOS grows and
+     shrinks as the address bar hides — so the canvas changed height on
+     every frame of that animation, and each change reallocated a ~5MB
+     backing store. 100svh is defined as "all toolbars showing" and a
+     browser may not change it while one animates, so a bar transition
+     moves nothing. A real rotation or a desktop window drag still does. */
+  .floor-viewport {
+    height: 100vh; /* pre-svh browsers: no fix, but no regression either */
+    height: 100svh;
+  }
+
+  /* ==================== MOTION SYSTEM ====================
+     One rhythm for the whole site. Two curves, three speeds:
+       --ease-out    entrances & hovers (fast start, soft landing)
+       --ease-spring pop-ins that should feel alive (slight overshoot)
+     Durations: micro 150-200ms, panels 240ms, ceremonies 300ms.
+     Transform/opacity only (no layout thrash); the reduced-motion
+     block at the bottom switches all of it off. */
+  :root {
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+    /* The palette, as space-separated RGB channels. This form — not hex —
+       because Tailwind's alpha modifiers (border-gold/60, bg-ink/85, 100+
+       usages) compose as rgb(var(--x) / alpha); a hex var would silently
+       break every one of them. Raw CSS and DOM SVG use rgb(var(--x)).
+       Canvas code CANNOT resolve these (it fails silently to black), so
+       everything that paints through a 2d context keeps literal hex. */
+    --paper: 242 239 231; /* #F2EFE7 */
+    --panel: 255 255 255; /* #FFFFFF */
+    --ink: 35 32 26; /* #23201A */
+    --muted: 111 106 94; /* #6F6A5E */
+    --line: 228 223 211; /* #E4DFD3 */
+    --accent: 217 72 15; /* #D9480F */
+    --accent-strong: 192 65 12; /* #C0410C */
+    --accent-soft: 251 233 224; /* #FBE9E0 */
+    --verify: 43 138 62; /* #2B8A3E */
+    --gold: 176 141 46; /* #B08D2E */
+    --gold-deep: 122 97 31; /* #7A611F */
+  }
+
+  /* Uppercase letterspaced micro-label for metadata (tier tags, rank names). */
+  .micro {
+    @apply text-[11px] font-medium uppercase tracking-widest;
+  }
+
+  /* Standard quiet panel: white card, soft hairline, resting depth.
+     The old flat 6px box read as legacy software — cards now sit ON the
+     page instead of being drawn on it. */
+  .panel {
+    @apply rounded-xl border border-line/70 bg-panel;
+    box-shadow:
+      0 1px 2px rgba(35, 32, 26, 0.04),
+      0 8px 24px -16px rgba(35, 32, 26, 0.1);
+  }
+
+  /* Smooth expand/collapse for content of unknown height (quest boards):
+     the grid-rows 0fr -> 1fr technique — no max-height guessing, no jump.
+     Toggle .open on the container; the single child needs no classes. */
+  .reveal-rows {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 320ms var(--ease-out);
+  }
+  .reveal-rows.open {
+    grid-template-rows: 1fr;
+  }
+  .reveal-rows > * {
+    min-height: 0;
+    overflow: hidden;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-rows {
+      transition: none;
+    }
+  }
+
+  /* Floating glass chrome for in-game overlays (quest pill, booth cards,
+     chat): translucent panel + blur so the hall stays visible underneath —
+     the single strongest "this is a 2026 product" cue on the floor. */
+  .glass {
+    @apply rounded-xl border border-line/60;
+    background-color: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(12px) saturate(1.1);
+    -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  }
+
+  /* Purposeful microinteractions: buttons press down and settle back on a
+     soft curve; cards lift with a layered shadow. Feedback, not decoration. */
+  .btn-press {
+    transition:
+      transform 180ms var(--ease-out),
+      background-color 150ms ease,
+      border-color 150ms ease,
+      box-shadow 180ms var(--ease-out);
+  }
+  .btn-press:active:not(:disabled) {
+    transform: translateY(1px) scale(0.98);
+    transition-duration: 60ms;
+  }
+
+  .card-lift {
+    transition:
+      transform 220ms var(--ease-out),
+      box-shadow 220ms var(--ease-out),
+      border-color 220ms ease;
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 1px 2px rgba(35, 32, 26, 0.05),
+      0 6px 14px rgba(35, 32, 26, 0.07),
+      0 16px 32px rgba(35, 32, 26, 0.07);
+    border-color: rgba(111, 106, 94, 0.45);
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* Route-level enter (app/template.tsx remounts this per navigation).
+     OPACITY ONLY — a transform here (even translateY(0) retained by
+     fill-mode) becomes the containing block for position:fixed descendants
+     and collapses the floor page's fixed-fullscreen game. Learned the hard way. */
+  @keyframes fade-only {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .page-enter {
+    animation: fade-only 240ms var(--ease-out) both;
+  }
+
+  /* Scroll-reveal for landing sections (driven by components/Reveal.tsx). */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 560ms var(--ease-out),
+      transform 560ms var(--ease-out);
+  }
+  .reveal.reveal-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Panel/card enter — booth cards, chat panes, dropdowns. Soft rise. */
+  .anim-in {
+    animation: fade-up 240ms var(--ease-out) both;
+  }
+
+  /* Ceremony enter — modals, graduation panel, big moments. Springy pop. */
+  .anim-pop {
+    animation: pop-in 300ms var(--ease-spring) both;
+  }
+
+  /* Toast enter — slides in from the right edge with a spring. */
+  .anim-toast {
+    animation: slide-in-right 260ms var(--ease-spring) both;
+  }
+
+  /* Modal backdrop fade. */
+  .anim-fade {
+    animation: fade-only 200ms ease-out both;
+  }
+
+  /* Staggered child entrances for lists/grids: each child rises in turn,
+     40ms apart, capped — beyond 8 it reads as lag, not rhythm. */
+  .stagger-children > * {
+    animation: fade-up 380ms var(--ease-out) both;
+  }
+  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger-children > *:nth-child(7) { animation-delay: 240ms; }
+  .stagger-children > *:nth-child(n + 8) { animation-delay: 280ms; }
+
+  /* Hero art: a slow breath, barely there. */
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+  .float-slow {
+    animation: float-slow 7s ease-in-out infinite;
+  }
+
+  /* Live-presence dot: a soft radar pulse. */
+  @keyframes pulse-ring {
+    0% {
+      box-shadow: 0 0 0 0 rgba(43, 138, 62, 0.45);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgba(43, 138, 62, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(43, 138, 62, 0);
+    }
+  }
+  .pulse-dot {
+    animation: pulse-ring 2.2s var(--ease-out) infinite;
+  }
+
+  /* Expo-signage ticker: seamless loop (content is rendered twice). */
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .marquee-track {
+    animation: marquee 36s linear infinite;
+    will-change: transform;
+  }
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
+
+  /* Headline accent: an underline that sweeps in after the page lands.
+     Painted as an animated background (not a positioned pseudo-element) so
+     it follows the text when the phrase wraps across lines —
+     box-decoration-break gives every wrapped fragment its own underline. */
+  .sweep-underline {
+    background-image: linear-gradient(rgba(217, 72, 15, 0.5), rgba(217, 72, 15, 0.5));
+    background-repeat: no-repeat;
+    background-position: 0 94%;
+    /* 0.075em rather than 0.1em: the headline now runs to 80px on desktop,
+       where a tenth of the em reads as a highlighter stripe */
+    background-size: 0% 0.075em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    animation: sweep 700ms var(--ease-out) 450ms both;
+  }
+  @keyframes sweep {
+    to {
+      background-size: 100% 0.075em;
+    }
+  }
+
+  /* ==================== MEMBERSHIP CEREMONY ====================
+     The one screen that's allowed to show off: rotating prize rays, a
+     medal that drops in on a spring and then breathes, a foil sheen
+     sweeping the headline, and sparks twinkling around the card. */
+  /* Explicit from AND to: a lone `to{rotate}` on an element that also
+     carries a translate utility interpolates through mismatched transform
+     lists (matrix decomposition), which visibly drifts the whole element
+     off-center each cycle. The rays now live in a plain child (parent does
+     the centering) and only ever rotate. */
+  @keyframes ceremony-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  .ceremony-rays {
+    background: repeating-conic-gradient(
+      var(--ray-color, rgba(176, 141, 46, 0.45)) 0deg 9deg,
+      transparent 9deg 30deg
+    );
+    mask-image: radial-gradient(circle, black 20%, transparent 66%);
+    -webkit-mask-image: radial-gradient(circle, black 20%, transparent 66%);
+    animation: ceremony-spin 18s linear infinite;
+  }
+
+  @keyframes seal-drop {
+    0% {
+      opacity: 0;
+      transform: translateY(-64px) scale(0.3) rotate(-18deg);
+    }
+    55% {
+      opacity: 1;
+      transform: translateY(8px) scale(1.12) rotate(4deg);
+    }
+    78% {
+      transform: translateY(-3px) scale(0.97) rotate(-2deg);
+    }
+    100% {
+      transform: translateY(0) scale(1) rotate(0deg);
+    }
+  }
+  .seal-drop {
+    animation:
+      seal-drop 750ms var(--ease-spring) 120ms both,
+      float-slow 5s ease-in-out 1.4s infinite;
+  }
+
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.3) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1) rotate(24deg);
+    }
+  }
+  .twinkle {
+    animation: twinkle 2.1s ease-in-out infinite;
+  }
+
+  /* Foil-stamp headline: mostly ink, with a bright band sweeping through. */
+  @keyframes sheen {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  .ceremony-title {
+    background-size: 250% 100%;
+    background-position: 0 0;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: sheen 3s ease-in-out 700ms infinite;
+  }
+  .ceremony-title-founder {
+    background-image: linear-gradient(
+      105deg,
+      rgb(var(--ink)) 38%,
+      rgb(var(--gold)) 47%,
+      #e8c766 50%,
+      rgb(var(--gold)) 53%,
+      rgb(var(--ink)) 62%
+    );
+  }
+  .ceremony-title-pro {
+    background-image: linear-gradient(
+      105deg,
+      rgb(var(--ink)) 38%,
+      rgb(var(--accent)) 47%,
+      #f0906b 50%,
+      rgb(var(--accent)) 53%,
+      rgb(var(--ink)) 62%
+    );
+  }
+
+  /* ==================== CEREMONY INTRO (full screen) ====================
+     The cinematic before the card: the room goes dark, gold threads race
+     in from the screen edges, converge, and DRAW the four-pointed star —
+     which ignites, sends out a shockwave, and announces the tier. Pure
+     CSS timeline (delays choreograph the phases); the component swaps to
+     the ceremony card at the end. */
+  @keyframes cine-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes cine-vanish {
+    to {
+      opacity: 0;
+    }
+  }
+  /* threads from the screen edges: draw in, then dissolve as the star forms */
+  .cine-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+      cine-draw 640ms var(--ease-out) both,
+      cine-vanish 500ms ease 1450ms forwards;
+  }
+  /* the star outline draws itself out of the converged threads */
+  .cine-star-outline {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cine-draw 1150ms var(--ease-out) 1250ms both;
+  }
+  @keyframes cine-fill-in {
+    from {
+      opacity: 0;
+      transform: scale(0.82);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .cine-star-fill {
+    opacity: 0;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: cine-fill-in 650ms var(--ease-spring) 2250ms both;
+  }
+  @keyframes cine-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.035);
+    }
+  }
+  .cine-star-group {
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: cine-breathe 4.5s ease-in-out 3s infinite;
+  }
+  /* ignition shockwave — a ring that blows out from the star. The
+     centering translate lives INSIDE the keyframes (a keyframe transform
+     replaces utility transforms wholesale); fill is forwards-only so the
+     ring stays invisible until ignition. */
+  @keyframes cine-ring {
+    from {
+      opacity: 0.9;
+      transform: translate(-50%, -50%) scale(0.12);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+  .cine-ring {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.12);
+    animation: cine-ring 950ms var(--ease-out) 2350ms forwards;
+  }
+  /* the announcement: letters land from wide tracking */
+  @keyframes cine-track-in {
+    from {
+      opacity: 0;
+      letter-spacing: 0.6em;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      letter-spacing: 0.12em;
+      transform: none;
+    }
+  }
+  .cine-track-in {
+    animation: cine-track-in 900ms var(--ease-out) 2750ms both;
+  }
+  .cine-fade-up {
+    animation: fade-up 550ms var(--ease-out) both;
+  }
+  /* pulsing halo once the star is lit */
+  @keyframes cine-glow {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 12px var(--cine-glow, rgba(232, 199, 102, 0.35)));
+    }
+    50% {
+      filter: drop-shadow(0 0 30px var(--cine-glow, rgba(232, 199, 102, 0.55)));
+    }
+  }
+  .cine-glow {
+    animation: cine-glow 3.4s ease-in-out 2.9s infinite;
+  }
+  /* the whole intro hands off: swells slightly and dissolves */
+  @keyframes cine-exit {
+    to {
+      opacity: 0;
+      transform: scale(1.05);
+    }
+  }
+  .cine-exit {
+    animation: cine-exit 480ms var(--ease-out) both;
+  }
+
+  /* ==================== GRADUATION (tutorial complete) ====================
+     The membership ceremony's sibling, in the opposite register: paper
+     instead of night, a certificate seal instead of the star. An ink ring
+     inscribes itself, a gold ring follows inside it, the rosette stamps
+     into the middle, and the graduate line letter-tracks in underneath —
+     like watching a diploma get sealed. Reuses cine-draw / cine-fill-in /
+     cine-track-in keyframes; only the timeline is new. */
+  .grad-ring {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cine-draw 950ms var(--ease-out) 150ms both;
+  }
+  .grad-ring-inner {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: cine-draw 800ms var(--ease-out) 550ms both;
+  }
+  .grad-seal-fill {
+    opacity: 0;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: cine-fill-in 620ms var(--ease-spring) 1150ms both;
+  }
+  .grad-title {
+    animation: cine-track-in 900ms var(--ease-out) 1500ms both;
+  }
+  @keyframes grad-rule {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  .grad-rule {
+    transform-origin: center;
+    animation: grad-rule 700ms var(--ease-out) 2050ms both;
+  }
+  /* gentle breath on the finished seal, so it reads alive while the
+     player takes the moment in */
+  .grad-breathe {
+    animation: float-slow 5.5s ease-in-out 2.2s infinite;
+  }
+
+  /* ==================== EXHIBITION LAYER ====================
+     The landing page is set like a printed trade-show programme rather
+     than like a web template: a margin rail carrying section numbers, a
+     dotted walking route instead of feature cards, dotted leaders in the
+     catalogue entries, perforated admission stubs instead of pricing
+     boxes, and crop marks around the artwork.
+
+     All of it is new class names on the existing colour tokens — nothing
+     here changes how the old design renders, so docs/design/v1 still
+     works with this stylesheet in place. */
+
+  /* Dashed rules, drawn as a gradient so the dash length is ours rather
+     than the browser's (border-style: dashed is 3px-on-3px and reads as a
+     mistake at this scale). --dash-c recolours them per section. */
+  .dash-x {
+    background-repeat: repeat-x;
+    background-image: linear-gradient(
+      to right,
+      var(--dash-c, rgba(35, 32, 26, 0.22)) 0,
+      var(--dash-c, rgba(35, 32, 26, 0.22)) 5px,
+      transparent 5px,
+      transparent 10px
+    );
+    background-size: 10px 1px;
+  }
+  .dash-y {
+    background-image: linear-gradient(
+      to bottom,
+      var(--dash-c, rgba(35, 32, 26, 0.22)) 0,
+      var(--dash-c, rgba(35, 32, 26, 0.22)) 5px,
+      transparent 5px,
+      transparent 10px
+    );
+    background-size: 1px 10px;
+    background-repeat: repeat-y;
+  }
+
+  /* Catalogue leader: the run of dots between an entry and its value, as
+     in a programme's contents page. Sits on the text baseline, so it has
+     to hang slightly above the flex line's bottom. */
+  .leader {
+    flex: 1 1 auto;
+    min-width: 1.25rem;
+    height: 1px;
+    align-self: flex-end;
+    margin-bottom: 0.38em;
+  }
+
+  /* Admission stub: a real perforation. Two circles are subtracted from
+     the card's left and right edges at the tear line, and the notch is a
+     hole in the element rather than a paper-coloured disc drawn on top —
+     so it works over any background. mask-composite is what makes the two
+     holes intersect; browsers without it simply show an un-notched card,
+     which is a perfectly good fallback. */
+  .stub {
+    --perf: 104px; /* distance from the bottom edge to the tear line */
+    --notch: 10px;
+    -webkit-mask-image: radial-gradient(
+        circle var(--notch) at 0 calc(100% - var(--perf)),
+        transparent 98%,
+        #000 100%
+      ),
+      radial-gradient(
+        circle var(--notch) at 100% calc(100% - var(--perf)),
+        transparent 98%,
+        #000 100%
+      );
+    mask-image: radial-gradient(
+        circle var(--notch) at 0 calc(100% - var(--perf)),
+        transparent 98%,
+        #000 100%
+      ),
+      radial-gradient(
+        circle var(--notch) at 100% calc(100% - var(--perf)),
+        transparent 98%,
+        #000 100%
+      );
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
+  /* the tear line itself, positioned off the same variable */
+  .stub-perf {
+    position: absolute;
+    left: var(--notch, 10px);
+    right: var(--notch, 10px);
+    bottom: var(--perf, 104px);
+    height: 1px;
+  }
+
+  /* Drafting grid for the ink placards. 32px is the game's tile size, so
+     the closing panel is literally ruled to the floor's own grid. */
+  .blueprint {
+    background-image: linear-gradient(rgba(242, 239, 231, 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(242, 239, 231, 0.055) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Index row: the whole row is the target, and the rule under it draws
+     itself in from the left on hover — a printed index that answers. */
+  .index-row {
+    transition: background-color 200ms var(--ease-out);
+  }
+  .index-row::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    height: 1px;
+    width: 0;
+    background: theme("colors.accent");
+    transition: width 320ms var(--ease-out);
+  }
+  .index-row:hover {
+    background-color: rgba(217, 72, 15, 0.04);
+  }
+  .index-row:hover::after,
+  .index-row:focus-visible::after {
+    width: 100%;
+  }
+
+  /* Oversized programme numerals: serif, tabular, and optically dropped
+     so they align with the cap height of the text beside them. */
+  .numeral {
+    @apply font-display tabular-nums;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---------------------------------------------- reveal-driven motion
+     Rules and bars draw themselves once their section arrives. Every one
+     of these keys off `.reveal-in`, the class components/Reveal.tsx adds
+     to a section when it scrolls in, so there is no second observer and no
+     extra JavaScript: the section's entrance IS the cue.
+
+     Everything is scaleX on the compositor. Widths and background-position
+     both animate, but only the ones that cannot be done with a transform
+     (the marching dashes) actually use layout-adjacent properties. */
+  .draw-x,
+  .meter-fill {
+    transform: scaleX(0);
+    transform-origin: left center;
+  }
+  .reveal-in .draw-x {
+    animation: draw-x 620ms var(--ease-out) both;
+  }
+  @keyframes draw-x {
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  /* The rank-board bars are NOT animated from here. They share a single
+     ramp with the figure above them, written to the node by RankMeter, so
+     the bar's length and the number are the same quantity drawn twice. All
+     this rule does is hold them at zero until that ramp starts. */
+
+  /* The route path keeps moving after it has drawn: the dashes crawl
+     forward by exactly one dash period, so the loop is seamless. It is the
+     one continuous animation on the page, and it is there because a route
+     that is being walked should not sit still. */
+  .reveal-in .march {
+    animation:
+      draw-x 700ms var(--ease-out) both,
+      march 2.6s linear 700ms infinite;
+  }
+  @keyframes march {
+    from {
+      background-position-x: 0;
+    }
+    to {
+      background-position-x: 10px;
+    }
+  }
+
+  /* A stop on the route lands with a small pop once the path reaches it. */
+  .reveal-in .stop-pop {
+    animation: pop-in 420ms var(--ease-spring) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .draw-x,
+    .meter-fill {
+      transform: none;
+    }
+    .reveal-in .draw-x,
+    .reveal-in .march,
+    .reveal-in .stop-pop {
+      animation: none;
+      transform: none;
+    }
+    .index-row,
+    .index-row::after {
+      transition: none;
+    }
+    .btn-press,
+    .btn-press:active:not(:disabled),
+    .card-lift,
+    .card-lift:hover {
+      transition: none;
+      transform: none;
+    }
+    .page-enter,
+    .anim-in,
+    .anim-pop,
+    .anim-toast,
+    .anim-fade,
+    .stagger-children > *,
+    .float-slow,
+    .pulse-dot,
+    .ceremony-rays,
+    .seal-drop,
+    .twinkle,
+    .ceremony-title,
+    .cine-line,
+    .cine-star-outline,
+    .cine-star-fill,
+    .cine-star-group,
+    .cine-ring,
+    .cine-track-in,
+    .cine-fade-up,
+    .cine-glow,
+    .cine-exit,
+    .grad-ring,
+    .grad-ring-inner,
+    .grad-seal-fill,
+    .grad-title,
+    .grad-rule,
+    .grad-breathe,
+    .marquee-track {
+      animation: none;
+    }
+    .sweep-underline {
+      animation: none;
+      background-size: 100% 0.075em;
+    }
+    .reveal,
+    .reveal.reveal-in {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+}
+
+@layer utilities {
+  /* Keep pixel art crisp when scaled — canvases, sprites, glyphs. */
+  .pixelated {
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+
+  /* Horizontal scroll rows (mobile chip rails) without a visible scrollbar. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Marquee/rail edges dissolve instead of hard-cropping at the viewport. */
+  .edge-fade-x {
+    mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  }
+}
+
+/* The game floor owns the whole viewport — the site nav gets out of the way. */
+/* The floor is a fixed, full-screen overlay, so nothing it draws is in the
+   document flow — which left the footer as the page's only in-flow content
+   and made the hall a ~750px scrollable document hiding behind an opaque
+   canvas. A thumb on the bottom HUD scrolled a page nobody could see, and
+   that is what collapsed the address bar in the first place. */
+body[data-on-floor] footer[data-site-footer] {
+  display: none;
+}
+
+body[data-on-floor] header[data-site-nav] {
+  display: none;
+}
