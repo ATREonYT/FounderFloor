@@ -106,9 +106,10 @@ export const FLOORS: FloorDef[] = [
     // from the door — you pass between two shopfronts and then the plaza
     // opens up in front of you.
     //
-    // The player spawns at (width/2, height-5) = tile (29, 37), which is
-    // inside the south avenue: you arrive at the bottom of the hall looking
-    // straight up the avenue, under the MAIN HALL sign, at the fountain.
+    // The player spawns at `spawn` (29, 37) — see THE ARRIVAL note by the
+    // field — inside the south avenue: you arrive at the bottom of the
+    // hall looking straight up the avenue, under the MAIN HALL sign, at
+    // the fountain.
     // The east and west wings are deliberately stand-free — they are the
     // lounge and café side of a real expo hall, and they give the eye
     // somewhere to rest between two dense banks of stands. A hall where
@@ -153,9 +154,20 @@ export const FLOORS: FloorDef[] = [
     tier: "free",
     width: 58,
     height: 42,
-    // Exactly what the engine's bottom-centre fallback computes for 58x42
-    // (width/2, height-5) — pinned here so a future relayout can move the
-    // door without touching engine code. See the spawn note above.
+    // ─── THE ARRIVAL ───────────────────────────────────────────────────
+    // Chosen, not computed. You land on the south avenue's paving, two
+    // rows below the arch, facing up — and from this tile, without
+    // moving, the view is the sales pitch in miniature: the MAIN HALL
+    // sign overhead, an OPEN STAND board on either side (the two gold
+    // entrance pitches, the first readable thing after the arch), and
+    // the fountain dead ahead up the avenue with the gold south-rim pair
+    // framing the plaza mouth. x=29 is the avenue column nearest the
+    // fountain's centreline; y=37 rather than deeper south because the
+    // tutorial coach card sits along the bottom edge of the screen — the
+    // same reason the engine's fallback formula is height-5, not
+    // height-2. This tile happens to equal that fallback (width/2,
+    // height-5), so pinning it costs nothing and frees a future relayout
+    // to move the door without touching engine code.
     spawn: { x: 29, y: 37 },
     theme: {
       floorA: "#D8D2C4",
