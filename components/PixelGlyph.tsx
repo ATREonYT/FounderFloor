@@ -129,7 +129,7 @@ interface PixelGlyphProps {
 /** Tiny pixel glyph rendered as crisp SVG rects. Server-safe. */
 export default function PixelGlyph({
   glyph,
-  color = "#23201A",
+  color = "rgb(var(--ink))",
   size = 16,
   className = "",
 }: PixelGlyphProps) {

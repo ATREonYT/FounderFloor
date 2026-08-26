@@ -436,7 +436,7 @@ export default function LandingPage() {
                   className="stop-pop relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper"
                   style={{ animationDelay: `${180 + i * 190}ms` }}
                 >
-                  <PixelGlyph glyph={stop.glyph} size={18} color="#D9480F" />
+                  <PixelGlyph glyph={stop.glyph} size={18} color="rgb(var(--accent))" />
                 </span>
                 <div className="min-w-0 sm:mt-7">
                   <Spec className="text-muted">Stop {String(i + 1).padStart(2, "0")}</Spec>
@@ -477,7 +477,7 @@ export default function LandingPage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span className="flex items-center gap-2.5 font-display text-xl leading-none">
-                  <PixelGlyph glyph={row.glyph} size={14} color="#D9480F" />
+                  <PixelGlyph glyph={row.glyph} size={14} color="rgb(var(--accent))" />
                   {row.name}
                 </span>
                 <span className="col-start-2 text-sm leading-relaxed text-muted sm:col-start-3">

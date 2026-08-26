@@ -140,11 +140,11 @@ function ReactionGame({ onDone }: { onDone: (r: RoundScore) => void }) {
   }, [hit]);
 
   const face = {
-    ready: { bg: "#6F6A5E", line: "Hit the shutter when it opens." },
+    ready: { bg: "rgb(var(--muted))", line: "Hit the shutter when it opens." },
     waiting: { bg: "#8C3B2B", line: "Wait for it…" },
-    go: { bg: "#2B8A3E", line: "NOW" },
+    go: { bg: "rgb(var(--verify))", line: "NOW" },
     early: { bg: "#8C3B2B", line: "Too early — that one's a write-off." },
-    hit: { bg: "#2B8A3E", line: last !== null ? `${last}ms` : "" },
+    hit: { bg: "rgb(var(--verify))", line: last !== null ? `${last}ms` : "" },
   }[phase];
 
   return (
@@ -170,7 +170,7 @@ function ReactionGame({ onDone }: { onDone: (r: RoundScore) => void }) {
           <span
             key={i}
             className="h-1.5 flex-1 rounded-full"
-            style={{ background: i < times.length ? "#2B8A3E" : "#E4DFD3" }}
+            style={{ background: i < times.length ? "rgb(var(--verify))" : "rgb(var(--line))" }}
           />
         ))}
       </div>

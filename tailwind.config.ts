@@ -5,22 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        paper: "#F2EFE7",
-        panel: "#FFFFFF",
-        ink: "#23201A",
-        muted: "#6F6A5E",
-        line: "#E4DFD3",
-        accent: "#D9480F",
+        paper: "rgb(var(--paper) / <alpha-value>)",
+        panel: "rgb(var(--panel) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        muted: "rgb(var(--muted) / <alpha-value>)",
+        line: "rgb(var(--line) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
         // white on #D9480F is ~4.3:1 — a hair under AA for button text. This
         // darker shade (~5.2:1) is for solid CTA fills; keep `accent` for
         // borders, dots, and accent text where it already passes.
-        "accent-strong": "#C0410C",
-        "accent-soft": "#FBE9E0",
-        verify: "#2B8A3E",
-        gold: "#B08D2E",
+        "accent-strong": "rgb(var(--accent-strong) / <alpha-value>)",
+        "accent-soft": "rgb(var(--accent-soft) / <alpha-value>)",
+        verify: "rgb(var(--verify) / <alpha-value>)",
+        gold: "rgb(var(--gold) / <alpha-value>)",
         // gold fails WCAG AA as small text on paper (2.7:1) — use this for
         // gold TEXT, keep `gold` for dots, borders and fills
-        "gold-deep": "#7A611F",
+        "gold-deep": "rgb(var(--gold-deep) / <alpha-value>)",
       },
       fontFamily: {
         display: ["Iowan Old Style", "Palatino Linotype", "Palatino", "Georgia", "serif"],

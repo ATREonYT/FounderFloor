@@ -9,7 +9,7 @@
     /* body carries the paper wash; html did not paint at all. With the body
        floor now at 100svh, a phone with its address bar collapsed shows a
        strip below the body — this fills it in the same colour. */
-    background-color: #f2efe7;
+    background-color: rgb(var(--paper));
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -94,6 +94,24 @@
   :root {
     --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+    /* The palette, as space-separated RGB channels. This form — not hex —
+       because Tailwind's alpha modifiers (border-gold/60, bg-ink/85, 100+
+       usages) compose as rgb(var(--x) / alpha); a hex var would silently
+       break every one of them. Raw CSS and DOM SVG use rgb(var(--x)).
+       Canvas code CANNOT resolve these (it fails silently to black), so
+       everything that paints through a 2d context keeps literal hex. */
+    --paper: 242 239 231; /* #F2EFE7 */
+    --panel: 255 255 255; /* #FFFFFF */
+    --ink: 35 32 26; /* #23201A */
+    --muted: 111 106 94; /* #6F6A5E */
+    --line: 228 223 211; /* #E4DFD3 */
+    --accent: 217 72 15; /* #D9480F */
+    --accent-strong: 192 65 12; /* #C0410C */
+    --accent-soft: 251 233 224; /* #FBE9E0 */
+    --verify: 43 138 62; /* #2B8A3E */
+    --gold: 176 141 46; /* #B08D2E */
+    --gold-deep: 122 97 31; /* #7A611F */
   }
 
   /* Uppercase letterspaced micro-label for metadata (tier tags, rank names). */
@@ -419,21 +437,21 @@
   .ceremony-title-founder {
     background-image: linear-gradient(
       105deg,
-      #23201a 38%,
-      #b08d2e 47%,
+      rgb(var(--ink)) 38%,
+      rgb(var(--gold)) 47%,
       #e8c766 50%,
-      #b08d2e 53%,
-      #23201a 62%
+      rgb(var(--gold)) 53%,
+      rgb(var(--ink)) 62%
     );
   }
   .ceremony-title-pro {
     background-image: linear-gradient(
       105deg,
-      #23201a 38%,
-      #d9480f 47%,
+      rgb(var(--ink)) 38%,
+      rgb(var(--accent)) 47%,
       #f0906b 50%,
-      #d9480f 53%,
-      #23201a 62%
+      rgb(var(--accent)) 53%,
+      rgb(var(--ink)) 62%
     );
   }
 

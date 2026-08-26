@@ -1103,7 +1103,7 @@ export default function ProfilePage() {
                 type="checkbox"
                 checked={form.seekingCofounder}
                 onChange={(e) => set("seekingCofounder", e.target.checked)}
-                className="h-4 w-4 accent-[#2B8A3E]"
+                className="h-4 w-4 accent-verify"
               />
               Seeking a co-founder
             </label>
@@ -1189,7 +1189,7 @@ export default function ProfilePage() {
                           : "border-line hover:border-muted"
                       }`}
                     >
-                      <PixelGlyph glyph={g} color="#23201A" size={16} />
+                      <PixelGlyph glyph={g} color="rgb(var(--ink))" size={16} />
                     </button>
                   ))}
                 </div>
@@ -1616,7 +1616,7 @@ export default function ProfilePage() {
               max={100}
               value={progress}
               onChange={(e) => setProgress(Number(e.target.value))}
-              className="w-full accent-[#2B8A3E]"
+              className="w-full accent-verify"
             />
           </div>
           <button
@@ -1877,7 +1877,7 @@ export default function ProfilePage() {
                 >
                   <PixelGlyph
                     glyph={meta.glyph}
-                    color={earned ? "#B08D2E" : "#B4AE9F"}
+                    color={earned ? "rgb(var(--gold))" : "#B4AE9F"}
                     size={18}
                   />
                 </span>

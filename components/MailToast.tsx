@@ -19,7 +19,7 @@ export interface MailToastData {
 }
 
 /** 12x9 pixel envelope, drawn with rects like the in-game emotes. */
-export function PixelMail({ size = 22, color = "#23201A" }: { size?: number; color?: string }) {
+export function PixelMail({ size = 22, color = "rgb(var(--ink))" }: { size?: number; color?: string }) {
   const px = size / 12;
   const r = (x: number, y: number, w: number, h: number, key: string) => (
     <rect key={key} x={x * px} y={y * px} width={w * px} height={h * px} />

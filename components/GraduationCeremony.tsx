@@ -118,20 +118,20 @@ export default function GraduationCeremony({
             <defs>
               <linearGradient id="grad-seal-gold" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#E8C766" />
-                <stop offset="100%" stopColor="#B08D2E" />
+                <stop offset="100%" stopColor="rgb(var(--gold))" />
               </linearGradient>
             </defs>
             <circle
               r={118}
               pathLength={1}
               className="grad-ring"
-              style={{ stroke: "#23201A", strokeWidth: 2.5, fill: "none" }}
+              style={{ stroke: "rgb(var(--ink))", strokeWidth: 2.5, fill: "none" }}
             />
             <circle
               r={100}
               pathLength={1}
               className="grad-ring-inner"
-              style={{ stroke: "#B08D2E", strokeWidth: 1.5, fill: "none", opacity: 0.85 }}
+              style={{ stroke: "rgb(var(--gold))", strokeWidth: 1.5, fill: "none", opacity: 0.85 }}
             />
             <g className="grad-seal-fill">
               {TICKS.map((deg) => (
@@ -142,7 +142,7 @@ export default function GraduationCeremony({
                   x2={0}
                   y2={-112}
                   transform={`rotate(${deg})`}
-                  stroke="#B08D2E"
+                  stroke="rgb(var(--gold))"
                   strokeWidth={2}
                   strokeLinecap="round"
                   opacity={0.8}
@@ -170,7 +170,7 @@ export default function GraduationCeremony({
           </p>
           <div
             className="grad-rule mx-auto mt-4 h-px w-40 sm:w-56"
-            style={{ background: "#B08D2E" }}
+            style={{ background: "rgb(var(--gold))" }}
           />
           <p className="cine-fade-up micro mt-5 text-muted/70" style={{ animationDelay: "2700ms" }}>
             click anywhere to continue

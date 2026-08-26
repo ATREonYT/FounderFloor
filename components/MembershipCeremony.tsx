@@ -106,7 +106,7 @@ export default function MembershipCeremony({
   }, []);
 
   const bright = founder ? "#E8C766" : "#F0906B";
-  const deep = founder ? "#B08D2E" : "#D9480F";
+  const deep = founder ? "rgb(var(--gold))" : "rgb(var(--accent))";
 
   // Threads are drawn in real pixel space so dash-based line drawing stays
   // exact on every viewport (a stretched 0-100 viewBox distorts dash math).
@@ -228,7 +228,7 @@ export default function MembershipCeremony({
         {/* ACT 1c: the announcement */}
         <div className="absolute inset-x-0 top-[72%] text-center">
           <p
-            className="cine-fade-up micro text-[#F2EFE7]/60"
+            className="cine-fade-up micro text-paper/60"
             style={{ animationDelay: "2500ms" }}
           >
             Membership activated
@@ -240,7 +240,7 @@ export default function MembershipCeremony({
             {bigText ?? TIER_LABEL[tier]}
           </p>
           <p
-            className="cine-fade-up micro mt-6 text-[#F2EFE7]/35"
+            className="cine-fade-up micro mt-6 text-paper/35"
             style={{ animationDelay: "3600ms" }}
           >
             click anywhere to continue

@@ -24,7 +24,7 @@ import {
 import MailToast, { type MailToastData } from "@/components/MailToast";
 
 /** 12x11 pixel speech bubble for the launcher button. */
-function PixelChat({ size = 20, color = "#F2EFE7" }: { size?: number; color?: string }) {
+function PixelChat({ size = 20, color = "rgb(var(--paper))" }: { size?: number; color?: string }) {
   const px = size / 12;
   const r = (x: number, y: number, w: number, h: number, key: string) => (
     <rect key={key} x={x * px} y={y * px} width={w * px} height={h * px} />

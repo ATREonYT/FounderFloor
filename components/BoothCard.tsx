@@ -62,7 +62,7 @@ export default function BoothCard({
   const pct = Math.round(Math.max(0, Math.min(1, s.goalProgress)) * 100);
   // Banner colors are user-picked — same light/dark flip the tilemap uses,
   // or pale banners render their sign text unreadable.
-  const bannerFg = luma(s.booth.banner) > 0.62 ? "#23201A" : "#F2EFE7";
+  const bannerFg = luma(s.booth.banner) > 0.62 ? "rgb(var(--ink))" : "rgb(var(--paper))";
 
   return (
     <aside
