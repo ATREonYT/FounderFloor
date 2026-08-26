@@ -21,6 +21,7 @@ import type {
   Connection,
   OnboardingStep,
   PodiumAward,
+  SpotTier,
   Startup,
   SubTier,
   Wallet,
@@ -28,13 +29,25 @@ import type {
 import { ONBOARDING_STEPS, TIER_ORDER } from "@/lib/types";
 import { FLOORS, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { QUESTS } from "@/lib/data/quests";
-import { EARN, MAX_EQUIPPED_PROPS, dailyTickets, shopItem, walletBalance } from "@/lib/data/shop";
+import {
+  EARN,
+  MAX_EQUIPPED_PROPS,
+  SPOT_PRICE,
+  activeSpotHold,
+  dailyTickets,
+  holdCovers,
+  newHoldUntil,
+  priceFor,
+  shopItem,
+  spotHoldId,
+  walletBalance,
+} from "@/lib/data/shop";
 import { ARCADE_DAILY_CAP } from "@/components/Arcade";
 import { MAX_OWN_QUIZZES, QUIZ_COST, sanitizeQuiz } from "@/lib/data/quiz";
 import type { Quiz } from "@/lib/data/quiz";
 import { getLastSyncTs, pullState, pushState, setLastSyncTs, syncableState } from "@/lib/sync";
 import type { Award, PaidEntitlement, Perks } from "@/lib/sync";
-import { billingLive } from "@/lib/pricing";
+import { billingLive, spotTicketPrice } from "@/lib/pricing";
 
 const STORAGE_KEY = "founderfloor:v1";
 
@@ -86,6 +99,14 @@ export interface StoreActions {
    * owned, or unaffordable — callers show the honest reason.
    */
   buyItem(itemId: string): boolean;
+  /**
+   * Buy a spot-tier hold on a floor ("gold" | "silver") with tickets, at
+   * this member's plan-discounted price (SPOT_TIER_DISCOUNT). A no-op
+   * that returns true when an active hold already covers the tier —
+   * moving between same-tier spots inside a hold is free. Returns false
+   * when unaffordable.
+   */
+  buySpotHold(floorId: string, tier: SpotTier): boolean;
   /**
    * Bank an arcade run. `tickets` is what the panel thinks was earned and
    * `runTotal` the score; both are clamped here, and the daily ceiling is
@@ -344,7 +365,7 @@ function applyRemoteState(remote: { state: unknown; savedAt: number }): boolean 
   merged.wallet = {
     earned: Math.min(1_000_000, remoteEarned + localDelta),
     redeemed: Math.max(merged.wallet.redeemed, local.wallet.redeemed),
-    owned: Array.from(new Set([...merged.wallet.owned, ...local.wallet.owned])).slice(0, 64),
+    owned: Array.from(new Set([...merged.wallet.owned, ...local.wallet.owned])).slice(0, 160),
     connHigh: Math.max(merged.wallet.connHigh, local.wallet.connHigh),
     earnedBase: remoteEarned,
   };
@@ -687,10 +708,14 @@ function sanitize(raw: unknown): AppState {
       earnedBase: Math.min(earned, Math.max(0, Math.trunc(numOr(w.earnedBase, 0)))),
     };
     if (Array.isArray(w.owned)) {
+      // 40 chars covers the longest legitimate entry (a spot-hold id with
+      // its timestamp and paid suffix); 160 entries is years of weekly
+      // gold holds plus the whole catalog — holds are never pruned
+      // because each one IS the record of its own spend.
       const ids = new Set<string>();
       for (const v of w.owned) {
-        if (typeof v === "string" && v && v.length <= 24) ids.add(v);
-        if (ids.size >= 64) break;
+        if (typeof v === "string" && v && v.length <= 40) ids.add(v);
+        if (ids.size >= 160) break;
       }
       base.wallet.owned = Array.from(ids);
     }
@@ -1257,13 +1282,36 @@ const ACTIONS: StoreActions = {
     ensureClientInit();
     const item = shopItem(itemId);
     if (!item || item.price === 0) return false;
-    if (state.wallet.owned.includes(itemId)) return false;
-    if (walletBalance(state) < item.price) return false;
-    if (state.wallet.owned.length >= 64) return false; // matches sanitize() cap
+    if (state.wallet.owned.some((e) => e === itemId || e.startsWith(`${itemId}@`))) return false;
+    // Exhibitors (stand-holders) pay the exhibitor rate; the paid price
+    // rides along in the entry ("style:bigtop@200") so the balance keeps
+    // deriving the true spend after the discount.
+    const paid = priceFor(state, item);
+    if (walletBalance(state) < paid) return false;
+    if (state.wallet.owned.length >= 160) return false; // matches sanitize() cap
+    const entry = paid === item.price ? itemId : `${itemId}@${paid}`;
     // owning the item IS the spend — the balance derives from owned prices
     setState({
       ...state,
-      wallet: { ...state.wallet, owned: [...state.wallet.owned, itemId] },
+      wallet: { ...state.wallet, owned: [...state.wallet.owned, entry] },
+    });
+    return true;
+  },
+
+  buySpotHold(floorId: string, tier: SpotTier): boolean {
+    ensureClientInit();
+    if (tier === "bronze") return true; // bronze is presence, never a purchase
+    // An active hold that covers the tier means nothing to buy — moving
+    // between same-tier spots inside a hold is free.
+    if (holdCovers(activeSpotHold(state, floorId), tier)) return true;
+    const paid = spotTicketPrice(SPOT_PRICE[tier], state.sub);
+    if (walletBalance(state) < paid) return false;
+    if (state.wallet.owned.length >= 160) return false;
+    const id = spotHoldId(floorId, tier, newHoldUntil(), paid);
+    if (state.wallet.owned.includes(id)) return true;
+    setState({
+      ...state,
+      wallet: { ...state.wallet, owned: [...state.wallet.owned, id] },
     });
     return true;
   },

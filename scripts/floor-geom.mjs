@@ -18,19 +18,23 @@
  *      avenue tile — i.e. the whole hall is actually connected
  */
 import { readFileSync } from "node:fs";
+import { MAIN_HALL_SPOTS } from "../lib/data/spot-plans.mjs";
 
 const SRC = new URL("../lib/data/floors.ts", import.meta.url).pathname;
 const raw = readFileSync(SRC, "utf8");
 
-// The file is pure data with one type-only import; strip the TS surface and
-// evaluate it. Cheaper and far less brittle than a real parser for one file.
+// The file is pure data plus imports; strip the TS surface, inject the one
+// value import (the Main Hall spots live in spot-plans.mjs so the floor
+// server can share them), and evaluate it. Cheaper and far less brittle
+// than a real parser for one file.
 const body = raw
-  .replace(/^import type .*$/gm, "")
+  .replace(/^import .*$/gm, "")
   .replace(/:\s*FloorDef\[\]/g, "")
+  .replace(/ as BoothSpot\[\]/g, "")
   .replace(/export const /g, "const ")
   // the real functions in the file are typed lookup helpers we don't need
   .replace(/export function \w+[\s\S]*?\n}\n/g, "");
-const FLOORS = new Function(`${body}; return FLOORS;`)();
+const FLOORS = new Function("MAIN_HALL_SPOTS", `${body}; return FLOORS;`)(MAIN_HALL_SPOTS);
 
 let bad = 0;
 const check = (ok, msg, extra = "") => {

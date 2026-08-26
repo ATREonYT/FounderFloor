@@ -28,6 +28,7 @@ import {
   BOOTH_SWATCHES,
   MAX_EQUIPPED_PROPS,
   ownsItem,
+  priceFor,
   walletBalance,
   type ShopItem,
 } from "@/lib/data/shop";
@@ -321,7 +322,7 @@ export default function EditStandPanel({
                     key={s.id}
                     type="button"
                     title={s.blurb}
-                    aria-label={`Buy ${s.name} for ${s.price} tickets`}
+                    aria-label={`Buy ${s.name} for ${priceFor(state, s)} tickets`}
                     onClick={() =>
                       setPending({
                         item: s,
@@ -334,7 +335,9 @@ export default function EditStandPanel({
                     }
                     className="rounded-sm border border-gold/60 px-2 py-1 text-xs text-gold-deep hover:border-gold"
                   >
-                    {s.name} <TicketIcon /> {s.price}
+                    {s.name}{" "}
+                    {priceFor(state, s) < s.price && <s className="opacity-60">{s.price}</s>}{" "}
+                    <TicketIcon /> {priceFor(state, s)}
                   </button>
                 );
               }
@@ -375,7 +378,7 @@ export default function EditStandPanel({
                     key={p.id}
                     type="button"
                     title={p.blurb}
-                    aria-label={`Buy ${p.name} for ${p.price} tickets`}
+                    aria-label={`Buy ${p.name} for ${priceFor(state, p)} tickets`}
                     onClick={() =>
                       setPending({
                         item: p,
@@ -394,7 +397,9 @@ export default function EditStandPanel({
                     }
                     className="rounded-sm border border-gold/60 px-2 py-1 text-xs text-gold-deep hover:border-gold"
                   >
-                    {p.name} <TicketIcon /> {p.price}
+                    {p.name}{" "}
+                    {priceFor(state, p) < p.price && <s className="opacity-60">{p.price}</s>}{" "}
+                    <TicketIcon /> {priceFor(state, p)}
                   </button>
                 );
               }
@@ -460,7 +465,8 @@ export default function EditStandPanel({
         <BuyConfirm
           name={pending.item.name}
           blurb={pending.item.blurb}
-          price={pending.item.price}
+          price={priceFor(state, pending.item)}
+          basePrice={pending.item.price}
           balance={balance}
           onCancel={() => setPending(null)}
           onConfirm={() => {

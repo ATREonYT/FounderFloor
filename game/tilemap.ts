@@ -8,7 +8,16 @@
  */
 
 import { TILE } from "../lib/types";
-import type { BoardRow, BoothClaim, BoothInstance, FloorDef, Startup, TileRect } from "../lib/types";
+import type {
+  BoardRow,
+  BoothClaim,
+  BoothInstance,
+  FloorDef,
+  SpotTier,
+  Startup,
+  TileRect,
+} from "../lib/types";
+import { SPOT_PRICE } from "../lib/data/shop";
 import { shade } from "./sprites";
 import { drawBoothBanner, drawBoothCounter, drawCarpet as paintCarpet } from "./boothArt";
 import {
@@ -418,7 +427,10 @@ export function buildFloor(
       const occupied = { ...b, startup: b.startup };
       drawables.push(bannerDrawable(occupied), counterDrawable(occupied));
     } else {
-      drawables.push(vacantBannerDrawable(b.spot, b.spotIndex), vacantCounterDrawable(b.spot));
+      drawables.push(
+        vacantBannerDrawable(b.spot, b.spotIndex, floor.boothSpots[b.spotIndex]?.tier ?? "bronze"),
+        vacantCounterDrawable(b.spot),
+      );
     }
   }
 
@@ -715,12 +727,17 @@ function drawCounterBase(ctx: CanvasRenderingContext2D, bx: number, y0: number):
 function vacantBannerDrawable(
   v: { x: number; y: number; face?: "up" | "down" },
   index: number,
+  tier: SpotTier = "bronze",
 ): Drawable {
   const bx = v.x * T;
   const by = v.y * T;
   const up = v.face === "up";
   const w = 4 * T;
   const no = String(index + 1).padStart(2, "0");
+  // Position pricing on the board itself — a show prints the pitch grade
+  // on the floorplan, not in a footnote. Facts only: tier and tickets.
+  const priceLine =
+    tier === "bronze" ? `NO. ${no} · FREE` : `NO. ${no} · ${tier.toUpperCase()} ${SPOT_PRICE[tier]}`;
   const shell = SHELL_COLORS[index % SHELL_COLORS.length];
   return {
     sortY: up ? (v.y + 3) * T : (v.y + 1) * T,
@@ -870,7 +887,7 @@ function vacantBannerDrawable(
       ctx.fillText("OPEN STAND", bx + w / 2, sy + 13, sw - 14);
       ctx.fillStyle = SLOT_BRASS;
       ctx.font = "700 7px ui-monospace, SFMono-Regular, Menlo, monospace";
-      ctx.fillText(`NO. ${no}`, bx + w / 2, sy + 25, sw - 14);
+      ctx.fillText(priceLine, bx + w / 2, sy + 25, sw - 14);
     },
   };
 }

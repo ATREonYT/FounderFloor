@@ -21,7 +21,14 @@ import TicketIcon from "@/components/TicketIcon";
 export interface BuyConfirmProps {
   name: string;
   blurb?: string;
+  /** What THIS buyer pays (exhibitor rate already applied). */
   price: number;
+  /**
+   * The list price. When it is higher than `price` the dialog shows it
+   * struck through beside the exhibitor price — the discount for holding
+   * a stand should be visible, not silent.
+   */
+  basePrice?: number;
   balance: number;
   /** Runs only when the viewer confirms AND can afford it. */
   onConfirm: () => void;
@@ -32,6 +39,7 @@ export default function BuyConfirm({
   name,
   blurb,
   price,
+  basePrice,
   balance,
   onConfirm,
   onCancel,
@@ -88,9 +96,20 @@ export default function BuyConfirm({
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-muted">Price</dt>
             <dd className="tabular-nums">
+              {basePrice !== undefined && basePrice > price && (
+                <>
+                  <s className="text-muted">{basePrice.toLocaleString("en-US")}</s>{" "}
+                </>
+              )}
               <TicketIcon /> {price.toLocaleString("en-US")}
             </dd>
           </div>
+          {basePrice !== undefined && basePrice > price && (
+            <div className="flex items-baseline justify-between gap-3 text-xs text-muted">
+              <dt>Exhibitor rate</dt>
+              <dd>you hold a stand on the floor</dd>
+            </div>
+          )}
           <div className="flex items-baseline justify-between gap-3">
             <dt className="text-muted">You have</dt>
             <dd className="tabular-nums">

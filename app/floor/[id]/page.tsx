@@ -25,7 +25,7 @@ import type {
   Startup,
 } from "@/lib/types";
 import { questStates, unlockedEmotes } from "@/lib/data/quests";
-import { buildCard, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
+import { buildCard, fetchStand, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
 import StallPanel from "@/components/StallPanel";
 import { fetchLeaderboard, humanMs } from "@/lib/leaderboard";
@@ -58,7 +58,15 @@ import QuietFloorCard from "@/components/QuietFloorCard";
 import QuestPanel from "@/components/QuestPanel";
 import MemberBadge from "@/components/MemberBadge";
 import TicketIcon from "@/components/TicketIcon";
-import { walletBalance } from "@/lib/data/shop";
+import {
+  SPOT_PRICE,
+  activeSpotHold,
+  holdCovers,
+  newHoldUntil,
+  walletBalance,
+} from "@/lib/data/shop";
+import { spotTicketPrice } from "@/lib/pricing";
+import { boothNumber } from "@/lib/boothNumber";
 import EventPill from "@/components/EventPill";
 import ConfettiBurst from "@/components/ConfettiBurst";
 import Toast, { type ToastData } from "@/components/Toast";
@@ -636,6 +644,20 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     (b: BoothInstance) => {
       const s = myStartupRef.current;
       if (!floor || !s) return;
+      // Position pricing: a silver or gold spot is claimed on a paid hold
+      // (SPOT_PRICE, plan discount applied). Bronze is always free — the
+      // purchase is a no-op when a live hold already covers the tier, so
+      // moving between same-tier spots inside a hold costs nothing.
+      const spotTier = floor.boothSpots[b.spotIndex]?.tier ?? "bronze";
+      if (spotTier !== "bronze" && floor.id !== PRACTICE_FLOOR_ID) {
+        if (!actions.buySpotHold(floor.id, spotTier)) {
+          const need = spotTicketPrice(SPOT_PRICE[spotTier], stateRef.current.sub);
+          showToast(
+            `That's a ${spotTier} spot — ${need} tickets. You have ${walletBalance(stateRef.current)}.`,
+          );
+          return;
+        }
+      }
       // Remember what we held: if the server denies this spot, the stand
       // rolls back instead of silently ghosting for everyone else. For a
       // cross-floor move that's the OTHER floor's claim — claimSpot is
@@ -1218,6 +1240,42 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     if (claimIdx !== undefined && !isClaimableSpot(f, claimIdx)) {
       actions.unclaimSpot(f.id);
       claimIdx = undefined;
+    }
+    // A lapsed hold must not re-raise itself. If the saved claim sits on a
+    // paid-tier spot and no live hold covers it, the server has moved the
+    // stand to a bronze spot (or is about to, at its next sweep) — join
+    // claimless, ask the server where the stand lives now, and adopt that,
+    // so the founder is TOLD their stand moved rather than silently
+    // re-granted the position they stopped paying for.
+    if (claimIdx !== undefined && f.id !== PRACTICE_FLOOR_ID) {
+      const lapsedTier = f.boothSpots[claimIdx]?.tier ?? "bronze";
+      if (
+        lapsedTier !== "bronze" &&
+        !holdCovers(activeSpotHold(stateRef.current, f.id), lapsedTier)
+      ) {
+        const lapsedFrom = claimIdx;
+        claimIdx = undefined;
+        actions.unclaimSpot(f.id);
+        void fetchStand(profileRef.current.id).then((res) => {
+          if (res.state !== "found" || res.entry.floorId !== f.id) return;
+          const idx = res.entry.spotIndex;
+          if (!Number.isInteger(idx) || idx < 0) return;
+          actions.claimSpot(f.id, idx);
+          const s = myStartupRef.current;
+          if (s) {
+            const adopted = { spotIndex: idx, startup: s };
+            handleRef.current?.setMyBooth(adopted);
+            netRef.current?.sendBoothSet(adopted);
+          }
+          if (idx !== lapsedFrom) {
+            showToast(
+              `Your ${lapsedTier} hold ended — your stand moved to ${
+                boothNumber(f.id, idx) || "a free spot"
+              }. It's all still there.`,
+            );
+          }
+        });
+      }
     }
     const mine = myStartupRef.current;
     const myClaim =
@@ -1958,6 +2016,22 @@ export default function FloorPage({ params }: { params: { id: string } }) {
                   (fid) => fid !== floor.id && fid !== PRACTICE_FLOOR_ID,
                 )
               }
+              tier={floor.boothSpots[activeBooth.spotIndex]?.tier ?? "bronze"}
+              price={spotTicketPrice(
+                SPOT_PRICE[floor.boothSpots[activeBooth.spotIndex]?.tier ?? "bronze"],
+                state.sub,
+              )}
+              basePrice={SPOT_PRICE[floor.boothSpots[activeBooth.spotIndex]?.tier ?? "bronze"]}
+              balance={walletBalance(state)}
+              holdActive={holdCovers(
+                activeSpotHold(state, floor.id),
+                floor.boothSpots[activeBooth.spotIndex]?.tier ?? "bronze",
+              )}
+              holdUntilLabel={new Date(newHoldUntil()).toLocaleDateString(undefined, {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
               onClaim={() => handleClaim(activeBooth)}
               onClose={() => setActiveBooth(null)}
             />

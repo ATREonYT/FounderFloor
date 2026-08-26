@@ -14,7 +14,9 @@
  * the impatient, which matches the "earn it or speed it up" brief.
  */
 
-import type { AppState, BoothProp, BoothStyle } from "@/lib/types";
+import type { AppState, BoothProp, BoothStyle, SpotTier } from "@/lib/types";
+import { PRACTICE_FLOOR_ID } from "@/lib/data/floors";
+import { holdUntilFor, tierOfSpot } from "@/lib/data/spot-plans.mjs";
 
 // ---------- earn rates ----------
 
@@ -119,6 +121,121 @@ export const BOOTH_PROPS: (ShopItem & { prop: BoothProp })[] = [
 /** Max props equipped at once (owning more is fine — swap anytime). */
 export const MAX_EQUIPPED_PROPS = 3;
 
+// ---------- position pricing ----------
+
+/**
+ * What a spot TIER costs, in tickets — the IPMI model: named tiers priced
+ * on position alone, no floorplan arithmetic. (IPMI sold Gold "corner
+ * booth or near high traffic" / Silver "inline" / Bronze "not close to
+ * traffic patterns"; automatica's row-to-island spread is ~30%.)
+ *
+ * The numbers, against the economy at the top of this file: an engaged
+ * free player earns 40-70 tickets a day, and the 400-ticket booth styles
+ * are documented as "about a week of showing up". GOLD costs exactly that
+ * — the best address in the hall is a week of commitment, reachable and
+ * not trivial — and unlike a style it RECURS: a hold runs to the end of
+ * the next Open Doors plus one week (lib/data/spot-plans.mjs), so gold is
+ * a habit, not a one-off grind. SILVER at 150 is two-three days, the step
+ * between showing up and committing. BRONZE is 0 and must stay 0: tickets
+ * buy stand-out, never presence — anyone can always have a stand.
+ *
+ * Plan members pay less (SPOT_TIER_DISCOUNT in lib/pricing.ts, beside the
+ * plan prices where every plan-changed number lives).
+ */
+export const SPOT_PRICE: Record<SpotTier, number> = {
+  bronze: 0, // always free — never gate presence
+  silver: 150,
+  gold: 400,
+};
+
+/** Does this player currently hold a stand on a real floor? The tutorial
+ * hall is rehearsal and does not make anyone an exhibitor. */
+export function holdsStand(state: AppState): boolean {
+  return Object.keys(state.claims).some((fid) => fid !== PRACTICE_FLOOR_ID);
+}
+
+/**
+ * The exhibitor rate. Real shows charge stand-holders roughly half what
+ * they charge everyone else for every other product (RSNA: $2,500 vs
+ * $5,000 for the same listing; NCCN: $1,000 vs $1,500). Applied to every
+ * ticket-priced catalog item through priceFor() — the ONE place the
+ * multiplier lives, so anything a later prompt adds to the catalog gets
+ * it for free. Spot tiers are exempt: they are what MAKES you an
+ * exhibitor, and their own discount is the plan discount in pricing.ts.
+ */
+export const EXHIBITOR_RATE = 0.5;
+
+/** What THIS player pays for a catalog item, exhibitor rate applied. */
+export function priceFor(state: AppState, item: ShopItem): number {
+  if (item.price === 0) return 0;
+  return holdsStand(state) ? Math.round(item.price * EXHIBITOR_RATE) : item.price;
+}
+
+// ---------- spot holds ----------
+
+/**
+ * A paid spot tier is a HOLD, not a possession: it runs to the end of the
+ * next Open Doors plus one week, then the stand moves to the nearest free
+ * bronze spot (the floor server does the moving, so it happens whether or
+ * not the owner is online).
+ *
+ * Holds live in wallet.owned as "hold:<floor>:<tier>:<untilMs>:<paid>",
+ * so the wallet's monotonic rules cover them unchanged: devices union
+ * their purchases, spend derives from what the ids record, and nothing
+ * can be double-charged or refunded by a sync. Expired holds stay in the
+ * list on purpose — they ARE the record of what was spent; dropping one
+ * would silently refund it.
+ */
+export interface SpotHold {
+  floorId: string;
+  tier: SpotTier;
+  until: number;
+  paid: number;
+}
+
+const HOLD_ID = /^hold:([a-z0-9-]{1,20}):(gold|silver):(\d{10,14}):(\d{1,5})$/;
+
+export function spotHoldId(floorId: string, tier: SpotTier, until: number, paid: number): string {
+  return `hold:${floorId}:${tier}:${until}:${paid}`;
+}
+
+export function parseSpotHold(id: string): SpotHold | null {
+  const m = HOLD_ID.exec(id);
+  if (!m) return null;
+  return { floorId: m[1], tier: m[2] as SpotTier, until: Number(m[3]), paid: Number(m[4]) };
+}
+
+/** The best unexpired hold this player has on a floor, if any. */
+export function activeSpotHold(
+  state: AppState,
+  floorId: string,
+  nowMs = Date.now(),
+): SpotHold | null {
+  let best: SpotHold | null = null;
+  for (const id of state.wallet.owned) {
+    const h = parseSpotHold(id);
+    if (!h || h.floorId !== floorId || h.until <= nowMs) continue;
+    if (!best || (h.tier === "gold" && best.tier !== "gold") || h.until > best.until) best = h;
+  }
+  return best;
+}
+
+/** Does an active hold on this floor cover a spot of this tier? Gold
+ * covers everything; silver covers silver; bronze needs nothing. */
+export function holdCovers(hold: SpotHold | null, tier: SpotTier): boolean {
+  if (tier === "bronze") return true;
+  if (!hold) return false;
+  return hold.tier === "gold" || hold.tier === tier;
+}
+
+/** When a hold bought right now would run out — for UI copy and the
+ * store's purchase action. Same arithmetic the server applies. */
+export function newHoldUntil(nowMs = Date.now()): number {
+  return holdUntilFor(nowMs);
+}
+
+export { tierOfSpot };
+
 /** The booth color palette — shared by the profile editor and the on-floor
  * quick editor so a stand can't be painted a color the other can't show. */
 export const BOOTH_SWATCHES: string[] = [
@@ -144,21 +261,41 @@ export function shopItem(id: string): ShopItem | undefined {
   );
 }
 
-/** Free items count as owned by everyone. */
+/** Free items count as owned by everyone. An entry may carry an "@<paid>"
+ * suffix recording an exhibitor-rate purchase — it still owns the item. */
 export function ownsItem(state: AppState, id: string): boolean {
   const item = shopItem(id);
   if (!item) return false;
   if (item.price === 0) return true;
-  return state.wallet.owned.includes(id);
+  return state.wallet.owned.some((e) => e === id || e.startsWith(`${id}@`));
 }
 
 /**
  * Spendable tickets. Derived, never stored: cumulative earned + cumulative
  * purchased, minus the price of everything owned. Unknown owned ids (a
  * removed catalog item, a hand-edited entry) cost nothing.
+ *
+ * Two id forms carry their own price: "style:bigtop@200" records a
+ * purchase at the exhibitor rate, and "hold:<floor>:<tier>:<until>:<paid>"
+ * records a spot hold. Both are clamped to the catalog price so a
+ * hand-edited suffix can never mint tickets — it can only overpay.
  */
 export function walletBalance(state: AppState): number {
-  const spent = state.wallet.owned.reduce((sum, id) => sum + (shopItem(id)?.price ?? 0), 0);
+  let spent = 0;
+  for (const id of state.wallet.owned) {
+    const at = id.indexOf("@");
+    if (at > 0) {
+      const base = shopItem(id.slice(0, at))?.price ?? 0;
+      spent += Math.min(base, Math.max(0, Math.trunc(Number(id.slice(at + 1)) || 0)));
+      continue;
+    }
+    const hold = parseSpotHold(id);
+    if (hold) {
+      spent += Math.min(SPOT_PRICE[hold.tier], Math.max(0, hold.paid));
+      continue;
+    }
+    spent += shopItem(id)?.price ?? 0;
+  }
   return Math.max(0, state.wallet.earned + state.wallet.redeemed - spent);
 }
 

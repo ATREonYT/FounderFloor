@@ -28,6 +28,7 @@ import {
   MAX_EQUIPPED_PROPS,
   dailyTickets,
   ownsItem,
+  priceFor,
   walletBalance,
   type ShopItem,
 } from "@/lib/data/shop";
@@ -1282,7 +1283,7 @@ export default function ProfilePage() {
                         ) : (
                           <button
                             type="button"
-                            aria-label={`Buy ${s.name} for ${s.price} tickets`}
+                            aria-label={`Buy ${s.name} for ${priceFor(state, s)} tickets`}
                             onClick={() =>
                               setPendingBuy({
                                 item: s,
@@ -1297,7 +1298,12 @@ export default function ProfilePage() {
                             }
                             className="shrink-0 rounded-sm border border-gold/60 px-2.5 py-1 text-xs text-gold-deep hover:border-gold"
                           >
-                            <TicketIcon /> {s.price}
+                            {priceFor(state, s) < s.price && (
+                              <>
+                                <s className="opacity-60">{s.price}</s>{" "}
+                              </>
+                            )}
+                            <TicketIcon /> {priceFor(state, s)}
                           </button>
                         )}
                       </div>
@@ -1319,7 +1325,7 @@ export default function ProfilePage() {
                           key={p.id}
                           type="button"
                           title={p.blurb}
-                          aria-label={`Buy ${p.name} for ${p.price} tickets`}
+                          aria-label={`Buy ${p.name} for ${priceFor(state, p)} tickets`}
                           onClick={() =>
                             setPendingBuy({
                               item: p,
@@ -1337,7 +1343,13 @@ export default function ProfilePage() {
                           }
                           className="rounded-sm border border-gold/60 px-3 py-1.5 text-xs text-gold-deep hover:border-gold"
                         >
-                          {p.name} · <TicketIcon /> {p.price}
+                          {p.name} ·{" "}
+                          {priceFor(state, p) < p.price && (
+                            <>
+                              <s className="opacity-60">{p.price}</s>{" "}
+                            </>
+                          )}
+                          <TicketIcon /> {priceFor(state, p)}
                         </button>
                       );
                     }
@@ -1962,7 +1974,8 @@ export default function ProfilePage() {
         <BuyConfirm
           name={pendingBuy.item.name}
           blurb={pendingBuy.item.blurb}
-          price={pendingBuy.item.price}
+          price={priceFor(state, pendingBuy.item)}
+          basePrice={pendingBuy.item.price}
           balance={walletBalance(state)}
           onCancel={() => setPendingBuy(null)}
           onConfirm={() => {

@@ -24,6 +24,27 @@ export const TIER_PRICING: Record<Exclude<SubTier, "free">, { monthly: number; a
   founder: { monthly: 19, annual: 159 },
 };
 
+/**
+ * Plan discount on SPOT TIERS — the ticket-priced positions in
+ * lib/data/shop.ts (SPOT_PRICE). Pro takes a quarter off, Founder+ half.
+ * The paid plans already sell visibility, and position IS visibility, so
+ * the plans make the good addresses cheaper without ever making them
+ * free: a Founder+ member's gold spot still costs a real 200 tickets.
+ * Kept here beside TIER_PRICING so every number a plan changes lives on
+ * one page; the exhibitor rate (what stand-holders pay for everything
+ * ELSE) is a different lever and lives with the catalog in shop.ts.
+ */
+export const SPOT_TIER_DISCOUNT: Record<SubTier, number> = {
+  free: 0,
+  pro: 0.25,
+  founder: 0.5,
+};
+
+/** What a spot tier costs THIS member, in tickets. */
+export function spotTicketPrice(base: number, sub: SubTier): number {
+  return Math.round(base * (1 - SPOT_TIER_DISCOUNT[sub]));
+}
+
 /** Months of the year the annual plan effectively gives free. */
 export function annualFreeMonths(tier: Exclude<SubTier, "free">): number {
   const p = TIER_PRICING[tier];

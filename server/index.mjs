@@ -49,6 +49,12 @@
 import { createHash, createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { windowInWords } from "../lib/data/event-window.mjs";
 import {
+  SPOT_PLANS,
+  holdUntilFor,
+  nearestFreeBronzeIndex,
+  tierOfSpot,
+} from "../lib/data/spot-plans.mjs";
+import {
   MAX_ARCADE,
   MAX_WEEK_MS,
   MIN_TIME,
@@ -130,6 +136,24 @@ const guestbooks = new Map();
 const stands = new Map();
 const STAND_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_STANDS_PER_FLOOR = 64;
+
+/**
+ * Position pricing: a silver/gold spot is held for a period, not forever
+ * — until the end of the next Open Doors plus one week (holdUntilFor() in
+ * lib/data/spot-plans.mjs, shared with the web app). The server computes
+ * the hold itself at claim time and never reads one off the wire, so a
+ * client cannot grant itself a longer stay. When a hold lapses the stand
+ * MOVES to the nearest free bronze spot, never disappears — presence is
+ * free, position is what expires. Stand records on tiered spots carry
+ * `holdUntil` (persisted in floor-data.json with the rest of the record).
+ *
+ * FF_SPOT_HOLD_MS / FF_HOLD_SWEEP_MS are test knobs only: they shrink the
+ * hold and the sweep interval so the lapse path can be exercised in
+ * seconds. Leave them unset in production.
+ */
+const SPOT_HOLD_MS = Math.max(0, Number(process.env.FF_SPOT_HOLD_MS) || 0);
+const HOLD_SWEEP_MS = Math.max(1000, Number(process.env.FF_HOLD_SWEEP_MS) || 60 * 60 * 1000);
+const holdUntilAt = (now) => (SPOT_HOLD_MS ? now + SPOT_HOLD_MS : holdUntilFor(now));
 /**
  * A startup has ONE stand: claiming a spot on a floor packs up any stand
  * the same founder holds elsewhere — the stand moves with them. The
@@ -1532,6 +1556,9 @@ function loadData() {
           claim,
           ownerName: typeof st.ownerName === "string" ? st.ownerName.slice(0, MAX_NAME_LEN) : "founder",
           lastSeen: st.lastSeen,
+          ...(typeof st.holdUntil === "number" && st.holdUntil > 0
+            ? { holdUntil: st.holdUntil }
+            : {}),
         });
       }
       if (map.size) stands.set(floorId.slice(0, MAX_ID_LEN), map);
@@ -2711,6 +2738,70 @@ function dropGuestbook(floorId, spotIndex) {
   if (books.size === 0) guestbooks.delete(floorId);
 }
 
+/**
+ * Move a stand's guestbook with it. dropGuestbook (above) encodes that
+ * the notes belong to the founder, not to the square of carpet —
+ * relocation is the same principle pointing the other way: the stand
+ * moved, so its notes move too.
+ */
+function moveGuestbook(floorId, fromIndex, toIndex) {
+  const books = guestbooks.get(floorId);
+  if (!books) return;
+  const book = books.get(`spot:${fromIndex}`);
+  books.delete(`spot:${fromIndex}`);
+  if (book) books.set(`spot:${toIndex}`, book);
+}
+
+/**
+ * Position pricing's enforcement half: when a paid hold lapses, the stand
+ * moves to the nearest free bronze spot — it never disappears, because
+ * presence is free and position is what expired. Runs on HOLD_SWEEP_MS
+ * (hourly in production).
+ *
+ * Two deliberate softenings:
+ *   - An owner who is ON the floor right now is never relocated out from
+ *     under their feet; the sweep catches the stand once they leave, and
+ *     their own client stops re-raising a lapsed claim at the next join.
+ *   - A stand already sitting on a tiered spot with no hold (claimed
+ *     before this shipped) is grandfathered one cycle: it gets a hold
+ *     from now instead of an instant eviction.
+ */
+function relocateLapsedHolds() {
+  const now = Date.now();
+  for (const [floorId, byOwner] of stands) {
+    if (!SPOT_PLANS[floorId] || !isRealFloor(floorId)) continue;
+    const room = rooms.get(floorId);
+    for (const [ownerId, st] of byOwner) {
+      if (tierOfSpot(floorId, st.claim.spotIndex) === "bronze") continue;
+      if (!st.holdUntil) {
+        st.holdUntil = holdUntilAt(now);
+        scheduleSave();
+        continue;
+      }
+      if (st.holdUntil > now) continue;
+      if (ownerOnline(room, ownerId)) continue;
+      const taken = new Set();
+      for (const [oid, other] of byOwner) {
+        if (oid !== ownerId) taken.add(other.claim.spotIndex);
+      }
+      const dest = nearestFreeBronzeIndex(floorId, st.claim.spotIndex, taken);
+      if (dest < 0) continue; // every bronze spot taken — try next sweep
+      moveGuestbook(floorId, st.claim.spotIndex, dest);
+      st.claim.spotIndex = dest;
+      delete st.holdUntil;
+      if (room) {
+        broadcast(room, { t: "booth_clear", ownerId });
+        pushActivity(
+          room,
+          floorId,
+          `${st.ownerName}'s stand moved to booth ${dest + 1} — its spot hold ended`,
+        );
+      }
+      scheduleSave();
+    }
+  }
+}
+
 function pruneStands() {
   const cutoff = Date.now() - STAND_TTL_MS;
   for (const [floorId, byOwner] of stands) {
@@ -2787,6 +2878,7 @@ function pruneCredentials() {
 }
 
 setInterval(pruneStands, 60 * 60 * 1000).unref();
+setInterval(relocateLapsedHolds, HOLD_SWEEP_MS).unref();
 setInterval(pruneCredentials, 60 * 60 * 1000).unref();
 
 loadData();
@@ -4785,6 +4877,10 @@ const server = createServer((req, res) => {
           ownerName: st.ownerName,
           startup: st.claim.startup,
           slug: slugByOwner.get(owner) ?? null,
+          // When a paid position runs out — absent on bronze spots. The
+          // owner's own UI reads this; it is a fact of the floorplan, not
+          // a secret.
+          ...(st.holdUntil ? { holdUntil: st.holdUntil } : {}),
         },
       });
       return;
@@ -5519,7 +5615,24 @@ wss.on("connection", (ws, req) => {
       send(ws, { t: "booth_denied", spotIndex: claim.spotIndex });
       return;
     }
-    byOwner.set(client.rawId, { claim, ownerName: client.name, lastSeen: Date.now() });
+    // A tiered spot carries a hold. Re-raising the SAME spot (rejoin,
+    // stand edit) keeps the existing hold rather than restarting the
+    // clock; a fresh claim on a tiered spot mints one from now. Bronze
+    // spots never carry one — nothing about them expires.
+    const prevRecord = byOwner.get(client.rawId);
+    const claimTier = isRealFloor(floorId) ? tierOfSpot(floorId, claim.spotIndex) : "bronze";
+    const holdUntil =
+      claimTier === "bronze"
+        ? undefined
+        : prevRecord?.claim.spotIndex === claim.spotIndex && prevRecord.holdUntil
+          ? prevRecord.holdUntil
+          : holdUntilAt(Date.now());
+    byOwner.set(client.rawId, {
+      claim,
+      ownerName: client.name,
+      lastSeen: Date.now(),
+      ...(holdUntil ? { holdUntil } : {}),
+    });
     // A practice claim mints nothing: the tutorial hall is rehearsal, and a
     // rehearsal must not spend the clean slug a real claim deserves.
     if (isRealFloor(floorId)) mintSlug(client.rawId, claim.startup.name);

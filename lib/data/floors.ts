@@ -19,6 +19,7 @@
  */
 
 import type { BoothSpot, FloorDef } from "@/lib/types";
+import { MAIN_HALL_SPOTS } from "@/lib/data/spot-plans.mjs";
 
 /**
  * The practice floor: claims here are rehearsal, exempt from the
@@ -197,44 +198,13 @@ export const FLOORS: FloorDef[] = [
     // the avenue. Once shipped an id is never reused or renamed: stored
     // claims will migrate onto these ids, and an id that moves a stand is
     // the same bug as a reordered array.
-    boothSpots: [
-      // GOLD — the inner rank, flanking the two avenue mouths. The four
-      // best places in the building, one street back from the fountain:
-      // the south pair meets every arrival face-on, the north pair shows
-      // its sign wall across the water.
-      { id: "rim-n-inner-w", x: 21, y: 12, face: "up", tier: "gold" },
-      { id: "rim-n-inner-e", x: 33, y: 12, face: "up", tier: "gold" },
-      { id: "rim-s-inner-w", x: 21, y: 27, tier: "gold" },
-      { id: "rim-s-inner-e", x: 33, y: 27, tier: "gold" },
-      // SILVER — the inner rank's outer pair on each rim: on the plaza,
-      // off the arrival sightline.
-      { id: "rim-n-outer-w", x: 15, y: 12, face: "up", tier: "silver" },
-      { id: "rim-n-outer-e", x: 39, y: 12, face: "up", tier: "silver" },
-      { id: "rim-s-outer-w", x: 15, y: 27, tier: "silver" },
-      { id: "rim-s-outer-e", x: 39, y: 27, tier: "silver" },
-      // Outer band, working away from the avenues. SILVER at the north
-      // avenue mouth; GOLD at the south one — the entrance pair is the
-      // first thing every visitor walks between.
-      { id: "outer-n-w1", x: 21, y: 5, tier: "silver" },
-      { id: "outer-n-e1", x: 33, y: 5, tier: "silver" },
-      { id: "outer-s-w1", x: 21, y: 34, face: "up", tier: "gold" },
-      { id: "outer-s-e1", x: 33, y: 34, face: "up", tier: "gold" },
-      // SILVER second-from-the-avenue on the entrance street only; the
-      // north band's second pair is already past the traffic.
-      { id: "outer-n-w2", x: 15, y: 5, tier: "bronze" },
-      { id: "outer-n-e2", x: 39, y: 5, tier: "bronze" },
-      { id: "outer-s-w2", x: 15, y: 34, face: "up", tier: "silver" },
-      { id: "outer-s-e2", x: 39, y: 34, face: "up", tier: "silver" },
-      // BRONZE — the far columns, out toward the side walls.
-      { id: "outer-n-w3", x: 9, y: 5, tier: "bronze" },
-      { id: "outer-n-e3", x: 45, y: 5, tier: "bronze" },
-      { id: "outer-s-w3", x: 9, y: 34, face: "up", tier: "bronze" },
-      { id: "outer-s-e3", x: 45, y: 34, face: "up", tier: "bronze" },
-      { id: "outer-n-w4", x: 3, y: 5, tier: "bronze" },
-      { id: "outer-n-e4", x: 51, y: 5, tier: "bronze" },
-      { id: "outer-s-w4", x: 3, y: 34, face: "up", tier: "bronze" },
-      { id: "outer-s-e4", x: 51, y: 34, face: "up", tier: "bronze" },
-    ],
+    // The array itself lives in lib/data/spot-plans.mjs — a plain .mjs so
+    // the FLOOR SERVER can read the same table (it relocates a stand when
+    // its paid hold lapses, which needs tier and position while the owner
+    // is offline; same sharing pattern as event-window.mjs). Ids stay
+    // permanent, order stays identity, the grouping comments live with
+    // the data.
+    boothSpots: MAIN_HALL_SPOTS as BoothSpot[],
     // ─── THE HALL SHIPS EMPTY ──────────────────────────────────────────
     // No seeded sample stands and no ambient staff. Every one of the
     // twenty-four spots below is open, and every person you see in this
