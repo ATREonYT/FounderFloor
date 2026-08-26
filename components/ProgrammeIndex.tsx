@@ -72,8 +72,10 @@ export default function ProgrammeIndex({ entries }: { entries: IndexEntry[] }) {
             </span>
             <span
               aria-hidden="true"
-              className={`h-px origin-left transition-all duration-300 ${
-                on ? "w-7 bg-accent" : "w-3.5 bg-line group-hover:w-5 group-hover:bg-muted/50"
+              className={`h-px w-7 origin-left transition-[transform,background-color] duration-300 ${
+                on
+                  ? "scale-x-100 bg-accent"
+                  : "scale-x-50 bg-line group-hover:scale-x-75 group-hover:bg-muted/50"
               }`}
             />
           </a>

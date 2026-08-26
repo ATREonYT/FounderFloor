@@ -72,7 +72,7 @@ export default function FoundingSeatsCard() {
           aria-label={`${taken} of ${seats.total} taken`}
         >
           <div
-            className="h-full rounded-full bg-gold transition-[width] duration-500"
+            className="h-full rounded-full bg-gold"
             style={{ width: `${Math.round((taken / seats.total) * 100)}%` }}
           />
         </div>

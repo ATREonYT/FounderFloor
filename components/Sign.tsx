@@ -45,7 +45,7 @@ export default function Sign({
         <PixelGlyph glyph={glyph} size={16} color={plate ? "var(--paper)" : "var(--ink)"} />
       </span>
       <span
-        className={`min-w-0 truncate font-display text-lg leading-none ${
+        className={`min-w-0 font-display text-lg leading-tight ${
           plate ? "text-paper" : "text-ink"
         }`}
       >

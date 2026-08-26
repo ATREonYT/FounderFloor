@@ -85,9 +85,12 @@
   input:focus,
   textarea:focus,
   select:focus {
-    border-color: theme("colors.accent");
-    box-shadow: 0 0 0 3px rgba(217, 72, 15, 0.12);
-    outline: none;
+    /* Focus is wayfinding — "you are here" — so it speaks fountain,
+       as a solid outline rather than a chromatic halo. */
+    border-color: oklch(var(--fountain));
+    outline: 2px solid oklch(var(--fountain) / 0.7);
+    outline-offset: 1px;
+    box-shadow: none;
   }
 
   /* every interactive control settles color changes softly by default */
@@ -411,20 +414,29 @@
     animation: float-slow 7s ease-in-out infinite;
   }
 
-  /* Live-presence dot: a soft radar pulse. */
-  @keyframes pulse-ring {
+  /* Live-presence dot: a radar ripple drawn with transform and opacity
+     only — a scaling ring, not a coloured glow shadow. */
+  @keyframes pulse-ripple {
     0% {
-      box-shadow: 0 0 0 0 rgba(43, 138, 62, 0.45);
+      transform: scale(1);
+      opacity: 0.55;
     }
-    70% {
-      box-shadow: 0 0 0 6px rgba(43, 138, 62, 0);
-    }
+    70%,
     100% {
-      box-shadow: 0 0 0 0 rgba(43, 138, 62, 0);
+      transform: scale(2.4);
+      opacity: 0;
     }
   }
   .pulse-dot {
-    animation: pulse-ring 2.2s var(--ease-out) infinite;
+    position: relative;
+  }
+  .pulse-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 1px solid oklch(var(--exitsign));
+    animation: pulse-ripple 2.2s var(--ease-out) infinite;
   }
 
   /* Expo-signage ticker: seamless loop (content is rendered twice). */
@@ -541,30 +553,14 @@
   .ceremony-title {
     background-size: 250% 100%;
     background-position: 0 0;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: sheen 3s ease-in-out 700ms infinite;
+    /* Solid metal, no gradient text and no sheen loop: the star cinematic
+       above carries the ceremony; the title just names the tier. */
   }
   .ceremony-title-founder {
-    background-image: linear-gradient(
-      105deg,
-      var(--ink) 38%,
-      var(--gold) 47%,
-      #e8c766 50%,
-      var(--gold) 53%,
-      var(--ink) 62%
-    );
+    color: var(--gold-deep);
   }
   .ceremony-title-pro {
-    background-image: linear-gradient(
-      105deg,
-      var(--ink) 38%,
-      var(--accent) 47%,
-      #f0906b 50%,
-      var(--accent) 53%,
-      var(--ink) 62%
-    );
+    color: var(--accent);
   }
 
   /* ==================== CEREMONY INTRO (full screen) ====================
@@ -841,16 +837,18 @@
     left: 0;
     bottom: -1px;
     height: 1px;
-    width: 0;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
     background: theme("colors.accent");
-    transition: width 320ms var(--ease-out);
+    transition: transform 320ms var(--ease-out);
   }
   .index-row:hover {
     background-color: rgba(217, 72, 15, 0.04);
   }
   .index-row:hover::after,
   .index-row:focus-visible::after {
-    width: 100%;
+    transform: scaleX(1);
   }
 
   /* Oversized programme numerals: serif, tabular, and optically dropped

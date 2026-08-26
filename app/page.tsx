@@ -132,7 +132,7 @@ function Section({
             {lede && (
               <p
                 className={`mt-3 max-w-sm text-sm leading-relaxed ${
-                  dark ? "text-paper/60" : "text-muted"
+                  dark ? "text-paper/85" : "text-muted"
                 }`}
               >
                 {lede}
@@ -464,10 +464,11 @@ export default function LandingPage() {
                 href={row.href}
                 className="index-row relative grid grid-cols-[2.25rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[2.5rem_8.5rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
               >
-                <span aria-hidden="true" className="numeral text-base text-ink/30">
-                  {String(i + 1).padStart(2, "0")}
+                {/* the row's REAL address, not an invented numbering */}
+                <span aria-hidden="true" className="font-mono text-xs text-muted/70">
+                  {row.href}
                 </span>
-                <span className="flex items-center gap-2.5 font-display text-xl leading-none">
+                <span className="flex items-center gap-2.5 font-display text-lg leading-tight">
                   <PixelGlyph glyph={row.glyph} size={14} color="var(--accent)" />
                   {row.name}
                 </span>
@@ -607,7 +608,7 @@ export default function LandingPage() {
                 <span
                   aria-hidden="true"
                   className="inline-block h-2.5 w-2.5 rotate-45"
-                  style={{ backgroundColor: rank.color, boxShadow: `0 0 10px ${rank.color}66` }}
+                  style={{ backgroundColor: rank.color }}
                 />
                 <Spec className="text-paper">{rank.name}</Spec>
               </span>
@@ -620,7 +621,7 @@ export default function LandingPage() {
                 color={rank.color}
                 delay={i * 90}
               />
-              <span className="col-span-2 text-sm leading-relaxed text-paper/60 sm:col-span-1">
+              <span className="col-span-2 text-sm leading-relaxed text-paper/85 sm:col-span-1">
                 {rank.blurb}
               </span>
             </div>
@@ -730,7 +731,7 @@ export default function LandingPage() {
               >
                 The doors are propped open. They stay that way.
               </h2>
-              <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/60">
+              <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/85">
                 No badge, no lanyard, no schedule. The founders are at their
                 booths.
               </p>
@@ -747,12 +748,12 @@ export default function LandingPage() {
             <div className="relative self-end border border-paper/20 p-6">
               <CropMarks tone="paper" />
               <Spec className="text-gold">Or come back when it&rsquo;s busy</Spec>
-              <p className="mt-3 text-sm leading-relaxed text-paper/70">
+              <p className="mt-3 text-sm leading-relaxed text-paper/80">
                 The floors fill up every Sunday at 18:00 CET. Leave an
                 address and we&rsquo;ll tell you when it&rsquo;s worth walking
                 in. No newsletter, no drip campaign.
               </p>
-              <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/40 [&_p]:text-paper/50">
+              <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/60 [&_p]:text-paper/85">
                 <EmailCapture variant="list" source="landing" />
               </div>
             </div>
