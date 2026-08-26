@@ -197,6 +197,9 @@ export interface StandEntry {
 }
 
 /** The notes left at one stand. Guestbooks are keyed floor + "spot:<n>". */
+// TODO(spot-id): the "spot:<n>" guestbook key is index-shaped server state —
+// migrate it together with claims, never separately (the notes must follow
+// the stand, and a key minted from an id must match what the floor signs).
 export async function fetchGuestbook(
   floorId: string,
   spotIndex: number,
@@ -229,6 +232,7 @@ export async function signGuestbook(
   spotIndex: number,
   text: string,
 ): Promise<boolean> {
+  // TODO(spot-id): same "spot:<n>" key as fetchGuestbook — migrate together.
   const ok = await post("/guestbook/sign", {
     me,
     name,

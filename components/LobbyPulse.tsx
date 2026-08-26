@@ -69,6 +69,8 @@ export default function LobbyPulse({
       const base = httpBase();
       if (!base) return;
       let count = 0;
+      // TODO(spot-id): "spot:<n>" guestbook keys are index-shaped — migrate
+      // with claims (see lib/social.ts fetchGuestbook).
       for (const [floorId, spotIndex] of Object.entries(claims)) {
         try {
           const res = await fetch(

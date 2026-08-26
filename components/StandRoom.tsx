@@ -34,8 +34,9 @@ import { floorById } from "@/lib/data/floors";
  */
 const ROOM_W = 10;
 const ROOM_H = 8;
-/** Booth is 4 wide, 3 tall — this centres it with a tile of air each side. */
-const SPOT = { x: 3, y: 2 };
+/** Booth is 4 wide, 3 tall — this centres it with a tile of air each side.
+ * The id never ships anywhere — this room exists only for one render. */
+const SPOT = { id: "showroom", x: 3, y: 2 };
 
 export interface StandRoomProps {
   startup: Startup;

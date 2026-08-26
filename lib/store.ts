@@ -1031,6 +1031,7 @@ const ACTIONS: StoreActions = {
   },
 
   claimSpot(floorId: string, spotIndex: number): void {
+    // TODO(spot-id): persist the spot's permanent id instead of its index.
     ensureClientInit();
     if (!state.myStartup) return; // nothing to put on the stand
     const idx = Math.trunc(numOr(spotIndex, -1));

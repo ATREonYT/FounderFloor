@@ -56,6 +56,7 @@ interface Person {
   alias: string;
   company: string;
   standFloor: string;
+  // TODO(spot-id): server contract — index-shaped until stored claims migrate.
   spotIndex: number | null;
   link: string;
   tier: string;

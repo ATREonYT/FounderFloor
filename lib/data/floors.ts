@@ -18,7 +18,7 @@
  *   - >= 2 tiles between any zone edge and the surrounding wall
  */
 
-import type { FloorDef } from "@/lib/types";
+import type { BoothSpot, FloorDef } from "@/lib/types";
 
 /**
  * The practice floor: claims here are rehearsal, exempt from the
@@ -68,7 +68,9 @@ export const FLOORS: FloorDef[] = [
     // knowingly spent that once — the layout changed underneath, so every
     // index had to be re-pointed anyway, and a stand only lives on a floor
     // while its owner is standing there. From here on the old rule holds
-    // again: append, never reorder.
+    // again: append, never reorder. Every spot now also carries a permanent
+    // `id` (see BoothSpot) — the identity claims will migrate onto, so the
+    // NEXT relayout never has to spend this rule at all.
     //
     // ─── GEOMETRY ──────────────────────────────────────────────────────
     // The stands stand ON the plaza rim. That is the whole point of the
@@ -114,6 +116,10 @@ export const FLOORS: FloorDef[] = [
     tier: "free",
     width: 58,
     height: 42,
+    // Exactly what the engine's bottom-centre fallback computes for 58x42
+    // (width/2, height-5) — pinned here so a future relayout can move the
+    // door without touching engine code. See the spawn note above.
+    spawn: { x: 29, y: 37 },
     theme: {
       floorA: "#D8D2C4",
       floorB: "#D1CABA",
@@ -135,35 +141,42 @@ export const FLOORS: FloorDef[] = [
     //
     // ORDER IS IDENTITY: ClaimEntry.spotIndex indexes this array. Append,
     // never reorder. Flipping a row changes `face`, never position.
+    //
+    // SPOT IDS ARE PERMANENT. Each id names WHERE the pitch stands — rim
+    // vs outer band, north vs south of the fountain, and either the
+    // inner/outer pair on a rim or w1..w4 / e1..e4 counting outward from
+    // the avenue. Once shipped an id is never reused or renamed: stored
+    // claims will migrate onto these ids, and an id that moves a stand is
+    // the same bug as a reordered array.
     boothSpots: [
       // Inner rank, flanking the two avenue mouths — the four best places
       // in the building, one street back from the fountain.
-      { x: 21, y: 12, face: "up" },
-      { x: 33, y: 12, face: "up" },
-      { x: 21, y: 27 },
-      { x: 33, y: 27 },
+      { id: "rim-n-inner-w", x: 21, y: 12, face: "up" },
+      { id: "rim-n-inner-e", x: 33, y: 12, face: "up" },
+      { id: "rim-s-inner-w", x: 21, y: 27 },
+      { id: "rim-s-inner-e", x: 33, y: 27 },
       // Inner rank, the outer pair on each rim.
-      { x: 15, y: 12, face: "up" },
-      { x: 39, y: 12, face: "up" },
-      { x: 15, y: 27 },
-      { x: 39, y: 27 },
+      { id: "rim-n-outer-w", x: 15, y: 12, face: "up" },
+      { id: "rim-n-outer-e", x: 39, y: 12, face: "up" },
+      { id: "rim-s-outer-w", x: 15, y: 27 },
+      { id: "rim-s-outer-e", x: 39, y: 27 },
       // Outer band, working away from the avenues.
-      { x: 21, y: 5 },
-      { x: 33, y: 5 },
-      { x: 21, y: 34, face: "up" },
-      { x: 33, y: 34, face: "up" },
-      { x: 15, y: 5 },
-      { x: 39, y: 5 },
-      { x: 15, y: 34, face: "up" },
-      { x: 39, y: 34, face: "up" },
-      { x: 9, y: 5 },
-      { x: 45, y: 5 },
-      { x: 9, y: 34, face: "up" },
-      { x: 45, y: 34, face: "up" },
-      { x: 3, y: 5 },
-      { x: 51, y: 5 },
-      { x: 3, y: 34, face: "up" },
-      { x: 51, y: 34, face: "up" },
+      { id: "outer-n-w1", x: 21, y: 5 },
+      { id: "outer-n-e1", x: 33, y: 5 },
+      { id: "outer-s-w1", x: 21, y: 34, face: "up" },
+      { id: "outer-s-e1", x: 33, y: 34, face: "up" },
+      { id: "outer-n-w2", x: 15, y: 5 },
+      { id: "outer-n-e2", x: 39, y: 5 },
+      { id: "outer-s-w2", x: 15, y: 34, face: "up" },
+      { id: "outer-s-e2", x: 39, y: 34, face: "up" },
+      { id: "outer-n-w3", x: 9, y: 5 },
+      { id: "outer-n-e3", x: 45, y: 5 },
+      { id: "outer-s-w3", x: 9, y: 34, face: "up" },
+      { id: "outer-s-e3", x: 45, y: 34, face: "up" },
+      { id: "outer-n-w4", x: 3, y: 5 },
+      { id: "outer-n-e4", x: 51, y: 5 },
+      { id: "outer-s-w4", x: 3, y: 34, face: "up" },
+      { id: "outer-s-e4", x: 51, y: 34, face: "up" },
     ],
     // ─── THE HALL SHIPS EMPTY ──────────────────────────────────────────
     // No seeded sample stands and no ambient staff. Every one of the
@@ -420,15 +433,17 @@ export const FLOORS: FloorDef[] = [
       wall: "#7A6248",
       trim: "#5C4A36",
     },
+    // SPOT IDS ARE PERMANENT — named by row (north/mid/back) and position.
+    // Never reused, never renamed once shipped.
     boothSpots: [
-      { x: 3, y: 3 },
-      { x: 11, y: 3 },
-      { x: 19, y: 3 },
-      { x: 3, y: 11 },
-      { x: 19, y: 11 },
-      { x: 11, y: 11 }, // front row center — reserved for you
-      { x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
-      { x: 15, y: 19 },
+      { id: "north-w", x: 3, y: 3 },
+      { id: "north-c", x: 11, y: 3 },
+      { id: "north-e", x: 19, y: 3 },
+      { id: "mid-w", x: 3, y: 11 },
+      { id: "mid-e", x: 19, y: 11 },
+      { id: "mid-c", x: 11, y: 11 }, // front row center — reserved for you
+      { id: "back-w", x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
+      { id: "back-e", x: 15, y: 19 },
     ],
     startupIds: [],
   },
@@ -449,15 +464,17 @@ export const FLOORS: FloorDef[] = [
       wall: "#2F2F36",
       trim: "#A63D2F",
     },
+    // SPOT IDS ARE PERMANENT — named by row (north/mid/back) and position.
+    // Never reused, never renamed once shipped.
     boothSpots: [
-      { x: 3, y: 3 },
-      { x: 12, y: 3 },
-      { x: 21, y: 3 },
-      { x: 3, y: 11 },
-      { x: 12, y: 11 },
-      { x: 21, y: 11 },
-      { x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
-      { x: 16, y: 19 },
+      { id: "north-w", x: 3, y: 3 },
+      { id: "north-c", x: 12, y: 3 },
+      { id: "north-e", x: 21, y: 3 },
+      { id: "mid-w", x: 3, y: 11 },
+      { id: "mid-c", x: 12, y: 11 },
+      { id: "mid-e", x: 21, y: 11 },
+      { id: "back-w", x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
+      { id: "back-e", x: 16, y: 19 },
     ],
     startupIds: [],
   },
@@ -476,15 +493,17 @@ export const FLOORS: FloorDef[] = [
       wall: "#24312A",
       trim: "#B08D2E",
     },
+    // SPOT IDS ARE PERMANENT — named by row (north/mid/back) and position.
+    // Never reused, never renamed once shipped.
     boothSpots: [
-      { x: 3, y: 3 },
-      { x: 12, y: 3 },
-      { x: 21, y: 3 },
-      { x: 3, y: 11 },
-      { x: 12, y: 11 },
-      { x: 21, y: 11 },
-      { x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
-      { x: 16, y: 19 },
+      { id: "north-w", x: 3, y: 3 },
+      { id: "north-c", x: 12, y: 3 },
+      { id: "north-e", x: 21, y: 3 },
+      { id: "mid-w", x: 3, y: 11 },
+      { id: "mid-c", x: 12, y: 11 },
+      { id: "mid-e", x: 21, y: 11 },
+      { id: "back-w", x: 7, y: 19 }, // open stands (claimable): zone rows 19-21, apron 22, wall at 25
+      { id: "back-e", x: 16, y: 19 },
     ],
     startupIds: [],
   },
@@ -492,6 +511,19 @@ export const FLOORS: FloorDef[] = [
 
 export function floorById(id: string): FloorDef | undefined {
   return FLOORS.find((f) => f.id === id);
+}
+
+/** The pitch carrying this permanent id, if the floor has one. */
+export function spotById(floor: FloorDef, id: string): BoothSpot | undefined {
+  return floor.boothSpots.find((s) => s.id === id);
+}
+
+/**
+ * Where an id currently sits in boothSpots (-1 when absent) — the bridge
+ * between permanent ids and the index-shaped claims still on the wire.
+ */
+export function spotIndexById(floor: FloorDef, id: string): number {
+  return floor.boothSpots.findIndex((s) => s.id === id);
 }
 
 // The practice hall: hidden from the lobby list, reached via "Start the
@@ -511,9 +543,10 @@ FLOORS.push({
     wall: "#7E8578",
     trim: "#5E665E",
   },
+  // SPOT IDS ARE PERMANENT. Never reused, never renamed once shipped.
   boothSpots: [
-    { x: 4, y: 3 },
-    { x: 13, y: 3 },
+    { id: "west", x: 4, y: 3 },
+    { id: "east", x: 13, y: 3 },
   ],
   startupIds: ["tutorial-guide"],
   hidden: true,

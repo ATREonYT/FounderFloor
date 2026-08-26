@@ -650,6 +650,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         otherFloor: otherEntry ? { floorId: otherEntry[0], spotIndex: otherEntry[1] } : null,
         ts: Date.now(),
       };
+      // TODO(spot-id): claims travel and persist as an index — this whole
+      // callback re-keys to BoothSpot.id when the wire format migrates.
       actions.claimSpot(floor.id, b.spotIndex);
       const claim = { spotIndex: b.spotIndex, startup: s };
       handleRef.current?.setMyBooth(claim);
@@ -842,6 +844,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     return f.boothSpots.map((spot, i) => {
       const seedId = seedIdAt(f, i);
       const seeded = seedId ? STARTUPS[seedId] : undefined;
+      // TODO(spot-id): claims[f.id] is an index; compare against spot.id
+      // once stored claims migrate.
       const mineHere =
         state.myStartup && state.claims[f.id] === i ? state.myStartup : undefined;
       return {
@@ -1287,6 +1291,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
 
     // Directory deep link: /floor/<id>?spot=<n> auto-walks you from the
     // spawn point up to the stand you searched for.
+    // TODO(spot-id): accept a spot id here too, resolving via spotIndexById.
     const search = new URLSearchParams(window.location.search);
     const spotParam = search.get("spot");
     if (spotParam) {

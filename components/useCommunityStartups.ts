@@ -21,6 +21,7 @@ export interface CommunityStartup {
   ownerId?: string;
   /** null = registered from the profile editor, no floor stand claimed yet. */
   floorId: string | null;
+  // TODO(spot-id): server contract — index-shaped until stored claims migrate.
   spotIndex: number;
   /** Founder currently walking that floor. */
   online: boolean;

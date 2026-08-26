@@ -28,8 +28,8 @@ const body = raw
   .replace(/^import type .*$/gm, "")
   .replace(/:\s*FloorDef\[\]/g, "")
   .replace(/export const /g, "const ")
-  // the one real function in the file is a typed lookup helper we don't need
-  .replace(/export function floorById[\s\S]*?\n}\n/, "");
+  // the real functions in the file are typed lookup helpers we don't need
+  .replace(/export function \w+[\s\S]*?\n}\n/g, "");
 const FLOORS = new Function(`${body}; return FLOORS;`)();
 
 let bad = 0;
@@ -62,6 +62,22 @@ for (const f of FLOORS) {
     set(0, y);
     set(W - 1, y);
   }
+
+  // ---- 0: spot identity ----
+  // Every spot carries a permanent id, unique on its floor. Claims will
+  // migrate onto these, so a duplicate or missing id is a data bug even
+  // before anything ships.
+  const spotIds = new Set();
+  let badIds = 0;
+  let dupIds = 0;
+  for (const s of f.boothSpots) {
+    if (typeof s.id !== "string" || s.id.length === 0) badIds++;
+    else if (spotIds.has(s.id)) dupIds++;
+    else spotIds.add(s.id);
+  }
+  check(badIds === 0, "every spot has an id", `${badIds} missing`);
+  check(dupIds === 0, "spot ids are unique on this floor", `${dupIds} duplicated`);
+  if (badIds === 0 && dupIds === 0) pass("spot ids present and unique");
 
   // ---- 1 & 2: booth zones ----
   const zoneOwner = new Map();
@@ -262,8 +278,10 @@ for (const f of FLOORS) {
   }
 
   // ---- 7: spawn ----
-  const sx = Math.floor(W / 2);
-  const sy = H - 5;
+  // The def may pin its own arrival tile; the fallback is the engine's
+  // bottom-centre formula — the same choice game/engine.ts makes.
+  const sx = f.spawn?.x ?? Math.floor(W / 2);
+  const sy = f.spawn?.y ?? H - 5;
   check(!isSolid(sx, sy), `the spawn tile (${sx},${sy}) is walkable`);
 
   // ---- 8: connectivity ----

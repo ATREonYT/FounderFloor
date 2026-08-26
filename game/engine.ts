@@ -178,10 +178,15 @@ export function createGame(opts: GameOptions): GameHandle {
     return { x: mapW / 2, y: mapH / 2 }; // pathological map; land somewhere
   };
 
-  // Three tiles up from the bottom wall: the tutorial coach / tour card sits
+  // The floor may pin its own arrival tile (floor.spawn); the fallback is
+  // three tiles up from the bottom wall: the tutorial coach / tour card sits
   // along the bottom edge of the screen, and spawning at height-2 put the
-  // avatar exactly behind it.
-  const spawn = findNearestWalkable(Math.floor(floor.width / 2), floor.height - 5);
+  // avatar exactly behind it. Either way the nearest-walkable search makes
+  // it safe against a tile that turns out solid.
+  const spawn = findNearestWalkable(
+    floor.spawn?.x ?? Math.floor(floor.width / 2),
+    floor.spawn?.y ?? floor.height - 5,
+  );
   const player: MoveState = { x: spawn.x, y: spawn.y, dir: "up", moving: false };
   let playerAnimT = 0;
 
@@ -1631,6 +1636,7 @@ export function createGame(opts: GameOptions): GameHandle {
       }
     },
     walkToBooth(spotIndex: number): void {
+      // TODO(spot-id): resolve by BoothSpot.id once deep links carry ids.
       const b = built.booths.find((x) => x.spotIndex === spotIndex);
       if (!b) return;
       // Aim at the booth's center; findPath resolves solid targets to the

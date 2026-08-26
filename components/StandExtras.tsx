@@ -59,6 +59,8 @@ export default function StandExtras({
   floorId: string | null;
   floorTier: SubTier | null;
   floorName: string | null;
+  // TODO(spot-id): index-shaped (guestbook key, ?spot= walk link) until the
+  // server contract carries spot ids.
   spotIndex: number;
   online: boolean;
   log: LogEntry[];

@@ -189,6 +189,8 @@ function logoImage(dataUrl: string): HTMLImageElement | null {
  * blocks arbitration for everyone else).
  */
 export function isClaimableSpot(floor: FloorDef, idx: number): boolean {
+  // TODO(spot-id): validate by BoothSpot.id once claims carry ids — an id
+  // survives a relayout, so this stops dropping claims it doesn't need to.
   if (!Number.isInteger(idx) || idx < 0 || idx >= floor.boothSpots.length) return false;
   return seedIdAt(floor, idx) === undefined;
 }
@@ -375,6 +377,7 @@ export function buildFloor(
   }
 
   // ----- booth assignment: seed startups first, then live claims on leftovers -----
+  // TODO(spot-id): key this map by BoothSpot.id once claims carry ids.
   const claimBySpot = new Map<number, ClaimEntry>();
   for (const c of claims) claimBySpot.set(c.claim.spotIndex, c);
 

@@ -20,6 +20,7 @@ export interface PublicStand {
   ownerId: string;
   slug: string | null;
   floorId: string | null;
+  // TODO(spot-id): server contract — index-shaped until stored claims migrate.
   spotIndex: number;
   online: boolean;
   lastSeen: number;

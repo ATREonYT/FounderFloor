@@ -85,6 +85,7 @@ export default function DirectoryPage() {
         startup: c.startup,
         floor,
         community: true,
+        // TODO(spot-id): link by spot id once ?spot= deep links accept ids.
         href: floor ? `/floor/${c.floorId}?spot=${c.spotIndex}` : "#",
         online: c.online,
       });

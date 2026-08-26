@@ -175,7 +175,8 @@ export interface Startup {
 export interface BoothInstance {
   /** Top-left tile of the 4x3 booth zone, with which way it opens. */
   spot: { x: number; y: number; face?: "up" | "down" };
-  /** Index into floor.boothSpots — the stable identity used for claims. */
+  /** Index into floor.boothSpots — the identity claims currently travel under. */
+  // TODO(spot-id): carry the spot's permanent id here and resolve via spotById.
   spotIndex: number;
   /** null = vacant stand, open to claim. */
   startup: Startup | null;
@@ -189,6 +190,8 @@ export interface BoothInstance {
 
 /** A player's claim on a floor spot, carried over the wire. */
 export interface BoothClaim {
+  // TODO(spot-id): wire format — still an index. Migrating stored claims to
+  // BoothSpot.id is a separate job; do not change this shape piecemeal.
   spotIndex: number;
   startup: Startup;
 }
@@ -198,6 +201,28 @@ export interface BoothClaim {
 export type SubTier = "free" | "pro" | "founder";
 
 export const TIER_ORDER: Record<SubTier, number> = { free: 0, pro: 1, founder: 2 };
+
+/** Pitch quality bands for booth spots — will drive price and display. */
+export type SpotTier = "gold" | "silver" | "bronze";
+
+/**
+ * One pitch on a floor: the top-left tile of a 4x3 booth zone.
+ *
+ * `face` is which way the stand OPENS: "down" (the default) puts the
+ * counter on the zone's bottom row and the carpet apron below it; "up"
+ * mirrors the rows — counter on top, apron above, sign wall at the bottom.
+ * Two rows of stands facing each other across an aisle runner is what
+ * turns a carpet with backs on one side into a shopping street.
+ */
+export interface BoothSpot {
+  /** Stable identity. Never reused, never renamed once shipped. */
+  id: string;
+  x: number;
+  y: number;
+  face?: "up" | "down";
+  /** Pitch quality — drives price and display. Absent = "bronze". */
+  tier?: SpotTier;
+}
 
 export interface FloorDef {
   id: string;
@@ -212,16 +237,15 @@ export interface FloorDef {
     wall: string;
     trim: string;
   };
+  /** Tile the player arrives on. Falls back to bottom-centre. */
+  spawn?: { x: number; y: number };
   /**
-   * Top-left tiles of 4x3 booth zones.
-   *
-   * `face` is which way the stand OPENS: "down" (the default) puts the
-   * counter on the zone's bottom row and the carpet apron below it;
-   * "up" mirrors the rows — counter on top, apron above, sign wall at the
-   * bottom. Two rows of stands facing each other across an aisle runner is
-   * what turns a carpet with backs on one side into a shopping street.
+   * The floor's pitches. Every spot carries a permanent `id` — that is the
+   * identity a spot should be addressed by (spotById in lib/data/floors.ts).
+   * Claims still travel and persist as an INDEX into this array, so until
+   * they migrate, order remains identity too: append, never reorder.
    */
-  boothSpots: { x: number; y: number; face?: "up" | "down" }[];
+  boothSpots: BoothSpot[];
   /** Hidden floors (the tutorial hall) are reachable by URL but not listed in the lobby. */
   hidden?: boolean;
   /** Assigned to boothSpots in order; may be shorter than boothSpots. */
@@ -647,6 +671,7 @@ export interface GameHandle {
    * Auto-walk the player up to a booth spot (index into floor.boothSpots),
    * e.g. deep-linked from the directory's "Walk there". Unknown indexes no-op.
    */
+  // TODO(spot-id): accept a spot id once ?spot= deep links carry ids.
   walkToBooth(spotIndex: number): void;
 }
 
@@ -736,6 +761,7 @@ export interface AppState {
   connections: Connection[];
   myStartup?: Startup;
   /** Claimed stand per floor: floorId -> boothSpots index. */
+  // TODO(spot-id): persist the spot id instead of the index.
   claims: Record<string, number>;
   /** Completed tutorial steps. */
   onboarding: OnboardingStep[];

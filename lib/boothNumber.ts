@@ -16,6 +16,8 @@ const HALL_LETTER: Record<string, string> = {
   "tutorial-hall": "T",
 };
 
+// TODO(spot-id): when claims carry ids, derive the number from the id's
+// position (spotIndexById) so printed numbers survive the claims migration.
 export function boothNumber(floorId: string | null | undefined, spotIndex: number): string {
   if (!floorId || spotIndex < 0) return "";
   const hall = HALL_LETTER[floorId] ?? floorId.charAt(0).toUpperCase();
