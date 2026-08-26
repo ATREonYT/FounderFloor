@@ -4,6 +4,12 @@ const config: Config = {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      /* THE UNIT GRID: u = 4px = TILE/8 (declared as --unit in globals).
+         Tailwind's default 4px spacing scale is already unit-true, so it
+         stands unmodified — the audit found every spacing call site on
+         it. Radii, shadows and font sizes are re-derived from the unit
+         in the steps that follow; any new value added here must be a
+         multiple of 4. */
       colors: {
         paper: "rgb(var(--paper) / <alpha-value>)",
         panel: "rgb(var(--panel) / <alpha-value>)",
