@@ -26,10 +26,13 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "This startup keeps a stand on FounderFloor.";
 
-const PAPER = "#F2EFE7";
-const INK = "#23201A";
-const MUTED = "#6F6A5E";
-const LINE = "#E4DFD3";
+// sRGB renders of the site's oklch materials (satori cannot resolve CSS
+// variables): screed, gaffer, conduit, laminate. The storefront mark
+// below keeps its brand colours — the logo does not retheme.
+const PAPER = "#E8ECF0";
+const INK = "#22272C";
+const MUTED = "#50565D";
+const LINE = "#D7DBE0";
 
 export default async function OgImage({ params }: { params: { slug: string } }) {
   const ref = decodeURIComponent(params.slug);

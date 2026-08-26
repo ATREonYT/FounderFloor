@@ -1818,7 +1818,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           sign="WHERE TO GO"
           keeper="The hall"
           blurb="What is in this room and how to find it."
-          color="rgb(var(--gold))"
+          color="var(--gold)"
           onClose={() => setGuideOpen(false)}
           onFocusChange={handleFocusChange}
         >

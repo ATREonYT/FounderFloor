@@ -106,7 +106,7 @@ export default function MembershipCeremony({
   }, []);
 
   const bright = founder ? "#E8C766" : "#F0906B";
-  const deep = founder ? "rgb(var(--gold))" : "rgb(var(--accent))";
+  const deep = founder ? "var(--gold)" : "var(--accent)";
 
   // Threads are drawn in real pixel space so dash-based line drawing stays
   // exact on every viewport (a stretched 0-100 viewBox distorts dash math).

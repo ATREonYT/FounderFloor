@@ -40,7 +40,7 @@ function Pips({ n }: { n: number }) {
         <span
           key={i}
           className="h-1.5 w-1.5 rounded-full"
-          style={{ background: i < n ? "rgb(var(--accent))" : "rgb(var(--line))" }}
+          style={{ background: i < n ? "var(--accent)" : "var(--line)" }}
         />
       ))}
     </span>

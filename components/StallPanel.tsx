@@ -129,7 +129,7 @@ export default function StallPanel({
             <span
               key={i}
               className="h-full flex-1"
-              style={{ background: i % 2 ? "rgb(var(--paper))" : color }}
+              style={{ background: i % 2 ? "var(--paper)" : color }}
             />
           ))}
         </div>

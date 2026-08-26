@@ -11,22 +11,37 @@ const config: Config = {
          in the steps that follow; any new value added here must be a
          multiple of 4. */
       colors: {
-        paper: "rgb(var(--paper) / <alpha-value>)",
-        panel: "rgb(var(--panel) / <alpha-value>)",
-        ink: "rgb(var(--ink) / <alpha-value>)",
-        muted: "rgb(var(--muted) / <alpha-value>)",
-        line: "rgb(var(--line) / <alpha-value>)",
-        accent: "rgb(var(--accent) / <alpha-value>)",
+        paper: "oklch(var(--screed) / <alpha-value>)",
+        panel: "oklch(var(--foamcore) / <alpha-value>)",
+        ink: "oklch(var(--gaffer) / <alpha-value>)",
+        muted: "oklch(var(--conduit) / <alpha-value>)",
+        line: "oklch(var(--trestle) / <alpha-value>)",
+        accent: "oklch(var(--tarp) / <alpha-value>)",
         // white on #D9480F is ~4.3:1 — a hair under AA for button text. This
         // darker shade (~5.2:1) is for solid CTA fills; keep `accent` for
         // borders, dots, and accent text where it already passes.
-        "accent-strong": "rgb(var(--accent-strong) / <alpha-value>)",
-        "accent-soft": "rgb(var(--accent-soft) / <alpha-value>)",
-        verify: "rgb(var(--verify) / <alpha-value>)",
-        gold: "rgb(var(--gold) / <alpha-value>)",
+        "accent-strong": "oklch(var(--tarp) / <alpha-value>)",
+        "accent-soft": "oklch(var(--tarp-wash) / <alpha-value>)",
+        verify: "oklch(var(--exitsign) / <alpha-value>)",
+        gold: "oklch(var(--brass) / <alpha-value>)",
         // gold fails WCAG AA as small text on paper (2.7:1) — use this for
         // gold TEXT, keep `gold` for dots, borders and fills
-        "gold-deep": "rgb(var(--gold-deep) / <alpha-value>)",
+        "gold-deep": "oklch(var(--brass-deep) / <alpha-value>)",
+        // material names, first-class — new work names the material;
+        // the semantic names above stay for the existing call sites
+        foamcore: "oklch(var(--foamcore) / <alpha-value>)",
+        screed: "oklch(var(--screed) / <alpha-value>)",
+        laminate: "oklch(var(--laminate) / <alpha-value>)",
+        trestle: "oklch(var(--trestle) / <alpha-value>)",
+        gantry: "oklch(var(--gantry) / <alpha-value>)",
+        conduit: "oklch(var(--conduit) / <alpha-value>)",
+        flightcase: "oklch(var(--flightcase) / <alpha-value>)",
+        gaffer: "oklch(var(--gaffer) / <alpha-value>)",
+        blackout: "oklch(var(--blackout) / <alpha-value>)",
+        tarp: "oklch(var(--tarp) / <alpha-value>)",
+        brass: "oklch(var(--brass) / <alpha-value>)",
+        fountain: "oklch(var(--fountain) / <alpha-value>)",
+        exitsign: "oklch(var(--exitsign) / <alpha-value>)",
       },
       fontFamily: {
         display: ["Iowan Old Style", "Palatino Linotype", "Palatino", "Georgia", "serif"],
@@ -66,8 +81,8 @@ const config: Config = {
        * these 2px offsets are the pen-width exception to the unit rule.
        */
       boxShadow: {
-        card: "0 2px 0 0 rgb(var(--ink) / 0.10)",
-        float: "0 4px 0 0 rgb(var(--ink) / 0.14)",
+        card: "0 2px 0 0 oklch(var(--gaffer) / 0.10)",
+        float: "0 4px 0 0 oklch(var(--gaffer) / 0.14)",
       },
     },
   },

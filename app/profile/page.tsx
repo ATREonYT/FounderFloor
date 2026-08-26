@@ -1189,7 +1189,7 @@ export default function ProfilePage() {
                           : "border-line hover:border-muted"
                       }`}
                     >
-                      <PixelGlyph glyph={g} color="rgb(var(--ink))" size={16} />
+                      <PixelGlyph glyph={g} color="var(--ink)" size={16} />
                     </button>
                   ))}
                 </div>
@@ -1877,7 +1877,7 @@ export default function ProfilePage() {
                 >
                   <PixelGlyph
                     glyph={meta.glyph}
-                    color={earned ? "rgb(var(--gold))" : "#B4AE9F"}
+                    color={earned ? "var(--gold)" : "#B4AE9F"}
                     size={18}
                   />
                 </span>

@@ -41,12 +41,12 @@ export async function GET(
 
   // The name in pixel caps, sized to the room left of the mark.
   const ctx = new SvgCtx();
-  ctx.fillStyle = "#23201A";
+  ctx.fillStyle = "#22272C";
   ctx.font = "12px ui-monospace";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   ctx.fillText(stand.startup.name, 50, 11, 156);
-  ctx.fillStyle = "#6F6A5E";
+  ctx.fillStyle = "#50565D";
   ctx.font = "7px ui-monospace";
   ctx.fillText("ON THE FLOOR AT FOUNDERFLOOR", 50, 27, 156);
 
@@ -54,8 +54,10 @@ export async function GET(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 216 48" width="216" height="48" shape-rendering="crispEdges" role="img" aria-label="' +
     stand.startup.name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;") +
     ' has a stand on FounderFloor">' +
-    '<rect x="0" y="0" width="216" height="48" fill="#F2EFE7"/>' +
-    '<rect x="0.5" y="0.5" width="215" height="47" fill="none" stroke="#E4DFD3" stroke-width="1"/>' +
+    // screed ground, laminate hairline — sRGB renders of the oklch
+    // materials, because a standalone SVG has no CSS to inherit
+    '<rect x="0" y="0" width="216" height="48" fill="#E8ECF0"/>' +
+    '<rect x="0.5" y="0.5" width="215" height="47" fill="none" stroke="#D7DBE0" stroke-width="1"/>' +
     MARK +
     ctx.body() +
     "</svg>";
