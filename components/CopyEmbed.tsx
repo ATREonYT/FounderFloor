@@ -62,7 +62,7 @@ export default function CopyEmbed({
         rows={3}
         onFocus={(e) => e.currentTarget.select()}
         aria-label="Embed code"
-        className="mt-2 w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-[11px] leading-relaxed text-muted"
+        className="mt-2 w-full rounded-md border border-line bg-paper px-3 py-2 font-mono text-xs leading-relaxed text-muted"
       />
       <button
         type="button"

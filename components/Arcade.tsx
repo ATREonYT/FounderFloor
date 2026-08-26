@@ -161,7 +161,7 @@ function ReactionGame({ onDone }: { onDone: (r: RoundScore) => void }) {
         style={{ background: face.bg }}
       >
         <span className="font-display text-3xl text-paper">{face.line}</span>
-        <span className="micro mt-2 text-[10px] text-paper/70">
+        <span className="micro mt-2 text-xs text-paper/70">
           {phase === "ready" ? "TAP OR PRESS SPACE TO START" : "TAP OR PRESS SPACE"}
         </span>
       </button>
@@ -519,7 +519,7 @@ function Header({ name, rule, step }: { name: string; rule: string; step: string
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-display text-lg leading-tight">{name}</h3>
-        <span className="micro shrink-0 text-[10px] text-muted">{step}</span>
+        <span className="micro shrink-0 text-xs text-muted">{step}</span>
       </div>
       <p className="mt-1 text-xs leading-snug text-muted">{rule}</p>
     </div>
@@ -574,7 +574,7 @@ export default function Arcade({ wonToday, hallRecord, onPayout, onExit }: Arcad
         >
           ← Back to the arcade
         </button>
-        <p className="micro text-[10px] text-muted">THE QUICK RUN</p>
+        <p className="micro text-xs text-muted">THE QUICK RUN</p>
         <p className="text-sm leading-relaxed text-muted">
           Three short games back to back, one score at the end. Reactions, then
           questions, then memory — so a run rewards being decent at all three
@@ -626,7 +626,7 @@ export default function Arcade({ wonToday, hallRecord, onPayout, onExit }: Arcad
   return (
     <div className="flex flex-col gap-5">
       <div className="text-center">
-        <p className="micro text-[10px] text-muted">RUN TOTAL</p>
+        <p className="micro text-xs text-muted">RUN TOTAL</p>
         <p className="font-display text-5xl leading-none">{total}</p>
         <p className="mt-1 text-xs text-muted">out of 300</p>
       </div>

@@ -64,7 +64,7 @@ export default function ProgrammeIndex({ entries }: { entries: IndexEntry[] }) {
             title={e.label}
           >
             <span
-              className={`micro font-mono text-[10px] transition-colors duration-200 ${
+              className={`micro font-mono text-xs transition-colors duration-200 ${
                 on ? "text-accent" : "text-muted/50 group-hover:text-muted"
               }`}
             >

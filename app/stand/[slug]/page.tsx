@@ -163,7 +163,7 @@ export default async function StandPage({ params }: Props) {
           <ul className="mt-3 flex flex-col gap-3">
             {stand.log.map((e) => (
               <li key={e.ts} className="flex flex-col gap-0.5">
-                <span className="micro text-[10px] text-muted">{ago(e.ts)}</span>
+                <span className="micro text-xs text-muted">{ago(e.ts)}</span>
                 <p className="max-w-prose text-sm leading-relaxed">{e.text}</p>
               </li>
             ))}

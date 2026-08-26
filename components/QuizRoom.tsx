@@ -91,7 +91,7 @@ function Play({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="micro text-[10px] text-muted">
+        <span className="micro text-xs text-muted">
           {i + 1} / {quiz.questions.length}
         </span>
         <span className="font-mono text-sm">{score}</span>
@@ -125,7 +125,7 @@ function Play({
                 {SHAPES[n % SHAPES.length]}
               </span>
               <span className="min-w-0 flex-1">{opt}</span>
-              {done && isAnswer && <span className="micro text-[10px]">CORRECT</span>}
+              {done && isAnswer && <span className="micro text-xs">CORRECT</span>}
             </button>
           );
         })}
@@ -214,7 +214,7 @@ function Editor({
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className="micro text-[10px] text-muted">TITLE</span>
+        <span className="micro text-xs text-muted">TITLE</span>
         <input
           value={title}
           maxLength={MAX_TITLE}
@@ -224,7 +224,7 @@ function Editor({
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="micro text-[10px] text-muted">ONE LINE ABOUT IT</span>
+        <span className="micro text-xs text-muted">ONE LINE ABOUT IT</span>
         <input
           value={blurb}
           maxLength={100}
@@ -237,7 +237,7 @@ function Editor({
       {qs.map((q, i) => (
         <div key={i} className="flex flex-col gap-2 rounded-lg border border-line p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="micro text-[10px] text-muted">QUESTION {i + 1}</span>
+            <span className="micro text-xs text-muted">QUESTION {i + 1}</span>
             <div className="flex items-center gap-2">
               <select
                 value={q.kind}
@@ -278,7 +278,7 @@ function Editor({
             placeholder="Ask something"
             className="w-full resize-none rounded-md border border-line bg-paper px-3 py-2 text-sm outline-none focus:border-accent"
           />
-          <p className="micro text-[10px] text-muted">
+          <p className="micro text-xs text-muted">
             TAP THE CIRCLE TO MARK THE RIGHT ANSWER
           </p>
           {q.options.map((opt, n) => (
@@ -432,7 +432,7 @@ export default function QuizRoom({
     return (
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <p className="micro text-[10px] text-muted">FINAL SCORE</p>
+          <p className="micro text-xs text-muted">FINAL SCORE</p>
           <p className="font-display text-5xl leading-none">{result.score}</p>
           <p className="mt-1 text-sm text-muted">{result.right} right</p>
         </div>
@@ -485,7 +485,7 @@ export default function QuizRoom({
             >
               <span className="flex items-baseline justify-between gap-3">
                 <span className="font-display text-lg leading-tight">{q.title}</span>
-                <span className="micro shrink-0 text-[10px] text-muted">
+                <span className="micro shrink-0 text-xs text-muted">
                   {q.questions.length} Qs
                 </span>
               </span>

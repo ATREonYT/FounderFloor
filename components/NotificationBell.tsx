@@ -286,7 +286,7 @@ export default function NotificationBell() {
           // Inside the button's box, not hung off its corner like the chat
           // launcher's: this one sits at the end of the header row, where the
           // page's own edge is a few pixels away at 360px.
-          <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent-strong px-1 text-[10px] font-medium text-white">
+          <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent-strong px-1 text-xs font-medium text-white">
             {count > 9 ? "9+" : count}
           </span>
         )}

@@ -96,7 +96,7 @@ export default function LiveStats({
                 />
               )}
             </dd>
-            <dt className="micro order-2 font-mono text-[10px] leading-relaxed text-muted">
+            <dt className="micro order-2 font-mono text-xs leading-relaxed text-muted">
               {t.label}
             </dt>
           </div>

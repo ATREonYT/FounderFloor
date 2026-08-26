@@ -235,13 +235,13 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
     return (
       <div className="flex flex-col gap-4">
         <div className="text-center">
-          <p className="micro text-[10px] text-muted">
+          <p className="micro text-xs text-muted">
             {map.name.toUpperCase()} — {done.status.timedOut ? "OUT OF TIME" : "CLEARED"}
           </p>
           <p className="font-display text-5xl leading-none">{secs(s.time)}</p>
           {s.medal !== "none" && (
             <p
-              className="micro mt-2 inline-block rounded-full px-3 py-1 text-[10px] text-paper"
+              className="micro mt-2 inline-block rounded-full px-3 py-1 text-xs text-paper"
               style={{ background: s.medal === "gold" ? "#B08D2E" : "#8E8A7C" }}
             >
               {s.medal === "gold" ? "GOLD — under par, everything collected" : "SILVER"}
@@ -380,7 +380,7 @@ export default function Parkour({ look, bests, capLeft, onFinish, onExit }: Park
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <p className="micro text-[10px] text-muted [@media(pointer:coarse)]:hidden">
+        <p className="micro text-xs text-muted [@media(pointer:coarse)]:hidden">
           A / D OR ARROWS TO MOVE · W, SPACE OR UP TO JUMP
         </p>
         <button

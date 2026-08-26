@@ -156,7 +156,7 @@ export default function RootLayout({
               <span
                 className={`h-1.5 w-1.5 rounded-full ${GATED ? "bg-accent" : "bg-verify"}`}
               />
-              <span className="micro font-mono text-[10px] text-muted">
+              <span className="micro font-mono text-xs text-muted">
                 {GATED ? "Doors open Sunday" : "Main Hall open"}
               </span>
             </span>
@@ -225,7 +225,7 @@ export default function RootLayout({
                 <PixelLogo size={22} />
                 <span className="font-display text-2xl tracking-tight">FounderFloor</span>
               </div>
-              <span className="micro font-mono text-[10px] text-muted">
+              <span className="micro font-mono text-xs text-muted">
                 Est. 2026 · one hall · admission free
               </span>
             </div>
@@ -242,7 +242,7 @@ export default function RootLayout({
                 <div />
               ) : (
                 <nav aria-label="Explore" className="text-sm">
-                  <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
+                  <span className="micro block border-b border-line pb-2 font-mono text-xs text-muted">
                     Explore
                   </span>
                   <div className="mt-3 flex flex-col gap-2">
@@ -267,7 +267,7 @@ export default function RootLayout({
                 </nav>
               )}
               <nav aria-label="The fine print" className="text-sm">
-                <span className="micro block border-b border-line pb-2 font-mono text-[10px] text-muted">
+                <span className="micro block border-b border-line pb-2 font-mono text-xs text-muted">
                   The fine print
                 </span>
                 <div className="mt-3 flex flex-col gap-2">

@@ -12,5 +12,5 @@ export default function Spec({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <span className={`micro font-mono text-[10px] ${className}`}>{children}</span>;
+  return <span className={`micro font-mono text-xs ${className}`}>{children}</span>;
 }

@@ -20,7 +20,7 @@ export default function RankBadge({
   const dot = size === "lg" ? "h-3 w-3" : "h-2 w-2";
   const label =
     size === "lg"
-      ? "text-[13px] font-semibold uppercase tracking-widest"
+      ? "text-xs font-semibold uppercase tracking-widest"
       : "micro";
   return (
     <span

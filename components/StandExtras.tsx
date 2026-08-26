@@ -248,7 +248,7 @@ export default function StandExtras({
               {entries.map((e) => (
                 <li key={e.ts} className="flex items-start justify-between gap-3 px-3 py-2">
                   <span className="min-w-0">
-                    <span className="micro block text-[10px] text-muted">{ago(e.ts)}</span>
+                    <span className="micro block text-xs text-muted">{ago(e.ts)}</span>
                     <span className="block text-sm leading-snug">{e.text}</span>
                   </span>
                   <button
@@ -304,7 +304,7 @@ export default function StandExtras({
             <ul className="mt-4 flex flex-col gap-3">
               {notes.map((n, i) => (
                 <li key={`${n.ts}-${i}`} className="flex flex-col gap-0.5">
-                  <span className="micro text-[10px] text-muted">
+                  <span className="micro text-xs text-muted">
                     {n.from || "someone"} · {ago(n.ts)}
                   </span>
                   <p className="max-w-prose text-sm leading-relaxed">{n.text}</p>

@@ -89,7 +89,7 @@ export default function LaunchBanner() {
         {/* the slip's own masthead: rule, label, rule */}
         <div className="flex items-center gap-4">
           <span aria-hidden="true" className="h-px flex-1 bg-gold/50" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold">
+          <span className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
             One night · Grand opening
           </span>
           <span aria-hidden="true" className="h-px flex-1 bg-gold/50" />
@@ -109,7 +109,7 @@ export default function LaunchBanner() {
           </div>
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-paper/55">Doors in</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-paper/55">Doors in</p>
               <p
                 className="font-display text-3xl text-gold sm:text-4xl"
                 style={{ fontVariantNumeric: "tabular-nums" }}

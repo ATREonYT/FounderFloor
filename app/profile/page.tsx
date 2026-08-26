@@ -863,10 +863,10 @@ export default function ProfilePage() {
                   // live preview — exactly the label stack everyone sees
                   // over your avatar on the floor
                   <div className="mt-3 inline-flex flex-col items-center gap-1 rounded-lg border border-line/70 bg-paper px-8 pb-3 pt-4">
-                    <span className="rounded-full border border-gold/80 bg-ink/90 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#E8C766]">
+                    <span className="rounded-full border border-gold/80 bg-ink/90 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#E8C766]">
                       {state.profile.title}
                     </span>
-                    <span className="rounded-full bg-ink/90 px-3 py-1 text-[11px] leading-none text-white">
+                    <span className="rounded-full bg-ink/90 px-3 py-1 text-xs leading-none text-white">
                       {state.profile.name || "You"}
                     </span>
                     <span className="micro mt-1.5 text-muted">
@@ -1264,7 +1264,7 @@ export default function ProfilePage() {
                           <span className={`block text-xs ${selected ? "text-accent" : "text-ink"}`}>
                             {s.name}
                           </span>
-                          <span className="block text-[11px] leading-snug text-muted">{s.blurb}</span>
+                          <span className="block text-xs leading-snug text-muted">{s.blurb}</span>
                         </div>
                         {owned ? (
                           <button
@@ -1499,7 +1499,7 @@ export default function ProfilePage() {
                 state.lastVisitDay === dayOf(now) || state.lastVisitDay === dayOf(now - 86_400_000);
               const streak = alive ? state.visitStreak : 0;
               return (
-                <p className="mt-3 text-[11px] leading-snug text-muted">
+                <p className="mt-3 text-xs leading-snug text-muted">
                   Current streak: {streak} {streak === 1 ? "day" : "days"} — your
                   next check-in pays <TicketIcon /> {dailyTickets(streak + 1)}.
                 </p>
@@ -1538,7 +1538,7 @@ export default function ProfilePage() {
                             </span>
                           )}
                         </span>
-                        <span className="block text-[11px] text-muted">{pack.blurb}</span>
+                        <span className="block text-xs text-muted">{pack.blurb}</span>
                       </span>
                       <span className="shrink-0 text-right">
                         <span className="block text-gold-deep">
@@ -1551,7 +1551,7 @@ export default function ProfilePage() {
                 );
               })}
               {!ticketPacksLive() ? (
-                <li className="pt-1 text-[11px] leading-snug text-muted">
+                <li className="pt-1 text-xs leading-snug text-muted">
                   Packs aren&rsquo;t on sale quite yet. Good news: every single
                   item is earnable free, forever — packs will only ever buy
                   patience.
@@ -1559,7 +1559,7 @@ export default function ProfilePage() {
               ) : (
                 <>
                   {!acctEmail && (
-                    <li className="pt-1 text-[11px] leading-snug text-muted">
+                    <li className="pt-1 text-xs leading-snug text-muted">
                       Packs attach to your account email — pay with the email
                       you sign in with (it still counts if you create the
                       account after).
@@ -1567,7 +1567,7 @@ export default function ProfilePage() {
                   )}
                   {/* pre-purchase notice, required for the EU withdrawal
                       waiver to hold up: instant delivery => sales are final */}
-                  <li className="pt-1 text-[11px] leading-snug text-muted">
+                  <li className="pt-1 text-xs leading-snug text-muted">
                     Prices include VAT where applicable. Tickets are
                     delivered instantly, so all pack sales are final — see
                     the{" "}

@@ -53,7 +53,7 @@ export default function PublicAddress({ ownerId }: { ownerId: string }) {
 
   return (
     <div className="mt-4 rounded-md border border-line bg-paper p-4">
-      <p className="micro text-[10px] text-muted">YOUR PUBLIC PAGE</p>
+      <p className="micro text-xs text-muted">YOUR PUBLIC PAGE</p>
       <p className="mt-1 select-all break-all font-mono text-sm text-ink">{url}</p>
       <p className="mt-1.5 text-xs leading-relaxed text-muted">
         Works without an account — this is the link for bios and readmes.

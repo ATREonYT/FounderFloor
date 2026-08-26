@@ -477,7 +477,7 @@ export default function LandingPageV1() {
                   }`}
                 >
                   {tier === "pro" && (
-                    <span className="absolute -top-3 left-5 rounded-full bg-accent-strong px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-white shadow-sm">
+                    <span className="absolute -top-3 left-5 rounded-full bg-accent-strong px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide text-white shadow-sm">
                       Recommended
                     </span>
                   )}

@@ -47,7 +47,7 @@ export function TicketStall({ state }: { state: AppState }) {
       </div>
 
       <div>
-        <p className="micro mb-2 text-[10px] text-muted">WAYS TO EARN</p>
+        <p className="micro mb-2 text-xs text-muted">WAYS TO EARN</p>
         <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
           {rows.map((r) => (
             <li key={r.label} className="flex items-baseline gap-3 px-4 py-2.5">
@@ -127,9 +127,9 @@ export function RegisterStall({ booths }: { booths: BoothInstance[] }) {
               <span className="flex flex-wrap items-baseline gap-x-2">
                 <span className="text-sm">{b.startup?.name}</span>
                 {b.startup?.demo && (
-                  <span className="micro text-[9px] text-muted">SAMPLE</span>
+                  <span className="micro text-xs text-muted">SAMPLE</span>
                 )}
-                {b.ownerId && <span className="micro text-[9px] text-verify">LIVE</span>}
+                {b.ownerId && <span className="micro text-xs text-verify">LIVE</span>}
               </span>
               <span className="block text-xs leading-snug text-muted">
                 {b.startup?.oneLiner}
@@ -176,7 +176,7 @@ export function PorterStall({
             >
               <div className="flex items-baseline justify-between gap-3">
                 <span className="font-display text-lg leading-tight">{f.name}</span>
-                <span className="micro shrink-0 text-[10px] text-muted">
+                <span className="micro shrink-0 text-xs text-muted">
                   {current ? "YOU ARE HERE" : locked ? f.tier.toUpperCase() : `${here} here`}
                 </span>
               </div>
@@ -272,7 +272,7 @@ export function GuideStall() {
           screen with no keyboard is the exact bug lib/device.ts exists
           to prevent. */}
       <div className="rounded-lg border border-line bg-paper px-4 py-3">
-        <p className="micro mb-1.5 text-[10px] text-muted">CONTROLS</p>
+        <p className="micro mb-1.5 text-xs text-muted">CONTROLS</p>
         {controls.lines.map((line) => (
           <p key={line} className="text-xs leading-relaxed text-muted">
             {line}
@@ -327,8 +327,8 @@ function Table<T extends { id: string; name: string }>({
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <p className="micro text-[10px] text-muted">{title}</p>
-        <p className="text-[10px] leading-none text-muted">{note}</p>
+        <p className="micro text-xs text-muted">{title}</p>
+        <p className="text-xs leading-none text-muted">{note}</p>
       </div>
       <ol className="flex flex-col divide-y divide-line rounded-lg border border-line">
         {rows.map((r, i) => (
@@ -344,7 +344,7 @@ function Table<T extends { id: string; name: string }>({
             </span>
             <span className="min-w-0 flex-1 truncate text-sm">
               {r.name}
-              {r.id === me && <span className="micro ml-2 text-[9px] text-accent">YOU</span>}
+              {r.id === me && <span className="micro ml-2 text-xs text-accent">YOU</span>}
             </span>
             <span className="shrink-0 font-mono text-sm">{value(r)}</span>
           </li>
@@ -414,16 +414,16 @@ export function RecordsStall({ state }: { state: AppState }) {
       <div className="grid grid-cols-2 gap-2">
         {cards.map((c) => (
           <div key={c.label} className="rounded-lg border border-line bg-paper px-3 py-2.5">
-            <p className="micro text-[9px] text-muted">{c.label.toUpperCase()}</p>
+            <p className="micro text-xs text-muted">{c.label.toUpperCase()}</p>
             <p className="mt-0.5 font-display text-2xl leading-none">{c.value}</p>
-            <p className="mt-1 text-[11px] leading-snug text-muted">{c.note}</p>
+            <p className="mt-1 text-xs leading-snug text-muted">{c.note}</p>
           </div>
         ))}
       </div>
 
       {awards.length > 0 && (
         <div className="rounded-lg border border-gold bg-paper px-4 py-3">
-          <p className="micro mb-2 text-[10px] text-muted">WHAT YOU HAVE WON</p>
+          <p className="micro mb-2 text-xs text-muted">WHAT YOU HAVE WON</p>
           <ul className="flex flex-col gap-1.5">
             {awards.slice(0, 4).map((a) => (
               <li key={`${a.week}|${a.board}`} className="flex items-baseline gap-2 text-sm">
@@ -499,7 +499,7 @@ export function RecordsStall({ state }: { state: AppState }) {
 
           {board.lastWeek && (
             <div>
-              <p className="micro mb-2 text-[10px] text-muted">
+              <p className="micro mb-2 text-xs text-muted">
                 LAST WEEK ({board.lastWeek.week})
               </p>
               <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
@@ -516,7 +516,7 @@ export function RecordsStall({ state }: { state: AppState }) {
           )}
 
           <div className="rounded-lg border border-line bg-paper px-4 py-3">
-            <p className="micro mb-1.5 text-[10px] text-muted">HOW MUCH TO TRUST THIS</p>
+            <p className="micro mb-1.5 text-xs text-muted">HOW MUCH TO TRUST THIS</p>
             <p className="text-xs leading-relaxed text-muted">
               Time in the building is measured by the server, from the moment
               you walk in to the moment you close the tab, so it is the one

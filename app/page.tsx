@@ -57,7 +57,7 @@ const TICKER_ITEMS = [
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded-sm border border-line bg-panel px-1.5 py-0.5 font-mono text-[11px] text-ink">
+    <kbd className="rounded-sm border border-line bg-panel px-1.5 py-0.5 font-mono text-xs text-ink">
       {children}
     </kbd>
   );

@@ -43,19 +43,33 @@ const config: Config = {
         fountain: "oklch(var(--fountain) / <alpha-value>)",
         exitsign: "oklch(var(--exitsign) / <alpha-value>)",
       },
+      /* THE TYPE SCALE, on the unit: 12 · 16 · 20 · 28 · 36 · 48 (+ the
+         88px hero). Every size and line-height a multiple of 4; step
+         ratios 1.33 / 1.25 / 1.4 / 1.29 / 1.33, page max:min 7.3. Body
+         reads at 16. Emphasis is one weight step, never italics. */
+      fontSize: {
+        xs: ["12px", { lineHeight: "16px" }],
+        sm: ["16px", { lineHeight: "24px" }],
+        base: ["16px", { lineHeight: "24px" }],
+        lg: ["20px", { lineHeight: "28px" }],
+        xl: ["28px", { lineHeight: "32px" }],
+        "2xl": ["28px", { lineHeight: "32px" }],
+        "3xl": ["36px", { lineHeight: "40px" }],
+        "4xl": ["48px", { lineHeight: "52px" }],
+      },
       fontFamily: {
         display: ["Iowan Old Style", "Palatino Linotype", "Palatino", "Georgia", "serif"],
         body: [
+          "IBM Plex Sans",
           "ui-sans-serif",
           "system-ui",
           "-apple-system",
           "Segoe UI",
-          "Roboto",
           "Helvetica Neue",
           "Arial",
           "sans-serif",
         ],
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
+        mono: ["IBM Plex Mono", "ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
       /**
        * Geometry on the unit grid. Radii are 1u/2u/3u and CONCENTRIC:

@@ -653,7 +653,7 @@ export default function AdminPage() {
                   )}
                   {p.mailingList && " · on the mailing list"}
                 </span>
-                <span className="break-all font-mono text-[11px]">{p.id}</span>
+                <span className="break-all font-mono text-xs">{p.id}</span>
                 <span>
                   {p.company ? <span className="text-ink">{p.company}</span> : "no company"}
                   {p.standFloor
@@ -827,7 +827,7 @@ export default function AdminPage() {
                     <span className="italic">guest — no email on file</span>
                   )}
                 </span>
-                <span className="break-all font-mono text-[11px]">{r.owner.id}</span>
+                <span className="break-all font-mono text-xs">{r.owner.id}</span>
                 {r.owner.banned && (
                   <span className="text-accent">
                     already banned: {r.owner.banned.reason || "no reason given"}

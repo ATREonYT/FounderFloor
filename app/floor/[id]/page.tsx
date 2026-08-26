@@ -1779,7 +1779,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
                     <span className="mt-1 block flex-1 text-xs leading-snug text-muted">
                       {r.what}
                     </span>
-                    <span className="micro mt-2 block text-[9px] text-muted">
+                    <span className="micro mt-2 block text-xs text-muted">
                       {r.meta.toUpperCase()}
                     </span>
                   </button>

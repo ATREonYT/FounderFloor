@@ -116,7 +116,7 @@ export default function BoothCard({
           )}
         </div>
 
-        <p className="font-display text-[15px] italic leading-snug text-ink">
+        <p className="font-display text-sm italic leading-snug text-ink">
           {s.oneLiner}
         </p>
         <p className="text-sm leading-relaxed text-muted">{s.pitch}</p>
