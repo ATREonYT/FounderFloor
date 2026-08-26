@@ -43,24 +43,31 @@ const config: Config = {
         mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
       /**
-       * 2026 geometry on a retro palette: the whole old scale read as
-       * boxy shareware. Every existing rounded-* call site picks these up.
+       * Geometry on the unit grid. Radii are 1u/2u/3u and CONCENTRIC:
+       * an inner element's radius = its parent's radius minus the gap
+       * between them (a 12 container with 8 of padding gives its child
+       * 4). Radii are the fallback shape — the primary corner language
+       * is the badge clip (see .clip-badge in globals), and rounded-full
+       * survives only on avatars and status dots.
        */
       borderRadius: {
-        sm: "6px",
-        DEFAULT: "8px",
-        md: "10px",
-        lg: "14px",
-        xl: "18px",
-        "2xl": "22px",
-        "3xl": "28px",
+        sm: "4px",
+        DEFAULT: "4px",
+        md: "8px",
+        lg: "12px",
+        xl: "12px",
+        "2xl": "16px",
+        "3xl": "16px",
       },
+      /**
+       * Die-cut shadows: hard offsets on the unit's half-steps, no blur.
+       * The old system was one soft wash on everything; this is a piece
+       * of card sitting on a table. Stroke weights (1/2px borders) and
+       * these 2px offsets are the pen-width exception to the unit rule.
+       */
       boxShadow: {
-        // resting card: barely-there contact shadow + a wide soft wash
-        card: "0 1px 2px rgba(35,32,26,0.05), 0 8px 24px -12px rgba(35,32,26,0.12)",
-        // floating chrome: popovers, toasts, the on-floor panels
-        float:
-          "0 1px 2px rgba(35,32,26,0.06), 0 12px 32px -12px rgba(35,32,26,0.18), 0 32px 64px -32px rgba(35,32,26,0.14)",
+        card: "0 2px 0 0 rgb(var(--ink) / 0.10)",
+        float: "0 4px 0 0 rgb(var(--ink) / 0.14)",
       },
     },
   },

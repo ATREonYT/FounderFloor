@@ -128,14 +128,35 @@
     @apply text-[11px] font-medium uppercase tracking-widest;
   }
 
-  /* Standard quiet panel: white card, soft hairline, resting depth.
-     The old flat 6px box read as legacy software — cards now sit ON the
-     page instead of being drawn on it. */
+  /* ─── THE BADGE CLIP — the signature ──────────────────────────────
+     One 8px (2u) cut across the top-right corner, on every panel, sign,
+     button and plaque, and nowhere else in the world: the corner you
+     punch a lanyard clip through on an expo badge. clip-path is the
+     tested implementation; corner-shape rides on top for engines that
+     have it. Nothing else on the site may cut a corner. */
+  .clip-badge {
+    clip-path: polygon(
+      0 0,
+      calc(100% - 8px) 0,
+      100% 8px,
+      100% 100%,
+      0 100%
+    );
+  }
+  @supports (corner-shape: notch) {
+    .clip-badge {
+      clip-path: none;
+      corner-shape: notch;
+      border-top-right-radius: 8px;
+    }
+  }
+
+  /* Standard quiet panel: a piece of card on the table — hairline edge,
+     hard 2px die-cut shadow, badge-clipped corner. The soft wash the
+     panels used to wear is gone with the rest of the one-shadow habit. */
   .panel {
-    @apply rounded-xl border border-line/70 bg-panel;
-    box-shadow:
-      0 1px 2px rgba(35, 32, 26, 0.04),
-      0 8px 24px -16px rgba(35, 32, 26, 0.1);
+    @apply clip-badge rounded-lg border border-line/70 bg-panel;
+    box-shadow: 0 2px 0 0 rgb(var(--ink) / 0.08);
   }
 
   /* Smooth expand/collapse for content of unknown height (quest boards):
@@ -162,8 +183,10 @@
   /* Floating glass chrome for in-game overlays (quest pill, booth cards,
      chat): translucent panel + blur so the hall stays visible underneath —
      the single strongest "this is a 2026 product" cue on the floor. */
+  /* Floor chrome: the blur is functional (legibility over a moving
+     game), not decoration, so it stays. Clipped like everything else. */
   .glass {
-    @apply rounded-xl border border-line/60;
+    @apply clip-badge rounded-lg border border-line/60;
     background-color: rgba(255, 255, 255, 0.86);
     backdrop-filter: blur(12px) saturate(1.1);
     -webkit-backdrop-filter: blur(12px) saturate(1.1);
@@ -190,12 +213,9 @@
       border-color 220ms ease;
   }
   .card-lift:hover {
-    transform: translateY(-3px);
-    box-shadow:
-      0 1px 2px rgba(35, 32, 26, 0.05),
-      0 6px 14px rgba(35, 32, 26, 0.07),
-      0 16px 32px rgba(35, 32, 26, 0.07);
-    border-color: rgba(111, 106, 94, 0.45);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 0 0 rgb(var(--ink) / 0.12);
+    border-color: rgb(var(--muted) / 0.45);
   }
 
   @keyframes fade-up {
