@@ -21,6 +21,7 @@ import { floorById } from "@/lib/data/floors";
 import RankBadge from "@/components/RankBadge";
 import TierTag from "@/components/TierTag";
 import StandExtras from "@/components/StandExtras";
+import { boothNumber } from "@/lib/boothNumber";
 
 export const revalidate = 60;
 
@@ -91,6 +92,8 @@ export default async function StandPage({ params }: Props) {
           Directory
         </Link>{" "}
         · {s.category || "Startup"}
+        {boothNumber(stand.floorId, stand.spotIndex) &&
+          ` · ${boothNumber(stand.floorId, stand.spotIndex)}`}
       </p>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">

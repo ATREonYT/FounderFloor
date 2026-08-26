@@ -18,6 +18,7 @@ import FoundingSeatsCard from "@/components/FoundingSeatsCard";
 import FoundersWall from "@/components/FoundersWall";
 import WallJoin from "@/components/WallJoin";
 import Spec from "@/components/Spec";
+import Sign from "@/components/Sign";
 
 /**
  * The landing page, set as a printed trade-show programme.
@@ -84,7 +85,7 @@ function CropMarks({ tone = "ink" }: { tone?: "ink" | "paper" }) {
  * previous design, where every section was a centred stack of equal width.
  */
 function Section({
-  n,
+  glyph,
   kicker,
   title,
   lede,
@@ -93,7 +94,7 @@ function Section({
   tone = "paper",
   className = "",
 }: {
-  n: string;
+  glyph: GlyphId;
   kicker: string;
   title: string;
   lede?: React.ReactNode;
@@ -103,7 +104,7 @@ function Section({
   className?: string;
 }) {
   const dark = tone === "ink";
-  const headingId = `${id ?? n}-heading`;
+  const headingId = `${id ?? kicker}-heading`;
   return (
     <section
       id={id}
@@ -115,26 +116,14 @@ function Section({
       <Reveal className={`${SHELL} py-14 sm:py-20`}>
         <div className="grid gap-y-8 lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] lg:gap-x-14">
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="flex items-center gap-3">
-              <span
-                aria-hidden="true"
-                className={`numeral text-[2.75rem] leading-none ${
-                  dark ? "text-paper/20" : "text-ink/15"
-                }`}
-              >
-                {n}
-              </span>
-              <span
-                aria-hidden="true"
-                className={`dash-x draw-x h-px flex-1 ${
-                  dark ? "[--dash-c:rgba(242,239,231,0.3)]" : ""
-                }`}
-              />
-            </div>
-            <Spec className={`mt-4 block ${dark ? "text-gold" : "text-accent"}`}>{kicker}</Spec>
+            {/* The sign. One repeating unit — pictogram, label, the
+                section's real anchor in the code slot — in place of the
+                old numeral rail and kicker. Same anatomy as every other
+                sign in the building; nothing here is improvised. */}
+            <Sign glyph={glyph} label={kicker} code={id ? `#${id}` : undefined} />
             <h2
               id={headingId}
-              className={`mt-2 font-display text-3xl leading-tight sm:text-[2.1rem] ${
+              className={`mt-4 font-display text-3xl leading-tight ${
                 dark ? "text-paper" : ""
               }`}
             >
@@ -266,15 +255,17 @@ const FAQ = [
  * The running head, pinned in the left margin above 1380px. Kept next to the
  * sections it points at so the two cannot drift apart.
  */
+// The side rail shows each section's REAL address — the anchor you would
+// share — not an invented numbering. Micrographics, not decoration.
 const PROGRAMME: IndexEntry[] = [
-  { id: "route", n: "01", label: "Three stops, one lap" },
-  { id: "index", n: "02", label: "Find your way around" },
-  { id: "wall", n: "03", label: "The founders wall" },
-  { id: "halls", n: "04", label: "The floor" },
-  { id: "ranks", n: "05", label: "The rank ladder" },
-  { id: "admission", n: "06", label: "Admission" },
-  { id: "roadmap", n: "07", label: "The floor keeps changing" },
-  { id: "faq", n: "08", label: "Fair questions" },
+  { id: "route", n: "#route", label: "Three stops, one lap" },
+  { id: "index", n: "#index", label: "Find your way around" },
+  { id: "wall", n: "#wall", label: "The founders wall" },
+  { id: "halls", n: "#halls", label: "The floor" },
+  { id: "ranks", n: "#ranks", label: "The rank ladder" },
+  { id: "admission", n: "#admission", label: "Admission" },
+  { id: "roadmap", n: "#roadmap", label: "The floor keeps changing" },
+  { id: "faq", n: "#faq", label: "Fair questions" },
 ];
 
 /* ------------------------------------------------------------------ page */
@@ -406,7 +397,7 @@ export default function LandingPage() {
 
       {/* ============================================ 01 — THE ROUTE */}
       <Section
-        n="01"
+        glyph="bolt"
         id="route"
         kicker="The whole idea"
         title={"Three stops, one lap"}
@@ -459,7 +450,7 @@ export default function LandingPage() {
 
       {/* ============================================ 02 — THE INDEX */}
       <Section
-        n="02"
+        glyph="chip"
         id="index"
         kicker="The map"
         title="Find your way around"
@@ -499,7 +490,7 @@ export default function LandingPage() {
           "what is this" to "I am in it" — no download, no floor, no
           waiting for Sunday. */}
       <Section
-        n="03"
+        glyph="heart"
         id="wall"
         kicker="Who is here"
         title="The founders wall"
@@ -512,7 +503,7 @@ export default function LandingPage() {
 
       {/* ============================================ 04 — THE HALL */}
       <Section
-        n="04"
+        glyph="cube"
         id="halls"
         kicker="The venue"
         title={MANY_FLOORS ? "The floors" : "The floor"}
@@ -588,7 +579,7 @@ export default function LandingPage() {
 
       {/* ============================================ 04 — THE BOARD */}
       <Section
-        n="05"
+        glyph="flask"
         id="ranks"
         kicker="The board"
         title="The rank ladder"
@@ -642,7 +633,7 @@ export default function LandingPage() {
 
       {/* ============================================ 05 — ADMISSION */}
       <Section
-        n="06"
+        glyph="coin"
         id="admission"
         kicker="What costs money"
         title="Admission"
@@ -660,7 +651,7 @@ export default function LandingPage() {
 
       {/* ============================================ 06 — THE BUILD LOG */}
       <Section
-        n="07"
+        glyph="rocket"
         id="roadmap"
         kicker="Shipping weekly"
         title="The floor keeps changing"
@@ -698,7 +689,7 @@ export default function LandingPage() {
 
       {/* ============================================ 07 — ENQUIRIES */}
       <Section
-        n="08"
+        glyph="leaf"
         id="faq"
         kicker="Before you ask"
         title="Fair questions"

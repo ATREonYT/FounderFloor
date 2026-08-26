@@ -18,6 +18,7 @@ import type { Leaderboard } from "@/lib/leaderboard";
 import { TIER_ORDER } from "@/lib/types";
 import type { AppState, BoothInstance, SubTier } from "@/lib/types";
 import TicketIcon from "@/components/TicketIcon";
+import { boothNumber } from "@/lib/boothNumber";
 import { controlCopy, useDevice } from "@/lib/device";
 
 // ---------------------------------------------------------------- tickets
@@ -79,7 +80,7 @@ export function TicketStall({ state }: { state: AppState }) {
 
 // --------------------------------------------------------------- register
 
-export function RegisterStall({ booths }: { booths: BoothInstance[] }) {
+export function RegisterStall({ booths, floorId }: { booths: BoothInstance[]; floorId?: string }) {
   const [q, setQ] = useState("");
   const taken = useMemo(
     () => booths.filter((b) => b.startup).sort((a, b) => a.spotIndex - b.spotIndex),
@@ -115,8 +116,8 @@ export function RegisterStall({ booths }: { booths: BoothInstance[] }) {
       <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
         {shown.map((b) => (
           <li key={b.spotIndex} className="flex items-start gap-3 px-3 py-2.5">
-            <span className="mt-0.5 w-8 shrink-0 font-mono text-xs text-muted">
-              {String(b.spotIndex + 1).padStart(2, "0")}
+            <span className="mt-0.5 w-12 shrink-0 font-mono text-xs text-muted">
+              {boothNumber(floorId, b.spotIndex) || String(b.spotIndex + 1).padStart(2, "0")}
             </span>
             <span
               aria-hidden="true"

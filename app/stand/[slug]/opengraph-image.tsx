@@ -19,6 +19,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fetchPublicStand } from "@/lib/serverFloor";
 import { renderStandSvg } from "@/game/standScene";
+import { boothNumber } from "@/lib/boothNumber";
 
 export const runtime = "nodejs";
 export const revalidate = 300;
@@ -45,8 +46,7 @@ export default async function OgImage({ params }: { params: { slug: string } }) 
   const name = stand?.startup.name ?? "FounderFloor";
   const oneLiner = stand?.startup.oneLiner ?? "";
   const founder = stand?.startup.founder ?? "";
-  const spot =
-    stand && stand.spotIndex >= 0 ? `NO. ${String(stand.spotIndex + 1).padStart(2, "0")}` : "";
+  const spot = stand ? boothNumber(stand.floorId, stand.spotIndex) : "";
   const hall = stand?.floorId ? stand.floorId.replace(/-/g, " ").toUpperCase() : "THE DIRECTORY";
 
   const boothSvg = stand

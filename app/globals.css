@@ -189,9 +189,11 @@
     text-box: trim-both cap alphabetic;
   }
 
-  /* Uppercase letterspaced micro-label for metadata (tier tags, rank names). */
+  /* Metadata label: mono, 12px, normal case. The uppercase letterspaced
+     kicker this used to be is the most documented type tell there is —
+     metadata now reads as what it is (data), set in the data face. */
   .micro {
-    @apply text-xs font-medium uppercase tracking-widest;
+    @apply font-mono text-xs font-normal normal-case tracking-normal;
   }
 
   /* ─── THE BADGE CLIP — the signature ──────────────────────────────

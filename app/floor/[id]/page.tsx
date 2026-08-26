@@ -1694,7 +1694,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           wide={openStall.action === "arcade"}
         >
           {openStall.action === "tickets" && <TicketStall state={state} />}
-          {openStall.action === "register" && <RegisterStall booths={hallBooths} />}
+          {openStall.action === "register" && <RegisterStall booths={hallBooths} floorId={floor.id} />}
           {openStall.action === "porter" && (
             <PorterStall floorId={floor?.id ?? ""} presence={floorCounts} tier={state.sub} />
           )}
