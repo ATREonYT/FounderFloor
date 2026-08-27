@@ -126,9 +126,9 @@ export default function BoothCard({
         {s.demo && (
           <p className="rounded-md border border-line bg-paper px-3 py-2 text-xs leading-relaxed text-muted">
             <span className="micro mr-1 text-ink">SAMPLE STAND</span>
-            One of sixteen examples dressing the hall while it fills up. Not a
-            real company, and not listed in the directory — the founder here is
-            a character, not a person you can reach.
+            Ships with the hall to dress it while it fills up. Not a real
+            company, and not listed in the directory — the founder here is a
+            character, not a person you can reach.
           </p>
         )}
 

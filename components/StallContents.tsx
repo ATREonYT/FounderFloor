@@ -87,6 +87,9 @@ export function RegisterStall({ booths, floorId }: { booths: BoothInstance[]; fl
     [booths],
   );
   const open = booths.length - taken.length;
+  // Samples are stands standing in the room, so they count as "up" — but
+  // the sentence must not let them pass as companies.
+  const samples = useMemo(() => taken.filter((b) => b.startup?.demo).length, [taken]);
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return taken;
@@ -104,8 +107,13 @@ export function RegisterStall({ booths, floorId }: { booths: BoothInstance[]; fl
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm leading-relaxed text-muted">
-        {taken.length} of {booths.length} stands are up. {open} still open — the
-        numbers on the empty boards are the ones you can claim.
+        {taken.length} of {booths.length} stands are up
+        {samples > 0 &&
+          (samples === taken.length
+            ? " (all of them samples that ship with the hall)"
+            : ` (${samples} of them samples that ship with the hall)`)}
+        . {open} still open — the numbers on the empty boards are the ones you
+        can claim.
       </p>
       <input
         value={q}

@@ -18,7 +18,12 @@
  *      avenue tile — i.e. the whole hall is actually connected
  */
 import { readFileSync } from "node:fs";
-import { MAIN_HALL_SPOTS } from "../lib/data/spot-plans.mjs";
+import {
+  MAIN_HALL_SEED_IDS,
+  MAIN_HALL_SEED_SPOTS,
+  MAIN_HALL_SPOTS,
+  SEED_VISIBLE_COUNT,
+} from "../lib/data/spot-plans.mjs";
 
 const SRC = new URL("../lib/data/floors.ts", import.meta.url).pathname;
 const raw = readFileSync(SRC, "utf8");
@@ -28,13 +33,21 @@ const raw = readFileSync(SRC, "utf8");
 // server can share them), and evaluate it. Cheaper and far less brittle
 // than a real parser for one file.
 const body = raw
-  .replace(/^import .*$/gm, "")
+  // whole import statements, single- or multi-line (anchored to their
+  // closing `";` so nothing else is consumed)
+  .replace(/^import\b[\s\S]*?";$/gm, "")
   .replace(/:\s*FloorDef\[\]/g, "")
   .replace(/ as BoothSpot\[\]/g, "")
   .replace(/export const /g, "const ")
   // the real functions in the file are typed lookup helpers we don't need
   .replace(/export function \w+[\s\S]*?\n}\n/g, "");
-const FLOORS = new Function("MAIN_HALL_SPOTS", `${body}; return FLOORS;`)(MAIN_HALL_SPOTS);
+const FLOORS = new Function(
+  "MAIN_HALL_SPOTS",
+  "MAIN_HALL_SEED_IDS",
+  "MAIN_HALL_SEED_SPOTS",
+  "SEED_VISIBLE_COUNT",
+  `${body}; return FLOORS;`,
+)(MAIN_HALL_SPOTS, MAIN_HALL_SEED_IDS, MAIN_HALL_SEED_SPOTS, SEED_VISIBLE_COUNT);
 
 let bad = 0;
 const check = (ok, msg, extra = "") => {
@@ -363,6 +376,36 @@ for (const f of FLOORS) {
   const total = (W - 2) * (H - 2);
   console.log(`        ${walkable} walkable tiles of ${total} interior (${Math.round((walkable / total) * 100)}%)`);
   if (bad === 0) pass("geometry clean");
+}
+
+// ---- the sample seed plan (checked at FULL length, whatever the dial
+// says today, so raising SEED_VISIBLE_COUNT on a launch morning can't
+// discover a bad seat) ----
+{
+  console.log(`\nmain-hall seed plan  ${MAIN_HALL_SEED_IDS.length} samples, ${SEED_VISIBLE_COUNT} visible`);
+  check(
+    MAIN_HALL_SEED_SPOTS.length === MAIN_HALL_SEED_IDS.length,
+    "one seat per sample",
+    `${MAIN_HALL_SEED_SPOTS.length} seats / ${MAIN_HALL_SEED_IDS.length} ids`,
+  );
+  const dupes = MAIN_HALL_SEED_SPOTS.length !== new Set(MAIN_HALL_SEED_SPOTS).size;
+  check(!dupes, "no two samples share a spot");
+  const outOfRange = MAIN_HALL_SEED_SPOTS.filter(
+    (i) => !Number.isInteger(i) || i < 0 || i >= MAIN_HALL_SPOTS.length,
+  );
+  check(outOfRange.length === 0, "every seat is a real spot index", outOfRange.join(", "));
+  const onGold = MAIN_HALL_SEED_SPOTS.filter((i) => MAIN_HALL_SPOTS[i]?.tier === "gold");
+  check(
+    onGold.length === 0,
+    "no sample ever sits on a gold spot — those stay open for people",
+    onGold.map((i) => MAIN_HALL_SPOTS[i].id).join(", "),
+  );
+  check(
+    SEED_VISIBLE_COUNT >= 0 && SEED_VISIBLE_COUNT <= MAIN_HALL_SEED_IDS.length,
+    "the dial is within range",
+    String(SEED_VISIBLE_COUNT),
+  );
+  if (bad === 0) pass("seed plan clean");
 }
 
 console.log(bad === 0 ? "\nALL GEOMETRY CHECKS PASSED" : `\n${bad} CHECK(S) FAILED`);

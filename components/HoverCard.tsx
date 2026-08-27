@@ -75,6 +75,11 @@ export default function HoverCard({
             {s.name} — {s.oneLiner}
           </p>
         )}
+        {/* Furniture, not a warning — but said before anyone invests a
+            walk-over in a company nobody runs. */}
+        {s?.demo && (
+          <p className="micro mt-1 text-muted">Sample stand — ships with the hall</p>
+        )}
       </>
     );
   } else {
@@ -86,6 +91,9 @@ export default function HoverCard({
           <RankBadge revenue={s.verifiedRevenue} />
         </div>
         <p className="mt-0.5 text-xs leading-snug text-muted">{s.oneLiner}</p>
+        {s.demo && (
+          <p className="micro mt-1 text-muted">Sample stand — ships with the hall</p>
+        )}
       </>
     ) : (
       <>

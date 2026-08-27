@@ -19,7 +19,12 @@
  */
 
 import type { BoothSpot, FloorDef } from "@/lib/types";
-import { MAIN_HALL_SPOTS } from "@/lib/data/spot-plans.mjs";
+import {
+  MAIN_HALL_SEED_IDS,
+  MAIN_HALL_SEED_SPOTS,
+  MAIN_HALL_SPOTS,
+  SEED_VISIBLE_COUNT,
+} from "@/lib/data/spot-plans.mjs";
 
 /**
  * The practice floor: claims here are rehearsal, exempt from the
@@ -224,9 +229,14 @@ export const FLOORS: FloorDef[] = [
     // caught faking one costs the claim it is built on.
     //
     // startupIds stays as a mechanism (the Tutorial Hall still uses it) and
-    // ships empty here. To put the samples back, restore the sixteen ids
-    // from lib/data/startups.ts and the seedSpots list from git history.
-    startupIds: [],
+    // ships empty here: SEED_VISIBLE_COUNT in lib/data/spot-plans.mjs is 0.
+    // To seat samples for a launch morning, raise that ONE number — the
+    // first N of the sixteen appear on bronze-then-silver spots (never
+    // gold), every surface labels them SAMPLE, and no listing or counter
+    // ever includes them. Lower it again as real founders claim stands and
+    // the fiction retreats to OPEN STAND boards.
+    startupIds: MAIN_HALL_SEED_IDS.slice(0, SEED_VISIBLE_COUNT),
+    seedSpots: MAIN_HALL_SEED_SPOTS.slice(0, SEED_VISIBLE_COUNT),
     plaza: {
       // The paving runs from the northern rank's apron row to the southern
       // rank's top row, so the stands are literally on its edge: step off

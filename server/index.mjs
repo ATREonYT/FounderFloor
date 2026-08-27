@@ -52,6 +52,7 @@ import {
   SPOT_PLANS,
   holdUntilFor,
   nearestFreeBronzeIndex,
+  seededSpotIndexes,
   tierOfSpot,
 } from "../lib/data/spot-plans.mjs";
 import {
@@ -2887,6 +2888,9 @@ function relocateLapsedHolds() {
       for (const [oid, other] of byOwner) {
         if (oid !== ownerId) taken.add(other.claim.spotIndex);
       }
+      // Visible sample stands occupy their spots client-side; parking a
+      // relocated REAL stand under one would make it invisible.
+      for (const i of seededSpotIndexes(floorId)) taken.add(i);
       const dest = nearestFreeBronzeIndex(floorId, st.claim.spotIndex, taken);
       if (dest < 0) continue; // every bronze spot taken — try next sweep
       moveGuestbook(floorId, st.claim.spotIndex, dest);
