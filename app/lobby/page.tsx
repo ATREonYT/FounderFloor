@@ -234,8 +234,10 @@ export default function LobbyPage() {
                 {floor.tagline}
               </p>
               {/* Say how busy it is either way. Hiding a zero doesn't make a
-                  floor feel full — it just makes the walk in a surprise, and
-                  "quiet right now" sets an honest expectation instead. */}
+                  floor feel full — it just makes the walk in a surprise.
+                  "between shows" states the schedule, not an absence: the
+                  hall fills on Sundays and is in build-up the rest of the
+                  week, and neither of those is a failure. */}
               <p className="micro mt-4 flex items-center gap-3 text-muted">
                 <span>{floor.boothSpots.length} booths</span>
                 {(presence[floor.id] ?? 0) > 0 ? (
@@ -252,7 +254,7 @@ export default function LobbyPage() {
                       aria-hidden="true"
                       className="inline-block h-2 w-2 rounded-full bg-muted/40"
                     />
-                    quiet right now
+                    between shows
                   </span>
                 )}
               </p>

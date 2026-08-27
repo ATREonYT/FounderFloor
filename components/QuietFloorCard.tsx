@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * What to do when the hall is empty.
+ * The hall between shows.
  *
  * A visitor who walks into a silent room with nothing but OPEN SPOT signs
  * concludes the place is dead and leaves — that single moment costs more
- * users than any other screen. So when someone is genuinely alone, say so
- * plainly and hand them the three things that are still worth doing:
+ * users than any other screen. The reframe is the trade-show truth: a hall
+ * between shows isn't failing, it's in BUILD-UP — the crew hours before
+ * the doors open. Say when the next show is, never imply anyone is here
+ * who isn't, and hand over the three things worth doing meanwhile:
  * put a stand up (the floor empties when they leave, but the stand's own
  * page does not), come back for the weekly hour when the floor is busy, or
  * read who else is here.
@@ -41,11 +43,11 @@ export default function QuietFloorCard({
 
   return (
     <aside
-      aria-label="Nobody else is here"
+      aria-label="The hall between shows"
       className="glass anim-in pointer-events-auto w-[330px] max-w-[calc(100vw-24px)] border-l-2 border-l-accent p-4 shadow-float"
     >
       <div className="flex items-baseline justify-between gap-2">
-        <span className="micro text-accent">QUIET RIGHT NOW</span>
+        <span className="micro text-accent">BUILD-UP</span>
         <button
           type="button"
           onClick={onClose}
@@ -55,8 +57,9 @@ export default function QuietFloorCard({
         </button>
       </div>
       <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        You&rsquo;re the only one in {floorName} at the moment — it&rsquo;s a
-        young floor. Three things still worth doing:
+        {ev.live
+          ? `You have ${floorName} to yourself even though the doors are open — early is a good time to arrive.`
+          : `You have ${floorName} to yourself. The next show is ${ev.name}, in ${ev.label} — until then the hall is in build-up, which is the right time to get your stand in order.`}
       </p>
       <div className="mt-3 flex flex-col gap-2">
         {!hasStand && (

@@ -258,7 +258,7 @@ export default function ChatPanel({
         {msgs.length === 0 && (
           <p className="px-3 py-2 text-sm text-muted">
             {activeKey === "floor"
-              ? "Nobody has said anything yet. Floors are quiet until they aren't."
+              ? "Nobody has said anything yet. Between shows the hall is like this — the doors-open crowd arrives on Sundays."
               : "Say something."}
           </p>
         )}
