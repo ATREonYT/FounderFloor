@@ -17,7 +17,7 @@ const config: Config = {
         "accent-strong": "#C0410C",
         "accent-soft": "#FBE9E0",
         verify: "#2B8A3E",
-        gold: "#B08D2E",
+        gold: "rgb(var(--gold) / <alpha-value>)",
         // gold fails WCAG AA as small text on paper (2.7:1) — use this for
         // gold TEXT, keep `gold` for dots, borders and fills
         "gold-deep": "#7A611F",

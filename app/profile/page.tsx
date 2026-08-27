@@ -1828,7 +1828,7 @@ export default function ProfilePage() {
                 >
                   <PixelGlyph
                     glyph={meta.glyph}
-                    color={earned ? "#B08D2E" : "#B4AE9F"}
+                    color={earned ? "rgb(var(--gold))" : "#B4AE9F"}
                     size={18}
                   />
                 </span>

@@ -14,7 +14,7 @@ export default function TicketIcon({ size = 14 }: { size?: number }) {
       className="pixelated inline-block shrink-0 align-[-2px]"
     >
       {/* body */}
-      <rect x="1" y="4" width="14" height="8" fill="#B08D2E" />
+      <rect x="1" y="4" width="14" height="8" fill="rgb(var(--gold))" />
       {/* top highlight + bottom shade */}
       <rect x="1" y="4" width="14" height="1" fill="#C9A94B" />
       <rect x="1" y="11" width="14" height="1" fill="#8A6E24" />
