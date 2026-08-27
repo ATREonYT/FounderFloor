@@ -48,10 +48,18 @@ export default function ProgrammeIndex({ entries }: { entries: IndexEntry[] }) {
     };
   }, [entries]);
 
+  // Above the first section — the hero — there is nothing to index, so
+  // the rail waits offstage and fades in when the reading actually starts.
+  // (active is null exactly while no section has reached the reading line.)
+  const offstage = active === null;
+
   return (
     <nav
       aria-label="Programme sections"
-      className="fixed left-7 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 min-[1380px]:flex"
+      aria-hidden={offstage || undefined}
+      className={`fixed left-7 top-1/2 z-30 hidden -translate-y-1/2 flex-col gap-3 transition-opacity duration-300 min-[1380px]:flex ${
+        offstage ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
     >
       {entries.map((e) => {
         const on = active === e.id;

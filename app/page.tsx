@@ -463,7 +463,11 @@ export default function LandingPage() {
             <li key={row.href}>
               <Link
                 href={row.href}
-                className="index-row relative grid grid-cols-[2.25rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[2.5rem_8.5rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
+                // The first track is `auto`, not a fixed rem: it holds the
+                // row's real address ("/connections" is the widest), and the
+                // old 2.5rem — sized for the numerals this column once
+                // carried — let the href run underneath the glyph and name.
+                className="index-row relative grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[auto_9rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
               >
                 {/* the row's REAL address, not an invented numbering */}
                 <span aria-hidden="true" className="font-mono text-xs text-muted/70">
