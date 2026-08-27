@@ -27,6 +27,14 @@ export default function EmailCapture({
 }) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<"idle" | "busy" | "done" | "already" | "error">("idle");
+  /**
+   * The plan question, asked only AFTER the address is in. Stating a plan
+   * measurably raises show-up (a 287k-person field experiment: +4.1
+   * points, +9.1 among people who live alone), and the reminder echoes it
+   * back — but it never blocks the signup, and Skip is always there.
+   */
+  const [plan, setPlan] = useState("");
+  const [planState, setPlanState] = useState<"ask" | "busy" | "sent" | "skipped">("ask");
 
   const rsvp = variant === "rsvp";
   const valid = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email.trim());
@@ -52,15 +60,92 @@ export default function EmailCapture({
     }
   };
 
+  const sendPlan = async () => {
+    const text = plan.trim().slice(0, 140);
+    if (!text) return;
+    setPlanState("busy");
+    try {
+      await fetch(`${httpBase()}/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // Same record, same endpoint — the server updates the plan and,
+        // because the address is already on the list, mails nothing.
+        body: JSON.stringify({ email: email.trim(), demoNight: rsvp, source, plan: text }),
+      });
+      setPlanState("sent");
+    } catch {
+      // The plan is a nice-to-have; a network hiccup must not undo the
+      // signup story. Treat it as skipped.
+      setPlanState("skipped");
+    }
+  };
+
   if (state === "done" || state === "already") {
     return (
-      <p className={`text-sm leading-relaxed text-verify ${className}`}>
-        {state === "already"
-          ? "You're already on the list — nothing more to do."
-          : rsvp
-            ? "You're on the list. We'll send one short reminder before it starts."
-            : "You're on the list. Check your inbox for a one-line hello."}
-      </p>
+      <div className={`flex flex-col gap-2 ${className}`}>
+        <p className="text-sm leading-relaxed text-verify">
+          {state === "already"
+            ? "You're already on the list — nothing more to do."
+            : rsvp
+              ? "You're on the list. We'll send one short reminder before it starts."
+              : "You're on the list. Check your inbox for a one-line hello."}
+        </p>
+
+        {rsvp && planState === "ask" && (
+          <div className="flex flex-col gap-2">
+            <label className="text-xs text-muted" htmlFor={`ec-plan-${source}`}>
+              One more, entirely optional: what will you be working on that Sunday?
+            </label>
+            <div className="flex gap-2">
+              <input
+                id={`ec-plan-${source}`}
+                type="text"
+                value={plan}
+                maxLength={140}
+                onChange={(e) => setPlan(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void sendPlan();
+                  }
+                }}
+                placeholder="Shipping the onboarding flow"
+                className="min-h-[40px] w-full rounded-md border border-line bg-paper px-3 py-2 text-sm placeholder:text-muted/60"
+              />
+              <button
+                type="button"
+                onClick={() => void sendPlan()}
+                disabled={!plan.trim()}
+                className="btn-press min-h-[40px] shrink-0 rounded-md border border-ink px-3 text-sm hover:bg-panel disabled:opacity-50"
+              >
+                Send
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlanState("skipped")}
+                className="min-h-[40px] shrink-0 rounded-md px-2 text-sm text-muted hover:text-ink"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
+        {rsvp && planState === "busy" && <p className="text-xs text-muted">Saving…</p>}
+        {rsvp && planState === "sent" && (
+          <p className="text-xs text-muted">
+            Noted — the reminder will ask how it went.
+          </p>
+        )}
+
+        {rsvp && (
+          <p className="text-xs text-muted">
+            <a href="/doors.ics" className="underline underline-offset-2 hover:text-ink">
+              Add Open Doors to your calendar
+            </a>{" "}
+            — repeats weekly, in your own time zone, with a 30-minute nudge.
+          </p>
+        )}
+      </div>
     );
   }
 

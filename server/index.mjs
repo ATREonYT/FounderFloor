@@ -47,7 +47,7 @@
  */
 
 import { createHash, createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
-import { windowInWords } from "../lib/data/event-window.mjs";
+import { EVENT_LABEL, nextWindow, windowInWords } from "../lib/data/event-window.mjs";
 import {
   SPOT_PLANS,
   holdUntilFor,
@@ -369,6 +369,13 @@ const STANDS_WHILE_AWAY = process.env.FLOOR_STANDS_WHILE_AWAY === "1";
  */
 const subscribers = new Map();
 const MAX_SUBSCRIBERS = 20000;
+/**
+ * startMs of the Open Doors window the one promised reminder has already
+ * been sent for. Persisted in floor-data.json (see saveNow/load), because
+ * the promise is ONE reminder and a process restart must not reset the
+ * count. 0 = never sent.
+ */
+let lastRemindedWindow = 0;
 
 /**
  * accounts: nameLower -> { id: "acct_<uuid>", name, email, salt, hash, kdf,
@@ -957,8 +964,13 @@ const emailRecipientLog = new Map(); // `${bucket}|${email}` -> ts[] within the 
 // bucket, apart from RESET links — an attacker flooding /auth/forgot at a
 // victim burns only the "reset" bucket and can never silence the tripwire
 // notices that would warn the victim an attack is underway.
-const RECIPIENT_HOURLY = { courtesy: 4, reset: 6, notice: 12, operator: 20 };
-const DAILY_CEILING = { courtesy: 300, reset: 200, notice: 300, operator: 100 };
+// "doors" is the weekly Open Doors reminder — the ONE email the RSVP box
+// promises. Its ceiling is sized to the whole list (one send a week, never
+// more), and the per-recipient cap of 2/hour means even a bug that fires
+// the send twice cannot bomb an inbox. It is not a new category of mail:
+// it is the promised category finally being sent.
+const RECIPIENT_HOURLY = { courtesy: 4, reset: 6, notice: 12, operator: 20, doors: 2 };
+const DAILY_CEILING = { courtesy: 300, reset: 200, notice: 300, operator: 100, doors: 20000 };
 
 /**
  * Where beta feedback and abuse reports get mailed (they're stored in
@@ -1285,6 +1297,88 @@ function sendSubscribeEmail(email, demoNight, eventWhen) {
     "courtesy",
   );
 }
+
+/**
+ * THE one reminder — the whole of what the RSVP box promises ("One
+ * reminder before the next Open Doors. Nothing else, ever."), sent about
+ * a day before the window to everyone who asked for it.
+ *
+ * The double-send guard is the part that matters. The marker
+ * (lastRemindedWindow) is set and persisted with saveNow() BEFORE the
+ * first email leaves, so the failure mode of a crash mid-send is
+ * under-sending — some people miss one reminder — and never the whole
+ * list getting it twice. A small product doesn't get to make that
+ * mistake twice, so the code is arranged to make it once at most.
+ *
+ * Sends are paced (~7/sec) to stay inside Resend's rate limits; at the
+ * 24h lead there is no hurry. FF_REMIND_LEAD_MS / FF_REMIND_SWEEP_MS are
+ * test knobs only.
+ */
+const REMIND_LEAD_MS = Math.max(60_000, Number(process.env.FF_REMIND_LEAD_MS) || 24 * 3600_000);
+const REMIND_SWEEP_MS = Math.max(1000, Number(process.env.FF_REMIND_SWEEP_MS) || 15 * 60_000);
+
+function sendDoorsReminderEmail(sub, whenWords) {
+  const plan = typeof sub.plan === "string" && sub.plan ? sub.plan : "";
+  sendEmail(
+    sub.email,
+    `One reminder, as promised — Open Doors ${EVENT_LABEL}`,
+    emailShell(
+      "The doors open tomorrow",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Open Doors is ` +
+        `${esc(whenWords)} — the three hours a week the floors are busy on purpose. ` +
+        `The lobby shows it in your own time zone.</p>` +
+        (plan
+          ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">You said you'd bring: ` +
+            `&ldquo;${esc(plan)}&rdquo;. The floor holds you to nothing — but somebody will ask.</p>`
+          : "") +
+        emailBtn(SITE_URL + "/lobby", "Walk in") +
+        `<p style="margin:0;font-size:13px;color:#6F6A5E;line-height:1.6">That was the one ` +
+        `reminder — the next email only exists if you ask for one. Want off the list? ` +
+        `Reply with "unsubscribe" and you're off — no forms.</p>`,
+    ),
+    `Open Doors is ${whenWords} — the three hours a week the floors are busy on purpose.` +
+      (plan ? `\n\nYou said you'd bring: "${plan}". The floor holds you to nothing — but somebody will ask.` : "") +
+      `\n\nWalk in: ${SITE_URL}/lobby` +
+      `\n\nThat was the one reminder — the next email only exists if you ask for one.` +
+      `\nWant off the list? Reply with "unsubscribe".`,
+    "doors",
+  );
+}
+
+/**
+ * Runs on a timer (and once shortly after boot, so a restart during the
+ * lead window still sends — the marker makes that safe). `force` is the
+ * operator's manual trigger: it skips the how-close-is-the-window check,
+ * NEVER the already-sent marker.
+ */
+function maybeSendDoorsReminder(force = false) {
+  const now = Date.now();
+  const win = nextWindow(now);
+  if (win.live) return { sent: 0, reason: "window is live — too late for a before-reminder" };
+  if (!force && win.startMs - now > REMIND_LEAD_MS) {
+    return { sent: 0, reason: "window not close enough yet" };
+  }
+  if (lastRemindedWindow === win.startMs) {
+    return { sent: 0, reason: "already reminded for this window" };
+  }
+  const list = [...subscribers.values()].filter((s) => s.demoNight);
+  // Nobody to remind: leave the marker unset, so someone who RSVPs later
+  // in the lead window still gets their one reminder at the next sweep.
+  if (!list.length) return { sent: 0, reason: "nobody has RSVP'd" };
+  // Marker first, persisted immediately — see the note above.
+  lastRemindedWindow = win.startMs;
+  saveNow();
+  const whenWords = windowInWords(now);
+  list.forEach((sub, i) => {
+    setTimeout(() => sendDoorsReminderEmail(sub, whenWords), i * 150);
+  });
+  console.log(
+    `[remind] queued ${list.length} Open Doors reminder(s) for window ${new Date(win.startMs).toISOString()}`,
+  );
+  return { sent: list.length, reason: "" };
+}
+setInterval(maybeSendDoorsReminder, REMIND_SWEEP_MS).unref();
+setTimeout(maybeSendDoorsReminder, 5000).unref();
 
 /** "alex@example.com" -> "a•••@example.com" — logs identify without leaking. */
 function maskEmail(e) {
@@ -1899,8 +1993,16 @@ function loadData() {
         source: typeof s.source === "string" ? s.source.slice(0, 24) : "landing",
         ts: s.ts,
         demoNight: s.demoNight === true,
+        ...(typeof s.plan === "string" && s.plan ? { plan: s.plan.slice(0, 140) } : {}),
       });
     }
+  }
+
+  // Which Open Doors window the one reminder has already gone out for
+  // (its startMs). Persisted so a restart inside the send window can
+  // never mail the whole list twice — see maybeSendDoorsReminder().
+  if (typeof parsed.lastRemindedWindow === "number" && parsed.lastRemindedWindow > 0) {
+    lastRemindedWindow = parsed.lastRemindedWindow;
   }
 
   if (parsed.activity && typeof parsed.activity === "object") {
@@ -1946,6 +2048,7 @@ function saveNow() {
     feedback,
     events,
     subscribers: Object.fromEntries(subscribers),
+    lastRemindedWindow,
     social: Object.fromEntries(social),
     dms: Object.fromEntries(dms),
     accounts: Object.fromEntries(accounts),
@@ -3649,8 +3752,21 @@ async function handleAdminPost(req, res, pathname) {
         total: subscribers.size,
         returned: list.length,
         emails: list.map((s) => s.email).join(", "),
+        // Each record carries `plan` when the person answered the "what
+        // will you be working on that Sunday?" question.
         subscribers: list,
+        lastRemindedWindow,
       });
+      return;
+    }
+
+    // The manual trigger for the one Open Doors reminder — kept alongside
+    // the automated sweep so the operator can send early. It skips only
+    // the how-close-is-the-window check, never the already-sent marker:
+    // there is no force flag that mails the list twice for one window.
+    if (pathname === "/admin/remind-doors") {
+      const result = maybeSendDoorsReminder(true);
+      sendJson(res, { ok: true, ...result, lastRemindedWindow });
       return;
     }
 
@@ -4558,13 +4674,21 @@ const server = createServer((req, res) => {
       }
       const demoNight = body?.demoNight === true;
       const source = typeof body?.source === "string" ? body.source.slice(0, 24) : "landing";
+      // The plan question — "what will you be working on that Sunday?" —
+      // asked AFTER the address is accepted and never required. Asking
+      // people to state a plan measurably raises turnout (a 287k-person
+      // field experiment put it at +4.1 points, +9.1 for people who live
+      // alone), and the reminder echoes it back. Same sanitiser as every
+      // other piece of user text; a later submit may update it.
+      const plan = body?.plan !== undefined ? sanitizeStr(body.plan, 140) : "";
       const existing = subscribers.get(email);
       if (!existing && subscribers.size >= MAX_SUBSCRIBERS) {
         sendJson(res, { error: "the list is full right now — email the operator instead" });
         return;
       }
       // Only mail on a genuinely new signup or a new RSVP, so a double-tap
-      // on the button can't send someone two identical letters.
+      // on the button (or the plan follow-up posting again) can't send
+      // someone two identical letters.
       const isNew = !existing;
       const newRsvp = demoNight && !existing?.demoNight;
       subscribers.set(email, {
@@ -4572,6 +4696,7 @@ const server = createServer((req, res) => {
         source: existing?.source ?? source,
         ts: existing?.ts ?? Date.now(),
         demoNight: demoNight || existing?.demoNight === true,
+        ...(plan || existing?.plan ? { plan: plan || existing?.plan } : {}),
       });
       scheduleSave();
       if (isNew || newRsvp) {

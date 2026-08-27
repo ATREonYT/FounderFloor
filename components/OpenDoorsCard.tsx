@@ -105,6 +105,15 @@ export default function OpenDoorsCard() {
         {/* "demo-night" is the stored analytics source for this box.
             Kept through the rename so the subscriber stats stay one series. */}
         <EmailCapture variant="rsvp" source="demo-night" />
+        {/* The reminder that survives people ignoring email: a weekly
+            repeating event, DST handled by the calendar itself. */}
+        <p className="mt-2 text-xs text-muted">
+          No email needed:{" "}
+          <a href="/doors.ics" className="underline underline-offset-2 hover:text-ink">
+            add Open Doors to your calendar
+          </a>
+          .
+        </p>
       </div>
     </section>
   );
