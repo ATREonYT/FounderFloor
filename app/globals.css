@@ -214,10 +214,16 @@
       0 100%
     );
   }
-  @supports (corner-shape: notch) {
+  /* corner-shape order is TL TR BR BL, like border-radius. Only the
+     top-right is cut, and it is a BEVEL (a straight snip, matching the
+     clip-path above) — `corner-shape: notch` bare applied an inward step
+     to ALL FOUR corners, which turned every chip and panel into a
+     stepped plate with tabs sticking out of its sides in browsers that
+     ship corner-shape. */
+  @supports (corner-shape: round bevel round round) {
     .clip-badge {
       clip-path: none;
-      corner-shape: notch;
+      corner-shape: round bevel round round;
       border-top-right-radius: 8px;
     }
   }
