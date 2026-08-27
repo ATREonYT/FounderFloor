@@ -114,6 +114,56 @@ export function useUpcomingEvents(pollMs = 60_000): UpcomingEvent[] {
   return events;
 }
 
+function readAnnex(data: unknown): string[] | null {
+  if (!data || typeof data !== "object") return null;
+  const a = (data as { annex?: unknown }).annex;
+  if (!Array.isArray(a)) return null;
+  return a.filter((v): v is string => typeof v === "string" && /^[a-z0-9-]{1,32}$/.test(v)).slice(0, 8);
+}
+
+/**
+ * The annex switch: floor ids the operator un-hid at runtime, riding the
+ * /presence poll like the founding counter does. Wherever the app filters
+ * out `hidden` floors it should treat these as not hidden — that is what
+ * lib/data/floors.ts listedFloors() does. Empty (and offline, and during
+ * SSR) means today's behaviour: hidden floors stay hidden.
+ */
+export function useAnnex(pollMs = 30_000): string[] {
+  const [annex, setAnnex] = useState<string[]>([]);
+
+  useEffect(() => {
+    let ctrl: AbortController | null = null;
+    let disposed = false;
+
+    const load = async (): Promise<void> => {
+      const base = httpBase();
+      if (!base) return;
+      ctrl?.abort();
+      ctrl = new AbortController();
+      try {
+        const res = await fetch(`${base}/presence`, { signal: ctrl.signal });
+        if (!res.ok) return;
+        const data: unknown = await res.json();
+        if (disposed) return;
+        const a = readAnnex(data);
+        if (a) setAnnex((prev) => (prev.join(",") === a.join(",") ? prev : a));
+      } catch {
+        // Offline — hidden floors simply stay hidden.
+      }
+    };
+
+    void load();
+    const timer = setInterval(() => void load(), pollMs);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+      ctrl?.abort();
+    };
+  }, [pollMs]);
+
+  return annex;
+}
+
 export function usePresence(pollMs = 15_000): Record<string, number> {
   const [floors, setFloors] = useState<Record<string, number>>({});
 

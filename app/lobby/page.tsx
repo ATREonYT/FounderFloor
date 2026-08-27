@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { syncNow, useAppState } from "@/lib/store";
-import { FLOORS } from "@/lib/data/floors";
+import { FLOORS , listedFloors } from "@/lib/data/floors";
 import { TIER_ORDER, type AvatarLook } from "@/lib/types";
 import AvatarPicker from "@/components/AvatarPicker";
 import TierTag, { TIER_LABEL } from "@/components/TierTag";
@@ -11,7 +11,7 @@ import EventPill from "@/components/EventPill";
 import LobbyPulse from "@/components/LobbyPulse";
 import OpenDoorsCard from "@/components/OpenDoorsCard";
 import FoundingSeatsCard from "@/components/FoundingSeatsCard";
-import { usePresence } from "@/components/usePresence";
+import { useAnnex, usePresence } from "@/components/usePresence";
 
 /**
  * First visit: a name is offered, never demanded. Making a stranger fill in
@@ -79,13 +79,13 @@ function FirstVisitPanel({
   );
 }
 
-/** The advertised floors — FOCUS MODE (lib/data/floors.ts) hides the rest. */
-const openFloors = FLOORS.filter((f) => !f.hidden);
-
 export default function LobbyPage() {
   const [state, actions] = useAppState();
   const [ready, setReady] = useState(false);
   const presence = usePresence();
+  // The advertised floors — FOCUS MODE (lib/data/floors.ts) hides the
+  // rest, and the annex switch can un-hide one at runtime for a show day.
+  const openFloors = listedFloors(useAnnex());
 
   useEffect(() => {
     setReady(true);

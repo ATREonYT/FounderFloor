@@ -149,7 +149,13 @@ const WELCOME_SUBJECT = "You're on the list for Open Doors";
   check(!!ada && ada.html.includes("shipping the billing page"), "and in the html body");
   check(!!bea && !bea.text.includes("You said you'd bring"), "no plan line for the plan-less");
   check(!!ada && ada.text.includes("unsubscribe"), "the unsubscribe line is present");
-  check(!!ada && ada.subject.includes("Sunday 18:00 CET"), "the subject carries the event label");
+  check(
+    // The ordinary week quotes the fixed phrase; a week with a special
+    // window (launch day) announces itself by that window's own label.
+    !!ada && (ada.subject.includes("Sunday 18:00 CET") || ada.subject.includes("doors open all day")),
+    "the subject names the window",
+    ada?.subject ?? "",
+  );
 
   const disk = JSON.parse(readFileSync(dataFile, "utf8"));
   check(

@@ -3,6 +3,7 @@ import { FLOORS } from "@/lib/data/floors";
 import { RANKS } from "@/lib/ranks";
 import { TIER_ORDER, type GlyphId, type SubTier } from "@/lib/types";
 import TierTag, { TIER_LABEL, TIER_PRICE } from "@/components/TierTag";
+import FloorCatalogue, { FloorsLede, FloorsTitle } from "@/components/FloorCatalogue";
 import PixelGlyph from "@/components/PixelGlyph";
 import HeroScene from "@/components/HeroScene";
 import LiveStats from "@/components/LiveStats";
@@ -96,7 +97,7 @@ function Section({
 }: {
   glyph: GlyphId;
   kicker: string;
-  title: string;
+  title: React.ReactNode;
   lede?: React.ReactNode;
   children: React.ReactNode;
   id?: string;
@@ -239,7 +240,7 @@ const FAQ = [
   },
   {
     q: "What happens to my stand when I close the tab?",
-    a: "It comes off the floor: a floor only shows who is in the hall right now. Your spot stays reserved, so walking back in puts the stand back where it was. Meanwhile the stand keeps its own page in the directory, open at any hour, collecting guestbook notes and connection requests. Leave it 7 days and the spot frees up for someone else.",
+    a: "It comes off the floor: a floor only shows who is in the hall right now. Your spot stays reserved, so walking back in puts the stand back where it was. Meanwhile the stand keeps its own page in the directory, open at any hour, collecting guestbook notes and connection requests. Leave it 7 days and the spot frees up for someone else — though stands are kept longer around show weeks.",
   },
   {
     q: "Do I need an account?",
@@ -503,79 +504,17 @@ export default function LandingPage() {
       </Section>
 
       {/* ============================================ 04 — THE HALL */}
+      {/* Client island: the annex switch can un-hide a floor at runtime,
+          so the list, its count and even the singular/plural title are
+          live. See components/FloorCatalogue.tsx. */}
       <Section
         glyph="cube"
         id="halls"
         kicker="The venue"
-        title={MANY_FLOORS ? "The floors" : "The floor"}
-        lede={
-          MANY_FLOORS ? (
-            <>
-              {PUBLIC_FLOORS.length} halls, {PUBLIC_FLOORS.length} temperaments.
-              Each is a real map with real booths; the miniatures are to scale.
-            </>
-          ) : (
-            <>
-              One hall, open to everyone, and everyone is in it. A young floor
-              fills up faster than four empty ones. The miniature is to scale.
-            </>
-          )
-        }
+        title={<FloorsTitle />}
+        lede={<FloorsLede />}
       >
-        <div className="border-t border-line">
-          {PUBLIC_FLOORS.map((floor) => {
-            const locked = TIER_ORDER[floor.tier] > TIER_ORDER.free;
-            return (
-              <article
-                key={floor.id}
-                className="flex flex-col gap-6 border-b border-line py-7 sm:flex-row sm:gap-8"
-              >
-                <div className="relative shrink-0 self-start">
-                  <CropMarks />
-                  <FloorThumb
-                    floor={floor}
-                    className={`border border-line ${locked ? "opacity-70" : ""}`}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h3 className={`font-display text-2xl ${locked ? "text-muted" : ""}`}>
-                      {floor.name}
-                    </h3>
-                    <TierTag tier={floor.tier} />
-                  </div>
-                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted">
-                    {floor.tagline}
-                  </p>
-
-                  {/* catalogue specification, with the leaders a programme
-                      would print between the entry and its value */}
-                  <dl className="mt-5 max-w-md text-sm">
-                    {[
-                      ["Booths", String(floor.boothSpots.length)],
-                      ["Admission", locked ? `${TIER_LABEL[floor.tier]}, ${TIER_PRICE[floor.tier]}` : "Free"],
-                      ["Stands held for newcomers", floor.reservedSpot !== undefined ? "One" : "None"],
-                      ["Tears down", "Never"],
-                    ].map(([k, v]) => (
-                      <div key={k} className="flex items-baseline gap-2 py-1.5">
-                        <dt className="shrink-0 text-muted">{k}</dt>
-                        <span aria-hidden="true" className="leader dash-x" />
-                        <dd className="shrink-0 tabular-nums text-ink">{v}</dd>
-                      </div>
-                    ))}
-                  </dl>
-
-                  <Link
-                    href={`/floor/${floor.id}`}
-                    className="mt-5 inline-block text-sm text-accent hover:underline"
-                  >
-                    Walk into {floor.name} →
-                  </Link>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <FloorCatalogue />
       </Section>
 
       {/* ============================================ 04 — THE BOARD */}

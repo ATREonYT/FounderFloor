@@ -7,7 +7,8 @@ import { getAuth } from "@/lib/auth";
 import { daysLeft, usePerks } from "@/lib/perks";
 import { registerStartupChecked, unregisterStartup } from "@/lib/social";
 import { RANKS, rankFor } from "@/lib/ranks";
-import { FLOORS } from "@/lib/data/floors";
+import { FLOORS , listedFloors } from "@/lib/data/floors";
+import { useAnnex } from "@/components/usePresence";
 import { CATEGORIES, isPresetCategory } from "@/lib/data/categories";
 import { earnedTitles, questStates } from "@/lib/data/quests";
 import {
@@ -369,6 +370,7 @@ function ColorRow({
 }
 
 export default function ProfilePage() {
+  const annex = useAnnex();
   const [state, actions] = useAppState();
   const perks = usePerks();
   const [ready, setReady] = useState(false);
@@ -1769,8 +1771,8 @@ export default function ProfilePage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {(["free", "pro", "founder"] as SubTier[]).map((tier) => {
             const current = state.sub === tier;
-            const unlocked = FLOORS.filter(
-              (f) => !f.hidden && TIER_ORDER[f.tier] <= TIER_ORDER[tier],
+            const unlocked = listedFloors(annex).filter(
+              (f) => TIER_ORDER[f.tier] <= TIER_ORDER[tier],
             );
             const price =
               tier === "free"
@@ -1800,7 +1802,7 @@ export default function ProfilePage() {
                 <ul className="mt-3 flex-1 space-y-1">
                   {/* Only worth listing when the tiers actually differ by
                       floor — see FOCUS MODE in lib/data/floors.ts. */}
-                  {FLOORS.filter((f) => !f.hidden).length > 1 &&
+                  {listedFloors(annex).length > 1 &&
                     unlocked.map((f) => (
                       <li key={f.id} className="flex items-baseline gap-1.5 text-xs">
                         <span aria-hidden="true" className="text-verify">

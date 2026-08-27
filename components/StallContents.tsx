@@ -10,7 +10,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { FLOORS } from "@/lib/data/floors";
+import { FLOORS , listedFloors } from "@/lib/data/floors";
+import { useAnnex } from "@/components/usePresence";
 import { MAPS } from "@/game/parkour";
 import { EARN, dailyTickets, walletBalance } from "@/lib/data/shop";
 import { fetchLeaderboard, humanMs, untilWords } from "@/lib/leaderboard";
@@ -165,7 +166,7 @@ export function PorterStall({
   presence: Record<string, number>;
   tier: SubTier;
 }) {
-  const open = FLOORS.filter((f) => !f.hidden);
+  const open = listedFloors(useAnnex());
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm leading-relaxed text-muted">

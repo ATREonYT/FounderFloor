@@ -23,20 +23,22 @@ import Link from "next/link";
 import { getAuth } from "@/lib/auth";
 import { useAppState } from "@/lib/store";
 import { daysLeft, usePerks } from "@/lib/perks";
-import { FLOORS } from "@/lib/data/floors";
+import { FLOORS , listedFloors } from "@/lib/data/floors";
+import { useAnnex } from "@/components/usePresence";
 import { TIER_ORDER, type SubTier } from "@/lib/types";
 import { TIER_LABEL, TIER_PRICE, TIER_PRICE_ANNUAL } from "@/components/TierTag";
 import { FOUNDING_OFFER, TIER_PERKS, TRIAL_DAYS, annualFreeMonths } from "@/lib/pricing";
 import Spec from "@/components/Spec";
 
-const PUBLIC_FLOORS = FLOORS.filter((f) => !f.hidden);
-const MANY_FLOORS = PUBLIC_FLOORS.length > 1;
+
 
 export default function AdmissionStubs({
   pricing,
 }: {
   pricing: { tier: SubTier; blurb: string }[];
 }) {
+  const PUBLIC_FLOORS = listedFloors(useAnnex());
+  const MANY_FLOORS = PUBLIC_FLOORS.length > 1;
   const [state] = useAppState();
   const perks = usePerks();
   const [signedIn, setSignedIn] = useState(false);

@@ -13,7 +13,7 @@
  * TZID; it describes the timezone, not the event.
  */
 
-import { EVENT_TZ, nextWindow } from "@/lib/data/event-window.mjs";
+import { EVENT_TZ, nextWindow, upcomingSpecialWindows } from "@/lib/data/event-window.mjs";
 import { siteOrigin } from "@/lib/serverFloor";
 
 export const dynamic = "force-dynamic";
@@ -48,11 +48,56 @@ function wallClock(utcMs: number): { stamp: string; byday: string } {
 
 export function GET(): Response {
   const now = Date.now();
-  const win = nextWindow(now);
+  // The weekly series must anchor on an ORDINARY Sunday: nextWindow() can
+  // return a special window (launch day), whose 10:00 start would become
+  // every week's start if used as DTSTART. Walk forward past specials.
+  let probe = now;
+  let win = nextWindow(probe);
+  for (let i = 0; i < 8 && win.label; i++) {
+    probe = win.endMs + 60_000;
+    win = nextWindow(probe);
+  }
   const start = wallClock(win.startMs);
   const end = wallClock(win.endMs);
   const hours = Math.round((win.endMs - win.startMs) / 3_600_000);
   const lobby = `${siteOrigin()}/lobby`;
+
+  // SPECIAL WINDOWS: the decision is EXDATE + one-off, not silence — a
+  // week with a special window gets its ordinary occurrence EXCLUDED from
+  // the series (when it falls on the series weekday) and a standalone
+  // VEVENT under the special's own label and hours. Skipping the week
+  // entirely would hide launch day from the one reminder that survives
+  // people ignoring email; leaving both would double-book the evening.
+  const specials = upcomingSpecialWindows(now);
+  const exdates: string[] = [];
+  const specialEvents: string[] = [];
+  for (const s of specials) {
+    const sStart = wallClock(s.startMs);
+    const sEnd = wallClock(s.endMs);
+    if (sStart.byday === start.byday) {
+      // Same weekday as the series: exclude that week's ordinary slot.
+      // The EXDATE must name the series' OWN start time on that date.
+      exdates.push(
+        `EXDATE;TZID=${EVENT_TZ}:${sStart.stamp.slice(0, 9)}${start.stamp.slice(9)}`,
+      );
+    }
+    specialEvents.push(
+      "BEGIN:VEVENT",
+      `UID:open-doors-${sStart.stamp.slice(0, 8)}@founderfloor.net`,
+      `DTSTAMP:${new Date(now).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
+      `DTSTART;TZID=${EVENT_TZ}:${sStart.stamp}`,
+      `DTEND;TZID=${EVENT_TZ}:${sEnd.stamp}`,
+      `SUMMARY:${s.label} — FounderFloor`,
+      `DESCRIPTION:Walk in: ${lobby}`,
+      `URL:${lobby}`,
+      "BEGIN:VALARM",
+      "ACTION:DISPLAY",
+      `DESCRIPTION:${s.label} — starts in 30 minutes`,
+      "TRIGGER:-PT30M",
+      "END:VALARM",
+      "END:VEVENT",
+    );
+  }
 
   const lines = [
     "BEGIN:VCALENDAR",
@@ -87,6 +132,7 @@ export function GET(): Response {
     `DTSTART;TZID=${EVENT_TZ}:${start.stamp}`,
     `DTEND;TZID=${EVENT_TZ}:${end.stamp}`,
     `RRULE:FREQ=WEEKLY;BYDAY=${start.byday}`,
+    ...exdates,
     "SUMMARY:Open Doors — FounderFloor",
     `DESCRIPTION:The ${hours} hours a week the floors are busy on purpose. ` +
       `Walk in: ${lobby}`,
@@ -97,6 +143,7 @@ export function GET(): Response {
     "TRIGGER:-PT30M",
     "END:VALARM",
     "END:VEVENT",
+    ...specialEvents,
     "END:VCALENDAR",
   ];
 

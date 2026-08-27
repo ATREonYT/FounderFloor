@@ -10,14 +10,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import PixelLogo from "@/components/PixelLogo";
-import { FLOORS } from "@/lib/data/floors";
+import { FLOORS, listedFloors } from "@/lib/data/floors";
 import { RANKS, rankFor } from "@/lib/ranks";
 import { useAppState } from "@/lib/store";
 import { TIER_ORDER, type FloorDef, type RankId, type Startup } from "@/lib/types";
 import { TIER_LABEL } from "@/components/TierTag";
 import RankBadge from "@/components/RankBadge";
 import TierTag from "@/components/TierTag";
-import { usePresence } from "@/components/usePresence";
+import { useAnnex, usePresence } from "@/components/usePresence";
 import { ownerIdOf, standHref } from "@/lib/ownerId";
 import { useCommunityStartups } from "@/components/useCommunityStartups";
 
@@ -25,7 +25,6 @@ const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(
   FLOORS.map((f) => [f.id, f]),
 );
 
-const PUBLIC_FLOOR_COUNT = FLOORS.filter((f) => !f.hidden).length;
 
 const MIN_RANKS = RANKS.filter((r) => r.id > 0);
 
@@ -69,6 +68,7 @@ export default function DirectoryPage() {
   const [minRank, setMinRank] = useState<RankId | null>(null);
   const presence = usePresence();
   const community = useCommunityStartups();
+  const publicFloorCount = listedFloors(useAnnex()).length;
   const [state] = useAppState();
 
   // Every row is a real founder's stand (claimed on a floor, or registered
@@ -137,10 +137,10 @@ export default function DirectoryPage() {
       <p className="mt-2 text-sm leading-relaxed text-muted">
         Every startup on the floors, all founder-made —{" "}
         {communityCount > 0
-          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${PUBLIC_FLOOR_COUNT} ${PUBLIC_FLOOR_COUNT === 1 ? "floor" : "floors"} so far`
-          : PUBLIC_FLOOR_COUNT === 1
+          ? `${communityCount} ${communityCount === 1 ? "stand" : "stands"} across ${publicFloorCount} ${publicFloorCount === 1 ? "floor" : "floors"} so far`
+          : publicFloorCount === 1
             ? "the floor just opened — the first stands go up now"
-            : `the floors just opened across ${PUBLIC_FLOOR_COUNT} halls`}
+            : `the floors just opened across ${publicFloorCount} halls`}
         . Set up a stand and yours appears here on its own, under whatever
         category you give it.
       </p>

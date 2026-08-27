@@ -47,7 +47,12 @@
  */
 
 import { createHash, createHmac, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
-import { EVENT_LABEL, nextWindow, windowInWords } from "../lib/data/event-window.mjs";
+import {
+  EVENT_LABEL,
+  nextWindow,
+  upcomingSpecialWindows,
+  windowInWords,
+} from "../lib/data/event-window.mjs";
 import {
   SPOT_PLANS,
   holdUntilFor,
@@ -135,8 +140,42 @@ const guestbooks = new Map();
  * not the per-connection wire id, so reconnects and second tabs re-own them.
  */
 const stands = new Map();
-const STAND_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const STAND_TTL_MS = Math.max(1000, Number(process.env.FF_STAND_TTL_MS) || 7 * 24 * 60 * 60 * 1000); // 7 days (env override is a test knob only)
 const MAX_STANDS_PER_FLOOR = 64;
+
+/**
+ * ─── LAUNCH CONTROLS ────────────────────────────────────────────────────
+ * Two operator switches for show weeks, both persisted in floor-data.json
+ * so a restart keeps them, both defaulting to today's behaviour when
+ * unset, both read and flipped in one place: POST /admin/launch-controls.
+ *
+ *   standExpiryPausedUntil  While now < this, the stand-expiry sweep
+ *                           removes nothing. Launch converts the best
+ *                           traffic day into the emptiest-looking week
+ *                           that follows if the 7-day sweep runs right
+ *                           through it. 0 = not paused. Note the sweep
+ *                           resumes with the normal cutoff — a stand
+ *                           whose owner stayed away through the whole
+ *                           pause ages out at the next sweep after it
+ *                           lifts, which is the sweep doing its job.
+ *
+ *   annexOpen               Floor ids un-hidden at runtime ("the annex").
+ *                           floors.ts marks finished floors hidden:true;
+ *                           the documented way to open one was a deploy.
+ *                           This list rides the /presence poll every
+ *                           client already makes, and the web app treats
+ *                           a listed floor as un-hidden. Closing it again
+ *                           re-hides the floor from lists — stands on it
+ *                           stay reachable by direct link, which is the
+ *                           hidden-floor contract and needs nothing here.
+ *
+ * (The third launch control, SPECIAL_WINDOWS, is dated data in
+ * lib/data/event-window.mjs — both sides import it, so it turns itself
+ * on and off by the clock; the admin endpoint reports it as state.)
+ */
+let standExpiryPausedUntil = 0;
+let annexOpen = [];
+const MAX_ANNEX = 8;
 
 /**
  * Position pricing: a silver/gold spot is held for a period, not forever
@@ -1318,11 +1357,13 @@ function sendSubscribeEmail(email, demoNight, eventWhen) {
 const REMIND_LEAD_MS = Math.max(60_000, Number(process.env.FF_REMIND_LEAD_MS) || 24 * 3600_000);
 const REMIND_SWEEP_MS = Math.max(1000, Number(process.env.FF_REMIND_SWEEP_MS) || 15 * 60_000);
 
-function sendDoorsReminderEmail(sub, whenWords) {
+function sendDoorsReminderEmail(sub, whenWords, label) {
   const plan = typeof sub.plan === "string" && sub.plan ? sub.plan : "";
   sendEmail(
     sub.email,
-    `One reminder, as promised — Open Doors ${EVENT_LABEL}`,
+    // A special window (launch day, say) announces itself by its own
+    // label; the ordinary week keeps the fixed quotable phrase.
+    `One reminder, as promised — ${label || `Open Doors ${EVENT_LABEL}`}`,
     emailShell(
       "The doors open tomorrow",
       `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Open Doors is ` +
@@ -1371,7 +1412,7 @@ function maybeSendDoorsReminder(force = false) {
   saveNow();
   const whenWords = windowInWords(now);
   list.forEach((sub, i) => {
-    setTimeout(() => sendDoorsReminderEmail(sub, whenWords), i * 150);
+    setTimeout(() => sendDoorsReminderEmail(sub, whenWords, win.label), i * 150);
   });
   console.log(
     `[remind] queued ${list.length} Open Doors reminder(s) for window ${new Date(win.startMs).toISOString()}`,
@@ -1637,8 +1678,20 @@ function loadData() {
     }
   }
 
+  // Launch controls parse BEFORE stands: the load-time expiry cutoff below
+  // must know whether expiry is paused, or a restart during a pause would
+  // drop exactly the stands the pause exists to keep.
+  if (typeof parsed.standExpiryPausedUntil === "number" && parsed.standExpiryPausedUntil > 0) {
+    standExpiryPausedUntil = parsed.standExpiryPausedUntil;
+  }
+  if (Array.isArray(parsed.annexOpen)) {
+    annexOpen = parsed.annexOpen
+      .filter((v) => typeof v === "string" && /^[a-z0-9-]{1,32}$/.test(v))
+      .slice(0, MAX_ANNEX);
+  }
+
   if (parsed.stands && typeof parsed.stands === "object") {
-    const cutoff = Date.now() - STAND_TTL_MS;
+    const cutoff = Date.now() < standExpiryPausedUntil ? 0 : Date.now() - STAND_TTL_MS;
     for (const [floorId, byOwner] of Object.entries(parsed.stands)) {
       if (!byOwner || typeof byOwner !== "object") continue;
       const map = new Map();
@@ -2006,6 +2059,7 @@ function loadData() {
     lastRemindedWindow = parsed.lastRemindedWindow;
   }
 
+
   if (parsed.activity && typeof parsed.activity === "object") {
     for (const [floorId, items] of Object.entries(parsed.activity)) {
       if (!Array.isArray(items)) continue;
@@ -2050,6 +2104,8 @@ function saveNow() {
     events,
     subscribers: Object.fromEntries(subscribers),
     lastRemindedWindow,
+    standExpiryPausedUntil,
+    annexOpen,
     social: Object.fromEntries(social),
     dms: Object.fromEntries(dms),
     accounts: Object.fromEntries(accounts),
@@ -2910,6 +2966,9 @@ function relocateLapsedHolds() {
 }
 
 function pruneStands() {
+  // The launch-week switch: while the pause holds, the sweep removes
+  // nothing. Stands are kept longer around show weeks — on purpose.
+  if (Date.now() < standExpiryPausedUntil) return;
   const cutoff = Date.now() - STAND_TTL_MS;
   for (const [floorId, byOwner] of stands) {
     const room = rooms.get(floorId);
@@ -2984,7 +3043,10 @@ function pruneCredentials() {
   if (changed) scheduleSave();
 }
 
-setInterval(pruneStands, 60 * 60 * 1000).unref();
+setInterval(
+  pruneStands,
+  Math.max(1000, Number(process.env.FF_PRUNE_SWEEP_MS) || 60 * 60 * 1000), // env is a test knob only
+).unref();
 setInterval(relocateLapsedHolds, HOLD_SWEEP_MS).unref();
 setInterval(pruneCredentials, 60 * 60 * 1000).unref();
 
@@ -3771,6 +3833,55 @@ async function handleAdminPost(req, res, pathname) {
     if (pathname === "/admin/remind-doors") {
       const result = maybeSendDoorsReminder(true);
       sendJson(res, { ok: true, ...result, lastRemindedWindow });
+      return;
+    }
+
+    /**
+     * The launch controls, read and flipped in ONE place. Send nothing to
+     * just read the state; send fields to change it:
+     *   standExpiryPausedUntil  ms timestamp to pause until, or null/0 to
+     *                           resume the normal 7-day sweep
+     *   annex                   { floor: "indie-alley", open: true|false }
+     * The special windows are dated data in event-window.mjs (both sides
+     * import it); they are reported here as state, not flipped.
+     */
+    if (pathname === "/admin/launch-controls") {
+      if ("standExpiryPausedUntil" in body) {
+        const v = body.standExpiryPausedUntil;
+        standExpiryPausedUntil =
+          typeof v === "number" && Number.isFinite(v) && v > Date.now() ? Math.trunc(v) : 0;
+        saveNow();
+        console.log(
+          `[launch] stand expiry ${standExpiryPausedUntil ? `paused until ${new Date(standExpiryPausedUntil).toISOString()}` : "resumed"}`,
+        );
+      }
+      if (body.annex && typeof body.annex === "object") {
+        const floor = typeof body.annex.floor === "string" ? body.annex.floor.slice(0, 32) : "";
+        if (/^[a-z0-9-]{1,32}$/.test(floor)) {
+          const open = body.annex.open === true;
+          annexOpen = annexOpen.filter((f) => f !== floor);
+          if (open && annexOpen.length < MAX_ANNEX) annexOpen.push(floor);
+          saveNow();
+          console.log(`[launch] annex ${floor} ${open ? "opened" : "closed"} (open now: ${annexOpen.join(", ") || "none"})`);
+        }
+      }
+      const specials = upcomingSpecialWindows(Date.now());
+      sendJson(res, {
+        ok: true,
+        standExpiryPausedUntil,
+        expiryState:
+          standExpiryPausedUntil > Date.now()
+            ? `expiry paused until ${new Date(standExpiryPausedUntil).toISOString()}`
+            : "expiry running normally (7 days)",
+        annexOpen,
+        annexState: annexOpen.length
+          ? `annex open: ${annexOpen.join(", ")}`
+          : "annex closed — hidden floors stay hidden",
+        specialWindows: specials,
+        specialState: specials.length
+          ? `next special window: ${specials[0].label} (${new Date(specials[0].startMs).toISOString()})`
+          : "no special windows ahead — the weekly Sunday rule applies",
+      });
       return;
     }
 
@@ -4814,6 +4925,10 @@ const server = createServer((req, res) => {
       floors,
       founding: { total: FOUNDING_SEATS, left: Math.max(0, FOUNDING_SEATS - foundingSeatsUsed) },
       events: events.filter((e) => (e.endMs ?? e.startMs) > now).slice(0, 10),
+      // The annex switch rides along too: floor ids the operator un-hid at
+      // runtime. The web app treats these as not-hidden wherever it
+      // filters floors; an empty list is today's behaviour.
+      annex: annexOpen,
     });
     return;
   }

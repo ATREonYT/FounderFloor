@@ -11,12 +11,11 @@
 
 import { useEffect, useState } from "react";
 import CountUp from "@/components/CountUp";
-import { FLOORS } from "@/lib/data/floors";
+import { listedFloors } from "@/lib/data/floors";
+import { useAnnex } from "@/components/usePresence";
 import { httpBase } from "@/lib/net";
 
-const PUBLIC_FLOORS = FLOORS.filter((f) => !f.hidden);
-const FLOORS_OPEN = PUBLIC_FLOORS.length;
-const TOTAL_SPOTS = PUBLIC_FLOORS.reduce((a, f) => a + f.boothSpots.length, 0);
+
 const BADGES_EARNABLE = 11;
 const REACTIONS = 8;
 
@@ -26,6 +25,9 @@ export default function LiveStats({
   /** "rail" = hairline scoreboard (current landing); "cards" = the original. */
   variant?: "cards" | "rail";
 }) {
+  const publicFloors = listedFloors(useAnnex());
+  const FLOORS_OPEN = publicFloors.length;
+  const TOTAL_SPOTS = publicFloors.reduce((a, f) => a + f.boothSpots.length, 0);
   const [online, setOnline] = useState<number | null>(null);
   const [stands, setStands] = useState<number | null>(null);
 

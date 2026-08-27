@@ -550,6 +550,18 @@ export function floorById(id: string): FloorDef | undefined {
   return FLOORS.find((f) => f.id === id);
 }
 
+/**
+ * The floors a visitor should see LISTED: everything not hidden, plus any
+ * hidden floor the operator un-hid at runtime (the annex switch — ids
+ * come from useAnnex(), which rides the /presence poll). Pass nothing and
+ * this is exactly the old `!f.hidden` filter, so callers without a live
+ * server degrade to today's behaviour. Direct links to hidden floors work
+ * regardless — that contract lives in the floor page, not here.
+ */
+export function listedFloors(annex: readonly string[] = []): FloorDef[] {
+  return FLOORS.filter((f) => !f.hidden || annex.includes(f.id));
+}
+
 /** The pitch carrying this permanent id, if the floor has one. */
 export function spotById(floor: FloorDef, id: string): BoothSpot | undefined {
   return floor.boothSpots.find((s) => s.id === id);

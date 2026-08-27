@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 import { getAuth } from "@/lib/auth";
+import { FLOORS, PRACTICE_FLOOR_ID } from "@/lib/data/floors";
 import { httpBase } from "@/lib/net";
 import { syncNow } from "@/lib/store";
 import PickMenu from "@/components/PickMenu";
@@ -337,6 +338,25 @@ export default function AdminPage() {
     }
   }, []);
 
+  // ---- launch controls (show-week switches, server-persisted) ----
+  const [launch, setLaunch] = useState<{
+    standExpiryPausedUntil: number;
+    expiryState: string;
+    annexOpen: string[];
+    annexState: string;
+    specialState: string;
+  } | null>(null);
+  const [pauseDate, setPauseDate] = useState("");
+  const loadLaunch = useCallback(async (body: Record<string, unknown> = {}) => {
+    try {
+      const r = await adminPost("/admin/launch-controls", body);
+      if (r?.ok) setLaunch(r);
+      return r;
+    } catch {
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     setReady(true);
     if (!getAuth()) {
@@ -347,7 +367,8 @@ export default function AdminPage() {
     void loadEvents();
     void loadPeople("");
     void loadStands("");
-  }, [refresh, loadEvents, loadPeople, loadStands]);
+    void loadLaunch();
+  }, [refresh, loadEvents, loadPeople, loadStands, loadLaunch]);
 
   // grant form
   const [gEmail, setGEmail] = useState("");
@@ -1059,6 +1080,104 @@ export default function AdminPage() {
           </ul>
         ) : (
           <p className="mt-3 text-sm text-muted">Nothing waiting.</p>
+        )}
+      </section>
+
+      <section className="panel p-5" aria-label="Launch controls">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-xl">Launch controls</h2>
+          <button type="button" onClick={() => void loadLaunch()} className="micro text-muted hover:text-ink">
+            refresh ↻
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-muted">
+          Show-week switches. All live on the floor server, survive restarts,
+          and default to normal behaviour when unset.
+        </p>
+        {launch ? (
+          <div className="mt-3 flex flex-col gap-5 text-sm">
+            <div>
+              <p className="micro text-muted">STAND EXPIRY</p>
+              <p className="mt-1">{launch.expiryState}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  type="datetime-local"
+                  value={pauseDate}
+                  onChange={(e) => setPauseDate(e.target.value)}
+                  aria-label="Pause stand expiry until"
+                  className="rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const t = new Date(pauseDate).getTime();
+                    if (!Number.isFinite(t) || t <= Date.now()) {
+                      say("pick a future date to pause expiry until");
+                      return;
+                    }
+                    void loadLaunch({ standExpiryPausedUntil: t }).then(() => say("stand expiry paused"));
+                  }}
+                  className="rounded-md border border-ink px-3 py-1.5 text-sm hover:bg-paper"
+                >
+                  Pause until then
+                </button>
+                {launch.standExpiryPausedUntil > Date.now() && (
+                  <button
+                    type="button"
+                    onClick={() => void loadLaunch({ standExpiryPausedUntil: null }).then(() => say("stand expiry resumed"))}
+                    className="rounded-md border border-line px-3 py-1.5 text-sm text-muted hover:border-ink hover:text-ink"
+                  >
+                    Resume normal expiry
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="micro text-muted">THE ANNEX</p>
+              <p className="mt-1">{launch.annexState}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {FLOORS.filter((f) => f.hidden && f.id !== PRACTICE_FLOOR_ID).map((f) => {
+                  const open = launch.annexOpen.includes(f.id);
+                  return (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() =>
+                        void loadLaunch({ annex: { floor: f.id, open: !open } }).then(() =>
+                          say(`${f.name} ${open ? "closed" : "opened"}`),
+                        )
+                      }
+                      className={`rounded-md border px-3 py-1.5 text-sm ${
+                        open
+                          ? "border-verify text-verify hover:bg-paper"
+                          : "border-line text-muted hover:border-ink hover:text-ink"
+                      }`}
+                    >
+                      {open ? `Close ${f.name}` : `Open ${f.name}`}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-xs text-muted">
+                Opening lists a hidden floor everywhere without a deploy.
+                Closing re-hides it — stands on it stay reachable by direct
+                link, as hidden floors always have been.
+              </p>
+            </div>
+
+            <div>
+              <p className="micro text-muted">SPECIAL WINDOWS</p>
+              <p className="mt-1">{launch.specialState}</p>
+              <p className="mt-1.5 text-xs text-muted">
+                Dated entries in lib/data/event-window.mjs — the app and the
+                floor server import the same list, so a special window turns
+                itself on and off by the clock. Changing the list is a deploy.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted">Loading the switches…</p>
         )}
       </section>
 

@@ -132,7 +132,7 @@ export default function AboutPage() {
           your pitch. Close the tab and the stand comes off the floor: a floor
           shows who is in the hall at that moment, and nothing else. The spot
           stays reserved for you, so walking back in puts your stand back
-          where it was. Stay away longer than 7 days and the spot opens up for
+          where it was. Stay away longer than 7 days — stands are kept longer around show weeks — and the spot opens up for
           the next founder.
         </p>
         <p>

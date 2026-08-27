@@ -66,7 +66,7 @@ export default function OpenDoorsCard() {
         <div>
           <p className="micro flex items-center gap-2 text-accent">
             <span aria-hidden="true" className="pulse-dot inline-block h-2 w-2 rounded-full bg-accent" />
-            OPEN DOORS · LIVE NOW
+            {(view.ev.special ? view.ev.name : "Open Doors").toUpperCase()} · LIVE NOW
           </p>
           <h2 className="mt-1 font-display text-lg">
             Everyone&rsquo;s at {floorName} right now.
@@ -93,7 +93,9 @@ export default function OpenDoorsCard() {
     >
       <div className="sm:max-w-sm">
         <p className="micro text-muted">NEXT OPEN DOORS · {view.label}</p>
-        <h2 className="mt-1 font-display text-lg">Next: {EVENT_LABEL}.</h2>
+        <h2 className="mt-1 font-display text-lg">
+          Next: {view.ev.special ? view.ev.name : EVENT_LABEL}.
+        </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
           Three hours a week, everyone shows up at {floorName} at the same
           time. It&rsquo;s the difference between a quiet hall and a room full

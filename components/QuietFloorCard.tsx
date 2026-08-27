@@ -32,7 +32,11 @@ export default function QuietFloorCard({
   const [ev] = useState(() => {
     const now = Date.now();
     const e = nextEvent(now);
-    return { live: e.live, label: e.live ? "live now" : fmtCountdown(e.startMs - now) };
+    return {
+      live: e.live,
+      name: e.special ? e.name : "Open Doors",
+      label: e.live ? "live now" : fmtCountdown(e.startMs - now),
+    };
   });
 
   return (
@@ -67,7 +71,7 @@ export default function QuietFloorCard({
           href="/lobby"
           className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
         >
-          {ev.live ? "Open Doors is live — join it" : `Open Doors in ${ev.label} — get a reminder`}
+          {ev.live ? `${ev.name} is live — join it` : `${ev.name} in ${ev.label} — get a reminder`}
         </Link>
         <Link
           href="/directory"

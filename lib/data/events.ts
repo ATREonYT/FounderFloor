@@ -26,6 +26,9 @@ export interface EventInfo {
   startMs: number;
   endMs: number;
   live: boolean;
+  /** True when this is a dated SPECIAL_WINDOWS entry (its label is the
+   * name) rather than the ordinary weekly Sunday window. */
+  special?: boolean;
 }
 
 const MINUTE = 60_000;
@@ -37,13 +40,18 @@ const DAY = 86_400_000;
  * inside a window it returns with live=true; otherwise the next one.
  */
 export function nextEvent(nowMs: number): EventInfo {
-  const { startMs, endMs, live } = nextWindow(nowMs);
+  const { startMs, endMs, live, label } = nextWindow(nowMs);
+  // A special window (a dated SPECIAL_WINDOWS entry — launch day, say)
+  // announces itself by its own label everywhere the event is named.
   return {
-    name: "Open Doors",
-    blurb:
-      `${EVENT_LABEL}: three hours where everyone is on the Main Hall at once. ` +
-      "Sunday evening in Europe, Sunday midday in the Americas. Walk in, look around, " +
-      "talk to whoever is at a stand. Be in the room and there's a badge in it for you.",
+    name: label ?? "Open Doors",
+    special: Boolean(label),
+    blurb: label
+      ? `${label}. Everyone is on the Main Hall — walk in, look around, ` +
+        "talk to whoever is at a stand. Be in the room and there's a badge in it for you."
+      : `${EVENT_LABEL}: three hours where everyone is on the Main Hall at once. ` +
+        "Sunday evening in Europe, Sunday midday in the Americas. Walk in, look around, " +
+        "talk to whoever is at a stand. Be in the room and there's a badge in it for you.",
     floorId: "main-hall",
     startMs,
     endMs,
