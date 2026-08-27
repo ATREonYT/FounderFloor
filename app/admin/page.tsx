@@ -345,8 +345,11 @@ export default function AdminPage() {
     annexOpen: string[];
     annexState: string;
     specialState: string;
+    maxFloorOccupancy: number;
+    occupancyState: string;
   } | null>(null);
   const [pauseDate, setPauseDate] = useState("");
+  const [capInput, setCapInput] = useState("");
   const loadLaunch = useCallback(async (body: Record<string, unknown> = {}) => {
     try {
       const r = await adminPost("/admin/launch-controls", body);
@@ -1163,6 +1166,43 @@ export default function AdminPage() {
                 Opening lists a hidden floor everywhere without a deploy.
                 Closing re-hides it — stands on it stay reachable by direct
                 link, as hidden floors always have been.
+              </p>
+            </div>
+
+            <div>
+              <p className="micro text-muted">OCCUPANCY CAP</p>
+              <p className="mt-1">{launch.occupancyState}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  type="number"
+                  min={10}
+                  max={1000}
+                  value={capInput}
+                  onChange={(e) => setCapInput(e.target.value)}
+                  placeholder={String(launch.maxFloorOccupancy)}
+                  aria-label="Max people per floor"
+                  className="w-28 rounded-md border border-line bg-paper px-2 py-1.5 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const v = Number(capInput);
+                    if (!Number.isFinite(v) || v < 10 || v > 1000) {
+                      say("the cap takes a number between 10 and 1000");
+                      return;
+                    }
+                    void loadLaunch({ maxFloorOccupancy: v }).then(() => say(`floor cap set to ${v}`));
+                  }}
+                  className="rounded-md border border-ink px-3 py-1.5 text-sm hover:bg-paper"
+                >
+                  Set cap
+                </button>
+              </div>
+              <p className="mt-1.5 text-xs text-muted">
+                Measured on load (server/test/load-floor.mjs): comfortable at
+                100 in a room, straining at 150, gone at 200. Joins past the
+                cap wait in an honest one-out-one-in line; nobody already
+                inside is ever dropped.
               </p>
             </div>
 

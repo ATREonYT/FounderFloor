@@ -315,6 +315,15 @@ export function createNetClient(wsUrl?: string): NetClient {
         emit({ t: "replaced" });
         return;
       }
+      // 4008 = the floor is at its occupancy cap. Terminal too: the
+      // floor_full frame arrived just before this close, the page's card
+      // owns the retry (via GET /full), and a transport-level reconnect
+      // would just hammer a full door.
+      if (e.code === 4008) {
+        phase = "closed";
+        clearTimer();
+        return;
+      }
       handleFailure(opened);
     };
   }

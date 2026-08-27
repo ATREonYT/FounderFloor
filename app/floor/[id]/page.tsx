@@ -48,6 +48,7 @@ import RequestCard from "@/components/RequestCard";
 import MailToast, { type MailToastData } from "@/components/MailToast";
 import BoothCard from "@/components/BoothCard";
 import OpenStandCard from "@/components/OpenStandCard";
+import FullHallCard from "@/components/FullHallCard";
 import ChatPanel, { type ChatThread } from "@/components/ChatPanel";
 import EmoteBar from "@/components/EmoteBar";
 import HoverCard from "@/components/HoverCard";
@@ -169,6 +170,13 @@ export default function FloorPage({ params }: { params: { id: string } }) {
    * connection because the same identity joined from another window/device.
    */
   const [session, setSession] = useState<"pending" | "mine" | "blocked" | "elsewhere">("pending");
+  /**
+   * The occupancy cap refused this join ({t:"floor_full"} then close 4008).
+   * While set, the FullHallCard replaces the hall; bumping fullRetry
+   * re-runs the whole join effect for the one-in-one-out admission.
+   */
+  const [hallFull, setHallFull] = useState<{ count: number } | null>(null);
+  const [fullRetry, setFullRetry] = useState(0);
   const lockReleaseRef = useRef<(() => void) | null>(null);
 
   const takeLock = useCallback((steal: boolean) => {
@@ -996,9 +1004,17 @@ export default function FloorPage({ params }: { params: { id: string } }) {
     if (!f || !canvas) return;
 
     // Canvas buffer sizing is owned by the engine's dpr-aware ResizeObserver.
+    setHallFull(null); // a fresh join attempt clears the full-hall card
     const net = createNetClient();
     netRef.current = net;
     const offNet = net.on((ev) => {
+      if (ev.t === "floor_full") {
+        // Refused at the door — the hall is at its cap. The card takes
+        // over; the engine below stays in its offline solo state and is
+        // torn down by this effect's cleanup when the card re-joins.
+        setHallFull({ count: ev.count });
+        return;
+      }
       if (ev.t === "replaced") {
         // The same identity joined this floor from another window or device
         // — the server handed the session over. Show the takeover panel;
@@ -1367,7 +1383,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       for (const t of Object.values(replyTimers.current)) clearTimeout(t);
       replyTimers.current = {};
     };
-  }, [allowed, session, params.id, actions, showToast, openNpcThread, openPlayerThread, refreshInbox]);
+  }, [allowed, session, params.id, fullRetry, actions, showToast, openNpcThread, openPlayerThread, refreshInbox]);
 
   useEffect(() => {
     return () => {
@@ -1460,6 +1476,26 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             </Link>
           </div>
         </div>
+      </main>
+    );
+  }
+
+  if (hallFull && floor) {
+    return (
+      <main className="relative h-[100dvh]">
+        <FullHallCard
+          floorId={floor.id}
+          floorName={floor.name}
+          visitorId={state.profile.id}
+          initialCount={hallFull.count}
+          onAdmit={() => {
+            // Clear the card IN THE SAME update as the retry bump: the join
+            // effect needs the canvas mounted when it re-runs, and the
+            // canvas only renders once hallFull is null.
+            setHallFull(null);
+            setFullRetry((n) => n + 1);
+          }}
+        />
       </main>
     );
   }

@@ -178,6 +178,42 @@ let annexOpen = [];
 const MAX_ANNEX = 8;
 
 /**
+ * ─── THE OCCUPANCY CAP ──────────────────────────────────────────────────
+ * Measured (server/test/load-floor.mjs, 4-core box, everyone walking):
+ * the broadcast fan-out is O(n²) per room and the curve breaks hard —
+ * ~35% of a core and 12ms lag at 100 in a room, 80% and 278ms at 150,
+ * saturated with multi-second lag at 200. The cap refuses JOINS at the
+ * line so the people already inside never feel the crowd outside.
+ *
+ * Default 100: comfortable at a third of a core, leaving room for chat,
+ * claims, HTTP and a second floor if the annex opens. Changeable LIVE
+ * from /admin/launch-controls (persisted), because the measured number
+ * and the launch-day number will disagree. A refused visitor gets a
+ * structured { t: "floor_full", count, cap } frame (the join-side twin
+ * of booth_denied's "taken"/"reserved"), then close 4008, and can wait
+ * in line via GET /full — a tiny poll-kept FIFO that hands out honest
+ * positions and one-in-one-out admissions. Nobody inside is ever
+ * dropped to admit somebody new. The "__inbox" pseudo-room is exempt.
+ */
+let maxFloorOccupancy = Math.max(10, Number(process.env.MAX_FLOOR_OCCUPANCY) || 100);
+const waitlists = new Map(); // floorId -> Map<visitorId, lastPolledMs> (insertion = queue order)
+const WAITLIST_TTL_MS = 12_000;
+
+function waitlistFor(floorId) {
+  let list = waitlists.get(floorId);
+  if (!list) {
+    if (waitlists.size >= MAX_FLOORS_TRACKED) return null;
+    list = new Map();
+    waitlists.set(floorId, list);
+  }
+  const cutoff = Date.now() - WAITLIST_TTL_MS;
+  for (const [id, ts] of list) {
+    if (ts < cutoff) list.delete(id);
+  }
+  return list;
+}
+
+/**
  * Position pricing: a silver/gold spot is held for a period, not forever
  * — until the end of the next Open Doors plus one week (holdUntilFor() in
  * lib/data/spot-plans.mjs, shared with the web app). The server computes
@@ -1689,6 +1725,9 @@ function loadData() {
       .filter((v) => typeof v === "string" && /^[a-z0-9-]{1,32}$/.test(v))
       .slice(0, MAX_ANNEX);
   }
+  if (typeof parsed.maxFloorOccupancy === "number" && parsed.maxFloorOccupancy >= 10) {
+    maxFloorOccupancy = Math.min(1000, Math.trunc(parsed.maxFloorOccupancy));
+  }
 
   if (parsed.stands && typeof parsed.stands === "object") {
     const cutoff = Date.now() < standExpiryPausedUntil ? 0 : Date.now() - STAND_TTL_MS;
@@ -2106,6 +2145,7 @@ function saveNow() {
     lastRemindedWindow,
     standExpiryPausedUntil,
     annexOpen,
+    maxFloorOccupancy,
     social: Object.fromEntries(social),
     dms: Object.fromEntries(dms),
     accounts: Object.fromEntries(accounts),
@@ -3855,6 +3895,12 @@ async function handleAdminPost(req, res, pathname) {
           `[launch] stand expiry ${standExpiryPausedUntil ? `paused until ${new Date(standExpiryPausedUntil).toISOString()}` : "resumed"}`,
         );
       }
+      if ("maxFloorOccupancy" in body) {
+        const v = Number(body.maxFloorOccupancy);
+        maxFloorOccupancy = Number.isFinite(v) && v >= 10 ? Math.min(1000, Math.trunc(v)) : 100;
+        saveNow();
+        console.log(`[launch] floor occupancy cap set to ${maxFloorOccupancy}`);
+      }
       if (body.annex && typeof body.annex === "object") {
         const floor = typeof body.annex.floor === "string" ? body.annex.floor.slice(0, 32) : "";
         if (/^[a-z0-9-]{1,32}$/.test(floor)) {
@@ -3877,6 +3923,8 @@ async function handleAdminPost(req, res, pathname) {
         annexState: annexOpen.length
           ? `annex open: ${annexOpen.join(", ")}`
           : "annex closed — hidden floors stay hidden",
+        maxFloorOccupancy,
+        occupancyState: `floor cap ${maxFloorOccupancy} — main-hall at ${rooms.get("main-hall")?.size ?? 0} right now`,
         specialWindows: specials,
         specialState: specials.length
           ? `next special window: ${specials[0].label} (${new Date(specials[0].startMs).toISOString()})`
@@ -4933,6 +4981,46 @@ const server = createServer((req, res) => {
     return;
   }
 
+  /**
+   * The line outside a full floor. A visitor refused with floor_full polls
+   * this every few seconds; the map's insertion order IS the queue, an
+   * entry not re-polled for 12s falls out of it, and `admit` turns true
+   * when your position fits inside the seats currently free — one out,
+   * one in, no accounts, no tickets, nothing stored. Positions are honest
+   * or absent; there is no progress bar to fake.
+   */
+  if (req.method === "GET" && url.pathname === "/full") {
+    const floorId = (url.searchParams.get("floor") || "").slice(0, 32);
+    const me = (url.searchParams.get("me") || "").slice(0, MAX_ID_LEN);
+    if (!/^[a-z0-9-]{1,32}$/.test(floorId) || !me) {
+      sendJson(res, { error: "floor and me are required" });
+      return;
+    }
+    const room = rooms.get(floorId);
+    const inside = room?.size ?? 0;
+    const list = waitlistFor(floorId);
+    if (!list) {
+      // Too many floors tracked (an attack shape, not a launch shape) —
+      // fall back to "just try": the join gate still enforces the cap.
+      sendJson(res, { inside, cap: maxFloorOccupancy, position: 0, admit: inside < maxFloorOccupancy });
+      return;
+    }
+    list.set(me, Date.now()); // upsert keeps the original queue position
+    let position = 0;
+    for (const id of list.keys()) {
+      if (id === me) break;
+      position++;
+    }
+    const seats = Math.max(0, maxFloorOccupancy - inside);
+    sendJson(res, {
+      inside,
+      cap: maxFloorOccupancy,
+      position,
+      admit: position < seats,
+    });
+    return;
+  }
+
   // The four boards, as they stand this week, plus last week's podium.
   //
   // Open to anyone — a leaderboard behind a login is a leaderboard nobody
@@ -5538,7 +5626,9 @@ const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
 // can't open thousands and exhaust memory, and drop any socket that connects
 // but never sends a valid `join` within a few seconds (idle-hold / slowloris).
 const MAX_WS_TOTAL = 3000;
-const MAX_WS_PER_IP = 24;
+// Env override is for the load probe (server/test/load-floor.mjs), which
+// necessarily runs all its clients from one address; production keeps 24.
+const MAX_WS_PER_IP = Math.max(1, Number(process.env.FF_MAX_WS_PER_IP) || 24);
 const JOIN_GRACE_MS = 12_000;
 const wsPerIp = new Map(); // ip key -> count
 
@@ -5653,6 +5743,30 @@ wss.on("connection", (ws, req) => {
     if (isBannedId(rawId) || isBannedAcct(accountsById.get(rawId))) {
       ws.close(4003, "suspended");
       return;
+    }
+    // The occupancy cap. Refuses NEW people only: an identity already in
+    // the room is a session replace (second tab, reconnect) and swaps
+    // 1-for-1, so it always passes — nobody inside is ever dropped or
+    // locked out by the crowd behind them.
+    if (floorId !== "__inbox") {
+      const existingRoom = rooms.get(floorId);
+      if (existingRoom && existingRoom.size >= maxFloorOccupancy) {
+        let alreadyIn = false;
+        for (const c of existingRoom.values()) {
+          if (c.rawId === rawId) {
+            alreadyIn = true;
+            break;
+          }
+        }
+        if (!alreadyIn) {
+          send(ws, { t: "floor_full", count: existingRoom.size, cap: maxFloorOccupancy });
+          ws.close(4008, "floor full");
+          console.log(`[ws] full  floor=${floorId} refused (${existingRoom.size}/${maxFloorOccupancy})`);
+          return;
+        }
+      }
+      // Joining takes you out of any line you were standing in.
+      waitlists.get(floorId)?.delete(rawId);
     }
     const name = moderateField(sanitizeName(p?.name)) || "guest";
     const look = sanitizeLook(p?.look);

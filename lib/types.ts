@@ -540,7 +540,14 @@ export type NetEvent =
    * goes terminal (no reconnect; reconnecting would just kick the newer
    * session back and ping-pong forever) and the page shows a takeover UI.
    */
-  | { t: "replaced" };
+  | { t: "replaced" }
+  /**
+   * The floor is at its occupancy cap. Sent once to a refused joiner
+   * before the server closes with code 4008; the transport goes terminal
+   * (like "replaced") and the page shows the full-hall card, which owns
+   * the retry via GET /full. People already in the room never see this.
+   */
+  | { t: "floor_full"; count: number; cap: number };
 
 export interface RemoteBooth {
   /** The owner's stable profile id (not the per-connection wire id). */
