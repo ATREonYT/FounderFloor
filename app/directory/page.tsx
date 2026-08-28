@@ -19,6 +19,7 @@ import RankBadge from "@/components/RankBadge";
 import TierTag from "@/components/TierTag";
 import { useAnnex, usePresence } from "@/components/usePresence";
 import { ownerIdOf, standHref } from "@/lib/ownerId";
+import { boothNumber } from "@/lib/boothNumber";
 import { useCommunityStartups } from "@/components/useCommunityStartups";
 
 const FLOOR_BY_ID: Record<string, FloorDef> = Object.fromEntries(
@@ -36,6 +37,8 @@ interface DirRow {
   slug: string | null;
   startup: Startup;
   floor: FloorDef | undefined;
+  /** Index into the floor's spots; -1 when the founder holds no stand. */
+  spotIndex: number;
   community: boolean;
   href: string;
   online: boolean;
@@ -84,6 +87,7 @@ export default function DirectoryPage() {
         slug: c.slug ?? null,
         startup: c.startup,
         floor,
+        spotIndex: c.spotIndex,
         community: true,
         // TODO(spot-id): link by spot id once ?spot= deep links accept ids.
         href: floor ? `/floor/${c.floorId}?spot=${c.spotIndex}` : "#",
@@ -233,7 +237,7 @@ export default function DirectoryPage() {
             </p>
             <Link
               href="/profile#booth"
-              className="btn-press mt-1 rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+              className="btn-press mt-1 rounded-md bg-accent-strong px-4 py-2 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
             >
               Set up your stand
             </Link>
@@ -253,8 +257,23 @@ export default function DirectoryPage() {
             return (
               <li
                 key={r.key}
-                className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center"
+                className="flex flex-col gap-3 py-4 sm:flex-row sm:items-start"
               >
+                {/* THE STAND REFERENCE. Derived from the spot, identical to
+                    the one on the stand page, the share card and the sign
+                    over the booth itself. An address a founder can put in a
+                    bio and a visitor can walk to is the most credible thing
+                    a directory owns; a founder with no stand up has no
+                    address yet, and the column says so rather than
+                    inventing one. */}
+                <span
+                  className="shrink-0 font-mono text-xs leading-6 text-muted sm:w-14 sm:pt-1"
+                  title={
+                    r.floor ? `Stand ${boothNumber(r.floor.id, r.spotIndex)}` : "No stand up yet"
+                  }
+                >
+                  {(r.floor && boothNumber(r.floor.id, r.spotIndex)) || "—"}
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     {/* The stand itself. A directory ought to open onto the

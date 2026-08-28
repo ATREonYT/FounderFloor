@@ -105,11 +105,15 @@ function Section({
   lede,
   children,
   id,
+  to,
   tone = "paper",
   className = "",
 }: {
   glyph: GlyphId;
   kicker: string;
+  /** True when this section names somewhere in the building you can walk
+   *  to, rather than something the page is explaining. Drives the arrow. */
+  to?: boolean;
   title: React.ReactNode;
   lede?: React.ReactNode;
   children: React.ReactNode;
@@ -134,7 +138,7 @@ function Section({
                 section's real anchor in the code slot — in place of the
                 old numeral rail and kicker. Same anatomy as every other
                 sign in the building; nothing here is improvised. */}
-            <Sign glyph={glyph} label={kicker} code={id ? `#${id}` : undefined} />
+            <Sign glyph={glyph} label={kicker} code={id ? `#${id}` : undefined} to={to} />
             <h2
               id={headingId}
               className={`mt-4 ${TITLE} ${dark ? "text-paper" : ""}`}
@@ -330,7 +334,7 @@ export default function LandingPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/lobby"
-                  className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+                  className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
                 >
                   Walk the floor →
                 </Link>
@@ -431,6 +435,7 @@ export default function LandingPage() {
       <Section
         glyph="chip"
         id="index"
+        to
         kicker="The map"
         title="Find your way around"
         lede="Four places, each with one job. Everything you do in one shows up in the others."
@@ -492,6 +497,7 @@ export default function LandingPage() {
       <Section
         glyph="cube"
         id="halls"
+        to
         kicker="The venue"
         title={<FloorsTitle />}
         lede={<FloorsLede />}
@@ -644,7 +650,7 @@ export default function LandingPage() {
         <div className={`${SHELL} py-16 sm:py-24`}>
           <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div>
-              <Spec className="text-gold">Closing time: there isn&rsquo;t one</Spec>
+              <Spec className="text-paper/50">Closing time: there isn&rsquo;t one</Spec>
               <h2
                 id="cta-heading"
                 className={`mt-4 max-w-xl ${TITLE} text-paper`}
@@ -657,7 +663,7 @@ export default function LandingPage() {
               </p>
               <Link
                 href="/lobby"
-                className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+                className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
               >
                 Walk the floor →
               </Link>

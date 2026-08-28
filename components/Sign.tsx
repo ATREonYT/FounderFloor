@@ -3,8 +3,15 @@
  * header and plaque, and improvised nowhere.
  *
  * One fixed anatomy, always in this order: a pictogram in a
- * radius-cornered square frame, the label in the display face, and the
- * real anchor or booth code in mono on the right. It is set like the
+ * radius-cornered square frame, the label set as SIGNAGE — uppercase and
+ * wide-tracked, the way a hall letters its own boards — and the real
+ * anchor or stand reference in mono on the right.
+ *
+ * `to` marks a DESTINATION: somewhere in the building you can actually
+ * walk to, as opposed to a section that only explains something. A
+ * destination gets the arrow and the accent; everything else stays
+ * quiet. That is the whole rule, and it is why the arrow means
+ * something — a sign that points everywhere points nowhere. It is set like the
  * hall's own boards — blackout plate, badge-clipped corner — so the page
  * and the game read as one building. The code slot shows genuine data
  * (a URL anchor, a booth number), never decoration.
@@ -19,12 +26,15 @@ export default function Sign({
   glyph,
   label,
   code,
+  to,
   tone = "plate",
 }: {
   glyph: GlyphId;
   label: string;
-  /** The real address of the thing signed: "#admission", "A-114". */
+  /** The real address of the thing signed: "#admission", "A-01". */
   code?: string;
+  /** Set when the section names a place you can go. Adds the arrow. */
+  to?: boolean;
   /** plate = blackout (default, like the hall boards); paper = quiet. */
   tone?: "plate" | "paper";
 }) {
@@ -45,10 +55,15 @@ export default function Sign({
         <PixelGlyph glyph={glyph} size={16} color={plate ? "var(--paper)" : "var(--ink)"} />
       </span>
       <span
-        className={`min-w-0 font-display text-lg leading-tight ${
-          plate ? "text-paper" : "text-ink"
+        className={`min-w-0 font-display text-xs uppercase leading-tight tracking-[0.12em] ${
+          to ? "text-accent" : plate ? "text-paper" : "text-ink"
         }`}
       >
+        {to && (
+          <span aria-hidden="true" className="mr-1.5">
+            &rarr;
+          </span>
+        )}
         {label}
       </span>
       {code && (

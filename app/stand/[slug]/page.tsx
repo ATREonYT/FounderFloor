@@ -92,9 +92,22 @@ export default async function StandPage({ params }: Props) {
           Directory
         </Link>{" "}
         · {s.category || "Startup"}
-        {boothNumber(stand.floorId, stand.spotIndex) &&
-          ` · ${boothNumber(stand.floorId, stand.spotIndex)}`}
       </p>
+
+      {/* THE ADDRESS, stated rather than tucked into a breadcrumb: the hall
+          and the stand reference, set like the sign hanging over the booth
+          itself. It is the same string the directory lists, the share card
+          prints and the register calls out, because all four ask
+          boothNumber() the same question. */}
+      {boothNumber(stand.floorId, stand.spotIndex) && (
+        <p className="mt-3 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-muted">
+          {floor?.name ?? "The floor"}
+          <span aria-hidden="true" className="h-px w-4 bg-line" />
+          <span className="text-accent">
+            Stand {boothNumber(stand.floorId, stand.spotIndex)}
+          </span>
+        </p>
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <h1 className="font-display text-3xl leading-tight">{s.name}</h1>

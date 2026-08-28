@@ -1,12 +1,14 @@
 /**
- * Booth numbers the way a real show prints them: hall letter, dash,
- * row-and-position. Spot 0 on the Main Hall is A-101, not "#1" — a code
- * that reads as a place somebody planned, and sorts correctly besides.
+ * THE STAND REFERENCE. Hall letter, dash, two-digit stand: A-01, C-14.
+ * The most credible thing this directory owns is an address you can
+ * quote, so it is generated from the spot and is the same string
+ * everywhere it appears — the stand page, the directory, the share
+ * card, the in-hall register and the floor's own toasts all call this
+ * one function.
  *
- * The number is DERIVED from (floorId, spotIndex), never stored: claims
- * keep their spotIndex identity, so the code can never drift from the
- * spot it names. 101-based so no booth is ever "100" or "0" — trade
- * shows do not have a booth zero.
+ * DERIVED from (floorId, spotIndex), never stored: claims keep their
+ * spotIndex identity, so a reference can never drift from the spot it
+ * names. One-based, because no trade show has a stand zero.
  */
 const HALL_LETTER: Record<string, string> = {
   "main-hall": "A",
@@ -21,5 +23,5 @@ const HALL_LETTER: Record<string, string> = {
 export function boothNumber(floorId: string | null | undefined, spotIndex: number): string {
   if (!floorId || spotIndex < 0) return "";
   const hall = HALL_LETTER[floorId] ?? floorId.charAt(0).toUpperCase();
-  return `${hall}-${101 + spotIndex}`;
+  return `${hall}-${String(spotIndex + 1).padStart(2, "0")}`;
 }
