@@ -367,7 +367,11 @@ export default function LandingPage() {
             <figure className="anim-in relative">
               <CropMarks tone="paper" />
               <div className="relative overflow-hidden border border-paper/15 bg-ink">
-                <HeroScene bare className="h-[300px] sm:h-[420px] lg:h-[520px]" />
+                <HeroScene
+                  playable
+                  bare
+                  className="h-[300px] sm:h-[420px] lg:h-[520px]"
+                />
               </div>
             </figure>
           </Parallax>

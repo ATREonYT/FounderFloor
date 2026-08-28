@@ -11,7 +11,7 @@
  * Respects prefers-reduced-motion by drawing a single static frame.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TILE } from "@/lib/types";
 import type { AvatarLook, Dir, GlyphId } from "@/lib/types";
 import {
@@ -128,8 +128,19 @@ interface Plant {
 export default function HeroScene({
   className = "",
   bare = false,
+  playable = false,
+  onFirstStep,
 }: {
   className?: string;
+  /**
+   * Hands the scene a visitor. Arrow keys / WASD walk once the scene has
+   * focus, and a tap walks toward the point. This is the product itself
+   * running on the landing page rather than a picture of it — the reason
+   * the hall is on the page at all.
+   */
+  playable?: boolean;
+  /** Fires once, the first time the visitor actually moves. */
+  onFirstStep?: () => void;
   /**
    * Drops the component's own height, radius and border so the caller can
    * frame it itself. Two competing `h-*` utilities of equal specificity
@@ -140,6 +151,9 @@ export default function HeroScene({
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [walking, setWalking] = useState(false);
+  const stepRef = useRef(onFirstStep);
+  stepRef.current = onFirstStep;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -171,6 +185,27 @@ export default function HeroScene({
     const npcs: Npc[] = [];
     let raf = 0;
 
+    /**
+     * THE VISITOR. Same shape as an ambient NPC, but driven by whoever is
+     * reading the page: held keys move it directly, a tap sends it to the
+     * point. It stays inside the aisle band the NPCs use, so it can never
+     * walk through a counter.
+     */
+    const me = {
+      frames: bank.makeAvatar({ skin: 2, outfit: 3, hair: 4 }),
+      x: 0,
+      y: 0,
+      dir: "down" as Dir,
+      moving: false,
+      animT: 0,
+      tx: null as number | null,
+      ty: null as number | null,
+      placed: false,
+    };
+    const held = new Set<string>();
+    let moved = false;
+    const SPEED = 78; // world px/s — a shade quicker than the ambient drift
+
     const pickTarget = (n: Npc): void => {
       n.tx = 16 + rand() * Math.max(1, worldW - 32);
       n.ty = bandTop + rand() * Math.max(1, bandBot - bandTop);
@@ -187,6 +222,13 @@ export default function HeroScene({
       worldH = cssH / ZOOM;
       bandTop = APRON_BOTTOM + 8;
       bandBot = Math.max(bandTop + 10, worldH - 8);
+      if (!me.placed) {
+        me.x = worldW / 2;
+        me.y = (bandTop + bandBot) / 2;
+        me.placed = true;
+      }
+      me.x = Math.min(Math.max(me.x, 12), Math.max(12, worldW - 12));
+      me.y = Math.min(Math.max(me.y, bandTop), bandBot);
 
       // Booths: 4-tile zones with 4-tile gaps, like the real hall.
       const tilesW = worldW / TILE;
@@ -412,6 +454,10 @@ export default function HeroScene({
         const frame = n.moving ? 1 + (Math.floor(n.animT * WALK_FPS) % 2) : 0;
         items.push({ sortY: n.y, paint: () => drawAvatar(n.frames, n.x, n.y, n.dir, frame) });
       }
+      if (playable && me.placed) {
+        const frame = me.moving ? 1 + (Math.floor(me.animT * WALK_FPS) % 2) : 0;
+        items.push({ sortY: me.y, paint: () => drawAvatar(me.frames, me.x, me.y, me.dir, frame) });
+      }
       items.sort((a, b) => a.sortY - b.sortY);
       for (const it of items) it.paint();
     };
@@ -421,10 +467,52 @@ export default function HeroScene({
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let last = 0;
 
+    /** Held keys first, then any tap target. Diagonals are normalised so
+     *  walking corner-wise is not faster than walking straight. */
+    const updateMe = (dt: number): void => {
+      if (!playable) return;
+      let vx = 0;
+      let vy = 0;
+      if (held.has("left")) vx -= 1;
+      if (held.has("right")) vx += 1;
+      if (held.has("up")) vy -= 1;
+      if (held.has("down")) vy += 1;
+      if (vx || vy) {
+        me.tx = null;
+        me.ty = null;
+      } else if (me.tx !== null && me.ty !== null) {
+        const dx = me.tx - me.x;
+        const dy = me.ty - me.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 2) {
+          me.tx = null;
+          me.ty = null;
+        } else {
+          vx = dx / d;
+          vy = dy / d;
+        }
+      }
+      const mag = Math.hypot(vx, vy);
+      me.moving = mag > 0;
+      if (!me.moving) return;
+      vx /= mag;
+      vy /= mag;
+      me.x = Math.min(Math.max(me.x + vx * SPEED * dt, 12), Math.max(12, worldW - 12));
+      me.y = Math.min(Math.max(me.y + vy * SPEED * dt, bandTop), bandBot);
+      me.dir = Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "left" : "right") : vy < 0 ? "up" : "down";
+      me.animT += dt;
+      if (!moved) {
+        moved = true;
+        setWalking(true);
+        stepRef.current?.();
+      }
+    };
+
     const loop = (now: number): void => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       updateNpcs(dt, now / 1000);
+      updateMe(dt);
       draw();
       raf = requestAnimationFrame(loop);
     };
@@ -441,6 +529,45 @@ export default function HeroScene({
 
     const onMotionChange = (): void => start();
 
+    /**
+     * INPUT. Keys are read only while the scene holds focus, so a visitor
+     * scrolling past the page never has their arrow keys stolen — they
+     * have to click or tab into the hall first, exactly like stepping
+     * through a door. Escape steps back out.
+     */
+    const KEYS: Record<string, string> = {
+      ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+      w: "up", a: "left", s: "down", d: "right",
+      W: "up", A: "left", S: "down", D: "right",
+    };
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") {
+        wrap.blur();
+        return;
+      }
+      const k = KEYS[e.key];
+      if (!k) return;
+      e.preventDefault(); // focused on purpose: the hall gets the arrows
+      held.add(k);
+    };
+    const onKeyUp = (e: KeyboardEvent): void => {
+      const k = KEYS[e.key];
+      if (k) held.delete(k);
+    };
+    const onBlur = (): void => held.clear();
+    const onPointerDown = (e: PointerEvent): void => {
+      wrap.focus();
+      const rect = canvas.getBoundingClientRect();
+      me.tx = (e.clientX - rect.left) / ZOOM;
+      me.ty = Math.min(Math.max((e.clientY - rect.top) / ZOOM, bandTop), bandBot);
+    };
+    if (playable) {
+      wrap.addEventListener("keydown", onKeyDown);
+      wrap.addEventListener("keyup", onKeyUp);
+      wrap.addEventListener("blur", onBlur);
+      wrap.addEventListener("pointerdown", onPointerDown);
+    }
+
     layout();
     start();
 
@@ -455,22 +582,49 @@ export default function HeroScene({
 
     return () => {
       cancelAnimationFrame(raf);
+      if (playable) {
+        wrap.removeEventListener("keydown", onKeyDown);
+        wrap.removeEventListener("keyup", onKeyUp);
+        wrap.removeEventListener("blur", onBlur);
+        wrap.removeEventListener("pointerdown", onPointerDown);
+      }
       ro.disconnect();
       if (typeof reduceMotion.removeEventListener === "function") {
         reduceMotion.removeEventListener("change", onMotionChange);
       }
     };
-  }, []);
+  }, [playable]);
 
   return (
     <div
       ref={wrapRef}
-      aria-hidden="true"
+      {...(playable
+        ? {
+            role: "application" as const,
+            tabIndex: 0,
+            "aria-label":
+              "A walkable slice of the Main Hall. Click or tap to step in, then use the arrow keys or W A S D to walk. Escape steps back out.",
+          }
+        : { "aria-hidden": true as const })}
       className={`relative w-full overflow-hidden bg-[#D8D2C4] ${
-        bare ? "" : "h-[320px] rounded-md border border-line sm:h-[368px]"
-      } ${className}`}
+        playable ? "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent" : ""
+      } ${bare ? "" : "h-[320px] rounded-md border border-line sm:h-[368px]"} ${className}`}
     >
       <canvas ref={canvasRef} className="pixelated absolute inset-0 h-full w-full" />
+      {/* The invitation, lettered like every other sign in the building.
+          It is not a caption about the picture — it is the instruction for
+          the thing the visitor is already able to do. */}
+      {playable && (
+        <p
+          className={`pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap border px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] transition-opacity duration-500 ${
+            walking
+              ? "border-paper/20 bg-ink/70 text-paper/60"
+              : "border-accent/50 bg-ink/80 text-accent"
+          }`}
+        >
+          {walking ? "You are walking the hall" : "Click, then walk with W A S D"}
+        </p>
+      )}
     </div>
   );
 }
