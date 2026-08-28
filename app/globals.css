@@ -284,6 +284,15 @@
       border-color 150ms ease,
       box-shadow 220ms var(--ease-release);
   }
+  /* A control should answer before it is pressed. The hover lifts it a
+     hair and deepens its cast; the press puts it back down harder than it
+     came up, which is what a real key feels like. */
+  .btn-press:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      0 2px 4px oklch(var(--gaffer) / 0.08),
+      0 10px 20px -6px oklch(var(--gaffer) / 0.18);
+  }
   .btn-press:active:not(:disabled) {
     transform: translateY(2px);
     box-shadow: 0 1px 2px oklch(var(--gaffer) / 0.10);
@@ -994,4 +1003,24 @@ body[data-on-floor] footer[data-site-footer] {
 
 body[data-on-floor] header[data-site-nav] {
   display: none;
+}
+
+@layer components {
+  /* Arrows travel on hover. The distance is 3px — enough to read as
+     intent, short enough that a row of them does not jitter. */
+  .arrow-slide :is(.arrow, [data-arrow]) {
+    display: inline-block;
+    transition: transform 220ms var(--ease-release);
+  }
+  .arrow-slide:hover :is(.arrow, [data-arrow]) {
+    transform: translateX(3px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .btn-press:hover:not(:disabled) {
+      transform: none;
+    }
+    .arrow-slide:hover :is(.arrow, [data-arrow]) {
+      transform: none;
+    }
+  }
 }

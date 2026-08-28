@@ -6,6 +6,7 @@ import TierTag, { TIER_LABEL, TIER_PRICE } from "@/components/TierTag";
 import FloorCatalogue, { FloorsLede, FloorsTitle } from "@/components/FloorCatalogue";
 import PixelGlyph from "@/components/PixelGlyph";
 import HeroScene from "@/components/HeroScene";
+import BoothPreview from "@/components/BoothPreview";
 import LiveStats from "@/components/LiveStats";
 import Reveal from "@/components/Reveal";
 import FloorThumb from "@/components/FloorThumb";
@@ -334,9 +335,9 @@ export default function LandingPage() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/lobby"
-                  className="btn-press rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
+                  className="btn-press arrow-slide rounded-md bg-accent-strong px-6 py-3 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
                 >
-                  Walk the floor →
+                  Walk the floor <span className="arrow">&rarr;</span>
                 </Link>
                 <Link
                   href="/profile#booth"
@@ -454,7 +455,7 @@ export default function LandingPage() {
                 // row's real address ("/connections" is the widest), and the
                 // old 2.5rem — sized for the numerals this column once
                 // carried — let the href run underneath the glyph and name.
-                className="index-row relative grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[auto_9rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
+                className="index-row arrow-slide relative grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[auto_9rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
               >
                 {/* the row's REAL address, not an invented numbering */}
                 <span aria-hidden="true" className="font-mono text-xs text-muted/70">
@@ -468,7 +469,7 @@ export default function LandingPage() {
                   {row.blurb}
                 </span>
                 <span className="col-start-2 whitespace-nowrap text-sm text-accent sm:col-start-4">
-                  {row.action} →
+                  {row.action} <span className="arrow">&rarr;</span>
                 </span>
               </Link>
             </li>
@@ -490,6 +491,26 @@ export default function LandingPage() {
         lede="Every startup that has taken a stand, live from the floor server. Adding yours is free and takes one form."
         tone="panel"
       >
+        {/* WHAT YOU GET, drawn rather than described. The same renderer
+            the floor uses, so this is not an artist's impression of a
+            stand — it is a stand, at the size it will stand. */}
+        <div className="mb-6 grid items-center gap-6 sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+          <BoothPreview
+            carpet="#C2B8A3"
+            banner="#8C3B2E"
+            sign="YOURS"
+            glyph="rocket"
+            pattern="solid"
+            founderLook={{ skin: 2, outfit: 3, hair: 4 }}
+          />
+          <div>
+            <p className={`${READ} text-ink/85`}>
+              This is the whole product: a stand with your name on it, a
+              person standing at it, and an address people can walk to. It
+              costs nothing and it goes up in about a minute.
+            </p>
+          </div>
+        </div>
         <WallJoin />
         <FoundersWall className="mt-4" limit={24} />
       </Section>
@@ -667,9 +688,9 @@ export default function LandingPage() {
               </p>
               <Link
                 href="/lobby"
-                className="btn-press mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
+                className="btn-press arrow-slide mt-8 inline-block rounded-md bg-accent-strong px-7 py-3.5 text-sm font-medium text-paper shadow-card hover:bg-accent-strong/90"
               >
-                Walk the floor →
+                Walk the floor <span className="arrow">&rarr;</span>
               </Link>
             </div>
 

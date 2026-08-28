@@ -48,11 +48,11 @@ export default function Sign({
       {/* the pictogram frame: radius-cornered square, concentric inside
           the plate (plate 8 − gap 4 = frame 4) */}
       <span
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded ${
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded ${
           plate ? "bg-foamcore/15" : "bg-laminate"
         }`}
       >
-        <PixelGlyph glyph={glyph} size={16} color={plate ? "var(--paper)" : "var(--ink)"} />
+        <PixelGlyph glyph={glyph} size={20} color={plate ? "var(--paper)" : "var(--ink)"} />
       </span>
       <span
         className={`min-w-0 font-display text-xs uppercase leading-tight tracking-[0.12em] ${

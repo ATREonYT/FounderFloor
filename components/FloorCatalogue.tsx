@@ -90,9 +90,9 @@ export default function FloorCatalogue() {
 
               <Link
                 href={`/floor/${floor.id}`}
-                className="mt-5 inline-block text-sm text-accent hover:underline"
+                className="arrow-slide mt-5 inline-block text-sm text-accent hover:underline"
               >
-                Walk into {floor.name} →
+                Walk into {floor.name} <span className="arrow">&rarr;</span>
               </Link>
             </div>
           </article>
