@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Archivo } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import PixelLogo from "@/components/PixelLogo";
@@ -12,6 +13,19 @@ import RefCatcher from "@/components/RefCatcher";
 import ReturnToFloor from "@/components/ReturnToFloor";
 import Messenger from "@/components/Messenger";
 import ScrollProgress from "@/components/ScrollProgress";
+
+/**
+ * The display face. Previously the headline asked for Iowan Old Style — a
+ * macOS system font — so every Windows visitor got Palatino and every
+ * Android one got Georgia: a headline nobody here had ever seen. Archivo is
+ * self-hosted by next/font (no external request, no layout shift, and no new
+ * package in package.json), so the page now looks the same everywhere.
+ */
+const display = Archivo({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 /**
  * Site URL for absolute metadata URLs. Vercel sets VERCEL_URL on preview
@@ -74,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={display.variable}>
       <head>
         {/* Scroll reveals and drawn rules start hidden and are switched on
             by script. Without this, a visitor with JavaScript off would get

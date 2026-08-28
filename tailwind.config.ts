@@ -23,7 +23,7 @@ const config: Config = {
         "gold-deep": "#7A611F",
       },
       fontFamily: {
-        display: ["Iowan Old Style", "Palatino Linotype", "Palatino", "Georgia", "serif"],
+        display: ["var(--font-display)", "Iowan Old Style", "Palatino Linotype", "Georgia", "serif"],
         body: [
           "ui-sans-serif",
           "system-ui",

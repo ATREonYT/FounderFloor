@@ -56,7 +56,7 @@ const TICKER_ITEMS = [
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="rounded-sm border border-line bg-panel px-1.5 py-0.5 font-mono text-[11px] text-ink">
+    <kbd className="rounded-sm border border-paper/25 bg-paper/10 px-1.5 py-0.5 font-mono text-[11px] text-paper">
       {children}
     </kbd>
   );
@@ -307,17 +307,22 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* ================================================ HERO — the poster */}
-      <section className="border-b border-line">
+      {/* ================================================ HERO — the poster
+          Dark on purpose: the hall is the only artwork on the site, and on a
+          cream page its cream floor had nothing to push against. Against
+          near-black the pixel light reads as a lit room seen from outside —
+          which is also what the hall is, an hour before doors. Everything
+          below section 01 stays on paper. */}
+      <section className="bg-ink text-paper">
         <div className={`${SHELL} pt-8 sm:pt-12`}>
           {/* dateline: the masthead line off a printed programme */}
-          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-line py-2.5">
-            <Spec className="text-muted">FounderFloor · Programme 2026</Spec>
-            <Spec className="flex items-center gap-2 text-muted">
+          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-paper/15 py-2.5">
+            <Spec className="text-paper/50">FounderFloor · Programme 2026</Spec>
+            <Spec className="flex items-center gap-2 text-paper/50">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verify" />
               Main Hall, open now
             </Spec>
-            <Spec className="text-muted">Admission free · nothing to install</Spec>
+            <Spec className="text-paper/50">Admission free · nothing to install</Spec>
           </div>
 
           {/* the headline runs the full measure, poster-scale, and breaks
@@ -332,14 +337,12 @@ export default function LandingPage() {
           {/* asymmetric split under the headline: the argument on the left,
               the doors on the right */}
           <div className="mt-10 grid gap-x-12 gap-y-8 sm:mt-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-end">
-            <p className="max-w-xl text-pretty text-[0.975rem] leading-[1.75] text-muted">
+            <p className="max-w-xl text-pretty text-[1.0625rem] leading-[1.7] text-paper/75">
               FounderFloor is a small 2D world where startups keep a stand and
-              real founders stand at it. You walk around, you read the signs,
-              you talk to people. Ranks reflect self-reported revenue in this
-              beta (verification is on the roadmap), and the gold badge tells
-              you who claims to have earned it the boring way.
+              real founders are there to talk to. You walk around, you read the
+              signs, you meet people.
             </p>
-            <div className="lg:border-l lg:border-line lg:pl-10">
+            <div className="lg:border-l lg:border-paper/15 lg:pl-10">
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/lobby"
@@ -349,12 +352,12 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/profile#booth"
-                  className="btn-press rounded-md border border-ink px-6 py-3 text-sm font-medium text-ink hover:bg-panel"
+                  className="btn-press rounded-md border border-paper/40 px-6 py-3 text-sm font-medium text-paper hover:bg-paper/10"
                 >
                   Set up a stand
                 </Link>
               </div>
-              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-paper/60">
                 <span className="hidden items-center gap-1.5 sm:flex">
                   <Kbd>W A S D</Kbd> walk
                 </span>
@@ -369,27 +372,15 @@ export default function LandingPage() {
 
         {/* PLATE — the artwork runs wider than the text and carries crop
             marks and a caption, the way a plate does in a printed programme */}
-        <div className={`${WIDE} mt-12 sm:mt-16`}>
+        <div className={`${WIDE} mt-12 pb-14 sm:mt-16 sm:pb-20`}>
           {/* the plate drifts a little against the type as it passes, so the
               page has a foreground and a background rather than one plane */}
           <Parallax amount={14}>
             <figure className="anim-in relative">
-              <CropMarks />
-              <div className="relative overflow-hidden border border-line bg-panel">
+              <CropMarks tone="paper" />
+              <div className="relative overflow-hidden border border-paper/15 bg-ink">
                 <HeroScene bare className="h-[300px] sm:h-[420px] lg:h-[520px]" />
-                {/* labels are printed ON the plate: solid stock, no blur */}
-                <span className="absolute left-4 top-4 border border-ink/15 bg-paper px-2.5 py-1.5">
-                  <Spec className="text-muted">Main Hall, ambient view</Spec>
-                </span>
-                <span className="absolute right-4 top-4 flex items-center gap-2 border border-ink/15 bg-paper px-2.5 py-1.5">
-                  <span aria-hidden="true" className="h-1.5 w-1.5 rotate-45 bg-accent" />
-                  <Spec className="text-muted">Drawn on load</Spec>
-                </span>
               </div>
-              <figcaption className="mt-3 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-1">
-                <Spec className="text-muted">Plate 01. The hall, drawn at its own scale</Spec>
-                <Spec className="text-muted">WASD · arrow keys · or tap</Spec>
-              </figcaption>
             </figure>
           </Parallax>
         </div>
