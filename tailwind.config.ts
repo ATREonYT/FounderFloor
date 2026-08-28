@@ -95,8 +95,10 @@ const config: Config = {
        * these 2px offsets are the pen-width exception to the unit rule.
        */
       boxShadow: {
-        card: "0 2px 0 0 oklch(var(--gaffer) / 0.10)",
-        float: "0 4px 0 0 oklch(var(--gaffer) / 0.14)",
+        // Layered and soft. The flat 2px offsets these replace were a
+        // print effect: correct for a programme, wrong for a 2026 product.
+        card: "0 1px 2px oklch(var(--gaffer) / 0.05), 0 6px 16px -4px oklch(var(--gaffer) / 0.08)",
+        float: "0 2px 6px oklch(var(--gaffer) / 0.07), 0 18px 40px -10px oklch(var(--gaffer) / 0.16)",
       },
     },
   },

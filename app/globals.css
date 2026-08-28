@@ -154,15 +154,15 @@
        styles and DOM SVG write var(--ink) and never care which material
        is behind it. Canvas code cannot resolve any of this and keeps
        literal hex, by classification. */
-    --foamcore: 97% 0.005 250; /* lightest surface — cards */
-    --screed: 94% 0.007 250; /* page ground */
-    --laminate: 89% 0.008 250; /* inset panels, wells */
-    --trestle: 80% 0.01 250; /* hairlines, rules */
-    --gantry: 68% 0.012 250; /* faint labels, disabled */
-    --conduit: 45% 0.014 250; /* secondary text */
+    --foamcore: 99.2% 0.004 250; /* lightest surface — cards */
+    --screed: 95.5% 0.006 250; /* page ground */
+    --laminate: 92.5% 0.007 250; /* inset panels, wells */
+    --trestle: 87% 0.008 250; /* hairlines, rules */
+    --gantry: 66% 0.012 250; /* faint labels, disabled */
+    --conduit: 44% 0.014 250; /* secondary text */
     --flightcase: 38% 0.014 250; /* strong secondary */
-    --gaffer: 27% 0.012 250; /* primary text, dark fills */
-    --blackout: 18% 0.01 250; /* the ticker band, deepest ink */
+    --gaffer: 20% 0.012 250; /* primary text, dark fills */
+    --blackout: 11% 0.012 250; /* the ticker band, deepest ink */
     --tarp: 52% 0.19 29; /* THE accent — CTAs, live, nothing else */
     --tarp-wash: 93% 0.03 29; /* the accent's own tint, for washes */
     --brass: 66% 0.11 85; /* membership fills, dots, borders only */
@@ -233,7 +233,9 @@
      panels used to wear is gone with the rest of the one-shadow habit. */
   .panel {
     @apply clip-badge rounded-lg border border-line/70 bg-panel;
-    box-shadow: 0 2px 0 0 oklch(var(--gaffer) / 0.08);
+    box-shadow:
+      0 1px 2px oklch(var(--gaffer) / 0.05),
+      0 6px 16px -4px oklch(var(--gaffer) / 0.07);
   }
 
   /* Smooth expand/collapse for content of unknown height (quest boards):
@@ -284,7 +286,7 @@
   }
   .btn-press:active:not(:disabled) {
     transform: translateY(2px);
-    box-shadow: 0 0 0 0 oklch(var(--gaffer) / 0.14);
+    box-shadow: 0 1px 2px oklch(var(--gaffer) / 0.10);
     transition-duration: 60ms;
     transition-timing-function: var(--ease-out);
   }
@@ -296,8 +298,10 @@
       border-color 220ms ease;
   }
   .card-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 0 0 oklch(var(--gaffer) / 0.12);
+    transform: translateY(-3px);
+    box-shadow:
+      0 2px 4px oklch(var(--gaffer) / 0.06),
+      0 16px 32px -8px oklch(var(--gaffer) / 0.13);
     border-color: oklch(var(--conduit) / 0.45);
   }
 

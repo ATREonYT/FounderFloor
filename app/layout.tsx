@@ -144,7 +144,7 @@ export default function RootLayout({
             sticky and the profile menu still hangs below it. */}
         <header
           data-site-nav
-          className="sticky top-0 z-40 overflow-x-clip border-b border-line bg-paper"
+          className="sticky top-0 z-40 overflow-x-clip border-b border-line/70 bg-panel shadow-[0_1px_3px_oklch(var(--gaffer)/0.05)]"
         >
           <div className="mx-auto flex h-14 w-full max-w-6xl items-center gap-3 px-5 sm:gap-6 sm:px-8">
             <Link

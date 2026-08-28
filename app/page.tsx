@@ -301,7 +301,7 @@ export default function LandingPage() {
           near-black the pixel light reads as a lit room seen from outside —
           which is also what the hall is, an hour before doors. Everything
           below section 01 stays on paper. */}
-      <section className="bg-ink text-paper">
+      <section className="bg-blackout text-paper">
         <div className={`${SHELL} pt-8 sm:pt-12`}>
           {/* dateline: the masthead line off a printed programme */}
           <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-paper/15 py-2.5">
@@ -650,7 +650,7 @@ export default function LandingPage() {
       </Section>
 
       {/* ============================================ CLOSING PLACARD */}
-      <section aria-labelledby="cta-heading" className="blueprint bg-ink">
+      <section aria-labelledby="cta-heading" className="blueprint bg-blackout">
         <div className={`${SHELL} py-16 sm:py-24`}>
           <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div>
