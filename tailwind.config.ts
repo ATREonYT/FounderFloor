@@ -58,7 +58,7 @@ const config: Config = {
         "4xl": ["48px", { lineHeight: "52px" }],
       },
       fontFamily: {
-        display: ["Iowan Old Style", "Palatino Linotype", "Palatino", "Georgia", "serif"],
+        display: ["var(--font-display)", "Iowan Old Style", "Palatino Linotype", "Georgia", "serif"],
         body: [
           "IBM Plex Sans",
           "ui-sans-serif",
