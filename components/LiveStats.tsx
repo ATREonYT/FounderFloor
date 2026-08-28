@@ -21,9 +21,16 @@ const REACTIONS = 8;
 
 export default function LiveStats({
   variant = "cards",
+  tone = "ink",
 }: {
   /** "rail" = hairline scoreboard (current landing); "cards" = the original. */
   variant?: "cards" | "rail";
+  /**
+   * Which ground it sits on. The landing hero is near-black now, and the
+   * default ink figures were invisible against it — a scoreboard nobody
+   * could read. "paper" inverts the figures and the rules.
+   */
+  tone?: "ink" | "paper";
 }) {
   const publicFloors = listedFloors(useAnnex());
   const FLOORS_OPEN = publicFloors.length;
@@ -76,20 +83,21 @@ export default function LiveStats({
   // "rail" is the landing page's hairline scoreboard — no boxes, just
   // figures divided by rules, the way a hall posts its numbers. "cards" is
   // the original four-panel treatment, kept for the archived design.
+  const dark = tone === "paper";
   if (variant === "rail") {
     return (
-      <dl className="grid grid-cols-2 border-y border-line sm:grid-cols-4">
+      <dl className={`grid grid-cols-2 border-y sm:grid-cols-4 ${dark ? "border-paper/15" : "border-line"}`}>
         {tiles.map((t, i) => (
           // Rules are placed per cell rather than with divide-*: in a
           // two-column grid, divide-x also draws a rule down the left of
           // the cell that starts the second row.
           <div
             key={t.label}
-            className={`flex flex-col gap-1.5 border-line px-5 py-6 sm:border-b-0 ${
+            className={`flex flex-col gap-1.5 px-5 py-6 sm:border-b-0 ${dark ? "border-paper/15" : "border-line"} ${
               i % 2 === 1 ? "border-l" : ""
             } ${i < 2 ? "border-b" : ""} ${i > 0 ? "sm:border-l" : "sm:border-l-0"}`}
           >
-            <dd className="order-1 flex items-baseline gap-2 font-display text-[2.15rem] leading-none tracking-tight text-ink">
+            <dd className={`order-1 flex items-baseline gap-2 font-display text-3xl leading-none tracking-tight ${dark ? "text-paper" : "text-ink"}`}>
               <CountUp value={t.value} />
               {t.live && (
                 <span
@@ -98,7 +106,7 @@ export default function LiveStats({
                 />
               )}
             </dd>
-            <dt className="micro order-2 font-mono text-xs leading-relaxed text-muted">
+            <dt className={`micro order-2 font-mono text-xs leading-relaxed ${dark ? "text-paper/50" : "text-muted"}`}>
               {t.label}
             </dt>
           </div>

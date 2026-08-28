@@ -45,15 +45,20 @@ const SHELL = "mx-auto w-full max-w-6xl px-5 sm:px-8";
 /** Full-bleed column for artwork, so the picture outruns the text. */
 const WIDE = "mx-auto w-full px-5 sm:px-8";
 
-const TICKER_ITEMS = [
-  "WALK IN",
-  "TALK TO FOUNDERS",
-  "CLAIM A STAND",
-  "SIGN GUESTBOOKS",
-  "EARN BADGES",
-  "FIND A CO-FOUNDER",
-  "NO CALENDAR INVITE",
-];
+/**
+ * THE TYPE SCALE. Four display sizes and two body sizes on the whole page,
+ * and the count is the rule:
+ *
+ *   display  hero 40/66/82 · TITLE 36/48 · text-xl 28 · text-lg 20
+ *   body     READ 17 (any real sentence, near-ink) · text-xs 12 (labels)
+ *
+ * Anything a visitor is meant to actually read is READ and near-ink;
+ * text-muted is reserved for genuinely secondary text. Archivo is a
+ * grotesque, so everything over ~30px carries negative tracking — the
+ * serif this page used to be set in did not need it.
+ */
+const TITLE = "font-display text-3xl leading-tight tracking-tight sm:text-4xl";
+const READ = "text-[1.0625rem] leading-[1.7]";
 
 /* ------------------------------------------------------------------ parts */
 
@@ -132,16 +137,14 @@ function Section({
             <Sign glyph={glyph} label={kicker} code={id ? `#${id}` : undefined} />
             <h2
               id={headingId}
-              className={`mt-4 font-display text-3xl leading-tight ${
-                dark ? "text-paper" : ""
-              }`}
+              className={`mt-4 ${TITLE} ${dark ? "text-paper" : ""}`}
             >
               {title}
             </h2>
             {lede && (
               <p
-                className={`mt-3 max-w-sm text-sm leading-relaxed ${
-                  dark ? "text-paper/85" : "text-muted"
+                className={`mt-3 max-w-sm ${READ} ${
+                  dark ? "text-paper/85" : "text-ink/85"
                 }`}
               >
                 {lede}
@@ -288,29 +291,6 @@ export default function LandingPage() {
       {/* The grand-opening slip, pasted over everything until launch night
           has come and gone — then it removes itself (LaunchBanner). */}
       <LaunchBanner />
-      {/* HALL BOARD — the lit sign over the doors. A fixed status chip, then
-          the programme running past it. */}
-      <div className="flex items-stretch border-b border-line bg-ink text-paper">
-        <span className="flex shrink-0 items-center gap-2 border-r border-paper/15 px-4 py-2">
-          <span aria-hidden="true" className="pulse-dot h-1.5 w-1.5 rounded-full bg-verify" />
-          <Spec className="text-paper">Open</Spec>
-        </span>
-        <div aria-hidden="true" className="marquee edge-fade-x min-w-0 flex-1 overflow-hidden py-2">
-          <div className="marquee-track flex w-max">
-            {["a", "b"].map((k) => (
-              <span key={k} className="flex shrink-0 items-center">
-                {TICKER_ITEMS.map((item) => (
-                  <span key={item} className="flex items-center">
-                    <Spec className="px-5 text-paper/55">{item}</Spec>
-                    <span aria-hidden="true" className="h-1 w-1 rotate-45 bg-gold/70" />
-                  </span>
-                ))}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* ================================================ HERO — the poster
           Dark on purpose: the hall is the only artwork on the site, and on a
           cream page its cream floor had nothing to push against. Against
@@ -391,7 +371,7 @@ export default function LandingPage() {
 
         {/* the numbers, posted on a rule instead of sat in four white boxes */}
         <div className={`${SHELL} mt-14 pb-14 sm:mt-16 sm:pb-16`}>
-          <LiveStats variant="rail" />
+          <LiveStats variant="rail" tone="paper" />
         </div>
       </section>
 
@@ -410,7 +390,7 @@ export default function LandingPage() {
               route that is being walked shouldn't sit still */}
           <span
             aria-hidden="true"
-            className="dash-x march edge-fade-x absolute left-0 top-6 hidden h-px w-full sm:block"
+            className="dash-x edge-fade-x absolute left-0 top-6 hidden h-px w-full sm:block"
           />
           <ol className="grid gap-11 sm:grid-cols-3 sm:gap-8">
             {STOPS.map((stop, i) => (
@@ -424,15 +404,14 @@ export default function LandingPage() {
                 )}
                 {/* each stop lands as the path reaches it */}
                 <span
-                  className="stop-pop relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper"
+                  className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper"
                   style={{ animationDelay: `${180 + i * 190}ms` }}
                 >
                   <PixelGlyph glyph={stop.glyph} size={18} color="var(--accent)" />
                 </span>
                 <div className="min-w-0 sm:mt-7">
-                  <Spec className="text-muted">Stop {String(i + 1).padStart(2, "0")}</Spec>
                   <h3 className="mt-1.5 font-display text-xl">{stop.title}</h3>
-                  <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">{stop.body}</p>
+                  <p className={`mt-2 max-w-sm ${READ} text-ink/85`}>{stop.body}</p>
                 </div>
               </li>
             ))}
@@ -457,7 +436,7 @@ export default function LandingPage() {
         lede="Four places, each with one job. Everything you do in one shows up in the others."
         tone="panel"
       >
-        <ul className="stagger-children border-t border-line">
+        <ul className="border-t border-line">
           {INDEX_ROWS.map((row, i) => (
             <li key={row.href}>
               <Link
@@ -476,7 +455,7 @@ export default function LandingPage() {
                   <PixelGlyph glyph={row.glyph} size={14} color="var(--accent)" />
                   {row.name}
                 </span>
-                <span className="col-start-2 text-sm leading-relaxed text-muted sm:col-start-3">
+                <span className={`col-start-2 ${READ} text-ink/85 sm:col-start-3`}>
                   {row.blurb}
                 </span>
                 <span className="col-start-2 whitespace-nowrap text-sm text-accent sm:col-start-4">
@@ -552,7 +531,7 @@ export default function LandingPage() {
                   className="inline-block h-2.5 w-2.5 rotate-45"
                   style={{ backgroundColor: rank.color }}
                 />
-                <Spec className="text-paper">{rank.name}</Spec>
+                <span className="font-display text-lg leading-none text-paper">{rank.name}</span>
               </span>
               {/* The board totals count up when the section arrives, the way
                   a hall's tote board does when it refreshes, and each bar
@@ -563,15 +542,15 @@ export default function LandingPage() {
                 color={rank.color}
                 delay={i * 90}
               />
-              <span className="col-span-2 text-sm leading-relaxed text-paper/85 sm:col-span-1">
+              <span className={`col-span-2 ${READ} text-paper/85 sm:col-span-1`}>
                 {rank.blurb}
               </span>
             </div>
           ))}
         </div>
-        <Spec className="mt-5 block text-paper/40">
+        <p className={`mt-5 ${READ} text-paper/75`}>
           Gold is self-reported in this beta. Verification is the roadmap
-        </Spec>
+        </p>
       </Section>
 
       {/* ============================================ 05 — ADMISSION */}
@@ -610,13 +589,12 @@ export default function LandingPage() {
               <div className="flex items-center gap-3 border-b border-line pb-2.5">
                 <Spec className={col.color}>{col.label}</Spec>
                 <span aria-hidden="true" className="dash-x draw-x h-px flex-1" />
-                <Spec className="text-muted">{String(col.rows.length).padStart(2, "0")}</Spec>
               </div>
               <ul className="mt-1">
                 {col.rows.map(([head, tail]) => (
                   <li
                     key={head}
-                    className="flex gap-3 border-b border-line/60 py-3.5 text-sm leading-relaxed text-muted last:border-b-0"
+                    className={`flex gap-3 border-b border-line/60 py-3.5 ${READ} text-ink/85 last:border-b-0`}
                   >
                     <span aria-hidden="true" className={`mt-1.5 h-1.5 w-1.5 shrink-0 rotate-45 ${col.mark}`} />
                     <span>
@@ -645,7 +623,7 @@ export default function LandingPage() {
                 <span aria-hidden="true" className="numeral w-8 shrink-0 text-sm text-ink/30">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span className="flex-1 text-[0.95rem] font-medium text-ink">{item.q}</span>
+                <span className={`flex-1 ${READ} font-medium text-ink`}>{item.q}</span>
                 <span
                   aria-hidden="true"
                   className="shrink-0 text-lg leading-none text-muted transition-transform duration-200 group-open:rotate-45"
@@ -653,7 +631,7 @@ export default function LandingPage() {
                   +
                 </span>
               </summary>
-              <p className="max-w-2xl pb-5 pl-12 pr-8 text-sm leading-relaxed text-muted">
+              <p className={`max-w-2xl pb-5 pl-12 pr-8 ${READ} text-ink/85`}>
                 {item.a}
               </p>
             </details>
@@ -669,11 +647,11 @@ export default function LandingPage() {
               <Spec className="text-gold">Closing time: there isn&rsquo;t one</Spec>
               <h2
                 id="cta-heading"
-                className="mt-4 max-w-xl font-display text-[2.3rem] leading-[1.1] text-paper sm:text-[3.1rem]"
+                className={`mt-4 max-w-xl ${TITLE} text-paper`}
               >
                 The doors are propped open. They stay that way.
               </h2>
-              <p className="mt-5 max-w-md text-sm leading-relaxed text-paper/85">
+              <p className={`mt-5 max-w-md ${READ} text-paper/75`}>
                 No badge, no lanyard, no schedule. The founders are at their
                 booths.
               </p>
@@ -687,10 +665,9 @@ export default function LandingPage() {
 
             {/* Not everyone is ready today. Without this the visit ends here
                 and there is no second one — the list is the only way back. */}
-            <div className="relative self-end border border-paper/20 p-6">
-              <CropMarks tone="paper" />
-              <Spec className="text-gold">Or come back when it&rsquo;s busy</Spec>
-              <p className="mt-3 text-sm leading-relaxed text-paper/80">
+            <div className="self-end border border-paper/15 p-6">
+              <p className="font-display text-lg text-paper">Or come back when it&rsquo;s busy</p>
+              <p className={`mt-3 ${READ} text-paper/75`}>
                 The floors fill up every Sunday at 18:00 CET. Leave an
                 address and we&rsquo;ll tell you when it&rsquo;s worth walking
                 in. No newsletter, no drip campaign.

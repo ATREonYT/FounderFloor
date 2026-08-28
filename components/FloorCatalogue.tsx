@@ -19,19 +19,6 @@ import { TIER_ORDER } from "@/lib/types";
 import TierTag, { TIER_LABEL, TIER_PRICE } from "@/components/TierTag";
 import FloorThumb from "@/components/FloorThumb";
 
-function CropMarks({ tone = "ink" }: { tone?: "ink" | "paper" }) {
-  const c = tone === "ink" ? "border-ink/30" : "border-paper/30";
-  const b = `pointer-events-none absolute h-3.5 w-3.5 ${c}`;
-  return (
-    <span aria-hidden="true">
-      <span className={`${b} -left-2 -top-2 border-l border-t`} />
-      <span className={`${b} -right-2 -top-2 border-r border-t`} />
-      <span className={`${b} -bottom-2 -left-2 border-b border-l`} />
-      <span className={`${b} -bottom-2 -right-2 border-b border-r`} />
-    </span>
-  );
-}
-
 /** "The floors" / "The floor" — live, so the annex opening a second hall
  * doesn't leave a singular headline over a plural list. */
 export function FloorsTitle() {
@@ -64,8 +51,7 @@ export default function FloorCatalogue() {
             key={floor.id}
             className="flex flex-col gap-6 border-b border-line py-7 sm:flex-row sm:gap-8"
           >
-            <div className="relative shrink-0 self-start">
-              <CropMarks />
+            <div className="shrink-0 self-start">
               <FloorThumb
                 floor={floor}
                 className={`border border-line ${locked ? "opacity-70" : ""}`}

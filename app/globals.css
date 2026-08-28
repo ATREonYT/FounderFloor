@@ -893,37 +893,12 @@
      the bar's length and the number are the same quantity drawn twice. All
      this rule does is hold them at zero until that ramp starts. */
 
-  /* The route path keeps moving after it has drawn: the dashes crawl
-     forward by exactly one dash period, so the loop is seamless. It is the
-     one continuous animation on the page, and it is there because a route
-     that is being walked should not sit still. */
-  .reveal-in .march {
-    animation:
-      draw-x 700ms var(--ease-out) both,
-      march 2.6s linear 700ms infinite;
-  }
-  @keyframes march {
-    from {
-      background-position-x: 0;
-    }
-    to {
-      background-position-x: 10px;
-    }
-  }
-
-  /* A stop on the route lands with a small pop once the path reaches it. */
-  .reveal-in .stop-pop {
-    animation: pop-in 420ms var(--ease-spring) both;
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .draw-x,
     .meter-fill {
       transform: none;
     }
-    .reveal-in .draw-x,
-    .reveal-in .march,
-    .reveal-in .stop-pop {
+    .reveal-in .draw-x {
       animation: none;
       transform: none;
     }
