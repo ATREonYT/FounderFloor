@@ -295,7 +295,7 @@ export default function MembershipCeremony({
           </span>
         ))}
 
-        <div className="stagger-children relative">
+        <div className="relative">
           {/* the medal: drops in with a spring, then breathes */}
           <div
             className={`seal-drop mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 text-3xl text-white shadow-float ${

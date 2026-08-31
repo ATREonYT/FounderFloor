@@ -114,7 +114,7 @@ function Play({
               type="button"
               disabled={done}
               onClick={() => answer(n)}
-              className={`flex items-center gap-3 rounded-md px-4 py-3 text-left text-sm text-paper transition-all ${
+              className={`flex items-center gap-3 rounded-md px-4 py-3 text-left text-sm text-paper transition-[color,background-color,border-color,transform] duration-150 ease-out ${
                 done && !isAnswer ? "opacity-35" : ""
               } ${chosen && !isAnswer ? "ring-2 ring-ink" : ""} ${
                 done && isAnswer ? "ring-2 ring-ink" : ""

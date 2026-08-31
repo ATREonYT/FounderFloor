@@ -1873,7 +1873,7 @@ export default function ProfilePage() {
           {Object.keys(BADGE_META).length} collected. Earned on the floor, not
           requested.
         </p>
-        <ul className="stagger-children mt-4 flex flex-wrap gap-3">
+        <ul className="mt-4 flex flex-wrap gap-3">
           {Object.entries(BADGE_META).map(([id, meta]) => {
             const earned = state.badges.includes(id);
             return (

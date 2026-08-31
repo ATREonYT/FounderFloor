@@ -613,13 +613,19 @@ export default function HeroScene({
       <canvas ref={canvasRef} className="pixelated absolute inset-0 h-full w-full" />
       {/* The invitation, lettered like every other sign in the building.
           It is not a caption about the picture — it is the instruction for
-          the thing the visitor is already able to do. */}
+          the thing the visitor is already able to do.
+
+          The plate is OPAQUE. A translucent one let the hall's own warm
+          floor (#D8D2C4) through, and lettering measured 2.42:1 against
+          it — no single colour is safe over moving artwork. Solid
+          blackout gives the text a ground it can rely on (5.61:1), and
+          matches how the hall letters its own boards. */}
       {playable && (
         <p
           className={`pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap border px-3 py-1.5 font-mono text-xs uppercase tracking-[0.12em] transition-opacity duration-500 ${
             walking
-              ? "border-paper/20 bg-ink/70 text-paper/60"
-              : "border-accent/50 bg-ink/80 text-accent"
+              ? "border-paper/20 bg-blackout text-paper/70"
+              : "border-accent-lift/50 bg-blackout text-accent-lift"
           }`}
         >
           {walking ? "You are walking the hall" : "Click, then walk with W A S D"}

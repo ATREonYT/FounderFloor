@@ -212,7 +212,7 @@ export default function GraduationCeremony({
           </span>
         ))}
 
-        <div className="stagger-children relative">
+        <div className="relative">
           <div className="seal-drop mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-gold-deep bg-gradient-to-b from-[#E8C766] to-gold-deep text-3xl text-white shadow-float">
             <span aria-hidden="true">✦</span>
           </div>

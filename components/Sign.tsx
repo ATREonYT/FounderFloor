@@ -37,6 +37,11 @@ export default function Sign({
   to?: boolean;
   /** plate = blackout (default, like the hall boards); paper = quiet. */
   tone?: "plate" | "paper";
+  /* THE ACCENT ON A PLATE. A destination sign is lettered in the accent,
+     but `accent` is calibrated against paper — on the blackout plate it
+     measures 3.36:1, under what lettering needs. The plate uses
+     accent-lift (5.63:1); the paper sign keeps accent (5.27:1). Same
+     hue either way, so the two read as one system. */
 }) {
   const plate = tone === "plate";
   return (
@@ -52,11 +57,16 @@ export default function Sign({
           plate ? "bg-foamcore/15" : "bg-laminate"
         }`}
       >
-        <PixelGlyph glyph={glyph} size={20} color={plate ? "var(--paper)" : "var(--ink)"} />
+        <PixelGlyph
+          glyph={glyph}
+          size={20}
+          drawIn
+          color={plate ? "var(--paper)" : "var(--ink)"}
+        />
       </span>
       <span
         className={`min-w-0 font-display text-xs uppercase leading-tight tracking-[0.12em] ${
-          to ? "text-accent" : plate ? "text-paper" : "text-ink"
+          to ? (plate ? "text-accent-lift" : "text-accent") : plate ? "text-paper" : "text-ink"
         }`}
       >
         {to && (

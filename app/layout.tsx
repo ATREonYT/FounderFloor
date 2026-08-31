@@ -102,7 +102,8 @@ export default function RootLayout({
               // !important because these override class rules whose order
               // in the head is Next's to decide, not ours.
               __html:
-                ".reveal{opacity:1!important;transform:none!important}" +
+                ".reveal,.reveal [data-reveal-child]{opacity:1!important;transform:none!important}" +
+                ".glyph-draw rect{opacity:1!important}" +
                 ".draw-x,.meter-fill{transform:none!important}",
             }}
           />

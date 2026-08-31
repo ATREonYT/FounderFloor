@@ -117,7 +117,7 @@ export default function StallPanel({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`panel relative flex max-h-full w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col overflow-hidden shadow-float outline-none transition-all duration-200 ease-out`}
+        className={`panel relative flex max-h-full w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col overflow-hidden shadow-float outline-none transition-[opacity,transform] duration-200 ease-out`}
         style={{
           opacity: open ? 1 : 0,
           transform: open ? "translateY(0) scale(1)" : "translateY(10px) scale(0.97)",

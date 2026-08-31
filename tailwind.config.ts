@@ -22,6 +22,10 @@ const config: Config = {
         // borders, dots, and accent text where it already passes.
         "accent-strong": "oklch(var(--tarp) / <alpha-value>)",
         "accent-soft": "oklch(var(--tarp-wash) / <alpha-value>)",
+        // the accent for DARK grounds only — `accent` measures 3.36:1 on
+        // blackout, this measures 5.63:1. On paper the rule inverts, so
+        // never reach for accent-lift on a light surface.
+        "accent-lift": "oklch(var(--tarp-lift) / <alpha-value>)",
         verify: "oklch(var(--exitsign) / <alpha-value>)",
         gold: "oklch(var(--brass) / <alpha-value>)",
         // gold fails WCAG AA as small text on paper (2.7:1) — use this for
@@ -39,6 +43,7 @@ const config: Config = {
         gaffer: "oklch(var(--gaffer) / <alpha-value>)",
         blackout: "oklch(var(--blackout) / <alpha-value>)",
         tarp: "oklch(var(--tarp) / <alpha-value>)",
+        "tarp-lift": "oklch(var(--tarp-lift) / <alpha-value>)",
         brass: "oklch(var(--brass) / <alpha-value>)",
         fountain: "oklch(var(--fountain) / <alpha-value>)",
         exitsign: "oklch(var(--exitsign) / <alpha-value>)",
@@ -54,8 +59,11 @@ const config: Config = {
         lg: ["20px", { lineHeight: "28px" }],
         xl: ["28px", { lineHeight: "32px" }],
         "2xl": ["28px", { lineHeight: "32px" }],
-        "3xl": ["36px", { lineHeight: "40px" }],
-        "4xl": ["48px", { lineHeight: "52px" }],
+        // Over 30px a grotesque needs the tracking pulled in — Archivo's
+        // default sidebearings are set for text sizes and read as gaps at
+        // poster scale. 36 and 48 are the only steps above the threshold.
+        "3xl": ["36px", { lineHeight: "40px", letterSpacing: "-0.018em" }],
+        "4xl": ["48px", { lineHeight: "52px", letterSpacing: "-0.022em" }],
       },
       fontFamily: {
         display: ["var(--font-display)", "Iowan Old Style", "Palatino Linotype", "Georgia", "serif"],

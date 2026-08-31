@@ -209,7 +209,7 @@ export default function LobbyPage() {
           a two-column grid sits in half the width with a hole beside it, so
           it goes full-width instead and reads as THE room. */}
       <div
-        className={`stagger-children mt-8 grid gap-4 ${
+        className={`mt-8 grid gap-4 ${
           openFloors.length > 1 ? "sm:grid-cols-2" : ""
         }`}
       >

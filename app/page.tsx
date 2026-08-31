@@ -12,7 +12,6 @@ import Reveal from "@/components/Reveal";
 import FloorThumb from "@/components/FloorThumb";
 import EmailCapture from "@/components/EmailCapture";
 import RankMeter from "@/components/RankMeter";
-import Parallax from "@/components/Parallax";
 import ProgrammeIndex, { type IndexEntry } from "@/components/ProgrammeIndex";
 import AdmissionStubs from "@/components/AdmissionStubs";
 import LaunchBanner from "@/components/LaunchBanner";
@@ -129,7 +128,7 @@ function Section({
       id={id}
       aria-labelledby={headingId}
       className={`scroll-mt-16 border-b border-line ${
-        dark ? "bg-ink" : tone === "panel" ? "bg-panel" : ""
+        dark ? "on-night bg-ink" : tone === "panel" ? "bg-panel" : ""
       } ${className}`}
     >
       <Reveal className={`${SHELL} py-14 sm:py-20`}>
@@ -302,21 +301,24 @@ export default function LandingPage() {
           near-black the pixel light reads as a lit room seen from outside —
           which is also what the hall is, an hour before doors. Everything
           below section 01 stays on paper. */}
-      <section className="bg-blackout text-paper">
+      <section className="on-night bg-blackout text-paper">
         <div className={`${SHELL} pt-8 sm:pt-12`}>
           {/* dateline: the masthead line off a printed programme */}
           <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-paper/15 py-2.5">
-            <Spec className="text-paper/50">FounderFloor · Programme 2026</Spec>
-            <Spec className="flex items-center gap-2 text-paper/50">
+            <Spec className="text-paper/60">FounderFloor · Programme 2026</Spec>
+            <Spec className="flex items-center gap-2 text-paper/60">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verify" />
               Main Hall, open now
             </Spec>
-            <Spec className="text-paper/50">Admission free · nothing to install</Spec>
+            <Spec className="text-paper/60">Admission free · nothing to install</Spec>
           </div>
 
           {/* the headline runs the full measure, poster-scale, and breaks
               where we say it breaks rather than wherever the box ends */}
-          <h1 className="stagger-children mt-10 font-display text-[2.5rem] leading-[1.06] tracking-[-0.015em] sm:mt-12 sm:text-[4.1rem] lg:text-[5.1rem]">
+          <h1 className="mt-10 font-display text-[2.5rem] leading-[1.06] tracking-[-0.02em] sm:mt-12 sm:text-[4.1rem] lg:text-[5.1rem]">
+            {/* The first screen does not wait for anything. No entrance
+                here: the one scroll behaviour starts below the fold, where
+                arriving is a real event rather than a delay on the LCP. */}
             <span className="block">A trade-show floor</span>
             <span className="block">
               that <span className="sweep-underline">never{" "}tears{" "}down</span>.
@@ -364,8 +366,11 @@ export default function LandingPage() {
         <div className={`${WIDE} mt-12 pb-14 sm:mt-16 sm:pb-20`}>
           {/* the plate drifts a little against the type as it passes, so the
               page has a foreground and a background rather than one plane */}
-          <Parallax amount={14}>
-            <figure className="anim-in relative">
+          {/* NO PARALLAX ON THE PIXEL ART. A scroll-driven translate lands
+              the canvas on fractional device pixels, which is exactly what
+              turns a crisp sprite into a blurred one. The plate sits still
+              and the art stays on its grid. */}
+          <figure className="relative">
               <CropMarks tone="paper" />
               <div className="relative overflow-hidden border border-paper/15 bg-ink">
                 <HeroScene
@@ -375,7 +380,6 @@ export default function LandingPage() {
                 />
               </div>
             </figure>
-          </Parallax>
         </div>
 
         {/* the numbers, posted on a rule instead of sat in four white boxes */}
@@ -403,7 +407,12 @@ export default function LandingPage() {
           />
           <ol className="grid gap-11 sm:grid-cols-3 sm:gap-8">
             {STOPS.map((stop, i) => (
-              <li key={stop.title} className="relative flex gap-5 sm:block">
+              <li
+                key={stop.title}
+                className="relative flex gap-5 sm:block"
+                data-reveal-child
+                style={{ "--i": i } as React.CSSProperties}
+              >
                 {/* on phones the path turns vertical and runs down the gutter */}
                 {i < STOPS.length - 1 && (
                   <span
@@ -412,11 +421,8 @@ export default function LandingPage() {
                   />
                 )}
                 {/* each stop lands as the path reaches it */}
-                <span
-                  className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper"
-                  style={{ animationDelay: `${180 + i * 190}ms` }}
-                >
-                  <PixelGlyph glyph={stop.glyph} size={18} color="var(--accent)" />
+                <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-ink/15 bg-paper">
+                  <PixelGlyph glyph={stop.glyph} size={18} drawIn color="var(--accent)" />
                 </span>
                 <div className="min-w-0 sm:mt-7">
                   <h3 className="mt-1.5 font-display text-xl">{stop.title}</h3>
@@ -448,7 +454,7 @@ export default function LandingPage() {
       >
         <ul className="border-t border-line">
           {INDEX_ROWS.map((row, i) => (
-            <li key={row.href}>
+            <li key={row.href} data-reveal-child style={{ "--i": i } as React.CSSProperties}>
               <Link
                 href={row.href}
                 // The first track is `auto`, not a fixed rem: it holds the
@@ -458,11 +464,11 @@ export default function LandingPage() {
                 className="index-row arrow-slide relative grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1.5 border-b border-line px-1 py-5 sm:grid-cols-[auto_9rem_minmax(0,1fr)_auto] sm:gap-x-6 sm:py-6"
               >
                 {/* the row's REAL address, not an invented numbering */}
-                <span aria-hidden="true" className="font-mono text-xs text-muted/70">
+                <span aria-hidden="true" className="font-mono text-xs text-muted">
                   {row.href}
                 </span>
                 <span className="flex items-center gap-2.5 font-display text-lg leading-tight">
-                  <PixelGlyph glyph={row.glyph} size={14} color="var(--accent)" />
+                  <PixelGlyph glyph={row.glyph} size={14} drawIn color="var(--accent)" />
                   {row.name}
                 </span>
                 <span className={`col-start-2 ${READ} text-ink/85 sm:col-start-3`}>
@@ -547,9 +553,9 @@ export default function LandingPage() {
       >
         <div className="blueprint border-y border-paper/15">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 border-b border-paper/15 px-1 py-2.5 sm:grid-cols-[9.5rem_minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-6">
-            <Spec className="text-paper/40">Rank</Spec>
-            <Spec className="text-right text-paper/40 sm:text-left">Monthly revenue</Spec>
-            <Spec className="hidden text-paper/40 sm:block">What it means</Spec>
+            <Spec className="text-paper/60">Rank</Spec>
+            <Spec className="text-right text-paper/60 sm:text-left">Monthly revenue</Spec>
+            <Spec className="hidden text-paper/60 sm:block">What it means</Spec>
           </div>
           {RANKS.map((rank, i) => (
             <div
@@ -671,11 +677,11 @@ export default function LandingPage() {
       </Section>
 
       {/* ============================================ CLOSING PLACARD */}
-      <section aria-labelledby="cta-heading" className="blueprint bg-blackout">
+      <section aria-labelledby="cta-heading" className="on-night blueprint bg-blackout">
         <div className={`${SHELL} py-16 sm:py-24`}>
           <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
             <div>
-              <Spec className="text-paper/50">Closing time: there isn&rsquo;t one</Spec>
+              <Spec className="text-paper/60">Closing time: there isn&rsquo;t one</Spec>
               <h2
                 id="cta-heading"
                 className={`mt-4 max-w-xl ${TITLE} text-paper`}
@@ -703,8 +709,10 @@ export default function LandingPage() {
                 address and we&rsquo;ll tell you when it&rsquo;s worth walking
                 in. No newsletter, no drip campaign.
               </p>
-              <div className="mt-4 [&_input]:border-paper/25 [&_input]:bg-paper/10 [&_input]:text-paper [&_input]:placeholder:text-paper/60 [&_p]:text-paper/85">
-                <EmailCapture variant="list" source="landing" />
+              {/* tone="ink", not a stack of [&_p]: overrides from outside:
+                  the form knows what ground it is on. */}
+              <div className="mt-4">
+                <EmailCapture variant="list" source="landing" tone="ink" />
               </div>
             </div>
           </div>

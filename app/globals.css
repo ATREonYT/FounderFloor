@@ -67,10 +67,21 @@
     @apply bg-accent-soft text-ink;
   }
 
+  /* FOCUS ON BOTH GROUNDS. The ring is the accent, which is calibrated
+     against paper (5.27:1) and collapses on the blackout sections to
+     3.36:1 — a focus ring you cannot see is the same as no focus ring.
+     Dark surfaces carry `.on-night`, which swaps in the lifted accent
+     (5.61:1) and takes the ring to 3px, since a dark ground gives a thin
+     outline less to sit against. Verified by tabbing both grounds. */
   :focus-visible {
     outline: 2px solid theme("colors.accent");
     outline-offset: 2px;
     border-radius: 6px;
+  }
+  .on-night :focus-visible,
+  .on-night:focus-visible {
+    outline-color: oklch(var(--tarp-lift));
+    outline-width: 3px;
   }
 
   input,
@@ -93,14 +104,18 @@
     box-shadow: none;
   }
 
-  /* every interactive control settles color changes softly by default */
+  /* Every interactive control settles the same way: 150ms, ease-out, and
+     ONLY on colour and transform. Never `all` — that quietly animates
+     layout properties (width, height, the box) whenever an unrelated
+     class changes, which is both a jank source and a thing nobody
+     asked for. Anything that needs more says so at its own call site. */
   button,
   a {
     transition:
-      background-color 150ms ease,
-      border-color 150ms ease,
-      color 150ms ease,
-      opacity 150ms ease;
+      background-color 150ms var(--ease-out),
+      border-color 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      transform 150ms var(--ease-out);
   }
 }
 
@@ -165,6 +180,12 @@
     --blackout: 11% 0.012 250; /* the ticker band, deepest ink */
     --tarp: 52% 0.19 29; /* THE accent — CTAs, live, nothing else */
     --tarp-wash: 93% 0.03 29; /* the accent's own tint, for washes */
+    /* THE ACCENT, LIFTED FOR DARK GROUNDS ONLY. --tarp is calibrated
+       against paper, where it reads 5.27:1. On the blackout hero it
+       collapses to 3.36:1 — under the 4.5 a link or a border needs.
+       Same hue, chroma pulled in a touch so the extra lightness does
+       not go neon: 5.63:1 on blackout. Never use it on paper (3.19).*/
+    --tarp-lift: 64% 0.17 29;
     --brass: 66% 0.11 85; /* membership fills, dots, borders only */
     --brass-deep: 48% 0.1 85; /* membership as TEXT (contrast) */
     --fountain: 52% 0.08 210; /* WAYFINDING ONLY — nav, you-are-here */
@@ -180,6 +201,7 @@
     --accent: oklch(var(--tarp));
     --accent-strong: oklch(var(--tarp));
     --accent-soft: oklch(var(--tarp-wash));
+    --accent-lift: oklch(var(--tarp-lift));
     --verify: oklch(var(--exitsign));
     --gold: oklch(var(--brass));
     --gold-deep: oklch(var(--brass-deep));
@@ -197,6 +219,22 @@
      metadata now reads as what it is (data), set in the data face. */
   .micro {
     @apply font-mono text-xs font-normal normal-case tracking-normal;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* FIGURES LINE UP. Proportional digits are right for prose and wrong
+     everywhere a number sits above, below or beside another number —
+     counters, prices, stand references, dates, stats, tables. Anything
+     in the data face, any explicit figure, and every table cell gets
+     the tabular set, so a count ticking 9 -> 10 does not shift the
+     column it lives in. */
+  .font-mono,
+  .tabular-nums,
+  th,
+  td,
+  time,
+  dd {
+    font-variant-numeric: tabular-nums;
   }
 
   /* ─── THE BADGE CLIP — the signature ──────────────────────────────
@@ -363,19 +401,69 @@
     animation: fade-only 240ms var(--ease-out) both;
   }
 
-  /* Sections do not fade up. The uniform rise-on-scroll every section
-     wore is the single most documented motion tell there is, so .reveal
-     no longer hides anything — content is simply there, the way print
-     is. The class pair SURVIVES because .reveal-in is still the cue for
-     the drawn diagrams (draw-x, the exhibition layer below): those are
-     choreographed marks with a reason to arrive, not entrances. */
+  /* ── THE ONE SCROLL BEHAVIOUR ──────────────────────────────────────
+     Every entrance on a marketing surface is this and only this: 14px
+     up, 0 to 1, 420ms, once. It is a transition rather than an
+     animation so the resting state is the honest one — nothing is
+     mid-keyframe if the class never lands.
+
+     This reinstates something an earlier pass deliberately removed (the
+     uniform rise is a documented AI-design tell). It earns its place
+     back by being SINGULAR: it replaced .stagger-children and the
+     per-section entrances rather than joining them, so the page now has
+     one motion idea instead of six competing ones. The tell is six, not
+     one.
+
+     .reveal-in also remains the cue for the drawn marks below (draw-x,
+     the glyphs, the exhibition layer) — those are choreographed, not
+     entrances, and they hang off the same single observer. */
   .reveal {
-    opacity: 1;
-    transform: none;
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 420ms var(--ease-out),
+      transform 420ms var(--ease-out);
   }
   .reveal.reveal-in {
     opacity: 1;
     transform: none;
+  }
+
+  /* Siblings that should arrive in sequence rather than as one block.
+     60ms apart and capped at six — past that a list reads as lag. The
+     index comes from the markup (style="--i:2"), so nothing here is a
+     hand-maintained nth-child ladder. */
+  .reveal [data-reveal-child] {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 420ms var(--ease-out),
+      transform 420ms var(--ease-out);
+  }
+  .reveal.reveal-in [data-reveal-child] {
+    opacity: 1;
+    transform: none;
+    transition-delay: calc(min(var(--i, 0), 5) * 60ms);
+  }
+
+  /* The pixel glyphs draw themselves in, one 8px row at a time, ~300ms
+     end to end (8 rows x 34ms + the row's own 110ms). Opacity per row
+     only — a pixel sprite is never scaled or moved by a fraction of a
+     pixel, which is what makes drop-in pixel art look cheap. */
+  .glyph-draw rect {
+    opacity: 0;
+  }
+  .reveal.reveal-in .glyph-draw rect {
+    animation: pixel-row 110ms steps(1, end) both;
+    animation-delay: calc(var(--row, 0) * 34ms);
+  }
+  @keyframes pixel-row {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* Panel/card enter — booth cards, chat panes, dropdowns. Soft rise. */
@@ -398,26 +486,6 @@
     animation: fade-only 200ms ease-out both;
   }
 
-  /* Staggered child entrances for lists/grids: each child rises in turn,
-     40ms apart, capped — beyond 8 it reads as lag, not rhythm. */
-  .stagger-children > * {
-    animation: fade-up 380ms var(--ease-out) both;
-  }
-  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-  .stagger-children > *:nth-child(2) { animation-delay: 40ms; }
-  .stagger-children > *:nth-child(3) { animation-delay: 80ms; }
-  .stagger-children > *:nth-child(4) { animation-delay: 120ms; }
-  .stagger-children > *:nth-child(5) { animation-delay: 160ms; }
-  .stagger-children > *:nth-child(6) { animation-delay: 200ms; }
-  .stagger-children > *:nth-child(7) { animation-delay: 240ms; }
-  .stagger-children > *:nth-child(n + 8) { animation-delay: 280ms; }
-  /* Engines with sibling-index() derive the same ladder instead of
-     reading it off a lookup table. */
-  @supports (animation-delay: calc(sibling-index() * 40ms)) {
-    .stagger-children > * {
-      animation-delay: calc((sibling-index() - 1) * 40ms);
-    }
-  }
 
   /* Hero art: a slow breath, barely there. */
   @keyframes float-slow {
@@ -931,7 +999,6 @@
     .anim-pop,
     .anim-toast,
     .anim-fade,
-    .stagger-children > *,
     .float-slow,
     .pulse-dot,
     .ceremony-rays,
@@ -960,11 +1027,22 @@
       animation: none;
       background-size: 100% 0.075em;
     }
+    /* The one scroll behaviour, and the marks that hang off it, all
+       resolve to "already there" — nothing waits on a scroll position
+       to become readable. */
     .reveal,
-    .reveal.reveal-in {
+    .reveal.reveal-in,
+    .reveal [data-reveal-child],
+    .reveal.reveal-in [data-reveal-child] {
       opacity: 1;
       transform: none;
       transition: none;
+      transition-delay: 0ms;
+    }
+    .glyph-draw rect,
+    .reveal.reveal-in .glyph-draw rect {
+      opacity: 1;
+      animation: none;
     }
   }
 }

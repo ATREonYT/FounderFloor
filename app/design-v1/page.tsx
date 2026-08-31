@@ -141,7 +141,7 @@ export default function LandingPageV1() {
           gently inside a framed panel */}
       <section className="border-b border-line">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 items-center gap-10 px-4 pb-12 pt-14 sm:pt-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12">
-          <div className="stagger-children">
+          <div className="">
             <p className="micro flex items-center gap-2 text-muted">
               <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-accent" />
               A walkable expo for startups
@@ -217,7 +217,7 @@ export default function LandingPageV1() {
           <h2 id="how-heading" className="mt-2 font-display text-3xl sm:text-4xl">
             How it works
           </h2>
-          <ol className="stagger-children mt-10 grid gap-4 sm:grid-cols-3 sm:gap-6">
+          <ol className="mt-10 grid gap-4 sm:grid-cols-3 sm:gap-6">
             {STEPS.map((step, i) => (
               <li
                 key={step.title}
@@ -251,7 +251,7 @@ export default function LandingPageV1() {
             Four places, each with one job. Everything you do in one shows up
             in the others.
           </p>
-          <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 href: "/lobby",
@@ -332,7 +332,7 @@ export default function LandingPageV1() {
               </>
             )}
           </p>
-          <div className="stagger-children mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {FLOORS.filter((f) => !f.hidden).map((floor) => {
               const locked = TIER_ORDER[floor.tier] > TIER_ORDER.free;
               return (
@@ -391,7 +391,7 @@ export default function LandingPageV1() {
             founders self-report their number and the badge follows. Treat
             every rank as a claim, not a fact.
           </p>
-          <div className="stagger-children mt-10 flex flex-col divide-y divide-paper/10 border-y border-paper/15">
+          <div className="mt-10 flex flex-col divide-y divide-paper/10 border-y border-paper/15">
             {RANKS.map((rank) => (
               <div
                 key={rank.id}
@@ -463,7 +463,7 @@ export default function LandingPageV1() {
             </Link>
           </div>
 
-          <div className="stagger-children mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {PRICING.map(({ tier, blurb }) => {
               const unlocked = FLOORS.filter(
                 (f) => !f.hidden && TIER_ORDER[f.tier] <= TIER_ORDER[tier],
