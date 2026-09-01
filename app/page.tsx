@@ -301,16 +301,22 @@ export default function LandingPage() {
           near-black the pixel light reads as a lit room seen from outside —
           which is also what the hall is, an hour before doors. Everything
           below section 01 stays on paper. */}
-      <section className="on-night bg-blackout text-paper">
+      {/* THE HERO IS ON PAPER. It ran on blackout for a while, and the
+          artwork did look well lit against it — but dark is an accent
+          band in this design, not the field, and a 1.5-viewport dark
+          hero made it the first and largest impression of the page.
+          Cream is the identity, the hall shares the palette, and the
+          plate now sits on the same ground the rest of the page does. */}
+      <section className="bg-paper text-ink">
         <div className={`${SHELL} pt-8 sm:pt-12`}>
           {/* dateline: the masthead line off a printed programme */}
-          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-paper/15 py-2.5">
-            <Spec className="text-paper/60">FounderFloor · Programme 2026</Spec>
-            <Spec className="flex items-center gap-2 text-paper/60">
+          <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-1.5 border-y border-line py-2.5">
+            <Spec className="text-muted">FounderFloor · Programme 2026</Spec>
+            <Spec className="flex items-center gap-2 text-muted">
               <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-verify" />
               Main Hall, open now
             </Spec>
-            <Spec className="text-paper/60">Admission free · nothing to install</Spec>
+            <Spec className="text-muted">Admission free · nothing to install</Spec>
           </div>
 
           {/* the headline runs the full measure, poster-scale, and breaks
@@ -328,12 +334,12 @@ export default function LandingPage() {
           {/* asymmetric split under the headline: the argument on the left,
               the doors on the right */}
           <div className="mt-10 grid gap-x-12 gap-y-8 sm:mt-12 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:items-end">
-            <p className="max-w-xl text-pretty text-[1.0625rem] leading-[1.7] text-paper/75">
+            <p className="max-w-xl text-pretty text-[1.0625rem] leading-[1.7] text-ink/85">
               FounderFloor is a small 2D world where startups keep a stand and
               real founders are there to talk to. You walk around, you read the
               signs, you meet people.
             </p>
-            <div className="lg:border-l lg:border-paper/15 lg:pl-10">
+            <div className="lg:border-l lg:border-line lg:pl-10">
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/lobby"
@@ -343,17 +349,17 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/profile#booth"
-                  className="btn-press rounded-md border border-paper/40 px-6 py-3 text-sm font-medium text-paper hover:bg-paper/10"
+                  className="btn-press rounded-md border border-ink px-6 py-3 text-sm font-medium text-ink hover:bg-panel"
                 >
                   Set up a stand
                 </Link>
               </div>
-              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-paper/60">
+              <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
                 <span className="hidden items-center gap-1.5 sm:flex">
-                  <Kbd tone="paper">W A S D</Kbd> walk
+                  <Kbd>W A S D</Kbd> walk
                 </span>
                 <span className="hidden items-center gap-1.5 sm:flex">
-                  <Kbd tone="paper">E</Kbd> talk
+                  <Kbd>E</Kbd> talk
                 </span>
                 <span className="sm:hidden">Tap where you want to go.</span>
               </p>
@@ -371,8 +377,8 @@ export default function LandingPage() {
               turns a crisp sprite into a blurred one. The plate sits still
               and the art stays on its grid. */}
           <figure className="relative">
-              <CropMarks tone="paper" />
-              <div className="relative overflow-hidden border border-paper/15 bg-ink">
+              <CropMarks />
+              <div className="relative overflow-hidden border border-line bg-ink">
                 <HeroScene
                   playable
                   bare
@@ -384,7 +390,7 @@ export default function LandingPage() {
 
         {/* the numbers, posted on a rule instead of sat in four white boxes */}
         <div className={`${SHELL} mt-14 pb-14 sm:mt-16 sm:pb-16`}>
-          <LiveStats variant="rail" tone="paper" />
+          <LiveStats variant="rail" />
         </div>
       </section>
 

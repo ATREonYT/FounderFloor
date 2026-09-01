@@ -563,8 +563,18 @@
      Painted as an animated background (not a positioned pseudo-element) so
      it follows the text when the phrase wraps across lines —
      box-decoration-break gives every wrapped fragment its own underline. */
+  /* The rule under the headline. It carried a hard-coded rgb(217,72,15) —
+     the accent from before the palette moved to oklch — so it had been
+     quietly drawing a different orange from every other accent on the
+     page. It reads from the token now and tracks the palette.
+
+     Full strength, not the half-alpha it used to carry. That 50% was
+     picked against the dark hero, where it made a muted brown; over
+     paper it washes to a dusty pink and reads as a highlighter that has
+     run out. The rule is the only accent in the headline besides the
+     button beside it, so it is drawn at the accent, full stop. */
   .sweep-underline {
-    background-image: linear-gradient(rgba(217, 72, 15, 0.5), rgba(217, 72, 15, 0.5));
+    background-image: linear-gradient(oklch(var(--tarp)), oklch(var(--tarp)));
     background-repeat: no-repeat;
     background-position: 0 94%;
     /* 0.075em rather than 0.1em: the headline now runs to 80px on desktop,
