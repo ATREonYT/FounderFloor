@@ -453,6 +453,22 @@
   .glyph-draw rect {
     opacity: 0;
   }
+
+  /* PRINT, AND ANYTHING THAT CAPTURES THE WHOLE PAGE AT ONCE. A reveal
+     that has never been scrolled to is genuinely opacity:0, so a print,
+     a PDF or a full-page screenshot renders those sections blank. There
+     is no scroll in any of those contexts, so the entrance has nothing
+     to mean: everything is simply present. */
+  @media print {
+    .reveal,
+    .reveal [data-reveal-child] {
+      opacity: 1 !important;
+      transform: none !important;
+    }
+    .glyph-draw rect {
+      opacity: 1 !important;
+    }
+  }
   .reveal.reveal-in .glyph-draw rect {
     animation: pixel-row 110ms steps(1, end) both;
     animation-delay: calc(var(--row, 0) * 34ms);
@@ -907,9 +923,15 @@
 
   /* Drafting grid for the ink placards. 32px is the game's tile size, so
      the closing panel is literally ruled to the floor's own grid. */
+  /* The setting-out grid on the closing band. The lines were mixed from
+     `paper`, which is a MATERIAL — the ground the page is printed on —
+     and a ruled line is not made of paper. Neutral white at the same
+     weight, so the grid reads as drawn rather than as a lighter patch of
+     the surface it sits on. At 5% it is a faint technical grid; anything
+     stronger turns into dust. */
   .blueprint {
-    background-image: linear-gradient(rgba(242, 239, 231, 0.055) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(242, 239, 231, 0.055) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 32px 32px;
   }
 
@@ -1048,6 +1070,32 @@
 }
 
 @layer utilities {
+  /* ── THE SEAMS ──────────────────────────────────────────────────
+     Where paper meets night, the change of ground IS the edge. A
+     hairline there is `line` (#D0D5D9) drawn across black — a cream
+     rule on a dark band, which reads as a seam that failed rather than
+     one that was made. Three of them were on the page: under the
+     founders wall (landing on the ranks band), under the ranks band
+     itself, and under the build log (landing on the closing band).
+
+     Both sides of every such boundary drop their rule: the night
+     section loses its own, and whatever sits immediately above one
+     loses its bottom. Nothing else changes — the hairlines between two
+     paper sections are doing real work and stay.
+
+     These live in the UTILITIES layer on purpose: `border-line` is a
+     Tailwind utility, and a cascade layer beats specificity outright —
+     the same rules in the components layer lost to it silently, which
+     is exactly the kind of change that looks applied and is not. */
+  section.on-night {
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+  }
+  section:has(+ .on-night) {
+    border-bottom-color: transparent;
+  }
+
+
   /* Keep pixel art crisp when scaled — canvases, sprites, glyphs. */
   .pixelated {
     image-rendering: crisp-edges;
