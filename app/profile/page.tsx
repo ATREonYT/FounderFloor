@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import PromoRedeem from "@/components/PromoRedeem";
 import Link from "next/link";
 import { isValidLogo, syncNow, useAppState } from "@/lib/store";
 import { getAuth } from "@/lib/auth";
@@ -1678,6 +1679,10 @@ export default function ProfilePage() {
 
       {/* ---- Membership ---- */}
       <SectionCard title="Membership" id="membership">
+        {/* A code sits above the plans on purpose: somebody arriving from a
+            launch post has one in their hand and is not here to compare
+            tiers. */}
+        <PromoRedeem className="mb-5 max-w-md" />
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {!billingLive() ? (
             <span className="micro rounded-sm border border-line px-1.5 py-0.5 text-muted">

@@ -444,6 +444,49 @@ const STANDS_WHILE_AWAY = process.env.FLOOR_STANDS_WHILE_AWAY === "1";
  * operator can mail just the people who asked to be reminded.
  */
 const subscribers = new Map();
+
+/**
+ * PROMO CODES — a named grant anybody with the word can spend once.
+ *
+ * The entitlement machinery already knew how to hand out days
+ * (grantTrialDays) and tickets (ticketsPurchased); what it had no way to
+ * do was give the same thing to a CROWD. /admin/grant is one email at a
+ * time, which is fine for a refund and useless for a launch.
+ *
+ * promos: CODE -> {
+ *   code, days, tickets, max, used, until|null, note, by, ts, off
+ * }
+ *
+ * The one-per-account rule is kept on the ACCOUNT (acct.promos), not on
+ * the code. A code with 500 uses would otherwise carry 500 ids, and the
+ * question being asked is always "has THIS account had it", which the
+ * account can answer by itself.
+ */
+const promos = new Map();
+/** Whether the launch code has ever been written. Persisted, so deleting
+ *  a code is a decision a restart cannot undo. */
+let promosSeeded = false;
+const MAX_PROMOS = 200;
+const MAX_PROMO_CODE_LEN = 32;
+/** Per account, so one bad actor cannot grow their own record forever. */
+const MAX_PROMOS_PER_ACCT = 40;
+
+/** CODE, uppercased and stripped to letters, digits, dash. */
+function normalizeCode(raw) {
+  return String(raw ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, "")
+    .slice(0, MAX_PROMO_CODE_LEN);
+}
+
+/** Why this code cannot be spent by this account, or "" if it can. */
+function promoRefusal(promo, acct) {
+  if (!promo || promo.off) return "that code is not in use";
+  if (typeof promo.until === "number" && promo.until <= Date.now()) return "that code has expired";
+  if (promo.used >= promo.max) return "that code has been fully claimed";
+  if ((acct.promos ?? []).includes(promo.code)) return "you have already used that code";
+  return "";
+}
 const MAX_SUBSCRIBERS = 20000;
 /**
  * startMs of the Open Doors window the one promised reminder has already
@@ -1665,6 +1708,59 @@ let nextActivityId = 1;
 
 // ---------- persistence (guestbooks + activity) ----------
 
+/**
+ * THE PRODUCT HUNT CODE, seeded once.
+ *
+ * A launch code has to exist before the launch, and asking an operator
+ * to remember a curl on the morning of it is how a launch goes out with
+ * a dead code in the copy. So an empty promo table gets this one — and
+ * only an EMPTY one, so deleting it or editing it down is permanent and
+ * a restart never resurrects an offer that was deliberately closed.
+ *
+ * Every number is an operator's to change from /admin/promo without a
+ * deploy; the env vars only set what the first boot writes.
+ */
+/**
+ * THE PRODUCT HUNT CODE, seeded exactly once in this server's life.
+ *
+ * A launch code has to exist before the launch, and asking an operator to
+ * remember a curl on the morning of it is how a launch goes out with a
+ * dead code in the copy. So a server that has never had a promo table
+ * gets this one.
+ *
+ * The guard is a persisted FLAG, not the size of the table. Seeding on
+ * "no codes exist" would resurrect the offer every restart after an
+ * operator deleted it, which is the one thing a promo system must never
+ * do: closing a giveaway has to stay closed. Every number is changeable
+ * from /admin/promo without a deploy; the env vars only decide what the
+ * first boot writes.
+ */
+function seedPromos() {
+  if (promosSeeded) return;
+  promosSeeded = true;
+  const code = normalizeCode(process.env.PH_PROMO_CODE || "PRODUCTHUNT");
+  const days = Math.max(0, Math.trunc(Number(process.env.PH_PROMO_DAYS ?? 90)));
+  const tickets = Math.max(0, Math.trunc(Number(process.env.PH_PROMO_TICKETS ?? 0)));
+  const max = Math.max(0, Math.trunc(Number(process.env.PH_PROMO_MAX ?? 500)));
+  if (code && (days > 0 || tickets > 0) && max > 0) {
+    promos.set(code, {
+      code,
+      days,
+      tickets,
+      max,
+      used: 0,
+      until: null,
+      note: "Product Hunt launch",
+      by: "seed",
+      ts: Date.now(),
+      off: false,
+    });
+    console.log(
+      `[promo] seeded ${code}: ${days}d${tickets ? ` + ${tickets} tickets` : ""}, ${max} uses`,
+    );
+  }
+}
+
 function loadData() {
   let raw;
   try {
@@ -1813,6 +1909,17 @@ function loadData() {
       if (Number.isFinite(rc) && rc > 0) acct.refCount = Math.min(100_000, Math.trunc(rc));
       const tstart = Number(a.trialStarted);
       if (Number.isFinite(tstart) && tstart > 0) acct.trialStarted = tstart;
+      // WHICH CODES THIS ACCOUNT HAS SPENT. The rehydrator builds a fresh
+      // object field by field, so anything not named here is dropped —
+      // and dropping this one silently reopens every promo code to
+      // everybody on every restart. The test that caught it now guards it.
+      if (Array.isArray(a.promos)) {
+        acct.promos = a.promos
+          .filter((c) => typeof c === "string")
+          .map(normalizeCode)
+          .filter(Boolean)
+          .slice(0, MAX_PROMOS_PER_ACCT);
+      }
       accounts.set(nameLower.slice(0, MAX_NAME_LEN), acct);
       indexAccount(acct);
     }
@@ -2091,6 +2198,32 @@ function loadData() {
     }
   }
 
+  if (parsed.promosSeeded === true) promosSeeded = true;
+
+  if (parsed.promos && typeof parsed.promos === "object") {
+    for (const [key, v] of Object.entries(parsed.promos)) {
+      if (promos.size >= MAX_PROMOS) break;
+      if (!v || typeof v !== "object") continue;
+      const code = normalizeCode(v.code ?? key);
+      if (!code) continue;
+      promos.set(code, {
+        code,
+        days: Math.max(0, Math.min(3650, Math.trunc(Number(v.days) || 0))),
+        tickets: Math.max(0, Math.min(1_000_000, Math.trunc(Number(v.tickets) || 0))),
+        max: Math.max(0, Math.min(1_000_000, Math.trunc(Number(v.max) || 0))),
+        used: Math.max(0, Math.trunc(Number(v.used) || 0)),
+        until: typeof v.until === "number" && v.until > 0 ? v.until : null,
+        note: sanitizeStr(v.note, 140),
+        by: sanitizeStr(v.by, 120),
+        ts: typeof v.ts === "number" ? v.ts : Date.now(),
+        off: v.off === true,
+      });
+    }
+    // A file written before the flag existed still proves the table was
+    // populated once; do not seed on top of it.
+    if (promos.size > 0) promosSeeded = true;
+  }
+
   // Which Open Doors window the one reminder has already gone out for
   // (its startMs). Persisted so a restart inside the send window can
   // never mail the whole list twice — see maybeSendDoorsReminder().
@@ -2162,6 +2295,8 @@ function saveNow() {
     currentWeek,
     slugs: Object.fromEntries(slugs),
     buildLogs: Object.fromEntries(buildLogs),
+    promos: Object.fromEntries(promos),
+    promosSeeded,
   };
   const tmp = `${DATA_FILE}.tmp`;
   try {
@@ -3091,6 +3226,7 @@ setInterval(relocateLapsedHolds, HOLD_SWEEP_MS).unref();
 setInterval(pruneCredentials, 60 * 60 * 1000).unref();
 
 loadData();
+seedPromos();
 
 // ---------- wire helpers ----------
 
@@ -3542,6 +3678,78 @@ async function handleAuthPost(req, res, pathname) {
     scheduleSave();
     console.log(`[trial] start id=${acct.id} days=${gave}`);
     sendJson(res, { ok: true, until: acct.paid.until, days: gave });
+    return;
+  }
+
+  /**
+   * SPEND A CODE. Everything is checked server-side and the account is
+   * the unit — a code is one grant per account, forever, whatever the
+   * browser says.
+   *
+   * A code may carry days, tickets, or both, and the two are independent:
+   * a permanent member has nothing to extend (grantTrialDays returns 0 by
+   * design) but their tickets are still theirs, so the refusal is only
+   * final when NEITHER half moved. Reporting "redeemed" after handing
+   * over nothing is the failure mode this shape exists to avoid.
+   */
+  if (pathname === "/promo/redeem") {
+    const token = typeof body.token === "string" ? body.token : "";
+    const entry = tokens.get(token);
+    const acct = entry ? accountsById.get(entry.id) : undefined;
+    if (!acct) {
+      sendJson(res, { error: "sign in first" });
+      return;
+    }
+    if (isBannedAcct(acct)) {
+      sendJson(res, { error: "this account is suspended" });
+      return;
+    }
+    const code = normalizeCode(body.code);
+    if (!code) {
+      sendJson(res, { error: "type the code" });
+      return;
+    }
+    const promo = promos.get(code);
+    const refused = promoRefusal(promo, acct);
+    if (refused) {
+      sendJson(res, { error: refused });
+      return;
+    }
+    if ((acct.promos ?? []).length >= MAX_PROMOS_PER_ACCT) {
+      sendJson(res, { error: "that is enough codes for one account" });
+      return;
+    }
+
+    const gaveDays = promo.days > 0 ? grantTrialDays(acct, promo.days, `promo:${code}`) : 0;
+    let gaveTickets = 0;
+    if (promo.tickets > 0) {
+      const before = acct.ticketsPurchased ?? 0;
+      acct.ticketsPurchased = Math.max(0, Math.min(10_000_000, before + promo.tickets));
+      gaveTickets = acct.ticketsPurchased - before;
+    }
+    if (gaveDays <= 0 && gaveTickets <= 0) {
+      // The only way to land here is a days-only code met by a permanent
+      // membership. Say so plainly rather than burning their one use.
+      sendJson(res, {
+        error: "you already have Founder+ for good — there is nothing this code can add",
+      });
+      return;
+    }
+
+    acct.promos = [...(acct.promos ?? []), code];
+    promo.used += 1;
+    saveNow(); // an entitlement grant does not wait on a debounce
+    console.log(
+      `[promo] ${code} redeemed by id=${acct.id} days=${gaveDays} tickets=${gaveTickets} (${promo.used}/${promo.max})`,
+    );
+    sendJson(res, {
+      ok: true,
+      code,
+      days: gaveDays,
+      tickets: gaveTickets,
+      until: acct.paid?.until ?? null,
+      tier: acct.paid?.tier ?? "free",
+    });
     return;
   }
 
@@ -4220,6 +4428,72 @@ async function handleAdminPost(req, res, pathname) {
       return;
     }
 
+    /**
+     * Create, change, close and list codes — the whole life of an offer,
+     * live, without a deploy. Called with nothing but a token it just
+     * lists, which is also how an operator checks what a launch has cost
+     * them so far.
+     */
+    if (pathname === "/admin/promo") {
+      const code = normalizeCode(body.code);
+      if (code) {
+        const existing = promos.get(code);
+        if (!existing && promos.size >= MAX_PROMOS) {
+          sendJson(res, { error: "too many codes — close some first" });
+          return;
+        }
+        const num = (v, fallback, cap) =>
+          Number.isFinite(Number(v)) ? Math.max(0, Math.min(cap, Math.trunc(Number(v)))) : fallback;
+        const next = {
+          code,
+          days: num(body.days, existing?.days ?? 0, 3650),
+          tickets: num(body.tickets, existing?.tickets ?? 0, 1_000_000),
+          max: num(body.max, existing?.max ?? 0, 1_000_000),
+          // `used` is a fact about what has happened, not a setting. It is
+          // never taken from the request — an operator who could reset it
+          // could hand out a capped offer twice by accident.
+          used: existing?.used ?? 0,
+          until:
+            body.until === null
+              ? null
+              : Number.isFinite(Number(body.until)) && Number(body.until) > 0
+                ? Math.trunc(Number(body.until))
+                : (existing?.until ?? null),
+          note: body.note === undefined ? (existing?.note ?? "") : sanitizeStr(body.note, 140),
+          by: `admin:${admin.email}`,
+          ts: existing?.ts ?? Date.now(),
+          off: body.off === undefined ? (existing?.off ?? false) : body.off === true,
+        };
+        if (body.delete === true) {
+          promos.delete(code);
+          console.log(`[promo] ${admin.email} deleted ${code}`);
+        } else {
+          promos.set(code, next);
+          console.log(
+            `[promo] ${admin.email} set ${code}: ${next.days}d + ${next.tickets}t, ${next.used}/${next.max}${next.off ? " (off)" : ""}`,
+          );
+        }
+        saveNow();
+      }
+      sendJson(res, {
+        ok: true,
+        promos: [...promos.values()]
+          .sort((a, b) => b.ts - a.ts)
+          .map((p) => ({
+            ...p,
+            left: Math.max(0, p.max - p.used),
+            state: p.off
+              ? "closed by hand"
+              : typeof p.until === "number" && p.until <= Date.now()
+                ? "expired"
+                : p.used >= p.max
+                  ? "fully claimed"
+                  : `open — ${Math.max(0, p.max - p.used)} of ${p.max} left`,
+          })),
+      });
+      return;
+    }
+
     if (pathname === "/admin/grant") {
       const email = normalizeEmail(body.email);
       const acct = email ? accountsByEmail.get(email) : undefined;
@@ -4644,10 +4918,16 @@ const server = createServer((req, res) => {
     return;
   }
 
-  // /trial/start rides with the auth routes on purpose: it is an
-  // account-token operation and it wants the same per-IP rate limit, since
-  // a loop against it is the cheapest way to probe for live tokens.
-  if (req.method === "POST" && (url.pathname.startsWith("/auth/") || url.pathname === "/trial/start")) {
+  // /trial/start and /promo/redeem ride with the auth routes on purpose:
+  // both are account-token operations and both want the same per-IP rate
+  // limit, since a loop against either is the cheapest way to probe for
+  // live tokens — and against /promo/redeem, for live CODES as well.
+  if (
+    req.method === "POST" &&
+    (url.pathname.startsWith("/auth/") ||
+      url.pathname === "/trial/start" ||
+      url.pathname === "/promo/redeem")
+  ) {
     dispatch(handleAuthPost(req, res, url.pathname), res, url.pathname);
     return;
   }

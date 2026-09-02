@@ -19,6 +19,7 @@ import type { Leaderboard } from "@/lib/leaderboard";
 import { TIER_ORDER } from "@/lib/types";
 import type { AppState, BoothInstance, SubTier } from "@/lib/types";
 import TicketIcon from "@/components/TicketIcon";
+import PromoRedeem from "@/components/PromoRedeem";
 import { TIER_LABEL } from "@/components/TierTag";
 import { boothNumber } from "@/lib/boothNumber";
 import { controlCopy, useDevice } from "@/lib/device";
@@ -627,6 +628,8 @@ export function MembershipPanel({
           );
         })}
       </ul>
+      <PromoRedeem className="border-t border-line pt-4" />
+
       <Link
         href="/profile#membership"
         className="rounded-md border border-line px-4 py-2.5 text-center text-sm transition-colors hover:bg-paper"
