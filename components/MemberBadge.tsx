@@ -18,7 +18,16 @@ import { getAuth } from "@/lib/auth";
 import { useAppState } from "@/lib/store";
 import { TIER_LABEL } from "@/components/TierTag";
 
-export default function MemberBadge({ glass = false }: { glass?: boolean }) {
+export default function MemberBadge({
+  glass = false,
+  onOpen,
+}: {
+  glass?: boolean;
+  /** Given on the floor: open the membership panel over the hall rather
+   *  than linking to a scrolled anchor on the settings page, which
+   *  disconnects the socket and costs the visitor their spot. */
+  onOpen?: () => void;
+}) {
   const [state] = useAppState();
   const [signedIn, setSignedIn] = useState(false);
   useEffect(() => {
@@ -35,20 +44,28 @@ export default function MemberBadge({ glass = false }: { glass?: boolean }) {
   // Founding subsumes Founder+ — the rarer status is the one worth wearing.
   const label = founding ? "Founding member" : TIER_LABEL[state.sub];
   const goldTone = founding || state.sub === "founder";
-  return (
-    <Link
-      href="/profile#membership"
-      title={`Your membership: ${label}`}
-      className={`micro flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 ${
-        glass ? "bg-panel/85 py-2 shadow-float backdrop-blur-md" : "py-1"
-      } ${
-        goldTone
-          ? "border-gold/70 bg-gold/10 text-gold-deep hover:border-gold"
-          : "border-accent/50 bg-accent-soft/60 text-accent hover:border-accent"
-      }`}
-    >
+  const cls = `micro flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2.5 ${
+    glass ? "bg-panel/85 py-2 shadow-float backdrop-blur-md" : "py-1"
+  } ${
+    goldTone
+      ? "border-gold/70 bg-gold/10 text-gold-deep hover:border-gold"
+      : "border-accent/50 bg-accent-soft/60 text-accent hover:border-accent"
+  }`;
+  const inner = (
+    <>
       <span aria-hidden="true">✦</span>
       {label}
-    </Link>
+    </>
+  );
+  return (
+    <>{onOpen ? (
+      <button type="button" onClick={onOpen} title={`Your membership: ${label}`} className={cls}>
+        {inner}
+      </button>
+    ) : (
+      <Link href="/profile#membership" title={`Your membership: ${label}`} className={cls}>
+        {inner}
+      </Link>
+    )}</>
   );
 }

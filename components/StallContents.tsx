@@ -19,12 +19,21 @@ import type { Leaderboard } from "@/lib/leaderboard";
 import { TIER_ORDER } from "@/lib/types";
 import type { AppState, BoothInstance, SubTier } from "@/lib/types";
 import TicketIcon from "@/components/TicketIcon";
+import { TIER_LABEL } from "@/components/TierTag";
 import { boothNumber } from "@/lib/boothNumber";
 import { controlCopy, useDevice } from "@/lib/device";
 
 // ---------------------------------------------------------------- tickets
 
-export function TicketStall({ state }: { state: AppState }) {
+export function TicketStall({
+  state,
+  onOpenEditor,
+}: {
+  state: AppState;
+  /** Given on the floor: the shop's actual goods are bought in the stand
+   *  editor, so "spend it" moves to that panel rather than leaving. */
+  onOpenEditor?: () => void;
+}) {
   const balance = walletBalance(state);
   const streak = Math.max(1, state.visitStreak);
   const rows: { label: string; amount: string; note: string }[] = [
@@ -69,12 +78,27 @@ export function TicketStall({ state }: { state: AppState }) {
         there is nothing to win.
       </p>
 
-      <Link
-        href="/profile#tickets"
-        className="rounded-md border border-line px-4 py-2.5 text-center text-sm transition-colors hover:bg-paper"
-      >
-        Ticket packs and the full shop — leaves the floor
-      </Link>
+      {/* This used to read "the full shop — leaves the floor", which was
+          honest and also the bug: the shop's goods are stand paint, and
+          stand paint is bought in the editor, which is already a panel on
+          this floor. Off the floor it stays a link, because there is no
+          panel to move to there. */}
+      {onOpenEditor ? (
+        <button
+          type="button"
+          onClick={onOpenEditor}
+          className="btn-press rounded-md border border-line px-4 py-2.5 text-center text-sm transition-colors hover:bg-paper"
+        >
+          Spend them on your stand
+        </button>
+      ) : (
+        <Link
+          href="/profile#tickets"
+          className="rounded-md border border-line px-4 py-2.5 text-center text-sm transition-colors hover:bg-paper"
+        >
+          Ticket packs and the full shop
+        </Link>
+      )}
     </div>
   );
 }
@@ -544,6 +568,71 @@ export function RecordsStall({ state }: { state: AppState }) {
           </p>
         </>
       )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------- membership
+
+/**
+ * Membership, as a panel on the floor.
+ *
+ * The badge in the HUD used to link to /profile#membership — a scrolled
+ * anchor on a settings page, which is the exact deep-link behaviour this
+ * work exists to remove. What the badge is actually asking is "what am I
+ * on and what does it open", and that answer is four lines long.
+ *
+ * Changing tier is a different question and still a page: it takes a
+ * payment, it is rare, and it is not something to do while standing in a
+ * hall. That link is the only way out of here and it says so.
+ */
+export function MembershipPanel({
+  state,
+  floorName,
+}: {
+  state: AppState;
+  floorName: string;
+}) {
+  // Same rule the badge uses: a founding badge without a paid tier is a
+  // stale entitlement, not a membership.
+  const founding = state.badges.includes("founding") && state.sub !== "free";
+  const mine = TIER_ORDER[state.sub];
+  const halls = FLOORS.filter((f) => !f.hidden);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-baseline gap-2">
+        <span className="font-display text-2xl">
+          {founding ? "Founding member" : TIER_LABEL[state.sub]}
+        </span>
+        {founding && (
+          <span className="micro text-xs text-gold-deep">{TIER_LABEL[state.sub]}</span>
+        )}
+      </div>
+      <p className="text-sm leading-relaxed text-muted">
+        You are standing in {floorName}. Here is every hall and whether
+        your membership opens its door.
+      </p>
+      <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
+        {halls.map((f) => {
+          const ok = mine >= TIER_ORDER[f.tier];
+          return (
+            <li key={f.id} className="flex items-center gap-3 px-3 py-2.5">
+              <span className="min-w-0 flex-1 text-sm">{f.name}</span>
+              <span
+                className={`micro shrink-0 text-xs ${ok ? "text-verify" : "text-muted"}`}
+              >
+                {ok ? "OPEN TO YOU" : TIER_LABEL[f.tier].toUpperCase()}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <Link
+        href="/profile#membership"
+        className="rounded-md border border-line px-4 py-2.5 text-center text-sm transition-colors hover:bg-paper"
+      >
+        Change your membership — leaves the floor
+      </Link>
     </div>
   );
 }

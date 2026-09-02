@@ -19,6 +19,10 @@
  *   - closing animates out before unmounting, so it does not just vanish
  *   - Escape and the backdrop both close it, because on a phone there is
  *     no Escape and on a desktop there is no obvious backdrop
+ *   - Tab is trapped inside it and focus returns to whatever opened it,
+ *     so a keyboard visitor cannot tab out onto a canvas they cannot see
+ *   - it is HEIGHT-CAPPED, not full-bleed: the hall has to stay visible
+ *     around it or the whole point of not leaving the floor is lost
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -91,9 +95,47 @@ export default function StallPanel({
   }, [dismiss]);
 
   // Move focus into the panel so a keyboard visitor is not left behind on
-  // the canvas, and so Escape reaches us first.
+  // the canvas, and so Escape reaches us first. On close it goes back to
+  // whatever opened the panel — a HUD chip, a stall prompt — because
+  // dumping focus at the top of the document is how a keyboard visitor
+  // loses their place entirely.
   useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
     panelRef.current?.focus();
+    return () => {
+      if (opener && document.contains(opener)) opener.focus?.();
+    };
+  }, []);
+
+  // Trap Tab. Without this, tabbing off the last control lands on the
+  // canvas and the game's own key handling behind a panel that is still
+  // covering it — invisible focus, and WASD starts walking again.
+  useEffect(() => {
+    const onTab = (e: KeyboardEvent): void => {
+      if (e.key !== "Tab") return;
+      const root = panelRef.current;
+      if (!root) return;
+      const items = [...root.querySelectorAll<HTMLElement>(
+        'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])',
+      )].filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (items.length === 0) {
+        e.preventDefault();
+        root.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === root)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onTab, true);
+    return () => window.removeEventListener("keydown", onTab, true);
   }, []);
 
   const open = shown && !leaving;
@@ -117,7 +159,11 @@ export default function StallPanel({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`panel relative flex max-h-full w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col overflow-hidden shadow-float outline-none transition-[opacity,transform] duration-200 ease-out`}
+        /* Height is capped so the hall reads around the panel rather than
+           behind a full-height card: 70% of the viewport on a desktop,
+           85% on a phone where a bottom-sheet-sized panel is the norm —
+           and even at 85% a strip of hall stays visible above it. */
+        className={`panel relative flex max-h-[85svh] w-full ${wide ? "max-w-3xl" : "max-w-lg"} flex-col self-end overflow-hidden shadow-float outline-none transition-[opacity,transform] duration-200 ease-out sm:max-h-[70svh] sm:self-center`}
         style={{
           opacity: open ? 1 : 0,
           transform: open ? "translateY(0) scale(1)" : "translateY(10px) scale(0.97)",

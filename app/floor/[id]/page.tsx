@@ -28,9 +28,11 @@ import { questStates, unlockedEmotes } from "@/lib/data/quests";
 import { buildCard, fetchStand, registerStartup, respondToRequest, sendConnectRequest, sendSocialDm, useInbox, type RequestState } from "@/lib/social";
 import EditStandPanel from "@/components/EditStandPanel";
 import StallPanel from "@/components/StallPanel";
+import EmailCapture from "@/components/EmailCapture";
 import { fetchLeaderboard, humanMs } from "@/lib/leaderboard";
 import {
   GuideStall,
+  MembershipPanel,
   PorterStall,
   RecordsStall,
   RegisterStall,
@@ -128,6 +130,67 @@ function withPeerPresence(th: ThreadState, present: boolean): ThreadState {
 
 const MAX_ACTIVITY = 8;
 
+/**
+ * THE PAGE PANELS — the things that used to be links off the floor.
+ *
+ * Each one wears the same chrome a merchant stall does, because it IS the
+ * same shell: sign, keeper, blurb, awning colour. Giving them a keeper is
+ * not decoration — it is what stops the hall from suddenly producing a
+ * generic settings modal in the middle of a trade show.
+ *
+ * `to` is where the same information lives as a full page, kept so a
+ * panel can still offer the long version for anyone who wants it.
+ */
+type PagePanelId = "guide" | "shop" | "booth" | "membership" | "directory" | "doors";
+
+type FloorPanel = { kind: "merchant"; m: MerchantDef } | { kind: "page"; id: PagePanelId };
+
+const PAGE_PANELS: Record<
+  PagePanelId,
+  { sign: string; keeper: string; blurb: string; color: string; wide?: boolean }
+> = {
+  guide: {
+    sign: "WHERE TO GO",
+    keeper: "The hall",
+    blurb: "What is in this room and how to find it.",
+    color: "var(--gold)",
+  },
+  shop: {
+    sign: "YOUR TICKETS",
+    keeper: "The booth",
+    blurb: "What you have, and what it is for.",
+    color: "var(--gold)",
+  },
+  booth: {
+    sign: "YOUR STAND",
+    keeper: "Alder",
+    blurb: "Repaint it, re-sign it, change the trim.",
+    color: "var(--accent)",
+  },
+  membership: {
+    sign: "MEMBERSHIP",
+    keeper: "The desk",
+    blurb: "What you are on, and what it opens.",
+    color: "var(--gold)",
+  },
+  directory: {
+    sign: "WHO IS HERE",
+    keeper: "The board",
+    blurb: "Every stand on this floor, without leaving it.",
+    color: "var(--fountain)",
+  },
+  doors: {
+    sign: "OPEN DOORS",
+    keeper: "The doorman",
+    blurb: "One reminder before the next busy hour. Nothing else, ever.",
+    color: "var(--verify)",
+  },
+};
+
+/** The query param a panel writes, so a panel is linkable and Back closes
+ *  it. `stall` stays exactly as it was — this is its sibling. */
+const PANEL_PARAM = "panel";
+
 export default function FloorPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [state, actions] = useAppState();
@@ -146,10 +209,53 @@ export default function FloorPage({ params }: { params: { id: string } }) {
   const [editingStand, setEditingStand] = useState(false);
   /** The merchant stall you are standing at, for the HUD prompt. */
   const [nearMerchant, setNearMerchant] = useState<MerchantDef | null>(null);
-  /** The stall whose panel is open over the hall, or null. */
-  const [openStall, setOpenStall] = useState<MerchantDef | null>(null);
-  /** The hall guide, opened from the HUD rather than from a stall. */
-  const [guideOpen, setGuideOpen] = useState(false);
+  /**
+   * WHAT IS OPEN OVER THE HALL — one state, one shell, for everything.
+   *
+   * This started as the six merchant stalls. Everything else that was a
+   * panel of information — your ticket balance, your membership, the
+   * stand editor, the directory, the Open Doors RSVP — was a <Link> to a
+   * page, and following one disconnected the socket, dropped you out of
+   * presence and lost your position. A hall that throws you out for
+   * checking your own ticket count is a website with a game on it.
+   *
+   * So a panel is now either a merchant stall or a PAGE panel, both
+   * rendered by the same StallPanel with the same scrim, the same tween
+   * and the same dismissal rules. The guide used to be a second
+   * StallPanel of its own; it is a page panel now, so there is exactly
+   * one overlay on the floor.
+   */
+  const [panel, setPanel] = useState<FloorPanel | null>(null);
+  /** The merchant stall, when the open panel is one. Existing call sites
+   *  read this exactly as they always did. */
+  const openStall = panel?.kind === "merchant" ? panel.m : null;
+  const setOpenStall = useCallback(
+    (m: MerchantDef | null) => setPanel(m ? { kind: "merchant", m } : null),
+    [],
+  );
+  /** Open one of the page panels. Threaded into the components that used
+   *  to carry a <Link> out of the building. */
+  const openPage = useCallback((id: PagePanelId) => setPanel({ kind: "page", id }), []);
+  const openPageId = panel?.kind === "page" ? panel.id : null;
+
+  /** The chrome StallPanel wears, from whichever kind is open. */
+  const panelChrome =
+    panel?.kind === "merchant"
+      ? {
+          sign: panel.m.sign,
+          keeper: panel.m.keeper,
+          blurb: panel.m.blurb,
+          color: panel.m.color,
+          wide: panel.m.action === "arcade",
+        }
+      : panel
+        ? { ...PAGE_PANELS[panel.id], wide: PAGE_PANELS[panel.id].wide ?? false }
+        : { sign: "", keeper: "", blurb: "", color: "var(--accent)", wide: false };
+
+  const closePanel = useCallback(() => {
+    setPanel(null);
+    setArcadeRoom("hub");
+  }, []);
   /**
    * What a stall does. The stalls are shortcuts to pages that already
    * exist, put in the hall so the two side avenues have a reason to be
@@ -892,13 +998,72 @@ export default function FloorPage({ params }: { params: { id: string } }) {
    * linked to and so an end-to-end test can reach it without twenty tiles
    * of dead reckoning; it also means "meet me at the arcade" is a URL.
    */
-  useEffect(() => {
-    if (!floor?.plaza?.merchants) return;
-    const want = new URLSearchParams(window.location.search).get("stall");
-    if (!want) return;
-    const m = floor.plaza.merchants.find((x) => x.id === want);
-    if (m) setOpenStall(m);
+  /** What the URL is asking to be open, if anything. */
+  const panelFromUrl = useCallback((): FloorPanel | null => {
+    const q = new URLSearchParams(window.location.search);
+    const stall = q.get("stall");
+    if (stall) {
+      const m = floor?.plaza?.merchants?.find((x) => x.id === stall);
+      return m ? { kind: "merchant", m } : null;
+    }
+    const page = q.get(PANEL_PARAM);
+    return page && page in PAGE_PANELS ? { kind: "page", id: page as PagePanelId } : null;
   }, [floor]);
+
+  // On arrival: honour ?stall= or ?panel= from the link that brought you.
+  useEffect(() => {
+    if (!floor) return;
+    const want = panelFromUrl();
+    if (want) setPanel(want);
+  }, [floor, panelFromUrl]);
+
+  /**
+   * THE PANEL IS IN THE URL, so it is linkable and so BACK CLOSES IT.
+   *
+   * Without this, Back on an open panel leaves the floor entirely —
+   * which is the exact thing this whole change exists to stop, arriving
+   * by a different door. The effect is written as a reconciliation
+   * rather than a command: it compares what the URL says to what is
+   * open and only acts on a difference, so a popstate that already
+   * moved the URL does not get pushed back on top of itself.
+   */
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search);
+    const cur = q.get("stall")
+      ? `stall=${q.get("stall")}`
+      : q.get(PANEL_PARAM)
+        ? `${PANEL_PARAM}=${q.get(PANEL_PARAM)}`
+        : "";
+    const want = !panel
+      ? ""
+      : panel.kind === "merchant"
+        ? `stall=${panel.m.id}`
+        : `${PANEL_PARAM}=${panel.id}`;
+    if (cur === want) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("stall");
+    url.searchParams.delete(PANEL_PARAM);
+    if (want) {
+      const eq = want.indexOf("=");
+      url.searchParams.set(want.slice(0, eq), want.slice(eq + 1));
+      window.history.pushState({ ffPanel: true }, "", url);
+    } else if ((window.history.state as { ffPanel?: boolean } | null)?.ffPanel) {
+      // Closed from the UI while our own entry is on top: step back, so
+      // closing three panels does not leave three dead entries that all
+      // have to be pressed through to get out of the hall.
+      window.history.back();
+    } else {
+      window.history.replaceState(window.history.state, "", url);
+    }
+  }, [panel]);
+
+  // Back/forward: the URL is the truth, the panel follows it.
+  useEffect(() => {
+    const onPop = (): void => setPanel(panelFromUrl());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [panelFromUrl]);
 
   /** Which room of the arcade is open — the door itself, or one of the three. */
   const [arcadeRoom, setArcadeRoom] = useState<"hub" | "parkour" | "quiz" | "quick">("hub");
@@ -1602,7 +1767,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           {!coarse && (
             <button
               type="button"
-              onClick={() => setGuideOpen(true)}
+              onClick={() => openPage("guide")}
               aria-label="Where to go"
               title="Where to go"
               className="glass flex h-9 w-9 shrink-0 items-center justify-center font-display text-lg leading-none shadow-float transition-colors hover:text-accent"
@@ -1642,7 +1807,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         </div>
         <div className="pointer-events-auto flex shrink-0 items-center gap-2">
           {/* your membership, worn on the floor chrome too */}
-          <MemberBadge glass />
+          <MemberBadge glass onOpen={() => openPage("membership")} />
           {/* The head-count, for pointers with room for a second chip. On
               touch it is already inside the name pill — a phone in
               landscape is wide enough to pass `sm` and would otherwise
@@ -1682,7 +1847,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           {coarse && (
             <button
               type="button"
-              onClick={() => setGuideOpen(true)}
+              onClick={() => openPage("guide")}
               aria-label="Help and where to go"
               className="glass min-h-[44px] min-w-[44px] text-sm text-muted shadow-float"
             >
@@ -1714,15 +1879,20 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       {state.tutorialDone && (
         <div className="pointer-events-none absolute left-3 top-24 flex flex-col items-start gap-2 sm:top-16">
           <QuestPanel quests={quests} />
-          <Link
-            href="/profile#tickets"
+          {/* THE ONE THAT WAS SHOWN FAILING. Checking your own ticket
+              balance used to navigate to /profile#tickets — socket down,
+              presence dropped, position lost, all to read a number that is
+              already in memory. It opens over the hall now. */}
+          <button
+            type="button"
+            onClick={() => openPage("shop")}
             className={`glass pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 text-xs text-gold-deep shadow-float hover:bg-paper ${
               device.landscapePhone ? "hidden" : ""
             }`}
             title="Your ticket balance — spend it on booth styles and props"
           >
             <TicketIcon /> {walletBalance(state).toLocaleString("en-US")} tickets
-          </Link>
+          </button>
         </div>
       )}
 
@@ -1776,29 +1946,28 @@ export default function FloorPage({ params }: { params: { id: string } }) {
         </div>
       )}
 
-      {/* A stall, open over the hall. The game keeps running behind it and
-          the player keeps standing where they were — closing puts you back
-          in the room rather than reloading the floor. */}
-      {openStall && (
+      {/* THE ONE PANEL. A stall or a page, open over the hall: the game
+          keeps running behind it and the player keeps standing where they
+          were, so closing puts you back in the room rather than reloading
+          the floor. Everything here shares one scrim, one tween and one
+          set of dismissal rules. */}
+      {panel && (
         <StallPanel
-          sign={openStall.sign}
-          keeper={openStall.keeper}
-          blurb={openStall.blurb}
-          color={openStall.color}
-          onClose={() => {
-            setOpenStall(null);
-            setArcadeRoom("hub");
-          }}
+          sign={panelChrome.sign}
+          keeper={panelChrome.keeper}
+          blurb={panelChrome.blurb}
+          color={panelChrome.color}
+          onClose={closePanel}
           onFocusChange={handleFocusChange}
-          wide={openStall.action === "arcade"}
+          wide={panelChrome.wide}
         >
-          {openStall.action === "tickets" && <TicketStall state={state} />}
-          {openStall.action === "register" && <RegisterStall booths={hallBooths} floorId={floor.id} />}
-          {openStall.action === "porter" && (
+          {openStall?.action === "tickets" && <TicketStall state={state} />}
+          {openStall?.action === "register" && <RegisterStall booths={hallBooths} floorId={floor.id} />}
+          {openStall?.action === "porter" && (
             <PorterStall floorId={floor?.id ?? ""} presence={floorCounts} tier={state.sub} />
           )}
-          {openStall.action === "records" && <RecordsStall state={state} />}
-          {openStall.action === "arcade" && arcadeRoom === "parkour" && (
+          {openStall?.action === "records" && <RecordsStall state={state} />}
+          {openStall?.action === "arcade" && arcadeRoom === "parkour" && (
             <Parkour
               look={state.profile.look}
               bests={state.parkourBests ?? {}}
@@ -1809,7 +1978,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               onExit={() => setArcadeRoom("hub")}
             />
           )}
-          {openStall.action === "arcade" && arcadeRoom === "quiz" && (
+          {openStall?.action === "arcade" && arcadeRoom === "quiz" && (
             <QuizRoom
               quizzes={quizzes}
               balance={walletBalance(state)}
@@ -1825,7 +1994,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               onExit={() => setArcadeRoom("hub")}
             />
           )}
-          {openStall.action === "arcade" && arcadeRoom === "quick" && (
+          {openStall?.action === "arcade" && arcadeRoom === "quick" && (
             <Arcade
               wonToday={arcadeWonToday}
               hallRecord={state.arcadeBest ?? null}
@@ -1836,7 +2005,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           {/* The arcade is three rooms, so the door is a list of three rooms.
               It used to be the quick run with the other two bolted above it,
               which read as one game with links stuck on top. */}
-          {openStall.action === "arcade" && arcadeRoom === "hub" && (
+          {openStall?.action === "arcade" && arcadeRoom === "hub" && (
             <div className="flex flex-col gap-4">
               <p className="text-sm leading-relaxed text-muted">
                 Three rooms out the back. Everything pays tickets, up to{" "}
@@ -1891,7 +2060,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               </p>
             </div>
           )}
-          {openStall.action === "editor" &&
+          {openStall?.action === "editor" &&
             (myStartup ? (
               <EditStandPanel
                 startup={myStartup}
@@ -1908,23 +2077,63 @@ export default function FloorPage({ params }: { params: { id: string } }) {
                 gladly do the sign for it.
               </p>
             ))}
-        </StallPanel>
-      )}
 
-      {/* the hall guide, from the HUD */}
-      {guideOpen && (
-        <StallPanel
-          sign="WHERE TO GO"
-          keeper="The hall"
-          blurb="What is in this room and how to find it."
-          color="var(--gold)"
-          onClose={() => setGuideOpen(false)}
-          onFocusChange={handleFocusChange}
-        >
+          {/* ── the page panels ─────────────────────────────────────── */}
+
           {/* On phones this panel is also the controls help — GuideStall's
               own CONTROLS box speaks the device's language, so the header
               row needs just one "?" and the floor name keeps its room. */}
-          <GuideStall />
+          {openPageId === "guide" && <GuideStall />}
+
+          {/* The ticket booth. Same content the tickets stall carries and
+              the same content /profile#tickets carries — a balance and how
+              it is earned. It was never a purchase flow, which is why it
+              had no business being a page you got thrown off the floor to
+              read. */}
+          {openPageId === "shop" && (
+            <TicketStall state={state} onOpenEditor={() => openPage("booth")} />
+          )}
+
+          {openPageId === "booth" &&
+            (myStartup ? (
+              <EditStandPanel
+                startup={myStartup}
+                state={state}
+                onBuy={actions.buyItem}
+                onApply={applyStandLive}
+                onSave={handleEditSave}
+                onClose={closePanel}
+                onFocusChange={handleFocusChange}
+              />
+            ) : (
+              <p className="text-sm leading-relaxed text-muted">
+                No stand up yet. Walk to an open spot and press E to take
+                one — then everything in here has something to paint.
+              </p>
+            ))}
+
+          {openPageId === "membership" && (
+            <MembershipPanel state={state} floorName={floor.name} />
+          )}
+
+          {/* The register board IS the floor directory: every stand,
+              searchable, with its real reference. There was no reason to
+              build a second one, and no reason for a link to /directory to
+              tear the hall down to show the same list. */}
+          {openPageId === "directory" && (
+            <RegisterStall booths={hallBooths} floorId={floor.id} />
+          )}
+
+          {openPageId === "doors" && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm leading-relaxed text-muted">
+                The floors fill up every Sunday at 18:00 CET. Leave an
+                address and we&rsquo;ll send one short reminder before the
+                doors open. No newsletter, no drip campaign.
+              </p>
+              <EmailCapture variant="rsvp" source="in-floor" />
+            </div>
+          )}
         </StallPanel>
       )}
 
@@ -1985,6 +2194,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             />
           ) : activeBooth.startup ? (
             <BoothCard
+              onShop={() => openPage("booth")}
               // A live player's stand carries its own startup data — never
               // resolve it through the local startups map, where every
               // client's own startup shares the same id.
@@ -2080,6 +2290,8 @@ export default function FloorPage({ params }: { params: { id: string } }) {
       {quietShown && !quietDismissed && floor && (
         <div className="pointer-events-none absolute bottom-44 left-1/2 flex -translate-x-1/2 justify-center sm:bottom-20 sm:left-3 sm:translate-x-0 sm:justify-start">
           <QuietFloorCard
+            onDirectory={() => openPage("directory")}
+            onDoors={() => openPage("doors")}
             floorName={floor.name}
             hasStand={Object.keys(state.claims).length > 0}
             onClose={() => setQuietDismissed(true)}

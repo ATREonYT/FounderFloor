@@ -33,6 +33,9 @@ interface BoothCardProps {
   onUnclaim?: () => void;
   /** Present only for your own stand: open the on-floor editor. */
   onEdit?: () => void;
+  /** Given on the floor: open the stand editor panel over the hall
+   *  instead of linking out to the scrolled profile editor. */
+  onShop?: () => void;
   onClose: () => void;
   /** When set, a guestbook renders below the founder row. */
   guestbook?: {
@@ -55,6 +58,7 @@ export default function BoothCard({
   onChat,
   onUnclaim,
   onEdit,
+  onShop,
   onClose,
   guestbook,
 }: BoothCardProps) {
@@ -199,11 +203,20 @@ export default function BoothCard({
                 </button>
               )}
             </div>
-            {onEdit && (
-              <Link href="/profile#booth" className="micro text-muted hover:text-ink hover:underline">
-                glyph, logo &amp; the full shop → profile editor
-              </Link>
-            )}
+            {onEdit &&
+              (onShop ? (
+                <button
+                  type="button"
+                  onClick={onShop}
+                  className="micro self-start text-muted hover:text-ink hover:underline"
+                >
+                  glyph, logo &amp; the full shop
+                </button>
+              ) : (
+                <Link href="/profile#booth" className="micro text-muted hover:text-ink hover:underline">
+                  glyph, logo &amp; the full shop → profile editor
+                </Link>
+              ))}
           </>
         ) : live ? (
           <>

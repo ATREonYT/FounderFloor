@@ -271,12 +271,17 @@ export default function GraduationCeremony({
                 >
                   Create a free account
                 </Link>
-                <Link
-                  href="/lobby"
+                {/* "keep exploring and decide later" used to be a link to
+                    /lobby, which threw you off the floor — the opposite of
+                    continuing. It closes the ceremony and leaves you
+                    standing exactly where you were. */}
+                <button
+                  type="button"
+                  onClick={onClose}
                   className="btn-press rounded-md border border-line px-4 py-2.5 text-sm text-muted hover:border-ink hover:text-ink"
                 >
                   Continue as guest
-                </Link>
+                </button>
               </div>
             </>
           )}

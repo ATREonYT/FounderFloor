@@ -19,6 +19,7 @@
  */
 
 import { useState } from "react";
+import Link from "next/link";
 import BoothPreview from "@/components/BoothPreview";
 import BuyConfirm from "@/components/BuyConfirm";
 import type { AppState, BoothProp, BoothStyle, Startup } from "@/lib/types";
@@ -437,9 +438,13 @@ export default function EditStandPanel({
 
         <p className="micro text-muted">
           Glyph, logo, trim &amp; more live in the{" "}
-          <a href="/profile#booth" className="text-accent hover:underline">
+          {/* Was a bare <a>, which reloads the whole document from inside
+              a panel that is open over a live hall. The full editor really
+              does live on the profile page, so this one legitimately
+              leaves — it just no longer tears the app down to do it. */}
+          <Link href="/profile#booth" className="text-accent hover:underline">
             full editor
-          </a>
+          </Link>
           .
         </p>
       </div>

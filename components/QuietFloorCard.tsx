@@ -25,11 +25,18 @@ export default function QuietFloorCard({
   floorName,
   hasStand,
   onClose,
+  onDirectory,
+  onDoors,
 }: {
   floorName: string;
   /** Whether this visitor already has a stand up somewhere. */
   hasStand: boolean;
   onClose: () => void;
+  /** Given on the floor: show this hall's stands as a panel rather than
+   *  navigating to /directory and tearing the hall down. */
+  onDirectory?: () => void;
+  /** Given on the floor: the Open Doors RSVP as a panel. */
+  onDoors?: () => void;
 }) {
   const [ev] = useState(() => {
     const now = Date.now();
@@ -70,18 +77,41 @@ export default function QuietFloorCard({
             Put your stand up
           </Link>
         )}
-        <Link
-          href="/lobby"
-          className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
-        >
-          {ev.live ? `${ev.name} is live — join it` : `${ev.name} in ${ev.label} — get a reminder`}
-        </Link>
-        <Link
-          href="/directory"
-          className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
-        >
-          See who else is on the floors
-        </Link>
+        {/* SPLIT deliberately. "Join it" while an event is live is real
+            travel and still leaves. "Get a reminder" is an RSVP form —
+            a panel — and on the floor it opens as one. */}
+        {!ev.live && onDoors ? (
+          <button
+            type="button"
+            onClick={onDoors}
+            className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
+          >
+            {`${ev.name} in ${ev.label} — get a reminder`}
+          </button>
+        ) : (
+          <Link
+            href="/lobby"
+            className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
+          >
+            {ev.live ? `${ev.name} is live — join it` : `${ev.name} in ${ev.label} — get a reminder`}
+          </Link>
+        )}
+        {onDirectory ? (
+          <button
+            type="button"
+            onClick={onDirectory}
+            className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
+          >
+            See who else is on this floor
+          </button>
+        ) : (
+          <Link
+            href="/directory"
+            className="btn-press flex min-h-[44px] items-center justify-center rounded-md border border-line px-3 py-2.5 text-center text-sm text-muted hover:border-ink hover:text-ink"
+          >
+            See who else is on the floors
+          </Link>
+        )}
       </div>
       <p className="mt-3 text-xs leading-relaxed text-muted">
         A stand comes off the floor when you leave, but it keeps a page of its
