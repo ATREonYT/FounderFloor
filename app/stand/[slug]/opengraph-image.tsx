@@ -35,13 +35,31 @@ const INK = "#22272C";
 const MUTED = "#50565D";
 const LINE = "#D7DBE0";
 
+/**
+ * The two faces, or null.
+ *
+ * NOTHING IN THIS ROUTE MAY THROW. A share card that 500s is not a
+ * degraded card, it is a broken image in somebody's Slack — and the whole
+ * point of the card is that a stand link looks like something. So the
+ * fonts are loaded defensively and their absence downgrades the card
+ * instead of killing it.
+ */
+async function loadFonts(): Promise<{ regular: Buffer; medium: Buffer } | null> {
+  try {
+    const dir = join(process.cwd(), "assets/fonts");
+    const [regular, medium] = await Promise.all([
+      readFile(join(dir, "Spectral-Regular.ttf")),
+      readFile(join(dir, "Spectral-Medium.ttf")),
+    ]);
+    return { regular, medium };
+  } catch {
+    return null;
+  }
+}
+
 export default async function OgImage({ params }: { params: { slug: string } }) {
   const ref = decodeURIComponent(params.slug);
-  const [stand, regular, medium] = await Promise.all([
-    fetchPublicStand(ref),
-    readFile(join(process.cwd(), "assets/fonts/Spectral-Regular.ttf")),
-    readFile(join(process.cwd(), "assets/fonts/Spectral-Medium.ttf")),
-  ]);
+  const [stand, fonts] = await Promise.all([fetchPublicStand(ref), loadFonts()]);
 
   const name = stand?.startup.name ?? "FounderFloor";
   const oneLiner = stand?.startup.oneLiner ?? "";
@@ -49,11 +67,63 @@ export default async function OgImage({ params }: { params: { slug: string } }) 
   const spot = stand ? boothNumber(stand.floorId, stand.spotIndex) : "";
   const hall = stand?.floorId ? stand.floorId.replace(/-/g, " ").toUpperCase() : "THE DIRECTORY";
 
-  const boothSvg = stand
-    ? `data:image/svg+xml;base64,${Buffer.from(
+  // The booth is the picture. If the game's renderer ever chokes on a
+  // stored startup, the card still goes out — without it.
+  let boothSvg: string | null = null;
+  if (stand) {
+    try {
+      boothSvg = `data:image/svg+xml;base64,${Buffer.from(
         renderStandSvg(stand.startup, stand.startup.founderLook),
-      ).toString("base64")}`
-    : null;
+      ).toString("base64")}`;
+    } catch {
+      boothSvg = null;
+    }
+  }
+
+  /**
+   * No fonts, no lettering — but still a picture of the stand.
+   *
+   * satori needs a font before it will lay out a single character, so a
+   * missing face cannot be papered over with a fallback family. What it
+   * does not need is text: the booth, the plate border and the mark are
+   * all geometry. This card is worse than the real one and far better
+   * than a broken image.
+   */
+  if (!fonts) {
+    return new ImageResponse(
+      (
+        <div style={{ width: "100%", height: "100%", display: "flex", background: PAPER }}>
+          <div
+            style={{
+              position: "absolute",
+              top: 24,
+              left: 24,
+              right: 24,
+              bottom: 24,
+              border: `1px solid ${LINE}`,
+              display: "flex",
+            }}
+          />
+          {boothSvg && (
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                right: 0,
+                top: 40,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={boothSvg} width={406} height={550} alt="" />
+            </div>
+          )}
+        </div>
+      ),
+      { ...size },
+    );
+  }
 
   return new ImageResponse(
     (
@@ -188,8 +258,8 @@ export default async function OgImage({ params }: { params: { slug: string } }) 
     {
       ...size,
       fonts: [
-        { name: "Spectral", data: regular, weight: 400, style: "normal" },
-        { name: "Spectral", data: medium, weight: 500, style: "normal" },
+        { name: "Spectral", data: fonts.regular, weight: 400, style: "normal" },
+        { name: "Spectral", data: fonts.medium, weight: 500, style: "normal" },
       ],
     },
   );
