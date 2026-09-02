@@ -25,6 +25,9 @@ interface OpenStandCardProps {
   /** "Sun 6 Sep" — when a hold bought now would run out. */
   holdUntilLabel: string;
   onClaim: () => void;
+  /** Given on the floor: open the put-a-stand-up form over the hall, so
+   *  claiming this spot does not start by leaving it. */
+  onSetUp?: () => void;
   onClose: () => void;
 }
 
@@ -61,6 +64,7 @@ export default function OpenStandCard({
   holdActive,
   holdUntilLabel,
   onClaim,
+  onSetUp,
   onClose,
 }: OpenStandCardProps) {
   const paid = tier !== "bronze";
@@ -168,16 +172,31 @@ export default function OpenStandCard({
           </>
         ) : (
           <>
+            {/* "come back and claim it" was doing a lot of work: the link
+                under it left the floor, so coming back meant reloading the
+                hall and walking to this spot again. The form opens over the
+                hall now — the spot is still here when it closes. */}
             <p className="text-sm leading-relaxed text-muted">
-              This spot is up for grabs. Set up your startup first, then come
-              back and claim it.
+              {onSetUp
+                ? "This spot is up for grabs. Name your startup and it is yours to claim — you stay right here."
+                : "This spot is up for grabs. Set up your startup first, then come back and claim it."}
             </p>
-            <Link
-              href="/profile#booth"
-              className="rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
-            >
-              Set up your booth in Profile
-            </Link>
+            {onSetUp ? (
+              <button
+                type="button"
+                onClick={onSetUp}
+                className="btn-press rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
+              >
+                Put a stand up
+              </button>
+            ) : (
+              <Link
+                href="/profile#booth"
+                className="rounded-md bg-ink px-3 py-2 text-center text-sm text-paper hover:bg-ink/85"
+              >
+                Set up your booth in Profile
+              </Link>
+            )}
           </>
         )}
       </div>

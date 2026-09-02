@@ -48,9 +48,13 @@ const EXIT_MS = 480; // matches .cine-exit
 
 export default function GraduationCeremony({
   onClose,
+  onSetUp,
   onBurst,
 }: {
   onClose: () => void;
+  /** Given on the floor: open the put-a-stand-up form over the hall
+   *  instead of sending a brand-new visitor off it. */
+  onSetUp?: () => void;
   onBurst?: () => void;
 }) {
   const [stage, setStage] = useState<"intro" | "exit" | "card">("intro");
@@ -243,12 +247,22 @@ export default function GraduationCeremony({
                 there is a real founder.
               </p>
               <div className="mt-5 flex flex-col gap-2">
-                <Link
-                  href="/profile#booth"
-                  className="btn-press rounded-md bg-accent-strong px-4 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
-                >
-                  Set up your own booth
-                </Link>
+                {onSetUp ? (
+                  <button
+                    type="button"
+                    onClick={onSetUp}
+                    className="btn-press rounded-md bg-accent-strong px-4 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+                  >
+                    Set up your own booth
+                  </button>
+                ) : (
+                  <Link
+                    href="/profile#booth"
+                    className="btn-press rounded-md bg-accent-strong px-4 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90"
+                  >
+                    Set up your own booth
+                  </Link>
+                )}
                 <Link
                   href="/lobby"
                   className="btn-press rounded-md border border-line px-4 py-2.5 text-sm text-muted hover:border-ink hover:text-ink"

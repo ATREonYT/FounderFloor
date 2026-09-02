@@ -27,6 +27,7 @@ export default function QuietFloorCard({
   onClose,
   onDirectory,
   onDoors,
+  onSetUp,
 }: {
   floorName: string;
   /** Whether this visitor already has a stand up somewhere. */
@@ -37,6 +38,9 @@ export default function QuietFloorCard({
   onDirectory?: () => void;
   /** Given on the floor: the Open Doors RSVP as a panel. */
   onDoors?: () => void;
+  /** Given on the floor: the put-a-stand-up form as a panel, so the offer
+   *  to put a stand up does not first take away the floor to put it on. */
+  onSetUp?: () => void;
 }) {
   const [ev] = useState(() => {
     const now = Date.now();
@@ -69,14 +73,23 @@ export default function QuietFloorCard({
           : `You have ${floorName} to yourself. The next show is ${ev.name}, in ${ev.label} — until then the hall is in build-up, which is the right time to get your stand in order.`}
       </p>
       <div className="mt-3 flex flex-col gap-2">
-        {!hasStand && (
-          <Link
-            href="/profile#booth"
-            className="btn-press flex min-h-[44px] items-center justify-center rounded-md bg-accent-strong px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-accent-strong/90"
-          >
-            Put your stand up
-          </Link>
-        )}
+        {!hasStand &&
+          (onSetUp ? (
+            <button
+              type="button"
+              onClick={onSetUp}
+              className="btn-press flex min-h-[44px] items-center justify-center rounded-md bg-accent-strong px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-accent-strong/90"
+            >
+              Put your stand up
+            </button>
+          ) : (
+            <Link
+              href="/profile#booth"
+              className="btn-press flex min-h-[44px] items-center justify-center rounded-md bg-accent-strong px-3 py-2.5 text-center text-sm font-medium text-white hover:bg-accent-strong/90"
+            >
+              Put your stand up
+            </Link>
+          ))}
         {/* SPLIT deliberately. "Join it" while an event is live is real
             travel and still leaves. "Get a reminder" is an RSVP form —
             a panel — and on the floor it opens as one. */}

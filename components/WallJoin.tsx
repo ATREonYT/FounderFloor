@@ -30,7 +30,29 @@ import Spec from "@/components/Spec";
 
 const SWATCH = { carpet: "#C2B8A3", banner: "#5C5548" };
 
-export default function WallJoin({ className = "" }: { className?: string }) {
+export default function WallJoin({
+  className = "",
+  variant = "wall",
+  onCancel,
+}: {
+  className?: string;
+  /**
+   * WHERE THIS FORM IS STANDING.
+   *
+   * "wall" is the marketing page: it introduces itself, waits behind an
+   * "Add my startup" button, and draws its own card.
+   *
+   * "stand" is a panel open over a live hall. Somebody clicked "put your
+   * stand up" while standing next to an empty spot — they have already
+   * asked, so there is nothing to introduce and nothing to expand, and
+   * the panel supplies the card. Same fields, same save path, same
+   * account rule; only the framing and the last line differ, because
+   * finishing here means walking to a spot rather than reloading a page.
+   */
+  variant?: "wall" | "stand";
+  /** Floor only: dismiss the panel this is sitting in. */
+  onCancel?: () => void;
+}) {
   const [state, actions] = useAppState();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -43,6 +65,9 @@ export default function WallJoin({ className = "" }: { className?: string }) {
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
 
+  const onFloor = variant === "stand";
+  /** The panel draws the card on the floor; the page draws its own. */
+  const shell = onFloor ? className : `border border-line bg-panel p-5 ${className}`;
   const signedIn = getAuth() !== null;
   const emailOk = /^[^@\s]+@[^@\s.]+\.[^@\s]+$/.test(email.trim());
   const ready =
@@ -114,18 +139,28 @@ export default function WallJoin({ className = "" }: { className?: string }) {
 
   if (done) {
     return (
-      <div className={`border border-verify/50 bg-panel p-5 ${className}`}>
-        <Spec className="text-verify">You are on the wall</Spec>
+      <div
+        className={
+          onFloor ? className : `border border-verify/50 bg-panel p-5 ${className}`
+        }
+      >
+        <Spec className="text-verify">
+          {onFloor ? "Your stand is ready" : "You are on the wall"}
+        </Spec>
         <p className="mt-1.5 font-display text-lg">{name.trim()} is up.</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Reload to see it. When the doors open, that entry is already your
-          stand — walk in and stand at it.
+          {onFloor
+            ? "Close this, walk to any open spot and press E. The board will have your name on it."
+            : "Reload to see it. When the doors open, that entry is already your stand — walk in and stand at it."}
         </p>
       </div>
     );
   }
 
-  if (!open) {
+  // On the floor the visitor already pressed the button that opens this
+  // panel — asking them to press another one to reveal the form is a door
+  // in front of a door.
+  if (!open && !onFloor) {
     return (
       <div className={`border border-line bg-panel p-5 ${className}`}>
         <Spec className="text-accent">Add yours</Spec>
@@ -148,9 +183,13 @@ export default function WallJoin({ className = "" }: { className?: string }) {
   }
 
   return (
-    <form onSubmit={submit} className={`border border-line bg-panel p-5 ${className}`}>
-      <Spec className="text-accent">Add yours</Spec>
-      <p className="mt-1.5 font-display text-lg">Put your startup on the wall.</p>
+    <form onSubmit={submit} className={shell}>
+      {!onFloor && (
+        <>
+          <Spec className="text-accent">Add yours</Spec>
+          <p className="mt-1.5 font-display text-lg">Put your startup on the wall.</p>
+        </>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="block">
@@ -242,15 +281,21 @@ export default function WallJoin({ className = "" }: { className?: string }) {
           disabled={busy || !ready}
           className="btn-press min-h-[44px] rounded-md bg-accent-strong px-5 py-2.5 text-sm font-medium text-white shadow-card hover:bg-accent-strong/90 disabled:opacity-60"
         >
-          {busy ? "Adding…" : "Add to the wall"}
+          {busy ? (onFloor ? "Putting it up…" : "Adding…") : onFloor ? "Put my stand up" : "Add to the wall"}
         </button>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="min-h-[44px] rounded-md px-3 py-2.5 text-sm text-muted hover:text-ink"
-        >
-          Cancel
-        </button>
+        {/* On the floor the form is never collapsed, so setOpen(false)
+            would leave a Cancel button that does nothing visible. Cancel
+            there means "close the panel", which only the floor can do —
+            without a handler it is not offered at all. */}
+        {(!onFloor || onCancel) && (
+          <button
+            type="button"
+            onClick={() => (onFloor ? onCancel?.() : setOpen(false))}
+            className="min-h-[44px] rounded-md px-3 py-2.5 text-sm text-muted hover:text-ink"
+          >
+            Cancel
+          </button>
+        )}
       </div>
 
       {err && <p className="mt-3 text-sm text-accent">{err}</p>}
@@ -258,9 +303,9 @@ export default function WallJoin({ className = "" }: { className?: string }) {
         <p className="micro mt-3 text-muted">
           {/* An account is the anti-spam mechanism, so it is worth saying
               why rather than making it look like a growth tactic. */}
-          Adding your startup makes your account — that is what keeps the
-          wall from filling with link spam, and it is the same account you
-          walk in with on Sunday.
+          {onFloor
+            ? "Putting a stand up makes your account — that is what keeps the hall from filling with link spam, and it is the account this stand stays attached to."
+            : "Adding your startup makes your account — that is what keeps the wall from filling with link spam, and it is the same account you walk in with on Sunday."}
         </p>
       )}
     </form>

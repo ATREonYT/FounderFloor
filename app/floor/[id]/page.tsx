@@ -29,6 +29,7 @@ import { buildCard, fetchStand, registerStartup, respondToRequest, sendConnectRe
 import EditStandPanel from "@/components/EditStandPanel";
 import StallPanel from "@/components/StallPanel";
 import EmailCapture from "@/components/EmailCapture";
+import WallJoin from "@/components/WallJoin";
 import { fetchLeaderboard, humanMs } from "@/lib/leaderboard";
 import {
   GuideStall,
@@ -141,7 +142,14 @@ const MAX_ACTIVITY = 8;
  * `to` is where the same information lives as a full page, kept so a
  * panel can still offer the long version for anyone who wants it.
  */
-type PagePanelId = "guide" | "shop" | "booth" | "membership" | "directory" | "doors";
+type PagePanelId =
+  | "guide"
+  | "shop"
+  | "booth"
+  | "newstand"
+  | "membership"
+  | "directory"
+  | "doors";
 
 type FloorPanel = { kind: "merchant"; m: MerchantDef } | { kind: "page"; id: PagePanelId };
 
@@ -160,6 +168,12 @@ const PAGE_PANELS: Record<
     keeper: "The booth",
     blurb: "What you have, and what it is for.",
     color: "var(--gold)",
+  },
+  newstand: {
+    sign: "PUT A STAND UP",
+    keeper: "The register",
+    blurb: "Name it, say what it does, and the spot is yours to claim.",
+    color: "var(--accent)",
   },
   booth: {
     sign: "YOUR STAND",
@@ -2112,6 +2126,21 @@ export default function FloorPage({ params }: { params: { id: string } }) {
               </p>
             ))}
 
+          {/* Putting a stand up used to be "Set up your booth in Profile" —
+              a link off the floor, from a card attached to the very spot
+              the visitor was standing at. This is the same form the wall
+              and the profile editor both save through, opened over the
+              hall so the spot is still there when they finish. */}
+          {openPageId === "newstand" &&
+            (myStartup ? (
+              <p className="text-sm leading-relaxed text-muted">
+                You already have a stand. Walk to any open spot and press E
+                to put it up here.
+              </p>
+            ) : (
+              <WallJoin variant="stand" onCancel={closePanel} />
+            ))}
+
           {openPageId === "membership" && (
             <MembershipPanel state={state} floorName={floor.name} />
           )}
@@ -2251,6 +2280,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
             />
           ) : (
             <OpenStandCard
+              onSetUp={() => openPage("newstand")}
               floorName={floor.name}
               hasStartup={Boolean(myStartup)}
               claimedElsewhere={state.claims[floor.id] !== undefined}
@@ -2292,6 +2322,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           <QuietFloorCard
             onDirectory={() => openPage("directory")}
             onDoors={() => openPage("doors")}
+            onSetUp={() => openPage("newstand")}
             floorName={floor.name}
             hasStand={Object.keys(state.claims).length > 0}
             onClose={() => setQuietDismissed(true)}
@@ -2390,6 +2421,7 @@ export default function FloorPage({ params }: { params: { id: string } }) {
           trap it under the game chrome */}
       {gradPanel && (
         <GraduationCeremony
+          onSetUp={() => openPage("newstand")}
           onClose={() => setGradPanel(false)}
           onBurst={() => setBurst((b) => b + 1)}
         />
