@@ -93,6 +93,26 @@ export function anthropicClient(fetchImpl: typeof fetch = fetch) {
   };
 }
 
+/** Collect a Stream into one string — for clients that cannot read SSE (React Native's fetch). */
+export async function collect(stream: Stream): Promise<{ text: string; usage?: Usage }> {
+  let text = "";
+  let usage: Usage | undefined;
+  for await (const c of stream) {
+    if (c.text) text += c.text;
+    if (c.usage) usage = c.usage;
+  }
+  return { text, usage };
+}
+
+/** SSE by default; a whole JSON body when the client sends Accept: application/json. */
+export async function respond(req: Request, stream: Stream): Promise<Response> {
+  if ((req.headers.get("accept") ?? "").includes("application/json")) {
+    const r = await collect(stream);
+    return new Response(JSON.stringify(r), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
+  }
+  return sse(stream);
+}
+
 /** Wrap a Stream as an SSE Response the app can read line by line. */
 export function sse(stream: Stream): Response {
   const enc = new TextEncoder();

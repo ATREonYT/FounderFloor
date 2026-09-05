@@ -5,7 +5,7 @@
  * the cached system block. Skeleton for Gate 3; the data access is
  * written against the 0001 migration.
  */
-import { anthropicClient, MODELS, sse } from "../_shared/anthropic.ts";
+import { anthropicClient, MODELS, respond } from "../_shared/anthropic.ts";
 import { gate } from "../_shared/gate.ts";
 
 // prompts come from packages/shared at deploy time (esbuild bundles them);
@@ -32,7 +32,8 @@ Deno.serve(async (req) => {
   const p = COACH_PROMPTS[coach];
   if (!p) return new Response("no such counter", { status: 404 });
   const client = anthropicClient();
-  return sse(
+  return respond(
+    req,
     client.stream({
       model: MODELS.fast,
       system: `${p.system}\n\nYour notes on this founder so far:\n${notes || "(none yet)"}`,

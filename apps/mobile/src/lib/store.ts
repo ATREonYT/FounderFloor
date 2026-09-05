@@ -18,7 +18,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type FloorAuth, type FloorStandEntry, type FloorStateReply, type StandRecord } from "@founderfloor/shared";
+import { FloorApi, isErr, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -179,19 +179,62 @@ export const EMPTY_RECORD: StandRecord = {
   residence: "other",
 };
 
+export type Door = "find" | "have" | "running";
+export interface SavedDoc extends Draft {
+  id: string;
+  at: string;
+  source: "rehearsal" | "live";
+}
+export interface Interview {
+  id: string;
+  who: string;
+  at: string;
+  said: string;
+  paysToday?: string;
+}
+export interface PlanState {
+  plan: Plan;
+  cycle?: "monthly" | "annual";
+  trialEnds?: string;
+  sandbox?: boolean;
+}
+
 interface FounderState {
   record: StandRecord;
   ticks: string[];
   scores: PitchScore[];
   quota: { week: string; target: number; sent: number };
   streak: { days: number; last: string | null };
+  /** First-run: which door was taken, or null before the start screen. */
+  door: Door | null;
+  ideas: { brief: IdeaBrief; ideas: Idea[]; at: string } | null;
+  reads: { text: string; read: IdeaRead; at: string }[];
+  docs: SavedDoc[];
+  kpi: KpiEntry[];
+  interviews: Interview[];
+  usage: Usage & { day: string; month: string };
+  plan: PlanState;
   setRecord(patch: Partial<StandRecord>): void;
   toggleTick(id: string): void;
   addScore(s: PitchScore): void;
   setQuota(target: number): void;
   countSent(n?: number): void;
   touchStreak(): void;
+  setDoor(d: Door): void;
+  setIdeas(brief: IdeaBrief, ideas: Idea[]): void;
+  addRead(text: string, read: IdeaRead): void;
+  saveDoc(d: Draft, source: SavedDoc["source"]): SavedDoc;
+  removeDoc(id: string): void;
+  logWeek(e: KpiEntry): void;
+  addInterview(i: Omit<Interview, "id" | "at">): void;
+  removeInterview(id: string): void;
+  count(kind: "ideaRuns" | "ideaChecks" | "coachTurnsToday" | "draftsThisMonth" | "handoffsThisMonth"): void;
+  setPlan(p: PlanState): void;
 }
+
+const today = () => new Date().toISOString().slice(0, 10);
+const month = () => new Date().toISOString().slice(0, 7);
+const EMPTY_USAGE = { ideaRuns: 0, ideaChecks: 0, coachTurnsToday: 0, draftsThisMonth: 0, handoffsThisMonth: 0, day: "", month: "" };
 
 export function isoWeek(d = new Date()): string {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -209,7 +252,34 @@ export const useFounder = create<FounderState>()(
       scores: [],
       quota: { week: isoWeek(), target: 10, sent: 0 },
       streak: { days: 0, last: null },
+      door: null,
+      ideas: null,
+      reads: [],
+      docs: [],
+      kpi: [],
+      interviews: [],
+      usage: EMPTY_USAGE,
+      plan: { plan: "free" },
       setRecord: (patch) => set({ record: { ...get().record, ...patch } }),
+      setDoor: (door) => set({ door }),
+      setIdeas: (brief, ideas) => set({ ideas: { brief, ideas, at: new Date().toISOString() } }),
+      addRead: (text, read) => set({ reads: [...get().reads, { text, read, at: new Date().toISOString() }].slice(-20) }),
+      saveDoc: (d, source) => {
+        const doc: SavedDoc = { ...d, id: `doc${Date.now().toString(36)}`, at: new Date().toISOString(), source };
+        set({ docs: [doc, ...get().docs].slice(0, 60) });
+        return doc;
+      },
+      removeDoc: (id) => set({ docs: get().docs.filter((d) => d.id !== id) }),
+      logWeek: (e) => set({ kpi: [...get().kpi.filter((x) => x.week !== e.week), e].sort((a, b) => (a.week < b.week ? -1 : 1)).slice(-104) }),
+      addInterview: (i) => set({ interviews: [{ ...i, id: `iv${Date.now().toString(36)}`, at: new Date().toISOString() }, ...get().interviews].slice(0, 200) }),
+      removeInterview: (id) => set({ interviews: get().interviews.filter((x) => x.id !== id) }),
+      count: (kind) => {
+        const u = get().usage;
+        const d = today(), m = month();
+        const fresh = { ...u, coachTurnsToday: u.day === d ? u.coachTurnsToday : 0, draftsThisMonth: u.month === m ? u.draftsThisMonth : 0, handoffsThisMonth: u.month === m ? u.handoffsThisMonth : 0, day: d, month: m };
+        set({ usage: { ...fresh, [kind]: fresh[kind] + 1 } });
+      },
+      setPlan: (plan) => set({ plan }),
       toggleTick: (id) => set({ ticks: get().ticks.includes(id) ? get().ticks.filter((t) => t !== id) : [...get().ticks, id] }),
       addScore: (s) => set({ scores: [...get().scores, s].slice(-24) }),
       setQuota: (target) => set({ quota: { ...get().quota, week: isoWeek(), target } }),
@@ -226,7 +296,7 @@ export const useFounder = create<FounderState>()(
         set({ streak: { days: s.last === yesterday ? s.days + 1 : 1, last: today } });
       },
     }),
-    { name: "ff.founder", storage: createJSONStorage(() => AsyncStorage) },
+    { name: "ff.founder", storage: createJSONStorage(() => AsyncStorage), version: 2, migrate: (persisted) => ({ ...(persisted as object) }) as unknown as FounderState },
   ),
 );
 

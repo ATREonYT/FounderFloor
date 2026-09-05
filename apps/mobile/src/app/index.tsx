@@ -1,5 +1,7 @@
 import { Redirect } from "expo-router";
-/** The app opens at the desk, the way every assistant app opens on its composer. */
+import { useFounder } from "../lib/store";
+/** First launch opens on the three doors; after that, the desk. */
 export default function Index() {
-  return <Redirect href="/reception" />;
+  const door = useFounder((s) => s.door);
+  return <Redirect href={door ? "/reception" : "/start"} />;
 }

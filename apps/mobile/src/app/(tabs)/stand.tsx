@@ -110,6 +110,22 @@ export default function Stand() {
             </Body>
           </Plate>
         ) : null}
+        {!stand.record.oneLiner && stand.source !== "rehearsal" ? (
+          <Plate tone="panel" radius={radius.xl} padding={16}>
+            <Spec tone="muted">THE SIGN IS BLANK</Spec>
+            <Body style={{ marginTop: 6 }}>Start with the idea. Find one from who you know, or write yours and have it read back.</Body>
+            <ButtonRow>
+              <View style={{ marginTop: 10 }}>
+                <Button size="sm" onPress={() => router.push("/idea/find")}>Find me an idea</Button>
+              </View>
+              <View style={{ marginTop: 10 }}>
+                <Button size="sm" variant="secondary" onPress={() => router.push("/idea/check")}>
+                  I have one
+                </Button>
+              </View>
+            </ButtonRow>
+          </Plate>
+        ) : null}
         {stand.source === "rehearsal" ? (
           <Plate tone="paper" radius={radius.md} padding={12} lineColor={shell.line}>
             <Body size="sm" tone="muted">
@@ -257,6 +273,26 @@ export default function Stand() {
           </Plate>
         </View>
 
+        <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
+          <Pressable onPress={() => router.navigate("/office")} accessibilityRole="button" style={{ flex: 1 }}>
+            <Plate tone="paperSign" radius={radius.lg} padding={14}>
+              <Spec tone="muted">THE OFFICE</Spec>
+              <Body size="sm" style={{ marginTop: 4 }}>Weekly log, interviews, the calendar, the update.</Body>
+            </Plate>
+          </Pressable>
+          <Pressable onPress={() => router.push("/drawer")} accessibilityRole="button" style={{ flex: 1 }}>
+            <Plate tone="paperSign" radius={radius.lg} padding={14}>
+              <Spec tone="muted">THE DRAWER</Spec>
+              <Body size="sm" style={{ marginTop: 4 }}>One-pager, landing copy, pricing, launch checklist.</Body>
+            </Plate>
+          </Pressable>
+          <Pressable onPress={() => router.push("/idea/check")} accessibilityRole="button" style={{ flex: 1 }}>
+            <Plate tone="paperSign" radius={radius.lg} padding={14}>
+              <Spec tone="muted">SECOND OPINION</Spec>
+              <Body size="sm" style={{ marginTop: 4 }}>Read the idea back after this week's conversations.</Body>
+            </Plate>
+          </Pressable>
+        </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 }}>
           <Sprite id="logo-mark" scale={1} />
           <Mono tone="muted" size="xs">{stand.slug ? `founderfloor.net/stand/${stand.slug}` : "No public address until the stand is on a floor."}</Mono>

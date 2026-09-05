@@ -7,7 +7,9 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { STAGES, stageProgress, currentStage, pathProgress, type BuildStage } from "@founderfloor/shared";
+import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
+import { useRouter } from "expo-router";
+import { useGate } from "../../lib/gate";
 import { Body, Button, ButtonRow, Dialogue, Display, Keeper, Plate, Progress, Signage, Spec, Tick, Toast, radius, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
@@ -20,8 +22,10 @@ const DOOR = ["#8C3B2E", "#3B5B92", "#4E6E4E", "#B4762E", "#2F6F6A", "#6B4E71"];
 
 export default function Build() {
   const L = useLayout();
+  const router = useRouter();
+  const gate = useGate();
   const bottom = useBottomChrome();
-  const { ticks, toggleTick } = useFounder();
+  const { ticks, toggleTick, saveDoc } = useFounder();
   const stand = useStand();
   const [open, setOpen] = useState<BuildStage | null>(null);
   const [guide, setGuide] = useState<{ q: string; text: string } | null>(null);
@@ -100,6 +104,30 @@ export default function Build() {
               </Button>
             </ButtonRow>
             {guide ? <Typed q={guide.q} text={guide.text} look={ines.look} color={ines.color} /> : null}
+            {DOC_KINDS.filter((k) => k.room === open.id && k.kind !== "update").length ? (
+              <View style={{ gap: 8, marginTop: 4 }}>
+                <Spec tone="muted">DRAFT IT FOR ME</Spec>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {DOC_KINDS.filter((k) => k.room === open.id && k.kind !== "update").map((k) => (
+                    <Button
+                      key={k.kind}
+                      size="sm"
+                      variant="ghost"
+                      onPress={() => {
+                        if (!gate("draft")) return;
+                        saveDoc(draftDocument(k.kind, stand.record), "rehearsal");
+                        setToast(`${k.title} is in the drawer.`);
+                        setTimeout(() => setToast(null), 2600);
+                        setOpen(null);
+                        router.push("/drawer");
+                      }}
+                    >
+                      {k.title}
+                    </Button>
+                  ))}
+                </View>
+              </View>
+            ) : null}
           </View>
         ) : null}
       </Dialogue>

@@ -7,16 +7,17 @@
 import { ScrollView, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { Bars, Body, Booth, Button, Display, Keeper, Plate, Spec, art, radius, shell, useLayout } from "@founderfloor/ui";
-import { TopBar } from "../../components/TopBar";
-import { COLUMN, useBottomChrome } from "../../lib/chrome";
-import { COACHES } from "../../lib/mock";
-import { useFounder } from "../../lib/store";
-import { useStand } from "../../lib/stand";
+import { TopBar } from "../components/TopBar";
+import { Pressable } from "react-native";
+import { COLUMN } from "../lib/chrome";
+import { COACHES } from "../lib/mock";
+import { useFounder } from "../lib/store";
+import { useStand } from "../lib/stand";
 
 export default function Coaches() {
   const L = useLayout();
   const router = useRouter();
-  const bottom = useBottomChrome();
+  const bottom = L.insets.bottom + 24;
   const stand = useStand();
   const scores = useFounder((s) => s.scores);
   const quota = useFounder((s) => s.quota);
@@ -24,7 +25,7 @@ export default function Coaches() {
   const cols = L.compact ? 1 : 2;
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Spec tone="muted">{`${stand.name} · four at the counter`}</Spec>} />
+      <TopBar left={<Pressable onPress={() => router.back()} accessibilityRole="button" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}><Spec tone="ink">← Back</Spec></Pressable>} center={<Spec tone="muted">{`${stand.name} · four at the counter`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 240, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
         <View style={{ gap: 8, paddingBottom: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>Coaches</Display>

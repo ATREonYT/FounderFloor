@@ -28,7 +28,7 @@ export default function TabsLayout() {
           <Tabs.Screen name="reception" />
           <Tabs.Screen name="stand" />
           <Tabs.Screen name="build" />
-          <Tabs.Screen name="coaches" />
+          <Tabs.Screen name="office" />
           <Tabs.Screen name="floor" />
         </Tabs>
         {!rail ? (

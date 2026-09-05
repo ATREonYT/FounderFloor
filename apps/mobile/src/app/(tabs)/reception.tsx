@@ -7,20 +7,23 @@
  * page beside the keeper. `?coach=` puts a stall keeper behind the desk.
  */
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Body, Button, Chip, Composer, Desk, Dialogue, Display, Keeper, Message, Pill, Sign, Spec, Thinking, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, Chip, Composer, Desk, Dialogue, Display, Keeper, Message, Pill, Sign, Spec, Thinking, radius, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
-import { HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
+import { COACHES, HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
 import { useStand } from "../../lib/stand";
+import { useGate } from "../../lib/gate";
+import { aiMode, MODE_LINE } from "../../lib/ai";
 import { useReceptionist } from "../../lib/receptionist";
 
 export default function Reception() {
   const L = useLayout();
   const router = useRouter();
   const bottom = useBottomChrome();
-  const { coach: coachParam } = useLocalSearchParams<{ coach?: string }>();
+  const { coach: coachParam, say } = useLocalSearchParams<{ coach?: string; say?: string }>();
+  const gate = useGate();
   const { coach, messages, busy, thinking, send, reset, starters } = useReceptionist(coachParam);
   const stand = useStand();
   const [draft, setDraft] = useState("");
@@ -39,9 +42,19 @@ export default function Reception() {
 
   const submit = (text = draft) => {
     if (!text.trim() || busy) return;
+    if (!atDesk && !gate("coachTurn", { coach: coach.id })) return;
     send(text);
     setDraft("");
   };
+  const said = useRef<string | null>(null);
+  useEffect(() => {
+    if (say && said.current !== say && !busy) {
+      said.current = say;
+      const t = setTimeout(() => submit(say), 400);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [say, coach.id]);
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
 
   return (
@@ -87,6 +100,25 @@ export default function Reception() {
                   </Chip>
                 ))}
               </View>
+              <View style={{ gap: 8 }}>
+                <Spec tone="muted">THE STAFF</Spec>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {COACHES.map((c) => (
+                    <Pressable key={c.id} onPress={() => router.setParams({ coach: c.id })} accessibilityRole="button" accessibilityLabel={`Talk to ${c.name}`} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: shell.line, borderRadius: radius.full, paddingRight: 12, paddingLeft: 4, paddingVertical: 4 })}>
+                      <Keeper look={c.look} scale={1} color={c.color} />
+                      <View>
+                        <Body size="sm" medium>
+                          {c.name}
+                        </Body>
+                        <Spec tone="faint">{c.title}</Spec>
+                      </View>
+                    </Pressable>
+                  ))}
+                  <Pressable onPress={() => router.push("/coaches")} accessibilityRole="button" style={{ justifyContent: "center", paddingHorizontal: 8 }}>
+                    <Spec tone="accent">About the four →</Spec>
+                  </Pressable>
+                </View>
+              </View>
             </View>
           ) : (
             <>
@@ -117,10 +149,10 @@ export default function Reception() {
             value={draft}
             onChange={setDraft}
             onSend={() => submit()}
-            onAttach={() => router.navigate("/stand")}
+            onAttach={() => router.push("/drawer")}
             placeholder={atDesk ? "Ask the desk…" : `Ask ${coach.name}…`}
             busy={busy}
-            status={`Rehearsal · replies are scripted over your real numbers · ${hall.name}`}
+            status={`${MODE_LINE[aiMode()]} · ${hall.name}`}
           />
         </View>
       </KeyboardAvoidingView>

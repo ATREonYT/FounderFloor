@@ -40,6 +40,12 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="sign-in" options={{ presentation: "modal" }} />
           <Stack.Screen name="inbox" options={{ presentation: "card" }} />
+          <Stack.Screen name="plans" options={{ presentation: "modal" }} />
+          <Stack.Screen name="drawer" options={{ presentation: "card" }} />
+          <Stack.Screen name="coaches" options={{ presentation: "card" }} />
+          <Stack.Screen name="start" />
+          <Stack.Screen name="idea/find" />
+          <Stack.Screen name="idea/check" />
         </Stack>
       </SafeAreaProvider>
     </GestureHandlerRootView>

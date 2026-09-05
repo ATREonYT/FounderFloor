@@ -4,7 +4,7 @@
  * logs the transcript, and on an email or note hands off to the owner's
  * inbox with a push. Gate 6; the gating and storage calls are TODO.
  */
-import { anthropicClient, MODELS, sse } from "../_shared/anthropic.ts";
+import { anthropicClient, MODELS, respond } from "../_shared/anthropic.ts";
 import { RECEPTIONIST_PROMPT } from "../../../packages/shared/src/prompts/index.ts";
 
 Deno.serve(async (req) => {
@@ -15,5 +15,5 @@ Deno.serve(async (req) => {
   };
   // TODO(gate-6): load `card` from stand_cards by standOwnerId with the anon key; gate hand-offs; write receptionist_sessions + inbox_items; send push
   const cached = [`Stand: ${card.name}`, `One-liner: ${card.one_liner}`, `Pitch: ${card.pitch}`, card.segment ? `Segment: ${card.segment}` : "", `FAQ:\n${card.faq.map((f) => `Q: ${f.q}\nA: ${f.a}`).join("\n") || "(none)"}`, `Public pricing: ${card.public_pricing ?? "not published — the founder will say"}`].filter(Boolean).join("\n");
-  return sse(anthropicClient().stream({ model: MODELS.fast, system: RECEPTIONIST_PROMPT, cached, turns: [...turns.slice(-10), { role: "user", content: message }], maxTokens: 220 }));
+  return respond(req, anthropicClient().stream({ model: MODELS.fast, system: RECEPTIONIST_PROMPT, cached, turns: [...turns.slice(-10), { role: "user", content: message }], maxTokens: 220 }));
 });

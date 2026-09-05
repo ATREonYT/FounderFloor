@@ -24,7 +24,7 @@ export const MENU: MenuEntry[] = [
   { key: "reception", label: "Desk", glyph: "wave" },
   { key: "stand", label: "Stand", glyph: "star" },
   { key: "build", label: "Build", glyph: "cube" },
-  { key: "coaches", label: "Coaches", glyph: "heart" },
+  { key: "office", label: "Office", glyph: "coin" },
   { key: "floor", label: "Floor", glyph: "flask" },
 ];
 
