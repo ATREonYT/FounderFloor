@@ -1,0 +1,5552 @@
+{
+  "tile": 32,
+  "scales": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "sprites": [
+    {
+      "id": "avatar-skin0-down-0",
+      "file": "avatar-skin0-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-down-1",
+      "file": "avatar-skin0-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-down-2",
+      "file": "avatar-skin0-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-up-0",
+      "file": "avatar-skin0-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-up-1",
+      "file": "avatar-skin0-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-up-2",
+      "file": "avatar-skin0-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-left-0",
+      "file": "avatar-skin0-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-left-1",
+      "file": "avatar-skin0-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-left-2",
+      "file": "avatar-skin0-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-right-0",
+      "file": "avatar-skin0-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-right-1",
+      "file": "avatar-skin0-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin0-right-2",
+      "file": "avatar-skin0-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-down-0",
+      "file": "avatar-skin1-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-down-1",
+      "file": "avatar-skin1-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-down-2",
+      "file": "avatar-skin1-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-up-0",
+      "file": "avatar-skin1-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-up-1",
+      "file": "avatar-skin1-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-up-2",
+      "file": "avatar-skin1-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-left-0",
+      "file": "avatar-skin1-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-left-1",
+      "file": "avatar-skin1-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-left-2",
+      "file": "avatar-skin1-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-right-0",
+      "file": "avatar-skin1-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-right-1",
+      "file": "avatar-skin1-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin1-right-2",
+      "file": "avatar-skin1-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-down-0",
+      "file": "avatar-skin2-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-down-1",
+      "file": "avatar-skin2-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-down-2",
+      "file": "avatar-skin2-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-up-0",
+      "file": "avatar-skin2-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-up-1",
+      "file": "avatar-skin2-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-up-2",
+      "file": "avatar-skin2-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-left-0",
+      "file": "avatar-skin2-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-left-1",
+      "file": "avatar-skin2-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-left-2",
+      "file": "avatar-skin2-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-right-0",
+      "file": "avatar-skin2-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-right-1",
+      "file": "avatar-skin2-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin2-right-2",
+      "file": "avatar-skin2-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-down-0",
+      "file": "avatar-skin3-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-down-1",
+      "file": "avatar-skin3-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-down-2",
+      "file": "avatar-skin3-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-up-0",
+      "file": "avatar-skin3-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-up-1",
+      "file": "avatar-skin3-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-up-2",
+      "file": "avatar-skin3-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-left-0",
+      "file": "avatar-skin3-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-left-1",
+      "file": "avatar-skin3-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-left-2",
+      "file": "avatar-skin3-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-right-0",
+      "file": "avatar-skin3-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-right-1",
+      "file": "avatar-skin3-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin3-right-2",
+      "file": "avatar-skin3-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-down-0",
+      "file": "avatar-skin4-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-down-1",
+      "file": "avatar-skin4-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-down-2",
+      "file": "avatar-skin4-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-up-0",
+      "file": "avatar-skin4-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-up-1",
+      "file": "avatar-skin4-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-up-2",
+      "file": "avatar-skin4-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-left-0",
+      "file": "avatar-skin4-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-left-1",
+      "file": "avatar-skin4-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-left-2",
+      "file": "avatar-skin4-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-right-0",
+      "file": "avatar-skin4-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-right-1",
+      "file": "avatar-skin4-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin4-right-2",
+      "file": "avatar-skin4-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-down-0",
+      "file": "avatar-skin5-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-down-1",
+      "file": "avatar-skin5-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-down-2",
+      "file": "avatar-skin5-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-up-0",
+      "file": "avatar-skin5-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-up-1",
+      "file": "avatar-skin5-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-up-2",
+      "file": "avatar-skin5-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-left-0",
+      "file": "avatar-skin5-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-left-1",
+      "file": "avatar-skin5-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-left-2",
+      "file": "avatar-skin5-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-right-0",
+      "file": "avatar-skin5-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-right-1",
+      "file": "avatar-skin5-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-skin5-right-2",
+      "file": "avatar-skin5-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-down-0",
+      "file": "avatar-outfit0-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-down-1",
+      "file": "avatar-outfit0-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-down-2",
+      "file": "avatar-outfit0-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-up-0",
+      "file": "avatar-outfit0-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-up-1",
+      "file": "avatar-outfit0-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-up-2",
+      "file": "avatar-outfit0-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-left-0",
+      "file": "avatar-outfit0-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-left-1",
+      "file": "avatar-outfit0-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-left-2",
+      "file": "avatar-outfit0-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-right-0",
+      "file": "avatar-outfit0-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-right-1",
+      "file": "avatar-outfit0-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit0-right-2",
+      "file": "avatar-outfit0-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-down-0",
+      "file": "avatar-outfit1-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-down-1",
+      "file": "avatar-outfit1-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-down-2",
+      "file": "avatar-outfit1-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-up-0",
+      "file": "avatar-outfit1-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-up-1",
+      "file": "avatar-outfit1-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-up-2",
+      "file": "avatar-outfit1-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-left-0",
+      "file": "avatar-outfit1-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-left-1",
+      "file": "avatar-outfit1-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-left-2",
+      "file": "avatar-outfit1-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-right-0",
+      "file": "avatar-outfit1-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-right-1",
+      "file": "avatar-outfit1-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit1-right-2",
+      "file": "avatar-outfit1-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-down-0",
+      "file": "avatar-outfit2-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-down-1",
+      "file": "avatar-outfit2-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-down-2",
+      "file": "avatar-outfit2-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-up-0",
+      "file": "avatar-outfit2-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-up-1",
+      "file": "avatar-outfit2-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-up-2",
+      "file": "avatar-outfit2-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-left-0",
+      "file": "avatar-outfit2-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-left-1",
+      "file": "avatar-outfit2-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-left-2",
+      "file": "avatar-outfit2-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-right-0",
+      "file": "avatar-outfit2-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-right-1",
+      "file": "avatar-outfit2-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit2-right-2",
+      "file": "avatar-outfit2-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-down-0",
+      "file": "avatar-outfit3-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-down-1",
+      "file": "avatar-outfit3-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-down-2",
+      "file": "avatar-outfit3-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-up-0",
+      "file": "avatar-outfit3-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-up-1",
+      "file": "avatar-outfit3-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-up-2",
+      "file": "avatar-outfit3-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-left-0",
+      "file": "avatar-outfit3-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-left-1",
+      "file": "avatar-outfit3-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-left-2",
+      "file": "avatar-outfit3-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-right-0",
+      "file": "avatar-outfit3-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-right-1",
+      "file": "avatar-outfit3-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit3-right-2",
+      "file": "avatar-outfit3-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-down-0",
+      "file": "avatar-outfit4-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-down-1",
+      "file": "avatar-outfit4-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-down-2",
+      "file": "avatar-outfit4-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-up-0",
+      "file": "avatar-outfit4-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-up-1",
+      "file": "avatar-outfit4-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-up-2",
+      "file": "avatar-outfit4-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-left-0",
+      "file": "avatar-outfit4-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-left-1",
+      "file": "avatar-outfit4-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-left-2",
+      "file": "avatar-outfit4-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-right-0",
+      "file": "avatar-outfit4-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-right-1",
+      "file": "avatar-outfit4-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit4-right-2",
+      "file": "avatar-outfit4-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-down-0",
+      "file": "avatar-outfit5-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-down-1",
+      "file": "avatar-outfit5-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-down-2",
+      "file": "avatar-outfit5-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-up-0",
+      "file": "avatar-outfit5-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-up-1",
+      "file": "avatar-outfit5-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-up-2",
+      "file": "avatar-outfit5-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-left-0",
+      "file": "avatar-outfit5-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-left-1",
+      "file": "avatar-outfit5-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-left-2",
+      "file": "avatar-outfit5-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-right-0",
+      "file": "avatar-outfit5-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-right-1",
+      "file": "avatar-outfit5-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit5-right-2",
+      "file": "avatar-outfit5-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-down-0",
+      "file": "avatar-outfit6-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-down-1",
+      "file": "avatar-outfit6-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-down-2",
+      "file": "avatar-outfit6-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-up-0",
+      "file": "avatar-outfit6-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-up-1",
+      "file": "avatar-outfit6-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-up-2",
+      "file": "avatar-outfit6-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-left-0",
+      "file": "avatar-outfit6-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-left-1",
+      "file": "avatar-outfit6-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-left-2",
+      "file": "avatar-outfit6-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-right-0",
+      "file": "avatar-outfit6-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-right-1",
+      "file": "avatar-outfit6-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit6-right-2",
+      "file": "avatar-outfit6-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-down-0",
+      "file": "avatar-outfit7-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-down-1",
+      "file": "avatar-outfit7-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-down-2",
+      "file": "avatar-outfit7-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-up-0",
+      "file": "avatar-outfit7-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-up-1",
+      "file": "avatar-outfit7-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-up-2",
+      "file": "avatar-outfit7-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-left-0",
+      "file": "avatar-outfit7-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-left-1",
+      "file": "avatar-outfit7-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-left-2",
+      "file": "avatar-outfit7-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-right-0",
+      "file": "avatar-outfit7-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-right-1",
+      "file": "avatar-outfit7-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-outfit7-right-2",
+      "file": "avatar-outfit7-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-down-0",
+      "file": "avatar-hair0-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-down-1",
+      "file": "avatar-hair0-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-down-2",
+      "file": "avatar-hair0-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-up-0",
+      "file": "avatar-hair0-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-up-1",
+      "file": "avatar-hair0-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-up-2",
+      "file": "avatar-hair0-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-left-0",
+      "file": "avatar-hair0-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-left-1",
+      "file": "avatar-hair0-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-left-2",
+      "file": "avatar-hair0-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-right-0",
+      "file": "avatar-hair0-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-right-1",
+      "file": "avatar-hair0-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair0-right-2",
+      "file": "avatar-hair0-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-down-0",
+      "file": "avatar-hair1-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-down-1",
+      "file": "avatar-hair1-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-down-2",
+      "file": "avatar-hair1-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-up-0",
+      "file": "avatar-hair1-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-up-1",
+      "file": "avatar-hair1-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-up-2",
+      "file": "avatar-hair1-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-left-0",
+      "file": "avatar-hair1-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-left-1",
+      "file": "avatar-hair1-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-left-2",
+      "file": "avatar-hair1-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-right-0",
+      "file": "avatar-hair1-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-right-1",
+      "file": "avatar-hair1-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair1-right-2",
+      "file": "avatar-hair1-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-down-0",
+      "file": "avatar-hair2-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-down-1",
+      "file": "avatar-hair2-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-down-2",
+      "file": "avatar-hair2-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-up-0",
+      "file": "avatar-hair2-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-up-1",
+      "file": "avatar-hair2-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-up-2",
+      "file": "avatar-hair2-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-left-0",
+      "file": "avatar-hair2-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-left-1",
+      "file": "avatar-hair2-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-left-2",
+      "file": "avatar-hair2-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-right-0",
+      "file": "avatar-hair2-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-right-1",
+      "file": "avatar-hair2-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair2-right-2",
+      "file": "avatar-hair2-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-down-0",
+      "file": "avatar-hair3-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-down-1",
+      "file": "avatar-hair3-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-down-2",
+      "file": "avatar-hair3-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-up-0",
+      "file": "avatar-hair3-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-up-1",
+      "file": "avatar-hair3-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-up-2",
+      "file": "avatar-hair3-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-left-0",
+      "file": "avatar-hair3-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-left-1",
+      "file": "avatar-hair3-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-left-2",
+      "file": "avatar-hair3-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-right-0",
+      "file": "avatar-hair3-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-right-1",
+      "file": "avatar-hair3-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair3-right-2",
+      "file": "avatar-hair3-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-down-0",
+      "file": "avatar-hair4-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-down-1",
+      "file": "avatar-hair4-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-down-2",
+      "file": "avatar-hair4-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-up-0",
+      "file": "avatar-hair4-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-up-1",
+      "file": "avatar-hair4-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-up-2",
+      "file": "avatar-hair4-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-left-0",
+      "file": "avatar-hair4-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-left-1",
+      "file": "avatar-hair4-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-left-2",
+      "file": "avatar-hair4-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-right-0",
+      "file": "avatar-hair4-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-right-1",
+      "file": "avatar-hair4-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair4-right-2",
+      "file": "avatar-hair4-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-down-0",
+      "file": "avatar-hair5-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-down-1",
+      "file": "avatar-hair5-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-down-2",
+      "file": "avatar-hair5-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-up-0",
+      "file": "avatar-hair5-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-up-1",
+      "file": "avatar-hair5-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-up-2",
+      "file": "avatar-hair5-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-left-0",
+      "file": "avatar-hair5-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-left-1",
+      "file": "avatar-hair5-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-left-2",
+      "file": "avatar-hair5-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-right-0",
+      "file": "avatar-hair5-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-right-1",
+      "file": "avatar-hair5-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair5-right-2",
+      "file": "avatar-hair5-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-down-0",
+      "file": "avatar-hair6-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-down-1",
+      "file": "avatar-hair6-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-down-2",
+      "file": "avatar-hair6-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-up-0",
+      "file": "avatar-hair6-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-up-1",
+      "file": "avatar-hair6-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-up-2",
+      "file": "avatar-hair6-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-left-0",
+      "file": "avatar-hair6-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-left-1",
+      "file": "avatar-hair6-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-left-2",
+      "file": "avatar-hair6-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-right-0",
+      "file": "avatar-hair6-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-right-1",
+      "file": "avatar-hair6-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair6-right-2",
+      "file": "avatar-hair6-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-down-0",
+      "file": "avatar-hair7-down-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-down-1",
+      "file": "avatar-hair7-down-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-down-2",
+      "file": "avatar-hair7-down-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-up-0",
+      "file": "avatar-hair7-up-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-up-1",
+      "file": "avatar-hair7-up-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-up-2",
+      "file": "avatar-hair7-up-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-left-0",
+      "file": "avatar-hair7-left-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-left-1",
+      "file": "avatar-hair7-left-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-left-2",
+      "file": "avatar-hair7-left-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-right-0",
+      "file": "avatar-hair7-right-0.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-right-1",
+      "file": "avatar-hair7-right-1.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "avatar-hair7-right-2",
+      "file": "avatar-hair7-right-2.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "avatar",
+      "note": "anchor at feet-centre: (10, 28); edge-darkened like renderGrid"
+    },
+    {
+      "id": "robot-c0v0-down",
+      "file": "robot-c0v0-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v0-up",
+      "file": "robot-c0v0-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v0-left",
+      "file": "robot-c0v0-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v0-right",
+      "file": "robot-c0v0-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v1-down",
+      "file": "robot-c0v1-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v1-up",
+      "file": "robot-c0v1-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v1-left",
+      "file": "robot-c0v1-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v1-right",
+      "file": "robot-c0v1-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v2-down",
+      "file": "robot-c0v2-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v2-up",
+      "file": "robot-c0v2-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v2-left",
+      "file": "robot-c0v2-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v2-right",
+      "file": "robot-c0v2-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v3-down",
+      "file": "robot-c0v3-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v3-up",
+      "file": "robot-c0v3-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v3-left",
+      "file": "robot-c0v3-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c0v3-right",
+      "file": "robot-c0v3-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v0-down",
+      "file": "robot-c1v0-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v0-up",
+      "file": "robot-c1v0-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v0-left",
+      "file": "robot-c1v0-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v0-right",
+      "file": "robot-c1v0-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v1-down",
+      "file": "robot-c1v1-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v1-up",
+      "file": "robot-c1v1-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v1-left",
+      "file": "robot-c1v1-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v1-right",
+      "file": "robot-c1v1-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v2-down",
+      "file": "robot-c1v2-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v2-up",
+      "file": "robot-c1v2-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v2-left",
+      "file": "robot-c1v2-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v2-right",
+      "file": "robot-c1v2-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v3-down",
+      "file": "robot-c1v3-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v3-up",
+      "file": "robot-c1v3-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v3-left",
+      "file": "robot-c1v3-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c1v3-right",
+      "file": "robot-c1v3-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v0-down",
+      "file": "robot-c2v0-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v0-up",
+      "file": "robot-c2v0-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v0-left",
+      "file": "robot-c2v0-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v0-right",
+      "file": "robot-c2v0-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v1-down",
+      "file": "robot-c2v1-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v1-up",
+      "file": "robot-c2v1-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v1-left",
+      "file": "robot-c2v1-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v1-right",
+      "file": "robot-c2v1-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v2-down",
+      "file": "robot-c2v2-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v2-up",
+      "file": "robot-c2v2-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v2-left",
+      "file": "robot-c2v2-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v2-right",
+      "file": "robot-c2v2-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v3-down",
+      "file": "robot-c2v3-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v3-up",
+      "file": "robot-c2v3-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v3-left",
+      "file": "robot-c2v3-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c2v3-right",
+      "file": "robot-c2v3-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v0-down",
+      "file": "robot-c3v0-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v0-up",
+      "file": "robot-c3v0-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v0-left",
+      "file": "robot-c3v0-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v0-right",
+      "file": "robot-c3v0-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v1-down",
+      "file": "robot-c3v1-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v1-up",
+      "file": "robot-c3v1-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v1-left",
+      "file": "robot-c3v1-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v1-right",
+      "file": "robot-c3v1-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v2-down",
+      "file": "robot-c3v2-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v2-up",
+      "file": "robot-c3v2-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v2-left",
+      "file": "robot-c3v2-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v2-right",
+      "file": "robot-c3v2-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v3-down",
+      "file": "robot-c3v3-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v3-up",
+      "file": "robot-c3v3-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v3-left",
+      "file": "robot-c3v3-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c3v3-right",
+      "file": "robot-c3v3-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v0-down",
+      "file": "robot-c4v0-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v0-up",
+      "file": "robot-c4v0-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v0-left",
+      "file": "robot-c4v0-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v0-right",
+      "file": "robot-c4v0-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v1-down",
+      "file": "robot-c4v1-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v1-up",
+      "file": "robot-c4v1-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v1-left",
+      "file": "robot-c4v1-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v1-right",
+      "file": "robot-c4v1-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v2-down",
+      "file": "robot-c4v2-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v2-up",
+      "file": "robot-c4v2-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v2-left",
+      "file": "robot-c4v2-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v2-right",
+      "file": "robot-c4v2-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v3-down",
+      "file": "robot-c4v3-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v3-up",
+      "file": "robot-c4v3-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v3-left",
+      "file": "robot-c4v3-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c4v3-right",
+      "file": "robot-c4v3-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v0-down",
+      "file": "robot-c5v0-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v0-up",
+      "file": "robot-c5v0-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v0-left",
+      "file": "robot-c5v0-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v0-right",
+      "file": "robot-c5v0-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v1-down",
+      "file": "robot-c5v1-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v1-up",
+      "file": "robot-c5v1-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v1-left",
+      "file": "robot-c5v1-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v1-right",
+      "file": "robot-c5v1-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v2-down",
+      "file": "robot-c5v2-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v2-up",
+      "file": "robot-c5v2-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v2-left",
+      "file": "robot-c5v2-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v2-right",
+      "file": "robot-c5v2-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v3-down",
+      "file": "robot-c5v3-down.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v3-up",
+      "file": "robot-c5v3-up.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v3-left",
+      "file": "robot-c5v3-left.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "robot-c5v3-right",
+      "file": "robot-c5v3-right.svg",
+      "w": 20,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "robot"
+    },
+    {
+      "id": "glyph-bolt-ink",
+      "file": "glyph-bolt-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-bolt-paper",
+      "file": "glyph-bolt-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-bolt-accent",
+      "file": "glyph-bolt-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-leaf-ink",
+      "file": "glyph-leaf-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-leaf-paper",
+      "file": "glyph-leaf-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-leaf-accent",
+      "file": "glyph-leaf-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-coin-ink",
+      "file": "glyph-coin-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-coin-paper",
+      "file": "glyph-coin-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-coin-accent",
+      "file": "glyph-coin-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-chip-ink",
+      "file": "glyph-chip-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-chip-paper",
+      "file": "glyph-chip-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-chip-accent",
+      "file": "glyph-chip-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-flask-ink",
+      "file": "glyph-flask-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-flask-paper",
+      "file": "glyph-flask-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-flask-accent",
+      "file": "glyph-flask-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-rocket-ink",
+      "file": "glyph-rocket-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-rocket-paper",
+      "file": "glyph-rocket-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-rocket-accent",
+      "file": "glyph-rocket-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-heart-ink",
+      "file": "glyph-heart-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-heart-paper",
+      "file": "glyph-heart-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-heart-accent",
+      "file": "glyph-heart-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-cube-ink",
+      "file": "glyph-cube-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-cube-paper",
+      "file": "glyph-cube-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-cube-accent",
+      "file": "glyph-cube-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-wave-ink",
+      "file": "glyph-wave-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-wave-paper",
+      "file": "glyph-wave-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-wave-accent",
+      "file": "glyph-wave-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-star-ink",
+      "file": "glyph-star-ink.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-star-paper",
+      "file": "glyph-star-paper.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "glyph-star-accent",
+      "file": "glyph-star-accent.svg",
+      "w": 8,
+      "h": 8,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "glyph"
+    },
+    {
+      "id": "emote-wave",
+      "file": "emote-wave.svg",
+      "w": 11,
+      "h": 11,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-laugh",
+      "file": "emote-laugh.svg",
+      "w": 11,
+      "h": 11,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-clap",
+      "file": "emote-clap.svg",
+      "w": 9,
+      "h": 11,
+      "anchor": {
+        "x": -1,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-heart",
+      "file": "emote-heart.svg",
+      "w": 11,
+      "h": 10,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-question",
+      "file": "emote-question.svg",
+      "w": 9,
+      "h": 11,
+      "anchor": {
+        "x": -1,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-rocket",
+      "file": "emote-rocket.svg",
+      "w": 11,
+      "h": 11,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-fire",
+      "file": "emote-fire.svg",
+      "w": 11,
+      "h": 11,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "emote"
+    },
+    {
+      "id": "emote-handshake",
+      "file": "emote-handshake.svg",
+      "w": 11,
+      "h": 10,
+      "anchor": {
+        "x": 0,
+        "y": -1
+      },
+      "group": "emote"
+    },
+    {
+      "id": "logo-mark",
+      "file": "logo-mark.svg",
+      "w": 16,
+      "h": 16,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "logo"
+    },
+    {
+      "id": "carpet-0-solid",
+      "file": "carpet-0-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #8C3B2E"
+    },
+    {
+      "id": "carpet-0-border",
+      "file": "carpet-0-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #8C3B2E"
+    },
+    {
+      "id": "carpet-0-stripes",
+      "file": "carpet-0-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #8C3B2E"
+    },
+    {
+      "id": "banner-0",
+      "file": "banner-0.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #8C3B2E; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-1-solid",
+      "file": "carpet-1-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #C4562B"
+    },
+    {
+      "id": "carpet-1-border",
+      "file": "carpet-1-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #C4562B"
+    },
+    {
+      "id": "carpet-1-stripes",
+      "file": "carpet-1-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #C4562B"
+    },
+    {
+      "id": "banner-1",
+      "file": "banner-1.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #C4562B; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-2-solid",
+      "file": "carpet-2-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #4E6E4E"
+    },
+    {
+      "id": "carpet-2-border",
+      "file": "carpet-2-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #4E6E4E"
+    },
+    {
+      "id": "carpet-2-stripes",
+      "file": "carpet-2-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #4E6E4E"
+    },
+    {
+      "id": "banner-2",
+      "file": "banner-2.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #4E6E4E; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-3-solid",
+      "file": "carpet-3-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #7A8C50"
+    },
+    {
+      "id": "carpet-3-border",
+      "file": "carpet-3-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #7A8C50"
+    },
+    {
+      "id": "carpet-3-stripes",
+      "file": "carpet-3-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #7A8C50"
+    },
+    {
+      "id": "banner-3",
+      "file": "banner-3.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #7A8C50; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-4-solid",
+      "file": "carpet-4-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #3B5B92"
+    },
+    {
+      "id": "carpet-4-border",
+      "file": "carpet-4-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #3B5B92"
+    },
+    {
+      "id": "carpet-4-stripes",
+      "file": "carpet-4-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #3B5B92"
+    },
+    {
+      "id": "banner-4",
+      "file": "banner-4.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #3B5B92; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-5-solid",
+      "file": "carpet-5-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #57829B"
+    },
+    {
+      "id": "carpet-5-border",
+      "file": "carpet-5-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #57829B"
+    },
+    {
+      "id": "carpet-5-stripes",
+      "file": "carpet-5-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #57829B"
+    },
+    {
+      "id": "banner-5",
+      "file": "banner-5.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #57829B; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-6-solid",
+      "file": "carpet-6-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #6B4E71"
+    },
+    {
+      "id": "carpet-6-border",
+      "file": "carpet-6-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #6B4E71"
+    },
+    {
+      "id": "carpet-6-stripes",
+      "file": "carpet-6-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #6B4E71"
+    },
+    {
+      "id": "banner-6",
+      "file": "banner-6.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #6B4E71; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-7-solid",
+      "file": "carpet-7-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #2F6F6A"
+    },
+    {
+      "id": "carpet-7-border",
+      "file": "carpet-7-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #2F6F6A"
+    },
+    {
+      "id": "carpet-7-stripes",
+      "file": "carpet-7-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #2F6F6A"
+    },
+    {
+      "id": "banner-7",
+      "file": "banner-7.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #2F6F6A; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-8-solid",
+      "file": "carpet-8-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #A98C5B"
+    },
+    {
+      "id": "carpet-8-border",
+      "file": "carpet-8-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #A98C5B"
+    },
+    {
+      "id": "carpet-8-stripes",
+      "file": "carpet-8-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #A98C5B"
+    },
+    {
+      "id": "banner-8",
+      "file": "banner-8.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #A98C5B; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-9-solid",
+      "file": "carpet-9-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #8A6B4D"
+    },
+    {
+      "id": "carpet-9-border",
+      "file": "carpet-9-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #8A6B4D"
+    },
+    {
+      "id": "carpet-9-stripes",
+      "file": "carpet-9-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #8A6B4D"
+    },
+    {
+      "id": "banner-9",
+      "file": "banner-9.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #8A6B4D; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-10-solid",
+      "file": "carpet-10-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #555049"
+    },
+    {
+      "id": "carpet-10-border",
+      "file": "carpet-10-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #555049"
+    },
+    {
+      "id": "carpet-10-stripes",
+      "file": "carpet-10-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #555049"
+    },
+    {
+      "id": "banner-10",
+      "file": "banner-10.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #555049; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-11-solid",
+      "file": "carpet-11-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #B08D2E"
+    },
+    {
+      "id": "carpet-11-border",
+      "file": "carpet-11-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #B08D2E"
+    },
+    {
+      "id": "carpet-11-stripes",
+      "file": "carpet-11-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #B08D2E"
+    },
+    {
+      "id": "banner-11",
+      "file": "banner-11.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #B08D2E; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-12-solid",
+      "file": "carpet-12-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #A64D79"
+    },
+    {
+      "id": "carpet-12-border",
+      "file": "carpet-12-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #A64D79"
+    },
+    {
+      "id": "carpet-12-stripes",
+      "file": "carpet-12-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #A64D79"
+    },
+    {
+      "id": "banner-12",
+      "file": "banner-12.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #A64D79; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "carpet-13-solid",
+      "file": "carpet-13-solid.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #3F4A5A"
+    },
+    {
+      "id": "carpet-13-border",
+      "file": "carpet-13-border.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #3F4A5A"
+    },
+    {
+      "id": "carpet-13-stripes",
+      "file": "carpet-13-stripes.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth",
+      "note": "swatch #3F4A5A"
+    },
+    {
+      "id": "banner-13",
+      "file": "banner-13.svg",
+      "w": 128,
+      "h": 40,
+      "anchor": {
+        "x": 0,
+        "y": 8
+      },
+      "group": "booth",
+      "note": "swatch #3F4A5A; sign text is fillText and will not record — see manifest.unsupported"
+    },
+    {
+      "id": "counter",
+      "file": "counter.svg",
+      "w": 128,
+      "h": 34,
+      "anchor": {
+        "x": 0,
+        "y": -62
+      },
+      "group": "booth"
+    },
+    {
+      "id": "stand-plinth",
+      "file": "stand-plinth.svg",
+      "w": 139,
+      "h": 139,
+      "anchor": {
+        "x": 4,
+        "y": 4
+      },
+      "group": "booth"
+    },
+    {
+      "id": "vacant-carpet",
+      "file": "vacant-carpet.svg",
+      "w": 128,
+      "h": 128,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth"
+    },
+    {
+      "id": "vacant-counter",
+      "file": "vacant-counter.svg",
+      "w": 128,
+      "h": 32,
+      "anchor": {
+        "x": 0,
+        "y": 0
+      },
+      "group": "booth"
+    },
+    {
+      "id": "prop-lamp",
+      "file": "prop-lamp.svg",
+      "w": 32,
+      "h": 64,
+      "anchor": {
+        "x": 0,
+        "y": 30
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-planter",
+      "file": "prop-planter.svg",
+      "w": 28,
+      "h": 27,
+      "anchor": {
+        "x": -2,
+        "y": -1
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-table",
+      "file": "prop-table.svg",
+      "w": 64,
+      "h": 22,
+      "anchor": {
+        "x": 0,
+        "y": -4
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-kiosk",
+      "file": "prop-kiosk.svg",
+      "w": 60,
+      "h": 46,
+      "anchor": {
+        "x": -2,
+        "y": 16
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-bench",
+      "file": "prop-bench.svg",
+      "w": 64,
+      "h": 28,
+      "anchor": {
+        "x": 0,
+        "y": -1
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-tree",
+      "file": "prop-tree.svg",
+      "w": 33,
+      "h": 70,
+      "anchor": {
+        "x": 0,
+        "y": 42
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-sofa",
+      "file": "prop-sofa.svg",
+      "w": 62,
+      "h": 26,
+      "anchor": {
+        "x": -1,
+        "y": -2
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-bar",
+      "file": "prop-bar.svg",
+      "w": 96,
+      "h": 51,
+      "anchor": {
+        "x": 0,
+        "y": 26
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-board",
+      "file": "prop-board.svg",
+      "w": 60,
+      "h": 51,
+      "anchor": {
+        "x": -2,
+        "y": 22
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-crates",
+      "file": "prop-crates.svg",
+      "w": 24,
+      "h": 15,
+      "anchor": {
+        "x": -3,
+        "y": -12
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-sign",
+      "file": "prop-sign.svg",
+      "w": 40,
+      "h": 45,
+      "anchor": {
+        "x": 4,
+        "y": 18
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-notice-board",
+      "file": "prop-notice-board.svg",
+      "w": 88,
+      "h": 108,
+      "anchor": {
+        "x": -4,
+        "y": 75
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-merchant-front",
+      "file": "prop-merchant-front.svg",
+      "w": 104,
+      "h": 40,
+      "anchor": {
+        "x": 2,
+        "y": 4
+      },
+      "group": "prop"
+    },
+    {
+      "id": "prop-merchant-back",
+      "file": "prop-merchant-back.svg",
+      "w": 96,
+      "h": 62,
+      "anchor": {
+        "x": 0,
+        "y": 58
+      },
+      "group": "prop"
+    }
+  ],
+  "unsupported": [
+    {
+      "id": "prop-fountain",
+      "error": "animated: sparkle positions come from the engine clock (NaN without it) — floor-only, in the WebView"
+    },
+    {
+      "id": "prop-arch",
+      "error": "animated shimmer, as the fountain — floor-only, in the WebView"
+    },
+    {
+      "id": "prop-stanchion",
+      "error": "rope is ctx.quadraticCurveTo, which SvgCtx does not record — floor-only, in the WebView"
+    },
+    {
+      "id": "prop-wall-banner",
+      "error": "uses ctx.clearRect, which SvgCtx does not record — floor-only, in the WebView"
+    }
+  ]
+}
