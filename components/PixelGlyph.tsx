@@ -16,7 +16,7 @@ export const GLYPH_IDS: GlyphId[] = [
 ];
 
 /** 8x8 bitmaps — "#" is a lit pixel. */
-const BITMAPS: Record<GlyphId, string[]> = {
+export const BITMAPS: Record<GlyphId, string[]> = {
   bolt: [
     "....##..",
     "...##...",

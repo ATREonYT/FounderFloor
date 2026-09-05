@@ -610,7 +610,7 @@ export function buildFloor(
  * biggest reason an early hall looks unfinished, and weave costs one extra
  * pass of 4px squares.
  */
-function drawVacantCarpet(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+export function drawVacantCarpet(ctx: CanvasRenderingContext2D, x: number, y: number): void {
   const cw = 4 * T;
   const ch = 4 * T;
   ctx.fillStyle = VACANT_SLAB;
@@ -706,7 +706,7 @@ function counterDrawable(b: BoothInstance & { startup: Startup }): Drawable {
   };
 }
 
-function drawCounterBase(ctx: CanvasRenderingContext2D, bx: number, y0: number): void {
+export function drawCounterBase(ctx: CanvasRenderingContext2D, bx: number, y0: number): void {
   ctx.fillStyle = WOOD_FRONT;
   ctx.fillRect(bx, y0 + 12, 4 * T, T - 12);
   ctx.fillStyle = shade(WOOD_FRONT, -0.24);

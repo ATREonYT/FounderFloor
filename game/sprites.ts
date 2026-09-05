@@ -211,6 +211,19 @@ export function avatarStillGrid(look: AvatarLook): Grid {
   return buildGrid(look, "down", 0);
 }
 
+/**
+ * Any cel of the walk cycle as a flat grid — the app's sprite atlas is
+ * rasterized from these off-line, so it is the floor's pixels by
+ * construction rather than a second drawing of them. `left` is `right`
+ * mirrored, exactly as renderGrid does it.
+ */
+export function avatarFrameGrid(look: AvatarLook, dir: Dir, frame: 0 | 1 | 2): Grid {
+  return buildGrid(look, dir === "left" ? "right" : dir, frame);
+}
+export function robotFrameGrid(look: RobotLook, dir: Dir, frame: 0 | 1 | 2): Grid {
+  return buildRobotGrid(look, dir === "left" ? "right" : dir, frame);
+}
+
 function buildGrid(look: AvatarLook, dir: Dir, frame: number): Grid {
   const g = newGrid();
   const skin = SKIN_TONES[((look.skin % 6) + 6) % 6];
