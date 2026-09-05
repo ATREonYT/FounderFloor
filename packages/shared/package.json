@@ -1,0 +1,9 @@
+{
+  "name": "@founderfloor/shared",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-strip-types --no-warnings --test test/*.test.mjs"
+  }
+}

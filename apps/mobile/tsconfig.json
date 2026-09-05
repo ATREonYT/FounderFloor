@@ -21,7 +21,8 @@
       "@founderfloor/shared/*": [
         "../../packages/shared/src/*"
       ]
-    }
+    },
+    "allowImportingTsExtensions": true
   },
   "include": [
     "**/*.ts",
