@@ -86,7 +86,12 @@ export const u = 4;
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 } as const;
 
 /** Radii are 1u/2u/3u/4u and CONCENTRIC (child = parent − gap). */
-export const radius = { sm: 4, md: 8, lg: 12, xl: 16, full: 999 } as const;
+export const radius = { sm: 4, md: 8, lg: 12, xl: 16, xxl: 24, full: 999 } as const;
+// xxl is the app's own addition (not on the site): the soft pill every 2026
+// assistant app draws its composer and its picker in. Still concentric.
+
+/** lib/data/shop.ts BOOTH_SWATCHES — the fourteen banner/carpet colours. */
+export const swatches = ["#8C3B2E", "#C4562B", "#4E6E4E", "#7A8C50", "#3B5B92", "#57829B", "#6B4E71", "#2F6F6A", "#A98C5B", "#8A6B4D", "#555049", "#B08D2E", "#A64D79", "#3F4A5A"] as const;
 
 /** The signature: an 8px bevel on the top-right corner only, on every plate. */
 export const BEVEL = 8;

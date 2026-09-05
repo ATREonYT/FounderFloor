@@ -21,10 +21,10 @@ import type { GlyphId } from "./Sign";
 export type MenuEntry = { key: string; label: string; glyph: GlyphId; badge?: number };
 
 export const MENU: MenuEntry[] = [
+  { key: "reception", label: "Desk", glyph: "wave" },
   { key: "stand", label: "Stand", glyph: "star" },
-  { key: "build", label: "Build", glyph: "cube" },
   { key: "coaches", label: "Coaches", glyph: "heart" },
-  { key: "floor", label: "Floor", glyph: "wave" },
+  { key: "floor", label: "Floor", glyph: "cube" },
   { key: "inbox", label: "Inbox", glyph: "chip" },
 ];
 
@@ -36,7 +36,7 @@ export function Menu({ active, onSelect, entries = MENU }: { active: string; onS
       <View style={{ flexDirection: rail ? "column" : "row", paddingHorizontal: rail ? 8 : 4, paddingVertical: rail ? 8 : 4, gap: rail ? 4 : 0 }}>
         {entries.map((e) => {
           const on = e.key === active;
-          const glyph = `glyph-${e.glyph}-${on ? "ink" : "ink"}` as SpriteId;
+          const glyph = `glyph-${e.glyph}-ink` as SpriteId;
           return (
             <Pressable
               key={e.key}

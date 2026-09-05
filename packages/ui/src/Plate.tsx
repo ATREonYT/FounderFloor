@@ -48,6 +48,7 @@ export function Plate({
   radius = R.lg,
   padding,
   contentStyle,
+  lineColor,
   testID,
 }: {
   tone?: PlateTone;
@@ -57,10 +58,12 @@ export function Plate({
   padding?: number;
   /** Constrain the painted box (e.g. maxHeight) so a scrolling child shrinks INSIDE the plate. */
   contentStyle?: ViewStyle;
+  /** Override the hairline — the composer speaks fountain while focused. */
+  lineColor?: string;
   testID?: string;
 }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const t = TONES[tone];
+  const t = lineColor ? { ...TONES[tone], line: lineColor } : TONES[tone];
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (width !== size.w || height !== size.h) setSize({ w: width, h: height });

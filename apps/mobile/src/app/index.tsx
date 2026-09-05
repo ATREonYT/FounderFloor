@@ -1,5 +1,5 @@
 import { Redirect } from "expo-router";
-/** Until Gate 2 there is one screen worth opening: the kit gallery. */
+/** The app opens at the desk, the way every assistant app opens on its composer. */
 export default function Index() {
-  return <Redirect href="/dev/kit" />;
+  return <Redirect href="/reception" />;
 }
