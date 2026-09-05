@@ -12,7 +12,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Body, Button, Chip, Composer, Desk, Dialogue, Display, Keeper, Message, Pill, Sign, Spec, Thinking, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
-import { HALLS, STARTERS, YOU, greeting, type HallId } from "../../lib/mock";
+import { HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
+import { useStand } from "../../lib/stand";
 import { useReceptionist } from "../../lib/receptionist";
 
 export default function Reception() {
@@ -20,7 +21,8 @@ export default function Reception() {
   const router = useRouter();
   const bottom = useBottomChrome();
   const { coach: coachParam } = useLocalSearchParams<{ coach?: string }>();
-  const { coach, messages, busy, thinking, send, reset } = useReceptionist(coachParam);
+  const { coach, messages, busy, thinking, send, reset, starters } = useReceptionist(coachParam);
+  const stand = useStand();
   const [draft, setDraft] = useState("");
   const [hallId, setHallId] = useState<HallId>("main-hall");
   const [halls, setHalls] = useState(false);
@@ -45,8 +47,7 @@ export default function Reception() {
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar
-        left={<Keeper look={YOU.look} scale={1} />}
-        center={<Pill label={hall.name} meta={`${hall.here} here`} live onPress={() => setHalls(true)} />}
+        center={<Pill label={hall.name} meta={L.compact && !empty ? undefined : `${hall.here} here`} live onPress={() => setHalls(true)} />}
         right={
           !empty ? (
             <Button
@@ -74,7 +75,7 @@ export default function Reception() {
             <View style={{ gap: 20, paddingBottom: 8 }}>
               <Desk look={coach.look} scale={L.compact ? 2 : 3} />
               <View style={{ gap: 8 }}>
-                <Display size={L.compact ? "3xl" : "4xl"}>{greeting()}</Display>
+                <Display size={L.compact ? "3xl" : "4xl"}>{greeting(stand.founder || undefined)}</Display>
                 <Body tone="muted" size={L.compact ? "base" : "lg"} style={{ maxWidth: 560 }}>
                   The desk is open. Ask about your stand, the floor, or a person, and the keeper who knows will answer.
                 </Body>
@@ -102,7 +103,16 @@ export default function Reception() {
           )}
         </ScrollView>
 
-        <View style={[column, { paddingBottom: bottom }]}>
+        <View style={[column, { paddingBottom: bottom, gap: 8 }]}>
+          {!atDesk && messages.length <= 1 ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {starters.map((t) => (
+                <Chip key={t} grow={false} onPress={() => submit(t)}>
+                  {t}
+                </Chip>
+              ))}
+            </View>
+          ) : null}
           <Composer
             value={draft}
             onChange={setDraft}
@@ -110,7 +120,7 @@ export default function Reception() {
             onAttach={() => router.navigate("/stand")}
             placeholder={atDesk ? "Ask the desk…" : `Ask ${coach.name}…`}
             busy={busy}
-            status={`Rehearsal · scripted replies until the desk is wired · ${hall.name}`}
+            status={`Rehearsal · replies are scripted over your real numbers · ${hall.name}`}
           />
         </View>
       </KeyboardAvoidingView>

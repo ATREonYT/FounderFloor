@@ -28,7 +28,7 @@ const TONE: Record<Tone, string> = {
   faint: shell.faint,
 };
 
-type Common = { children: ReactNode; tone?: Tone; style?: StyleProp<TextStyle>; numberOfLines?: number; accessibilityRole?: "header" | "text" };
+type Common = { children: ReactNode; tone?: Tone; style?: StyleProp<TextStyle>; numberOfLines?: number; accessibilityRole?: "header" | "text" | "link"; onPress?: () => void };
 
 export function Display({ children, tone = "ink", size = "xl", style, ...rest }: Common & { size?: "lg" | "xl" | "3xl" | "4xl" }) {
   const s = T[size];

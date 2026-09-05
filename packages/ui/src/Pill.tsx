@@ -16,10 +16,14 @@ export function Pill({ label, meta, live = false, onPress, tone = "panel" }: { l
       <Plate tone={tone} radius={radius.xl}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingLeft: 12, paddingRight: 10, height: 36 }}>
           {live ? <View style={{ width: 8, height: 8, borderRadius: radius.full, backgroundColor: shell.verify }} /> : null}
-          <Body size="sm" medium>
+          <Body size="sm" medium numberOfLines={1}>
             {label}
           </Body>
-          {meta ? <Spec tone="muted">{meta}</Spec> : null}
+          {meta ? (
+            <Spec tone="muted" numberOfLines={1}>
+              {meta}
+            </Spec>
+          ) : null}
           {onPress ? <Spec tone="faint">▾</Spec> : null}
         </View>
       </Plate>

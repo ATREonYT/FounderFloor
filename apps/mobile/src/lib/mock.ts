@@ -37,9 +37,9 @@ export const HALLS: { id: HallId; name: string; here: number; tagline: string; o
   { id: "tutorial-hall", name: "Tutorial Hall", here: 1, tagline: "Where you learn to walk. Nobody will judge you.", open: true },
 ];
 
-/** The keepers of the Main Hall (lib/data/floors.ts) — each one is a coach. */
+/** The keepers of the Main Hall (lib/data/floors.ts). */
 export type Coach = { id: string; name: string; sign: string; title: string; blurb: string; color: string; look: Look; topics: string[]; greeting: string };
-export const COACHES: Coach[] = [
+export const KEEPERS: Coach[] = [
   {
     id: "signwright",
     name: "Alder",
@@ -107,6 +107,57 @@ export const COACHES: Coach[] = [
     greeting: "Bram. Best run this week is 41.2 seconds. Yours is not on the board yet.",
   },
 ];
+/**
+ * The four coaches from the brief — the staff at YOUR stand, not the hall's.
+ * Names and looks are new; colours are the hall's own awning colours.
+ */
+export const COACHES: Coach[] = [
+  {
+    id: "strategy",
+    name: "Ines",
+    sign: "STRATEGY",
+    title: "Strategy & accountability",
+    blurb: "Owns the weekly goal, the 90-day target and the streak. Monday plan, Friday review, and the question nobody else asks: did it slip from fear, or because it did not matter?",
+    color: "#4F6E6B",
+    look: { skin: 1, outfit: 4, hair: 2 },
+    topics: ["Monday plan", "Friday review", "90-day target"],
+    greeting: "Ines. Three goals for the week, each with a number in it. Start with the one you least want to say.",
+  },
+  {
+    id: "sales",
+    name: "Rook",
+    sign: "SALES",
+    title: "Sales",
+    blurb: "Keeps the weekly outreach quota and counts what actually went out. Drafts in your voice, under sixty words, one question. Plays the prospect until you say stop.",
+    color: "#B4762E",
+    look: { skin: 3, outfit: 2, hair: 5 },
+    topics: ["quota", "drafts", "objections"],
+    greeting: "Rook. Quota this week is ten. Zero have gone out. Who is the first one, and what do they lose by not replying?",
+  },
+  {
+    id: "investor",
+    name: "Marguerite",
+    sign: "INVESTOR",
+    title: "Investor",
+    blurb: "A sceptical European pre-seed investor. Scores a three-minute pitch on problem, why now, traction, market with a number, and the ask. Keeps the history. Does not round up.",
+    color: "#7A6070",
+    look: { skin: 0, outfit: 6, hair: 3 },
+    topics: ["pitch score", "the ask", "what kills it"],
+    greeting: "Marguerite. Give me the pitch as you would say it in three minutes. I will score it in five parts and tell you which one I stopped listening at.",
+  },
+  {
+    id: "finance",
+    name: "Teodor",
+    sign: "FINANCE",
+    title: "Finance & compliance",
+    blurb: "Runway as one line of arithmetic. Salary scenarios the same way. The filing calendar for your entity and residence, each date with its official source.",
+    color: "#5E7C93",
+    look: { skin: 4, outfit: 1, hair: 0 },
+    topics: ["runway", "salary", "filings"],
+    greeting: "Teodor. I will always show the arithmetic. What do you want to know: the runway, the salary, or what has to be filed next?",
+  },
+];
+
 export const RECEPTIONIST: Coach = {
   id: "desk",
   name: "The desk",
@@ -119,10 +170,24 @@ export const RECEPTIONIST: Coach = {
   greeting: "",
 };
 
-export type Thread = { id: string; who: string; look: Look; stand: string; last: string; when: string; unread: boolean; lines: { role: "you" | "them"; text: string }[] };
+export type Thread = { id: string; kind: "message" | "handoff" | "nudge"; who: string; look: Look; stand: string; last: string; when: string; unread: boolean; lines: { role: "you" | "them"; text: string }[] };
 export const THREADS: Thread[] = [
   {
+    id: "t0",
+    kind: "handoff",
+    who: "The receptionist",
+    look: { skin: 3, outfit: 4, hair: 2 },
+    stand: "Hand-off · 19:10",
+    last: "A visitor asked about pricing for three shops and left an email.",
+    when: "19:10",
+    unread: true,
+    lines: [
+      { role: "them", text: "A visitor stopped at the stand while you were away. They run three cafés in Limassol and asked whether the pass works across locations. I said the founder will answer, and took an email: dora@example.com. Nothing else was promised." },
+    ],
+  },
+  {
     id: "t1",
+    kind: "message",
     who: "Mira",
     look: { skin: 1, outfit: 5, hair: 4 },
     stand: "Ledgerline · A-11",
@@ -137,6 +202,7 @@ export const THREADS: Thread[] = [
   },
   {
     id: "t2",
+    kind: "message",
     who: "Tomasz",
     look: { skin: 4, outfit: 2, hair: 0 },
     stand: "Kilnhouse · Indie Alley 3",
@@ -147,6 +213,18 @@ export const THREADS: Thread[] = [
   },
   {
     id: "t3",
+    kind: "nudge",
+    who: "Teodor",
+    look: { skin: 4, outfit: 1, hair: 0 },
+    stand: "Finance · reminder",
+    last: "Form 5472 is due in 21 days. Source attached.",
+    when: "Mon",
+    unread: false,
+    lines: [{ role: "them", text: "Form 5472 with the pro-forma 1120 is due 15 April, 21 days from now. Source: irs.gov/forms-pubs/about-form-5472. Check the official source; this is a calendar, not tax advice." }],
+  },
+  {
+    id: "t3b",
+    kind: "message",
     who: "Halloway",
     look: { skin: 1, outfit: 3, hair: 4 },
     stand: "Porter's Lodge",
@@ -157,6 +235,7 @@ export const THREADS: Thread[] = [
   },
   {
     id: "t4",
+    kind: "message",
     who: "Priya",
     look: { skin: 5, outfit: 7, hair: 6 },
     stand: "Northlight · Ramen 2",
@@ -170,10 +249,10 @@ export const THREADS: Thread[] = [
   },
 ];
 
-export function greeting(now = new Date()): string {
+export function greeting(name = YOU.name, now = new Date()): string {
   const h = now.getHours();
   const part = h < 5 ? "Late night" : h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening";
-  return `${part}, ${YOU.name}.`;
+  return name ? `${part}, ${name}.` : `${part}.`;
 }
 
 export const STARTERS: { text: string; hint: string }[] = [

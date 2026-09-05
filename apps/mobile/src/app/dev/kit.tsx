@@ -12,6 +12,16 @@ import { useState, type ReactNode } from "react";
 import { ScrollView, View } from "react-native";
 import { Image } from "expo-image";
 import {
+  Bars,
+  Chip,
+  Choices,
+  Composer,
+  Desk,
+  Keeper,
+  Message,
+  Pill,
+  Thinking,
+  Tick,
   Booth,
   Button,
   ButtonRow,
@@ -86,6 +96,9 @@ export default function Kit() {
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState(false);
   const [menu, setMenu] = useState("stand");
+  const [draft, setDraft] = useState("");
+  const [entity, setEntity] = useState("de-llc");
+  const [ticked, setTicked] = useState(false);
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 24, paddingBottom: 140, paddingHorizontal: L.shell.paddingHorizontal, gap: 16, maxWidth: L.shell.maxWidth, alignSelf: "center", width: "100%" }}>
@@ -197,6 +210,35 @@ export default function Kit() {
             <Sprite id="prop-planter" scale={2} />
           </View>
           <Spec tone="faint">Not in the atlas (floor-only, shown through the WebView): {UNSUPPORTED.map((u) => u.id.replace("prop-", "")).join(", ")}</Spec>
+        </Row>
+
+        <Row title="Composer" note="the assistant-app bar: glass plate, bevel, fountain on focus, status line in the venue's voice" isNew>
+          <Composer value={draft} onChange={setDraft} onSend={() => setDraft("")} onAttach={() => {}} status="Rehearsal · Main Hall" />
+        </Row>
+
+        <Row title="Turns and thinking" note="you on the right in a plate; the desk on the left as a page beside its keeper; three ink pixels while it looks" isNew>
+          <Message role="you" text="What changed on my stand this week" />
+          <Message role="desk" text="Your stand is A-04 in the Main Hall. This week: 38 visitors, 6 signatures." streaming avatar={<Keeper look={{ skin: 3, outfit: 4, hair: 2 }} scale={1} color={shell.accent} speaking />} />
+          <Thinking avatar={<Keeper look={{ skin: 3, outfit: 4, hair: 2 }} scale={1} color={shell.accent} speaking />} />
+        </Row>
+
+        <Row title="Chips, pill, keeper, desk" note="suggestion chips are paper signs; the picker pill shows the hall, not a model; the desk is the counter sprite with a keeper" isNew>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Chip hint="the Porter's list">Who is on Co-founder Row right now</Chip>
+            <Chip hint="the Records">How far am I from Default Alive</Chip>
+          </View>
+          <View style={{ flexDirection: "row", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+            <Pill label="Main Hall" meta="14 here" live onPress={() => {}} />
+            <Keeper look={{ skin: 1, outfit: 4, hair: 2 }} scale={2} color="#4F6E6B" />
+            <Keeper look={{ skin: 0, outfit: 6, hair: 3 }} scale={2} />
+          </View>
+          <Desk look={{ skin: 3, outfit: 4, hair: 2 }} scale={1} />
+        </Row>
+
+        <Row title="Quest list, choices, score bars" note="the site's quest tick; the category chips as a closed-set picker; a stepped meter stood on end per score" isNew>
+          <Tick done={ticked} text="Write the problem in one sentence with no product in it" proof="A sentence a stranger can repeat back" onToggle={() => setTicked((t) => !t)} />
+          <Choices label="Entity" value={entity} options={[{ v: "none", label: "None yet" }, { v: "de-llc", label: "Delaware LLC" }, { v: "cy-ltd", label: "Cyprus Ltd" }]} onChange={setEntity} />
+          <Bars values={[4.2, 5.8, 5.4, 7.0, 7.6, 8.6]} labels={["6 pitches scored", "latest 8.6/10"]} color="#7A6070" />
         </Row>
 
         <Row title="Bottom menu" note="five entries · a glass bar on phones, a rail on wider screens" isNew>

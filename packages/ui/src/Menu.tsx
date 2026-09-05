@@ -23,9 +23,9 @@ export type MenuEntry = { key: string; label: string; glyph: GlyphId; badge?: nu
 export const MENU: MenuEntry[] = [
   { key: "reception", label: "Desk", glyph: "wave" },
   { key: "stand", label: "Stand", glyph: "star" },
+  { key: "build", label: "Build", glyph: "cube" },
   { key: "coaches", label: "Coaches", glyph: "heart" },
-  { key: "floor", label: "Floor", glyph: "cube" },
-  { key: "inbox", label: "Inbox", glyph: "chip" },
+  { key: "floor", label: "Floor", glyph: "flask" },
 ];
 
 export function Menu({ active, onSelect, entries = MENU }: { active: string; onSelect: (key: string) => void; entries?: MenuEntry[] }) {

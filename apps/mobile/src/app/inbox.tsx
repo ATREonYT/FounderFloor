@@ -1,48 +1,63 @@
 /**
- * INBOX — conversations from the floor. Rows the way every messaging list
- * is built (face, name, last line, time, unread dot), with the hall's
- * faces and mono times. Opening one uses the same Dialogue as everything
- * else and the same Message turns as the desk.
+ * INBOX — the mailbox at your booth. One feed: messages from people on the
+ * floor, receptionist hand-offs, coach nudges. Rows the way every list of
+ * conversations is built, with the hall's faces and mono times; a hand-off
+ * wears the receptionist's accent stripe so it is visibly not a person.
+ * Opening one uses the same Dialogue and Message turns as the desk.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import { useRouter } from "expo-router";
 import { Body, Composer, Dialogue, Display, Keeper, Message, Plate, Spec, radius, shell, useLayout } from "@founderfloor/ui";
-import { TopBar } from "../../components/TopBar";
-import { COLUMN, useBottomChrome } from "../../lib/chrome";
-import { THREADS, YOU, type Thread } from "../../lib/mock";
+import { THREADS } from "../lib/mock";
+import { useInbox, type InboxItem } from "../lib/store";
+
+const KIND: Record<InboxItem["kind"], { label: string; color: string }> = {
+  message: { label: "message", color: "#4F6E6B" },
+  handoff: { label: "hand-off", color: "#BE241B" },
+  nudge: { label: "coach", color: "#5E7C93" },
+};
 
 export default function Inbox() {
   const L = useLayout();
-  const bottom = useBottomChrome();
-  const [threads, setThreads] = useState(THREADS);
-  const [open, setOpen] = useState<Thread | null>(null);
+  const router = useRouter();
+  const { items, seed, read, reply } = useInbox();
+  const [openId, setOpenId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
-  const unread = threads.filter((t) => t.unread).length;
-  const openThread = (t: Thread) => {
-    setThreads((ts) => ts.map((x) => (x.id === t.id ? { ...x, unread: false } : x)));
-    setOpen(t);
-  };
-  const reply = () => {
-    if (!open || !draft.trim()) return;
-    const line = { role: "you" as const, text: draft.trim() };
-    setThreads((ts) => ts.map((x) => (x.id === open.id ? { ...x, lines: [...x.lines, line], last: `You: ${line.text}`, when: "now" } : x)));
-    setOpen((o) => (o ? { ...o, lines: [...o.lines, line] } : o));
-    setDraft("");
-  };
+  useEffect(() => seed(THREADS), [seed]);
+  const open = items.find((x) => x.id === openId) ?? null;
+  const unread = items.filter((t) => t.unread).length;
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Spec tone="muted">{unread ? `${unread} unread` : "all read"}</Spec>} />
-      <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
+      <View style={{ paddingTop: L.insets.top + 8, paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" })}>
+          <Spec tone="ink">← Back</Spec>
+        </Pressable>
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Spec tone="muted">{unread ? `${unread} unread` : "all read"}</Spec>
+        </View>
+        <View style={{ width: 72 }} />
+      </View>
+      <ScrollView contentContainerStyle={{ width: "100%", maxWidth: 720, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: L.insets.bottom + 24, gap: 16 }}>
         <View style={{ gap: 8, paddingBottom: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>Inbox</Display>
           <Body tone="muted" size="lg">
-            People who stopped at your stand, and kept talking.
+            People who stopped at your stand, what the receptionist took down while you were away, and what the coaches want you to see.
           </Body>
         </View>
         <Plate tone="panel" radius={radius.xl}>
-          {threads.map((t, i) => (
-            <Pressable key={t.id} onPress={() => openThread(t)} accessibilityRole="button" style={({ pressed }) => ({ flexDirection: "row", gap: 12, alignItems: "center", padding: 14, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, backgroundColor: pressed ? shell.well : "transparent" })}>
-              <Keeper look={t.look} scale={2} />
+          {items.map((t, i) => (
+            <Pressable
+              key={t.id}
+              onPress={() => {
+                read(t.id);
+                setOpenId(t.id);
+              }}
+              accessibilityRole="button"
+              style={({ pressed }) => ({ flexDirection: "row", gap: 12, alignItems: "center", padding: 14, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, backgroundColor: pressed ? shell.well : "transparent" })}
+            >
+              <View style={{ width: 3, alignSelf: "stretch", borderRadius: 2, backgroundColor: t.kind === "message" ? "transparent" : KIND[t.kind].color }} />
+              <Keeper look={t.look} scale={2} color={t.kind === "handoff" ? shell.accentSoft : undefined} />
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
                   <Body medium>{t.who}</Body>
@@ -61,15 +76,26 @@ export default function Inbox() {
             </Pressable>
           ))}
         </Plate>
+        <Spec tone="faint">Rehearsal · these arrive over Supabase Realtime and push once the desk is wired.</Spec>
       </ScrollView>
 
-      <Dialogue open={!!open} onClose={() => setOpen(null)} sign={open?.who ?? ""} keeper={open?.stand ?? ""} color="#4F6E6B" footer={null}>
+      <Dialogue open={!!open} onClose={() => setOpenId(null)} sign={open?.who ?? ""} keeper={open ? KIND[open.kind].label : ""} blurb={open?.stand} color={open ? KIND[open.kind].color : shell.accent} footer={null}>
         <View style={{ gap: 16 }}>
           {open?.lines.map((l, i) => (
             <Message key={i} role={l.role === "you" ? "you" : "desk"} text={l.text} avatar={l.role === "them" && open ? <Keeper look={open.look} scale={1} /> : undefined} />
           ))}
-          <Composer value={draft} onChange={setDraft} onSend={reply} placeholder={`Reply to ${open?.who ?? ""}…`} />
-          <Spec tone="faint">{`Replies go to their stand on the floor. You are ${YOU.name}.`}</Spec>
+          {open?.kind !== "nudge" ? (
+            <Composer
+              value={draft}
+              onChange={setDraft}
+              onSend={() => {
+                if (open && draft.trim()) reply(open.id, draft.trim());
+                setDraft("");
+              }}
+              placeholder={open?.kind === "handoff" ? "Reply to the visitor…" : `Reply to ${open?.who ?? ""}…`}
+            />
+          ) : null}
+          <Spec tone="faint">{open?.kind === "handoff" ? "Your reply goes to the email the visitor left." : "Replies go to their stand on the floor."}</Spec>
         </View>
       </Dialogue>
     </View>

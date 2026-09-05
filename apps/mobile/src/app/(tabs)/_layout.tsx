@@ -27,9 +27,9 @@ export default function TabsLayout() {
         <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: shell.paper }, animation: "shift" }}>
           <Tabs.Screen name="reception" />
           <Tabs.Screen name="stand" />
+          <Tabs.Screen name="build" />
           <Tabs.Screen name="coaches" />
           <Tabs.Screen name="floor" />
-          <Tabs.Screen name="inbox" />
         </Tabs>
         {!rail ? (
           <View pointerEvents="box-none" style={{ position: "absolute", left: BAR.inset, right: BAR.inset, bottom: L.insets.bottom + BAR.inset }}>

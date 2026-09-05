@@ -26,3 +26,6 @@ export { Pill } from "./Pill";
 export { Keeper, Desk, type Look } from "./Keeper";
 export { Message, Thinking, type Role } from "./Message";
 export { Composer } from "./Composer";
+export { Bars } from "./Bars";
+export { Tick } from "./Tick";
+export { Choices } from "./Field";
