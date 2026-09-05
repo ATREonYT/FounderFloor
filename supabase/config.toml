@@ -1,0 +1,24 @@
+# Supabase CLI config. `supabase start` for local; `supabase link` to the project in .env.
+project_id = "founderfloor"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+major_version = 17
+
+[auth]
+enabled = true
+# The floor server mints JWTs with the project's JWT secret (see docs/reboot-auth.md);
+# Supabase Auth's own providers stay off until Gate 2b decides otherwise.
+enable_signup = false
+
+[functions.coach-chat]
+verify_jwt = true
+[functions.guide]
+verify_jwt = true
+[functions.receptionist]
+verify_jwt = false
