@@ -1,0 +1,35 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@/assets/*": [
+        "./assets/*"
+      ],
+      "@founderfloor/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@founderfloor/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@founderfloor/shared": [
+        "../../packages/shared/src/index.ts"
+      ],
+      "@founderfloor/shared/*": [
+        "../../packages/shared/src/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "../../packages/ui/src/**/*.ts",
+    "../../packages/ui/src/**/*.tsx",
+    "../../packages/shared/src/**/*.ts"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "FounderFloor",
+    "slug": "founderfloor",
+    "version": "0.1.0",
+    "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "scheme": "founderfloor",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#EDF0F4",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "net.founderfloor.app"
+    },
+    "android": {
+      "package": "net.founderfloor.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#EDF0F4",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#EDF0F4",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 64
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
