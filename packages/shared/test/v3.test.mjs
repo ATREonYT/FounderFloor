@@ -90,3 +90,18 @@ test("free limits gate exactly as the copy promises", () => {
   assert.equal(canUse("draft", { ...u, draftsThisMonth: 3 }, "free").ok, false);
   assert.match(canUse("draft", { ...u, draftsThisMonth: 3 }, "free").reason, /Pro drafts everything/);
 });
+
+test("the builder brief carries the stand, marks what is missing, and never invents interviews", async () => {
+  const { builderBrief } = await import("../src/brief.ts");
+  const b = builderBrief({ ...REC, segment: "b2b-saas" }, { ticks: ["idea.problem"], interviews: [{ who: "Dora", said: "I lose an hour a week chasing tabs", paysToday: "a POS at €49/mo" }], mcp: true });
+  assert.match(b, /^# Soup Ticket — build brief/);
+  assert.match(b, /Stage on the build path: 1\. Idea/);
+  assert.match(b, /Runway: €40,000 ÷ \(€6,000 − €1,200\) = 8.3 months/);
+  assert.match(b, /- Dora: "I lose an hour a week chasing tabs" \(pays today: a POS at €49\/mo\)/);
+  assert.match(b, /founderfloor\.log_shipped/);
+  assert.match(b, /The one workflow the customer does today by hand/);
+  const empty = builderBrief({ ...REC, name: "", pitch: "", segment: undefined });
+  assert.match(empty, /\[company name\]/);
+  assert.match(empty, /No interviews written down yet\. Do not invent any/);
+  assert.match(empty, /paste what shipped into the weekly log/);
+});

@@ -10,7 +10,7 @@
 import { useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter } from "expo-router";
-import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
+import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, builderBrief, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
 import { Body, Booth, Button, ButtonRow, Choices, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Spec, Sprite, TierTag, Toast, art, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
@@ -50,7 +50,8 @@ export default function Stand() {
   const auth = useSession((s) => s.auth);
   const sessionError = useSession((s) => s.error);
   const signOut = useSession((s) => s.signOut);
-  const { record, setRecord, ticks } = useFounder();
+  const { record, setRecord, ticks, interviews, docs, saveDoc } = useFounder();
+  const [brief, setBrief] = useState<string | null>(null);
   const [paint, setPaint] = useState(false);
   const [numbers, setNumbers] = useState(false);
   const [account, setAccount] = useState(false);
@@ -293,6 +294,19 @@ export default function Stand() {
             </Plate>
           </Pressable>
         </View>
+        <Pressable onPress={() => setBrief(builderBrief(r, { ticks, interviews, docs: docs.filter((d) => d.kind !== "brief").slice(0, 2), mcp: true }))} accessibilityRole="button">
+          <Plate tone="plate" radius={radius.lg} padding={14}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Spec tone="paperQuiet">HAND IT TO YOUR BUILDER</Spec>
+                <Body size="sm" tone="paper" style={{ marginTop: 4 }}>
+                  The stand as a brief for Claude Code, Cursor or Lovable: build first, do not build yet, done means. No copying between apps.
+                </Body>
+              </View>
+              <Body tone="accentLift">→</Body>
+            </View>
+          </Plate>
+        </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 }}>
           <Sprite id="logo-mark" scale={1} />
           <Mono tone="muted" size="xs">{stand.slug ? `founderfloor.net/stand/${stand.slug}` : "No public address until the stand is on a floor."}</Mono>
@@ -415,6 +429,28 @@ export default function Stand() {
         </View>
       </Dialogue>
 
+      <Dialogue open={!!brief} onClose={() => setBrief(null)} sign="THE BRIEF" keeper="for your builder" blurb="Paste it into Claude Code, Cursor or Lovable as the first message. It tells the agent what to build first, what not to, and when it is done." color="#3F4A5A" wide footer="Square brackets are facts not on the stand yet; the agent is told not to invent them.">
+        {brief ? (
+          <View style={{ gap: 12 }}>
+            <Plate tone="paper" radius={radius.md} padding={14}>
+              <Mono size="xs">{brief}</Mono>
+            </Plate>
+            <ButtonRow>
+              <Button onPress={() => Share.share({ message: brief, title: `${stand.name} — build brief` }).catch(() => {})}>Send it</Button>
+              <Button
+                variant="secondary"
+                onPress={() => {
+                  saveDoc({ kind: "brief", title: "Build brief", body: brief }, "rehearsal");
+                  setBrief(null);
+                  say("Brief saved to the drawer.");
+                }}
+              >
+                Keep in the drawer
+              </Button>
+            </ButtonRow>
+          </View>
+        ) : null}
+      </Dialogue>
       <Toast text={toast ?? ""} visible={!!toast} />
     </View>
   );

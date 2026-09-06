@@ -1,0 +1,16 @@
+{
+  "name": "@founderfloor/mcp",
+  "version": "0.1.0",
+  "description": "FounderFloor as an MCP server: your stand, your log, your drawer and your coaches, readable and writable from Claude Code, Cursor and any MCP client.",
+  "private": true,
+  "type": "module",
+  "bin": { "founderfloor-mcp": "bin/founderfloor-mcp.mjs" },
+  "scripts": {
+    "start": "node --experimental-strip-types --no-warnings src/cli.ts",
+    "test": "node --experimental-strip-types --no-warnings --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "zod": "^3.25.0"
+  }
+}

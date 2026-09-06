@@ -86,6 +86,10 @@ export class FloorApi {
   forgot(email: string): Promise<unknown> {
     return this.post("/auth/forgot", { email });
   }
+  /** A Supabase-compatible JWT for a live floor session (server /auth/supabase). "not configured" when the VPS has no secret. */
+  supabaseJwt(token: string): Promise<{ jwt: string; expiresIn: number; sub: string } | { error: string }> {
+    return this.post<{ jwt: string; expiresIn: number; sub: string }>("/auth/supabase", { token });
+  }
   /** The account's synced state — the stand record lives in `state.myStartup`. */
   state(me: string, token: string): Promise<FloorStateReply | { error: string }> {
     return this.get<FloorStateReply>(`/state?me=${encodeURIComponent(me)}`, token);

@@ -125,3 +125,16 @@ test("the floor client speaks the server's protocol and never throws", async () 
   const r = await down.login("a", "b");
   assert.ok(isErr(r) && /unreachable/.test(r.error));
 });
+
+test("the floor client asks the bridge for a Supabase JWT", async () => {
+  const calls = [];
+  const fake = async (url, init) => {
+    calls.push({ url, init });
+    if (url.endsWith("/auth/supabase")) return { ok: true, status: 200, json: async () => ({ jwt: "a.b.c", expiresIn: 3600, sub: "acct_1" }) };
+    return { ok: false, status: 404, json: async () => ({}) };
+  };
+  const api = new FloorApi("https://floor.example", fake);
+  const r = await api.supabaseJwt("floor-token");
+  assert.ok(!isErr(r) && r.jwt === "a.b.c" && r.expiresIn === 3600);
+  assert.equal(JSON.parse(calls[0].init.body).token, "floor-token");
+});

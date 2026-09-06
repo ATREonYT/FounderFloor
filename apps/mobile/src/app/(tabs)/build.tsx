@@ -15,7 +15,7 @@ import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
 import { useStand } from "../../lib/stand";
-import { askGuide, whereAmI } from "../../lib/guide";
+import { askGuide, whereAmI } from "@founderfloor/shared";
 import { COACHES } from "../../lib/mock";
 
 const DOOR = ["#8C3B2E", "#3B5B92", "#4E6E4E", "#B4762E", "#2F6F6A", "#6B4E71"];

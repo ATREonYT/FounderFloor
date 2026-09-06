@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
-import { coachReply, whereAmI } from "./guide";
+import { coachReply, whereAmI } from "@founderfloor/shared";
 import { fmtMoney, runwayLine } from "@founderfloor/shared";
 
 export type Turn = { id: string; role: "you" | "desk"; text: string; streaming?: boolean };

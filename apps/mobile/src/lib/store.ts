@@ -18,17 +18,20 @@ import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage } from "@founderfloor/shared";
+import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
 
 // ─── secret storage: the token goes to the keychain, everything else to disk ──
+// On the web there is no keychain. sessionStorage keeps the token out of
+// other tabs and gone when the tab closes; the cost is signing in again per
+// tab, which is the right trade for a bearer token that is never rotated.
 const secure = {
   async get(k: string): Promise<string | null> {
     if (Platform.OS === "web") {
       try {
-        return globalThis.localStorage?.getItem(k) ?? null;
+        return globalThis.sessionStorage?.getItem(k) ?? null;
       } catch {
         return null;
       }
@@ -38,7 +41,7 @@ const secure = {
   async set(k: string, v: string): Promise<void> {
     if (Platform.OS === "web") {
       try {
-        globalThis.localStorage?.setItem(k, v);
+        globalThis.sessionStorage?.setItem(k, v);
       } catch {}
       return;
     }
@@ -47,7 +50,7 @@ const secure = {
   async del(k: string): Promise<void> {
     if (Platform.OS === "web") {
       try {
-        globalThis.localStorage?.removeItem(k);
+        globalThis.sessionStorage?.removeItem(k);
       } catch {}
       return;
     }
@@ -90,6 +93,10 @@ interface SessionState {
   status: SessionStatus;
   error: string | null;
   fetchedAt: number;
+  /** The Supabase JWT from the floor server's bridge, held in memory only. */
+  supabase: { jwt: string; exp: number } | null;
+  /** A live Supabase JWT, minted on demand; null when signed out or the VPS has no secret. */
+  supabaseJwt(): Promise<string | null>;
   signIn(email: string, password: string): Promise<boolean>;
   register(email: string, name: string, password: string): Promise<boolean>;
   signOut(): Promise<void>;
@@ -105,6 +112,17 @@ export const useSession = create<SessionState>()(
       status: "out",
       error: null,
       fetchedAt: 0,
+      supabase: null,
+      async supabaseJwt() {
+        const a = get().auth;
+        if (!a) return null;
+        const have = get().supabase;
+        if (have && have.exp - 60_000 > Date.now()) return have.jwt;
+        const r = await api.supabaseJwt(a.token);
+        if (isErr(r)) return null;
+        set({ supabase: { jwt: r.jwt, exp: Date.now() + r.expiresIn * 1000 } });
+        return r.jwt;
+      },
       async signIn(email, password) {
         set({ status: "signing", error: null });
         const r = await api.login(email.trim(), password);
@@ -130,7 +148,7 @@ export const useSession = create<SessionState>()(
       async signOut() {
         const a = get().auth;
         if (a) void api.logout(a.token);
-        set({ auth: null, floor: null, stand: null, status: "out", error: null, fetchedAt: 0 });
+        set({ auth: null, floor: null, stand: null, status: "out", error: null, fetchedAt: 0, supabase: null });
       },
       async refresh() {
         const a = get().auth;
@@ -160,11 +178,7 @@ export const useSession = create<SessionState>()(
 );
 
 // ─── the founder's numbers, the workshop, the scores ──────────────────────
-export interface PitchScore {
-  at: string; // ISO
-  parts: { problem: number; now: number; traction: number; market: number; ask: number };
-  total: number; // 1–10, one decimal
-}
+export type { PitchScore } from "@founderfloor/shared";
 
 export const EMPTY_RECORD: StandRecord = {
   name: "",

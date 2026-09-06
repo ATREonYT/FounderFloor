@@ -112,6 +112,9 @@ key is in, everything says "Rehearsal" and nothing should be charged.
 
 ## 5. Next
 
+0. Done since this plan: the MCP server (`packages/mcp`) and the build
+   brief on the stand. Founders build in Claude Code on their own account
+   with the stand as context; nothing is pasted between tools.
 1. Alex: Supabase project (URL, anon key, JWT secret) + Anthropic key →
    coaches, finder and opinion go live through the Edge Functions.
 2. Push: `expo-notifications` + a small sender on the floor server for

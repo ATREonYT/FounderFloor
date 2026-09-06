@@ -11,3 +11,5 @@ export * from "./ideas.ts";
 export * from "./kpi.ts";
 export * from "./documents.ts";
 export * from "./plans.ts";
+export * from "./guide.ts";
+export * from "./brief.ts";

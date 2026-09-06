@@ -9,8 +9,9 @@ import type { StandRecord } from "./types.ts";
 import { runwayLine, fmtMoney } from "./runway.ts";
 import { generateDeadlines } from "./deadlines.ts";
 import { MOM_TEST_QUESTIONS } from "./documents-shared.ts";
+import { builderBrief } from "./brief.ts";
 
-export type DocKind = "one-pager" | "landing" | "interview-script" | "entity" | "pricing" | "outreach" | "plan-12" | "launch" | "update" | "faq";
+export type DocKind = "one-pager" | "landing" | "interview-script" | "entity" | "pricing" | "outreach" | "plan-12" | "launch" | "update" | "faq" | "brief";
 
 export const DOC_KINDS: { kind: DocKind; title: string; room: string; blurb: string }[] = [
   { kind: "one-pager", title: "One-pager", room: "idea", blurb: "The company on one page: problem, who, what changes hands, why now, what you need." },
@@ -23,6 +24,7 @@ export const DOC_KINDS: { kind: DocKind; title: string; room: string; blurb: str
   { kind: "launch", title: "Launch checklist", room: "customers", blurb: "The week before and the week after: where to post, what to say, who to thank." },
   { kind: "update", title: "Investor update", room: "raise", blurb: "Numbers first, ask last, drafted from your weekly log." },
   { kind: "faq", title: "Receptionist FAQ", room: "customers", blurb: "The eight questions visitors ask at a stand, answered in your words so the receptionist can repeat them." },
+  { kind: "brief", title: "Build brief", room: "setup", blurb: "The stand as a brief for Claude Code, Cursor or Lovable: build first, do not build yet, done means." },
 ];
 
 export interface Draft {
@@ -193,6 +195,8 @@ export function draftDocument(kind: DocKind, r: StandRecord): Draft {
       };
     case "update":
       return { kind, title, body: "Drafted from the weekly log — open the Office and log a week first." };
+    case "brief":
+      return { kind, title, body: builderBrief(r) };
     case "faq":
       return {
         kind,

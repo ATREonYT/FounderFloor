@@ -55,6 +55,13 @@ on this device only**. This path refuses to run in a release build; the
 production path is the Supabase Edge Functions (`EXPO_PUBLIC_SUPABASE_URL`),
 which hold the key server-side and gate the Free plan.
 
+## Build with Claude Code, from the stand
+
+`packages/mcp` is FounderFloor as an MCP server: Claude Code reads the
+stand, the interviews and the drawer, and logs what shipped. See its
+README. The stand's **Hand it to your builder** button produces the same
+brief for anyone who never sets up MCP.
+
 ## Where things are
 
 | Path | What |

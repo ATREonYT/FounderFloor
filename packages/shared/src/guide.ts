@@ -5,8 +5,17 @@
  * arithmetic, the dates and the sources are already the true ones. Only
  * the prose is canned. The composer says "Rehearsal" while this answers.
  */
-import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayMonths, runwayEnds, salaryScenario, fmtMoney, fmtMonths, rankFor, toNextRank, nextRank, type StandRecord, type StageId } from "@founderfloor/shared";
-import type { PitchScore } from "./store";
+import { STAGES, currentStage, stageProgress } from "./build-path.ts";
+import { generateDeadlines } from "./deadlines.ts";
+import { runwayLine, runwayMonths, runwayEnds, salaryScenario, fmtMoney, fmtMonths } from "./runway.ts";
+import { rankFor, toNextRank, nextRank } from "./ranks.ts";
+import type { StandRecord, StageId } from "./types.ts";
+
+export interface PitchScore {
+  at: string; // ISO
+  parts: { problem: number; now: number; traction: number; market: number; ask: number };
+  total: number; // 1–10, one decimal
+}
 
 export function askGuide(record: StandRecord, ticks: string[], stageId?: StageId): string {
   const stage = stageId ? STAGES.find((s) => s.id === stageId)! : currentStage(ticks);
