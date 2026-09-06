@@ -660,6 +660,37 @@ const MAX_RESET_TOKENS = 500;
  * machine. Never set it in production.
  */
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+
+/**
+ * The app's bridge to Supabase (docs/reboot-auth.md). This server is the
+ * identity authority; given a live floor token it mints a short HS256 JWT
+ * signed with the Supabase project's JWT secret, so PostgREST and the Edge
+ * Functions can trust `sub` (the floor account id) without a second user
+ * table. Unset secret = the route answers "not configured" and nothing
+ * else changes.
+ */
+const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || "";
+const SUPABASE_JWT_TTL_S = 60 * 60;
+const b64url = (buf) => Buffer.from(buf).toString("base64url");
+function mintSupabaseJwt(acct, now = Date.now()) {
+  const iat = Math.floor(now / 1000);
+  const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const payload = b64url(
+    JSON.stringify({
+      sub: acct.id,
+      role: "authenticated",
+      aud: "authenticated",
+      iss: "founderfloor",
+      iat,
+      exp: iat + SUPABASE_JWT_TTL_S,
+      ...(acct.email ? { email: acct.email } : {}),
+      app_metadata: { provider: "founderfloor" },
+      user_metadata: { name: acct.name },
+    }),
+  );
+  const sig = createHmac("sha256", SUPABASE_JWT_SECRET).update(`${header}.${payload}`).digest("base64url");
+  return `${header}.${payload}.${sig}`;
+}
 const EMAIL_FROM = process.env.EMAIL_FROM || "FounderFloor <noreply@founderfloor.net>";
 // The From can be a no-reply address (no mailbox needed on the domain); set
 // EMAIL_REPLY_TO to a real inbox you read so a user who hits "reply" reaches
@@ -3760,6 +3791,25 @@ async function handleAuthPost(req, res, pathname) {
     return;
   }
 
+  // A Supabase-compatible JWT for a live floor session. Short-lived; the app
+  // asks again when it expires. See docs/reboot-auth.md.
+  if (pathname === "/auth/supabase") {
+    if (!SUPABASE_JWT_SECRET) {
+      sendJson(res, { error: "not configured" });
+      return;
+    }
+    const token = typeof body.token === "string" ? body.token : "";
+    const entry = tokens.get(token);
+    const acct = entry ? accountsById.get(entry.id) : undefined;
+    if (!entry || !acct || isBannedAcct(acct)) {
+      notFound(res);
+      return;
+    }
+    entry.ts = Date.now();
+    sendJson(res, { jwt: mintSupabaseJwt(acct), expiresIn: SUPABASE_JWT_TTL_S, sub: acct.id });
+    return;
+  }
+
   if (pathname === "/auth/forgot") {
     const email = normalizeEmail(body.email);
     // Always the same answer — this route must not reveal which emails exist.
@@ -5088,7 +5138,7 @@ const server = createServer((req, res) => {
       // drift, and the symptom is always the same — the new UI calls an
       // endpoint the old server has never heard of and shows an empty
       // panel. One curl on /health now says which side is behind.
-      features: { boards: true, awards: true, playtime: true, people: true, stands: true, standPages: true },
+      features: { boards: true, awards: true, playtime: true, people: true, stands: true, standPages: true, supabaseJwt: Boolean(SUPABASE_JWT_SECRET) },
     });
     return;
   }
