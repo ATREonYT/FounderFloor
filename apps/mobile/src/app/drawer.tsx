@@ -8,7 +8,8 @@ import { useState } from "react";
 import { Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter } from "expo-router";
 import { DOC_KINDS, draftDocument, GUIDE_PROMPT, standBlock } from "@founderfloor/shared";
-import { Body, Button, ButtonRow, Dialogue, Display, Mono, Plate, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Dialogue, Display, GlyphTile, Mono, Plate, Scene, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
+import { DOC_GLYPH } from "../lib/glyphs";
 import { useFounder, type SavedDoc } from "../lib/store";
 import { useStand } from "../lib/stand";
 import { useGate } from "../lib/gate";
@@ -49,12 +50,16 @@ export default function Drawer() {
         <Pressable onPress={() => router.back()} accessibilityRole="button" style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
+        <Scene set="archive" height={L.compact ? 164 : 192} radiusPx={radius.xl} ambient={false} accessibilityLabel="The drawer">
+          <Spec tone="muted">{docs.length ? `${docs.length} DOCUMENT${docs.length === 1 ? "" : "S"}` : "EMPTY SO FAR"}</Spec>
+        </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The drawer</Display>
         <Body tone="muted">{`Drafted from ${stand.name}'s stand, in your words and numbers. ${MODE_LINE[aiMode()]}.`}</Body>
         {docs.length ? (
           <Plate tone="panel" radius={radius.xl}>
             {docs.map((d, i) => (
               <Pressable key={d.id} onPress={() => setOpen(d)} accessibilityRole="button" style={({ pressed }) => ({ padding: 14, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, backgroundColor: pressed ? shell.well : "transparent", flexDirection: "row", alignItems: "center", gap: 12 })}>
+                <GlyphTile id={DOC_GLYPH[d.kind] ?? "star"} size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Body medium>{d.title}</Body>
                   <Spec tone="faint">{`${d.at.slice(0, 10)} · ${d.source}`}</Spec>
@@ -69,15 +74,20 @@ export default function Drawer() {
           {DOC_KINDS.filter((k) => k.kind !== "update").map((k) => (
             <Pressable key={k.kind} onPress={() => draft(k)} disabled={!!busy} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: L.compact ? "100%" : "48%", flexGrow: 1, opacity: pressed || busy === k.kind ? 0.7 : 1 })}>
               <Plate tone="paperSign" radius={radius.lg} padding={12}>
-                <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-                  <Body medium>{k.title}</Body>
-                  <Spec tone="faint" style={{ marginLeft: "auto" }}>
-                    {k.room}
-                  </Spec>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <GlyphTile id={DOC_GLYPH[k.kind] ?? "star"} size={36} />
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+                      <Body medium>{k.title}</Body>
+                      <Spec tone="faint" style={{ marginLeft: "auto" }}>
+                        {k.room}
+                      </Spec>
+                    </View>
+                    <Spec tone="muted" style={{ marginTop: 2 }}>
+                      {busy === k.kind ? "Drafting…" : k.blurb}
+                    </Spec>
+                  </View>
                 </View>
-                <Spec tone="muted" style={{ marginTop: 4 }}>
-                  {busy === k.kind ? "Drafting…" : k.blurb}
-                </Spec>
               </Plate>
             </Pressable>
           ))}

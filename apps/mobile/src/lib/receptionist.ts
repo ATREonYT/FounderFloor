@@ -51,7 +51,7 @@ export function useReceptionist(coachId?: string) {
     const { stand: s, founder: f } = ctx.current;
     const r = s.record;
     const p = prompt.toLowerCase();
-    if (/one.?liner|draft|redraft|copy|pitch|sign|tagline|write/.test(p)) return `That is the Sign Painter's counter on the floor, and Rook's here. For the sign: three tries, plain words, no adjective that needs defending. 1. ${r.oneLiner || "Say what changes hands."} 2. ${r.name || "Your company"}: who pays, and what they get. 3. The same, for the person who has never heard of you.\n\nWant Rook to draft the message that goes with it?`;
+    if (/one.?liner|draft|redraft|copy|pitch|sign|tagline|write/.test(p)) return `That is the Sign Painter's counter on the floor, and Jonah's here. For the sign: three tries, plain words, no adjective that needs defending. 1. ${r.oneLiner || "Say what changes hands."} 2. ${r.name || "Your company"}: who pays, and what they get. 3. The same, for the person who has never heard of you.\n\nWant Jonah to draft the message that goes with it?`;
     if (/stand|booth|visitors|week|changed/.test(p)) return `${s.name}${s.hall ? `, ${s.spot} in the ${s.hall.replace(/-/g, " ")}` : ", no spot on a floor yet"}. Rank ${s.rank.name}${r.mrr ? ` at ${fmtMoney(r.mrr, r.currency)} a month` : ""}. ${s.online ? "Your stand is showing you online." : "Your stand shows you away; the receptionist is answering."} ${f.ticks.length ? `${f.ticks.length} workshop items ticked.` : "Nothing ticked in the workshop yet."}\n\nWant the honest version from Ines: where are you really?`;
     if (/who|row|floor|here|tonight|people|online|hall/.test(p)) {
       const row = HALLS.find((h) => h.id === "cofounder-row")!;
@@ -59,11 +59,11 @@ export function useReceptionist(coachId?: string) {
       return `${main.here} people are on the floor. Co-founder Row has ${row.here}. Ramen District is quiet until the evening. The Floor tab drops you in; the counts up top are live.\n\nWant me to open the Row?`;
     }
     if (/code|redeem|promo|product ?hunt/.test(p)) return "Codes are redeemed at the Ticket Booth on the floor, under Membership. PRODUCTHUNT is live: three months of Founder+, one per account, until 3 December.\n\nWant the Floor tab open at the booth?";
-    if (/runway|money|cash|burn/.test(p)) return r.burn ? `${runwayLine({ cash: r.cash, burn: r.burn, mrr: r.mrr }, r.currency)}. Teodor has the salary scenarios and the filing calendar.\n\nOpen Finance?` : "Burn and cash are not on the stand yet, so nobody here can tell you the runway. Open the stand and put the three numbers in.\n\nShall I open it?";
+    if (/runway|money|cash|burn/.test(p)) return r.burn ? `${runwayLine({ cash: r.cash, burn: r.burn, mrr: r.mrr }, r.currency)}. Theo has the salary scenarios and the filing calendar.\n\nOpen Finance?` : "Burn and cash are not on the stand yet, so nobody here can tell you the runway. Open the stand and put the three numbers in.\n\nShall I open it?";
     if (/where am i|honest|really/.test(p)) return whereAmI(r, f.ticks);
     if (/^(hi|hello|hey|evening|morning|yo)\b/.test(p)) return "Evening. What do you need: your stand, the floor, or one of the coaches?";
     if (/thank/.test(p)) return "Any time. The desk is open whenever the hall is.";
-    return "I can do three things from the desk: tell you about your stand, tell you who is in the building, or hand you to a coach: Ines for the plan, Rook for sales, Marguerite for the pitch, Teodor for the money.\n\nWhich?";
+    return "I can do three things from the desk: tell you about your stand, tell you who is in the building, or hand you to a coach: Ines for the plan, Jonah for sales, Margot for the pitch, Theo for the money.\n\nWhich?";
   };
 
   /** Stream `full` word by word into a new desk turn. */

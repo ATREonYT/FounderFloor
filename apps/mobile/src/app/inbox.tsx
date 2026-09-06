@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
-import { Body, Composer, Dialogue, Display, Keeper, Message, Plate, Spec, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Composer, Dialogue, Display, Keeper, Message, Plate, Scene, Spec, radius, shell, useLayout } from "@founderfloor/ui";
 import { THREADS } from "../lib/mock";
 import { useInbox, type InboxItem } from "../lib/store";
 
@@ -39,10 +39,13 @@ export default function Inbox() {
         <View style={{ width: 72 }} />
       </View>
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: 720, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: L.insets.bottom + 24, gap: 16 }}>
-        <View style={{ gap: 8, paddingBottom: 4 }}>
+        <Scene set="mailroom" height={L.compact ? 164 : 192} radiusPx={radius.xl} accessibilityLabel="The mailroom">
+          <Spec tone="muted">{unread ? `${unread} WAITING` : "ALL READ"}</Spec>
+        </Scene>
+        <View style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>Inbox</Display>
           <Body tone="muted" size="lg">
-            People who stopped at your stand, what the receptionist took down while you were away, and what the coaches want you to see.
+            Visitors to your stand, the receptionist's notes, and the coaches.
           </Body>
         </View>
         <Plate tone="panel" radius={radius.xl}>

@@ -10,7 +10,8 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useRouter } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Button, ButtonRow, Dialogue, Display, Door, Keeper, Plate, Progress, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Dialogue, Display, Door, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { ROOM_GLYPH } from "../../lib/glyphs";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
@@ -68,10 +69,19 @@ export default function Build() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar center={<Spec tone="muted">{`Workshop · ${Math.round(pathProgress(ticks) * 100)}% of the path`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
-        <View style={{ gap: 8, paddingBottom: 4 }}>
+        <Scene set="workshop" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The workshop">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <GlyphTile id={ROOM_GLYPH[cur.id] ?? "bolt"} color={DOOR[cur.n - 1]} size={36} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Spec tone="muted">YOU ARE IN</Spec>
+              <Body medium numberOfLines={1}>{cur.name}</Body>
+            </View>
+          </View>
+        </Scene>
+        <View style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The workshop</Display>
           <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>
-            {`Six rooms from idea to money. You are in ${cur.name}. Each room has four or five things to do, and the guide knows which one is next.`}
+            Six rooms from idea to money. The guide knows which door is next.
           </Body>
         </View>
 
@@ -91,7 +101,7 @@ export default function Build() {
       <Dialogue open={!!open} onClose={() => setOpen(null)} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tick what is true, not what you intend.">
         {open ? (
           <View style={{ gap: 12 }}>
-            <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
+            <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} set="workshop" ambient={false} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
             <Progress value={stageProgress(open, ticks)} label={open.name} right={`${Math.round(stageProgress(open, ticks) * 100)}%`} color={stageProgress(open, ticks) >= 1 ? shell.verify : shell.accent} />
             <View>
               {open.items.map((it, i) => (

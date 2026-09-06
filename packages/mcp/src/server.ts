@@ -119,7 +119,7 @@ export function createServer(store: Store): McpServer {
     return json(generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant }));
   });
 
-  server.registerTool("ask", { title: "Ask a coach", description: "Ask Ines (strategy), Rook (sales), Marguerite (investor) or Teodor (finance) a question about this company; or the guide: 'next' for the most important next action, 'where' for the blunt assessment. Answers use the stand's real numbers.", inputSchema: { who: z.enum(["strategy", "sales", "investor", "finance", "guide"]), question: z.string().max(4000) } }, async ({ who, question }) => {
+  server.registerTool("ask", { title: "Ask a coach", description: "Ask Ines (strategy), Jonah (sales), Margot (investor) or Theo (finance) a question about this company; or the guide: 'next' for the most important next action, 'where' for the blunt assessment. Answers use the stand's real numbers.", inputSchema: { who: z.enum(["strategy", "sales", "investor", "finance", "guide"]), question: z.string().max(4000) } }, async ({ who, question }) => {
     const [r, ticks] = await Promise.all([store.getStand(), store.listTicks()]);
     if (who === "guide") return text(/where/i.test(question) ? whereAmI(r, ticks) : askGuide(r, ticks));
     const log = await store.getLog();

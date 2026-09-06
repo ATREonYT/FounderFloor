@@ -106,7 +106,7 @@ test("yearly event rules roll forward instead of vanishing", () => {
 });
 
 test("the stand block carries the numbers the coaches reason over", () => {
-  const b = standBlock({ name: "Soup Ticket", oneLiner: "Prepaid meal passes for small shops.", pitch: "", currency: "EUR", mrr: 1200, burn: 6000, cash: 40000, founderSalary: 2000, entity: "de-llc", residence: "CY" });
+  const b = standBlock({ name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", pitch: "", currency: "EUR", mrr: 1200, burn: 6000, cash: 40000, founderSalary: 2000, entity: "de-llc", residence: "CY" });
   assert.match(b, /rank Ramen Profitable, 8800 to the next/);
   assert.match(b, /Runway: €40,000 ÷ \(€6,000 − €1,200\) = 8.3 months/);
   assert.match(b, /Weekly goal: none set/);
@@ -121,7 +121,7 @@ test("the floor client speaks the server's protocol and never throws", async () 
   const fake = async (url, init) => {
     calls.push({ url, init });
     if (url.endsWith("/auth/login")) return { ok: true, status: 200, json: async () => ({ id: "acct_1", name: "ATRE", email: "a@b.c", token: "t" }) };
-    if (url.includes("/state?me=acct_1")) return { ok: true, status: 200, json: async () => ({ state: { myStartup: { name: "Soup Ticket" } }, savedAt: 1, paid: null, coins: 0, perks: null, awards: [] }) };
+    if (url.includes("/state?me=acct_1")) return { ok: true, status: 200, json: async () => ({ state: { myStartup: { name: "Lantern" } }, savedAt: 1, paid: null, coins: 0, perks: null, awards: [] }) };
     return { ok: false, status: 404, json: async () => ({}) };
   };
   const api = new FloorApi("https://floor.example", fake);

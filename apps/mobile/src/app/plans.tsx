@@ -10,7 +10,9 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { APP_PLANS, PLAN_COPY, type Plan } from "@founderfloor/shared";
-import { Body, Button, Choices, Display, Plate, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, Choices, Display, Glyph, Plate, Scene, Spec, Toast, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
+
+const PLAN_GLYPH: Record<Plan, GlyphId> = { free: "leaf", pro: "bolt", founder: "star" };
 import { offerings, purchase, restore, effectivePlan, type Cycle } from "../lib/billing";
 import { useFounder } from "../lib/store";
 
@@ -51,9 +53,12 @@ export default function Plans() {
             <Body size="sm">{why}</Body>
           </Plate>
         ) : null}
+        <Scene set="cafe" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The staff room">
+          <Spec tone="muted">THREE DAYS FREE ON EITHER PAID PLAN</Spec>
+        </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The whole staff, every day.</Display>
         <Body tone="muted" size="lg">
-          Free finds out whether this is for you. Pro is the four coaches, every draft, every hand-off. Founder+ adds the careful model and a better address on the floor.
+          Free finds out whether this is for you. Pro is the four coaches and every draft. Founder+ adds the careful model and a better address on the floor.
         </Body>
         <Choices value={cycle} options={[{ v: "monthly", label: "Monthly" }, { v: "annual", label: "Yearly · two months free" }]} onChange={setCycle} />
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
@@ -64,7 +69,10 @@ export default function Plans() {
             return (
               <Plate key={p} tone={p === "founder" ? "plate" : "panel"} radius={radius.xl} style={{ flex: 1 }}>
                 <View style={{ padding: 18, gap: 10 }}>
-                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 9, backgroundColor: p === "founder" ? "rgba(250,253,255,0.15)" : shell.well, alignItems: "center", justifyContent: "center" }}>
+                      <Glyph id={PLAN_GLYPH[p]} tone={p === "founder" ? "paper" : "auto"} scale={2} />
+                    </View>
                     <Display size="lg" tone={p === "founder" ? "paper" : "ink"}>
                       {PLAN_COPY[p].name}
                     </Display>

@@ -39,7 +39,7 @@ claude mcp add founderfloor \
 | `log`, `log_week`, `log_shipped` | The weekly log; `log_shipped` appends one line to this week. |
 | `interviews`, `add_interview` | What customers said, verbatim. |
 | `calendar` | Filings for the entity and residence, each with its official source. |
-| `ask` | Ines, Rook, Marguerite, Teodor, or the guide, over the real numbers. |
+| `ask` | Ines, Jonah, Margot, Theo, or the guide, over the real numbers. |
 | `read_idea` | The second opinion. Never a score. |
 
 Resources: `founderfloor://stand` (JSON) and `founderfloor://brief` (Markdown).

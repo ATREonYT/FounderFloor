@@ -7,14 +7,14 @@
  */
 import { View, ScrollView } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { Body, Display, Plate, Signage, Spec, Sprite, Stage, Tap, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Display, Glyph, Plate, Signage, Spec, Sprite, Stage, Tap, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
 import { RECEPTIONIST } from "../lib/mock";
 import { useFounder, type Door } from "../lib/store";
 
-const DOORS: { door: Door; sign: string; title: string; line: string; color: string; to: string }[] = [
-  { door: "find", sign: "IDEAS", title: "I need an idea", line: "Tell us what you know and who you know. Five ideas you could start this month, each with the first ten people to talk to.", color: "#3B5B92", to: "/idea/find" },
-  { door: "have", sign: "SECOND OPINION", title: "I have an idea", line: "Write it in a sentence or a paragraph. You get what is already strong, the questions only customers can answer, and how to ask them.", color: "#4E6E4E", to: "/idea/check" },
-  { door: "running", sign: "THE OFFICE", title: "I already run something", line: "Skip the building. The weekly log, the runway, the filing calendar, four coaches who know your numbers, and updates that write themselves.", color: "#B4762E", to: "/office" },
+const DOORS: { door: Door; sign: string; title: string; line: string; color: string; to: string; glyph: GlyphId }[] = [
+  { door: "find", sign: "IDEAS", title: "I need an idea", line: "Five ideas from what you know and who you know, each with the first ten people to call.", color: "#3B5B92", to: "/idea/find", glyph: "bolt" },
+  { door: "have", sign: "SECOND OPINION", title: "I have an idea", line: "A sentence is enough. You get what is strong, and the questions only customers can answer.", color: "#4E6E4E", to: "/idea/check", glyph: "star" },
+  { door: "running", sign: "THE OFFICE", title: "I already run something", line: "Skip the building. The weekly log, the runway, the calendar, and four coaches who know your numbers.", color: "#B4762E", to: "/office", glyph: "coin" },
 ];
 
 export default function Start() {
@@ -31,18 +31,19 @@ export default function Start() {
         <Sprite id="logo-mark" scale={2} />
         <Spec tone="muted">FounderFloor</Spec>
       </View>
-      <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say="Three doors. Take the one that is true today; you can change your mind." height={L.compact ? 200 : 230} scale={2} />
+      <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say="Three doors. Take the one that is true today; you can change your mind." height={L.compact ? 200 : 230} scale={2} set="doors" />
       <Display size={L.compact ? "3xl" : "4xl"}>Which is true today?</Display>
       <Body tone="muted" size="lg">
-        A building for one founder alone: an idea, a plan, the numbers, and staff who remember. The hall full of other founders is at the end, when you have a stand worth showing.
+        One building for one founder: the idea, the plan, the numbers, and staff who remember.
       </Body>
       <View style={{ gap: 12 }}>
         {DOORS.map((d) => (
           <Tap key={d.door} onPress={() => go(d)} accessibilityLabel={d.title}>
             <Plate tone="panel" radius={radius.xl}>
               <View style={{ flexDirection: "row", gap: 16, padding: 16, alignItems: "center" }}>
-                <View style={{ width: 44, height: 60, backgroundColor: d.color, borderRadius: 2, borderWidth: 2, borderColor: shell.ink, alignItems: "flex-end", justifyContent: "center", paddingRight: 6 }}>
-                  <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: shell.accentLift }} />
+                <View style={{ width: 48, height: 64, backgroundColor: d.color, borderRadius: 3, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderWidth: 2, borderColor: shell.ink, alignItems: "center", justifyContent: "center" }}>
+                  <Glyph id={d.glyph} tone="paper" scale={2} />
+                  <View style={{ position: "absolute", right: 6, top: 30, width: 4, height: 4, borderRadius: 2, backgroundColor: shell.accentLift }} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                   <View style={{ alignSelf: "flex-start", backgroundColor: shell.blackout, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 }}>

@@ -19,8 +19,9 @@ import { Pressable, View } from "react-native";
 import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring, useReducedMotion } from "react-native-reanimated";
 import { Sprite, type SpriteId } from "./Sprite";
 import { Sparks } from "./Sparks";
+import { Backdrop, Furniture, SCENE_SETS, type SceneSet } from "./Scene";
 import { Body, Spec } from "./Text";
-import { art, radius, shell } from "./tokens";
+import { art, shell } from "./tokens";
 import type { Look } from "./Keeper";
 
 export type Mood = "idle" | "talk" | "nod" | "cheer" | "rest";
@@ -42,6 +43,8 @@ export function Stage({
   onPress,
   children,
   radiusPx = 28,
+  set = "lobby",
+  ambient = true,
 }: {
   look: Look;
   /** The keeper's awning colour: the wash, the bubble tail, the sparks' partner. */
@@ -56,7 +59,11 @@ export function Stage({
   /** Anything to stand on the counter (a ticket chip, a streak). */
   children?: ReactNode;
   radiusPx?: number;
+  /** The vignette behind the keeper: which hall, which props, who walks past. */
+  set?: SceneSet;
+  ambient?: boolean;
 }) {
+  const [width, setWidth] = useState(360);
   const reduced = useReducedMotion();
   const y = useSharedValue(0);
   const jump = useSharedValue(0);
@@ -129,14 +136,10 @@ export function Stage({
 
   return (
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={who ? `${who}: ${say ?? ""}` : say}>
-      <View style={{ height, borderRadius: radiusPx, overflow: "hidden", backgroundColor: wash(color, scheme() === "dark" ? 0.22 : 0.16), position: "relative" }}>
-        {/* the wall and the floor */}
-        <View style={{ position: "absolute", left: 0, right: 0, bottom: floorH, height: 5, backgroundColor: art.floors["main-hall"].wall }} />
-        <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: floorH, backgroundColor: art.floors["main-hall"].a, flexDirection: "row" }}>
-          {Array.from({ length: 14 }).map((_, i) => (
-            <View key={i} style={{ width: 32, borderRightWidth: 1, borderRightColor: "rgba(0,0,0,0.05)" }} />
-          ))}
-        </View>
+      <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))} style={{ height, borderRadius: radiusPx, overflow: "hidden", backgroundColor: wash(color, scheme() === "dark" ? 0.22 : 0.16), position: "relative" }}>
+        {/* the wall, the floor, and the hall behind the counter */}
+        <Backdrop hall={SCENE_SETS[set].hall} floorH={floorH} scale={scale} />
+        <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={ambient} edges />
         {/* the counter, and the keeper behind it */}
         <View style={{ position: "absolute", left: "50%", bottom: withCounter ? floorH - 10 * scale : floorH - 6, marginLeft: -counterW / 2, width: counterW, height: counterH + keeperH, alignItems: "center" }}>
           <Animated.View style={[{ position: "absolute", bottom: withCounter ? counterH - 2 : 0, left: keeperX }, body]}>

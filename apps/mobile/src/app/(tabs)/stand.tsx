@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter } from "expo-router";
 import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, builderBrief, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
-import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId } from "@founderfloor/ui";
+import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId, Backdrop, Furniture, wash, scheme, type Hall } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder, useSession } from "../../lib/store";
@@ -58,6 +58,7 @@ export default function Stand() {
   const [toast, setToast] = useState<string | null>(null);
   const [look, setLook] = useState({ swatch: stand.swatch, carpetSwatch: stand.carpetSwatch, pattern: stand.pattern as CarpetPattern });
   const [draft, setDraft] = useState(() => ({ ...stand.record }));
+  const [heroW, setHeroW] = useState(360);
   const r = stand.record;
   const cur = r.currency;
   const floor = art.floors[(stand.hall as keyof typeof art.floors) ?? "main-hall"] ?? art.floors["main-hall"];
@@ -136,8 +137,11 @@ export default function Stand() {
         ) : null}
 
         <Plate tone="panel" radius={radius.xl}>
-          <View style={{ backgroundColor: floor.a, alignItems: "center", paddingVertical: 20, borderBottomWidth: 4, borderBottomColor: floor.wall }}>
+          <View onLayout={(e) => setHeroW(Math.round(e.nativeEvent.layout.width))} style={{ backgroundColor: wash(swatches[stand.swatch % swatches.length], scheme() === "dark" ? 0.24 : 0.14), alignItems: "center", paddingTop: 24, paddingBottom: 30, overflow: "hidden", position: "relative" }}>
+            <Backdrop hall={(stand.hall as Hall) in art.floors ? (stand.hall as Hall) : "main-hall"} floorH={L.compact ? 96 : 130} scale={2} />
+            <Furniture set="stand" width={heroW} floorH={L.compact ? 96 : 130} scale={2} only="props" />
             <Booth swatch={stand.swatch} carpetSwatch={stand.carpetSwatch} pattern={stand.pattern} look={stand.look} scale={L.compact ? 2 : 3} />
+            <Furniture set="stand" width={heroW} floorH={L.compact ? 96 : 130} scale={2} only="walkers" />
           </View>
           <View style={{ padding: 20, gap: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -255,12 +259,12 @@ export default function Stand() {
                   <Spec tone="accent">{`Official source → ${new URL(nextFiling.source).hostname}`}</Spec>
                 </Pressable>
                 <Spec tone="faint" style={{ marginTop: 4 }}>
-                  Not tax advice. {deadlines.length > 1 ? `${deadlines.length - 1} more with Teodor.` : ""}
+                  Not tax advice. {deadlines.length > 1 ? `${deadlines.length - 1} more with Theo.` : ""}
                 </Spec>
               </>
             ) : (
               <Body size="sm" tone="muted" style={{ marginTop: 8 }}>
-                {r.entity === "none" ? "No entity on the stand, so nothing to file. Choose one in the numbers." : "Nothing dated for this entity and residence. Teodor will say what he knows."}
+                {r.entity === "none" ? "No entity on the stand, so nothing to file. Choose one in the numbers." : "Nothing dated for this entity and residence. Theo will say what he knows."}
               </Body>
             )}
           </Plate>
@@ -319,12 +323,12 @@ export default function Stand() {
       </ScrollView>
 
       {/* the numbers — the brief's extended stand editor */}
-      <Dialogue open={numbers} onClose={() => setNumbers(false)} sign="THE NUMBERS" keeper="Teodor" blurb="What the coaches reason over. Nothing here is shown to visitors." color="#5E7C93" wide footer="Saved on this device until the desk is wired.">
+      <Dialogue open={numbers} onClose={() => setNumbers(false)} sign="THE NUMBERS" keeper="Theo" blurb="What the coaches reason over. Nothing here is shown to visitors." color="#5E7C93" wide footer="Saved on this device until the desk is wired.">
         <View style={{ gap: 14 }}>
           {stand.source !== "floor" ? (
             <>
               <Input label="Company" value={draft.name} onChangeText={(name) => setDraft((d) => ({ ...d, name }))} placeholder="What it's called" />
-              <Input label="One-liner — what changes hands" value={draft.oneLiner} onChangeText={(oneLiner) => setDraft((d) => ({ ...d, oneLiner }))} placeholder="Prepaid meal passes for small shops." />
+              <Input label="One-liner — what changes hands" value={draft.oneLiner} onChangeText={(oneLiner) => setDraft((d) => ({ ...d, oneLiner }))} placeholder="Prepaid passes for the cafés people come back to." />
             </>
           ) : (
             <Spec tone="faint">Name and sign come from your stand on the floor; repaint them there.</Spec>

@@ -111,7 +111,7 @@ export default function Check() {
         {busy ? <Thinking label="Reading it the way a customer would…" avatar={<Keeper look={ines.look} scale={1} color={ines.color} speaking />} /> : null}
         {read ? (
           <>
-            <Stage look={ines.look} color={ines.color} who={ines.name} say={read.readinessLine} mood={read.readiness === "ready" ? "cheer" : "nod"} scale={2} height={210} radiusPx={20} />
+            <Stage look={ines.look} color={ines.color} who={ines.name} say={read.readinessLine} mood={read.readiness === "ready" ? "cheer" : "nod"} scale={2} height={210} radiusPx={20} set="doors" />
             <Plate tone="panel" radius={radius.xl}>
               <View style={{ padding: 16, gap: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

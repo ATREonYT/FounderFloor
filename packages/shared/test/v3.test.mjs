@@ -5,7 +5,7 @@ import { deltas, draftUpdate, pct } from "../src/kpi.ts";
 import { draftDocument, DOC_KINDS } from "../src/documents.ts";
 import { canUse, FREE_LIMITS } from "../src/plans.ts";
 
-const REC = { name: "Soup Ticket", oneLiner: "Prepaid meal passes for small shops.", pitch: "", currency: "EUR", mrr: 1200, burn: 6000, cash: 40000, founderSalary: 2000, entity: "de-llc", residence: "CY", target90: "€2,000 MRR by December" };
+const REC = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", pitch: "", currency: "EUR", mrr: 1200, burn: 6000, cash: 40000, founderSalary: 2000, entity: "de-llc", residence: "CY", target90: "€2,000 MRR by December" };
 
 test("the finder returns five ideas, matched to who the founder knows, deterministic", () => {
   const brief = { skills: ["code", "design"], audiences: ["cafés", "my barber"], hoursPerWeek: 8, budget: 200 };
@@ -33,7 +33,7 @@ test("the second opinion never scores and always leaves the founder with a next 
   assert.equal(sketch.questions.length, 3);
   assert.equal(sketch.ask.length, 5);
   assert.ok(!/\d\/10|score/i.test(JSON.stringify(sketch)));
-  const ready = readIdea("Small cafés lose hours every week chasing regulars who pay late. Soup Ticket is a prepaid pass they pay €29 a month for. Since 2025 card fees doubled so shops want prepayment. I talked to 14 shop owners, 9 said they would pay.");
+  const ready = readIdea("Small cafés lose hours every week chasing regulars who pay late. Lantern is a prepaid pass they pay €29 a month for. Since 2025 card fees doubled so shops want prepayment. I talked to 14 shop owners, 9 said they would pay.");
   assert.equal(ready.readiness, "ready");
   assert.equal(ready.strong.length, 3);
   assert.match(ready.sharpen, /price/);
@@ -54,7 +54,7 @@ test("the weekly log computes deltas and drafts an update that never invents", (
   assert.equal(d.revenue, "+20%");
   assert.equal(d.customers, "+2");
   const u = draftUpdate(e, REC);
-  assert.match(u, /Soup Ticket — update for 2026-W36/);
+  assert.match(u, /Lantern — update for 2026-W36/);
   assert.match(u, /Revenue: €1,200 \(\+20% on 2026-W35\)/);
   assert.match(u, /€40,000 ÷ \(€6,000 − €1,200\) = 8.3 months/);
   assert.match(u, /Shipped: the pass QR/);
@@ -94,7 +94,7 @@ test("free limits gate exactly as the copy promises", () => {
 test("the builder brief carries the stand, marks what is missing, and never invents interviews", async () => {
   const { builderBrief } = await import("../src/brief.ts");
   const b = builderBrief({ ...REC, segment: "b2b-saas" }, { ticks: ["idea.problem"], interviews: [{ who: "Dora", said: "I lose an hour a week chasing tabs", paysToday: "a POS at €49/mo" }], mcp: true });
-  assert.match(b, /^# Soup Ticket — build brief/);
+  assert.match(b, /^# Lantern — build brief/);
   assert.match(b, /Stage on the build path: 1\. Idea/);
   assert.match(b, /Runway: €40,000 ÷ \(€6,000 − €1,200\) = 8.3 months/);
   assert.match(b, /- Dora: "I lose an hour a week chasing tabs" \(pays today: a POS at €49\/mo\)/);

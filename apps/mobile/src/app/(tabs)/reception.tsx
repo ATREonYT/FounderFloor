@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Body, Button, Chip, Composer, Dialogue, Display, Keeper, Message, Pill, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
+import { COACH_SET } from "../../lib/glyphs";
 import { COACHES, HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
 import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
@@ -90,7 +91,7 @@ export default function Reception() {
         >
           {empty ? (
             <View style={{ gap: 20, paddingBottom: 8 }}>
-              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240}>
+              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
                 <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
               </Stage>
               <View style={{ gap: 8 }}>
@@ -128,7 +129,7 @@ export default function Reception() {
             </View>
           ) : (
             <>
-              <Stage look={coach.look} color={coach.color} mood={mood} scale={2} height={112} radiusPx={20} who={atDesk ? "The desk" : coach.name} say={lastDesk && !lastDesk.streaming ? undefined : undefined} />
+              <Stage look={coach.look} color={coach.color} mood={mood} scale={2} height={112} radiusPx={20} ambient={false} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"} who={atDesk ? "The desk" : coach.name} say={lastDesk && !lastDesk.streaming ? undefined : undefined} />
               {messages.map((m) => (
                 <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} avatar={m.role === "desk" ? <Keeper look={coach.look} scale={1} speaking={!!m.streaming} color={coach.color} /> : undefined} />
               ))}

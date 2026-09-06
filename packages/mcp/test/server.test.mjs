@@ -32,15 +32,15 @@ test("an agent reads the stand, ticks a room, logs what shipped and drafts the b
   assert.equal(empty.rank, "Garage");
   assert.equal(empty.runway, null);
 
-  const upd = JSON.parse(await call(c, "update_stand", { name: "Soup Ticket", oneLiner: "Prepaid meal passes for small shops.", segment: "b2b-saas", mrr: 1200, burn: 6000, cash: 40000, entity: "de-llc", residence: "CY" }));
-  assert.equal(upd.name, "Soup Ticket");
+  const upd = JSON.parse(await call(c, "update_stand", { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", segment: "b2b-saas", mrr: 1200, burn: 6000, cash: 40000, entity: "de-llc", residence: "CY" }));
+  assert.equal(upd.name, "Lantern");
   const st = JSON.parse(await call(c, "stand"));
   assert.equal(st.rank, "Ramen Profitable");
   assert.equal(st.runway, "€40,000 ÷ (€6,000 − €1,200) = 8.3 months");
 
   // the same file, read by a second server (the app and the agent share it)
   const again = new FileStore(join(dir, "stand.json"));
-  assert.equal((await again.getStand()).name, "Soup Ticket");
+  assert.equal((await again.getStand()).name, "Lantern");
 
   assert.match(await call(c, "tick", { itemId: "idea.problem", proof: "sentence on the sign" }), /Ticked idea\.problem — sentence on the sign\. 3% of the path/);
   assert.match(await call(c, "tick", { itemId: "nope" }), /No item nope/);
@@ -55,7 +55,7 @@ test("an agent reads the stand, ticks a room, logs what shipped and drafts the b
 
   await call(c, "add_interview", { who: "Dora", said: "I lose an hour a week chasing tabs", paysToday: "a POS at €49/mo" });
   const brief = await call(c, "brief");
-  assert.match(brief, /^# Soup Ticket — build brief/);
+  assert.match(brief, /^# Lantern — build brief/);
   assert.match(brief, /Dora: "I lose an hour a week chasing tabs"/);
   assert.match(brief, /founderfloor\.log_shipped/);
 
@@ -76,7 +76,7 @@ test("an agent reads the stand, ticks a room, logs what shipped and drafts the b
   assert.equal(idea.readiness, "sketch");
 
   const res = await c.readResource({ uri: "founderfloor://stand" });
-  assert.equal(JSON.parse(res.contents[0].text).name, "Soup Ticket");
+  assert.equal(JSON.parse(res.contents[0].text).name, "Lantern");
 });
 
 test("the Supabase store speaks PostgREST with the founder's JWT and maps columns both ways", async () => {
@@ -84,7 +84,7 @@ test("the Supabase store speaks PostgREST with the founder's JWT and maps column
   const jwt = `x.${Buffer.from(JSON.stringify({ sub: "acct_1", role: "authenticated" })).toString("base64url")}.y`;
   const f = async (url, init) => {
     calls.push({ url, init });
-    if (url.includes("/stands?owner_id=eq.acct_1")) return { ok: true, text: async () => JSON.stringify([{ name: "Soup Ticket", one_liner: "x", mrr: 1200, founder_salary: 2000, weekly_goal_progress: 0.5 }]) };
+    if (url.includes("/stands?owner_id=eq.acct_1")) return { ok: true, text: async () => JSON.stringify([{ name: "Lantern", one_liner: "x", mrr: 1200, founder_salary: 2000, weekly_goal_progress: 0.5 }]) };
     if (url.includes("/stands?on_conflict=owner_id")) return { ok: true, text: async () => JSON.stringify([JSON.parse(init.body)]) };
     if (url.includes("/kpi_log?on_conflict")) return { ok: true, text: async () => "" };
     if (url.includes("/kpi_log?owner_id")) return { ok: true, text: async () => JSON.stringify([{ week: "2026-W36", revenue: 1, customers: 2, cash: 3, hours_on_customers: 4 }]) };
@@ -92,7 +92,7 @@ test("the Supabase store speaks PostgREST with the founder's JWT and maps column
   };
   const s = new SupabaseStore("https://p.supabase.co/", "anon", jwt, f);
   const r = await s.getStand();
-  assert.equal(r.name, "Soup Ticket");
+  assert.equal(r.name, "Lantern");
   assert.equal(r.founderSalary, 2000);
   assert.equal(r.weeklyGoalProgress, 0.5);
   assert.equal(calls[0].init.headers.authorization, `Bearer ${jwt}`);

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, type KpiEntry } from "@founderfloor/shared";
-import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, Keeper, Mono, Plate, Spec, Tap, Toast, haptic, radius, shell, useLayout } from "@founderfloor/ui";
+import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Glyph, GlyphTile, Input, Keeper, Mono, Plate, Scene, Spec, Tap, Toast, haptic, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, setPendingSay } from "../../lib/chrome";
 import { isoWeek, useFounder } from "../../lib/store";
@@ -74,20 +74,29 @@ export default function Office() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <View style={{ gap: 8, paddingBottom: 4 }}>
+        <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The Office">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <GlyphTile id="coin" color="#5E7C93" size={36} />
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Spec tone="muted">{`WEEK ${wk.slice(-2)}`}</Spec>
+              <Body medium numberOfLines={1}>{d ? `${fmtMoney(d.latest.revenue, cur)} this month · ${d.revenue}` : "Nothing logged yet"}</Body>
+            </View>
+          </View>
+        </Scene>
+        <View style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The Office</Display>
           <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>
-            Five numbers a week, and everything that follows from them. This is the room founders keep in their head; keep it here instead.
+            Five numbers a week, and everything that follows from them.
           </Body>
         </View>
 
         {/* rituals */}
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
-          <Ritual title="Monday plan" on={weekday === 1} line="Three goals with a number each." onPress={() => {
+          <Ritual title="Monday plan" glyph="bolt" on={weekday === 1} line="Three goals with a number each." onPress={() => {
               setPendingSay("strategy", "Monday plan");
               router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href);
             }} />
-          <Ritual title="Friday review" on={weekday === 5} line="Promised against shipped." onPress={() => {
+          <Ritual title="Friday review" glyph="star" on={weekday === 5} line="Promised against shipped." onPress={() => {
               setPendingSay("strategy", "Friday review");
               router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href);
             }} />
@@ -187,7 +196,7 @@ export default function Office() {
             ))
           ) : (
             <Body size="sm" tone="muted" style={{ marginTop: 8 }}>
-              {r.entity === "none" ? "No entity on the stand yet, so nothing to file. Teodor can compare the options." : "Nothing dated for this entity and residence."}
+              {r.entity === "none" ? "No entity on the stand yet, so nothing to file. Theo can compare the options." : "Nothing dated for this entity and residence."}
             </Body>
           )}
           <Spec tone="faint" style={{ marginTop: 8 }}>
@@ -209,7 +218,7 @@ export default function Office() {
         </Pressable>
       </ScrollView>
 
-      <Dialogue open={log} onClose={() => setLog(false)} sign="THE WEEKLY LOG" keeper="Teodor" blurb={`Week ${wk}. Five numbers; the rest follows.`} color="#5E7C93" footer="Same numbers each week, however you define them, so the deltas mean something.">
+      <Dialogue open={log} onClose={() => setLog(false)} sign="THE WEEKLY LOG" keeper="Theo" blurb={`Week ${wk}. Five numbers; the rest follows.`} color="#5E7C93" footer="Same numbers each week, however you define them, so the deltas mean something.">
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
             <View style={{ flex: 1 }}>
@@ -256,7 +265,7 @@ export default function Office() {
         ) : null}
       </Dialogue>
 
-      <Dialogue open={iv} onClose={() => setIv(false)} sign="THE INTERVIEW BOOK" keeper="Rook" blurb="Their words. Not yours." color="#B4762E" footer="Ten of these, then read the idea back again.">
+      <Dialogue open={iv} onClose={() => setIv(false)} sign="THE INTERVIEW BOOK" keeper="Jonah" blurb="Their words. Not yours." color="#B4762E" footer="Ten of these, then read the idea back again.">
         <View style={{ gap: 12 }}>
           <Input label="Who (name or role)" value={ivDraft.who} onChangeText={(who) => setIvDraft((x) => ({ ...x, who }))} placeholder="Dora, three cafés in Limassol" />
           <Input label="What they said" value={ivDraft.said} onChangeText={(said) => setIvDraft((x) => ({ ...x, said }))} multiline placeholder="“We tried stamps once. Nobody used them. I lose an hour a week chasing tabs.”" style={{ minHeight: 100 }} />
@@ -288,12 +297,14 @@ export default function Office() {
   );
 }
 
-function Ritual({ title, on, line, onPress }: { title: string; on: boolean; line: string; onPress: () => void }) {
+function Ritual({ title, glyph, on, line, onPress }: { title: string; glyph: GlyphId; on: boolean; line: string; onPress: () => void }) {
   return (
     <Tap onPress={onPress} accessibilityLabel={title} style={{ flex: 1 }}>
       <Plate tone={on ? "plate" : "panel"} radius={radius.xl} padding={16}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: on ? shell.accentLift : shell.faint }} />
+          <View style={{ width: 36, height: 36, borderRadius: 9, backgroundColor: on ? "rgba(250,253,255,0.15)" : shell.well, alignItems: "center", justifyContent: "center" }}>
+            <Glyph id={glyph} tone={on ? "paper" : "auto"} scale={2} />
+          </View>
           <View style={{ flex: 1 }}>
             <Body medium tone={on ? "paper" : "ink"}>
               {title}

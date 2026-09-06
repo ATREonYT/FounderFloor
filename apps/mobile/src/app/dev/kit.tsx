@@ -162,8 +162,8 @@ export default function Kit() {
           <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
             <Plate tone="panel" padding={16} style={{ flex: 1 }}>
               <Spec tone="muted">MAIN HALL · A-04</Spec>
-              <Display size="lg" style={{ marginTop: 4 }}>Soup Ticket</Display>
-              <Body size="sm" tone="muted">Prepaid meal passes for small shops.</Body>
+              <Display size="lg" style={{ marginTop: 4 }}>Lantern</Display>
+              <Body size="sm" tone="muted">Prepaid passes for the cafés people come back to.</Body>
             </Plate>
             <Plate tone="glass" padding={12} style={{ flex: 1 }}>
               <Spec tone="ink">Chat · Bo walked in · open</Spec>

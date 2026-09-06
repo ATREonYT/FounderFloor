@@ -9,7 +9,8 @@ import { useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { findIdeas, IDEA_FIND_PROMPT, type Idea, type IdeaBrief } from "@founderfloor/shared";
-import { Body, Button, ButtonRow, Choices, Display, Input, Plate, Spec, Thinking, Keeper, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Choices, Display, Input, Plate, Spec, Thinking, Keeper, radius, shell, useLayout, GlyphTile } from "@founderfloor/ui";
+import { SEGMENT_GLYPH } from "../../lib/glyphs";
 import { useFounder } from "../../lib/store";
 import { useGate } from "../../lib/gate";
 import { askModel, parseJson, aiMode, MODE_LINE } from "../../lib/ai";
@@ -96,7 +97,10 @@ export default function Find() {
                 {source === "live" ? "live" : "rehearsal"}
               </Spec>
             </View>
-            <Display size="lg">{i.oneLiner}</Display>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <GlyphTile id={SEGMENT_GLYPH[i.segment] ?? "star"} color={ines.color} size={40} />
+              <Display size="lg" style={{ flex: 1, minWidth: 0 }}>{i.oneLiner}</Display>
+            </View>
             <Row k="The pain" v={i.pain} />
             <Row k="What changes hands" v={i.whatChangesHands} />
             <Row k="Why now" v={i.whyNow} />
