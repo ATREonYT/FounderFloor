@@ -12,19 +12,14 @@ import { Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { FONT_MAP, PIXELATED_CSS, shell } from "@founderfloor/ui";
-import { useFounder } from "../lib/store";
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts(FONT_MAP);
-  const touchStreak = useFounder((s) => s.touchStreak);
   useEffect(() => {
     if (loaded) void SplashScreen.hideAsync();
   }, [loaded]);
-  useEffect(() => {
-    touchStreak();
-  }, [touchStreak]);
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const s = document.createElement("style");

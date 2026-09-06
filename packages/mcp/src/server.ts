@@ -63,6 +63,8 @@ export function createServer(store: Store): McpServer {
         weeklyGoalProgress: z.number().min(0).max(1).optional(),
         target90: z.string().max(200).optional(),
         formedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        yearEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        stockGrant: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
         publicPricing: z.string().max(400).optional(),
         faq: z.array(z.object({ q: z.string().max(200), a: z.string().max(600) })).max(12).optional(),
       },
@@ -114,7 +116,7 @@ export function createServer(store: Store): McpServer {
 
   server.registerTool("calendar", { title: "The filing calendar", description: "Upcoming filings for the stand's entity and residence, each with its official source. Not tax advice.", inputSchema: {} }, async () => {
     const r = await store.getStand();
-    return json(generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn }));
+    return json(generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant }));
   });
 
   server.registerTool("ask", { title: "Ask a coach", description: "Ask Ines (strategy), Rook (sales), Marguerite (investor) or Teodor (finance) a question about this company; or the guide: 'next' for the most important next action, 'where' for the blunt assessment. Answers use the stand's real numbers.", inputSchema: { who: z.enum(["strategy", "sales", "investor", "finance", "guide"]), question: z.string().max(4000) } }, async ({ who, question }) => {

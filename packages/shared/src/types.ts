@@ -63,6 +63,10 @@ export interface StandRecord {
   target90?: string;
   /** ISO date the entity was formed — drives event-based filings. */
   formedOn?: string;
+  /** ISO date of the most recent financial year end — accounts, HE32, CT. */
+  yearEnd?: string;
+  /** ISO date vesting stock was received — the 83(b)'s 30 days. */
+  stockGrant?: string;
   /** Founder-written answers the receptionist may repeat. */
   faq?: { q: string; a: string }[];
   publicPricing?: string;

@@ -93,6 +93,18 @@ test("a Cyprus Ltd gets the quarterly VAT date nearest to now", () => {
   assert.equal(d[0].ruleId, "cy-vat");
 });
 
+test("yearly event rules roll forward instead of vanishing", () => {
+  const now = new Date("2026-09-05T12:00:00Z");
+  const uk = generateDeadlines({ entity: "uk-ltd", residence: "GB", formedOn: "2022-03-10", yearEnd: "2025-12-31" }, now);
+  const conf = uk.find((x) => x.ruleId === "uk-confirmation");
+  assert.equal(conf.due, "2027-03-24"); // 2022-03-10 + 379d = 2023-03-24, rolled to the first date on or after today
+  assert.equal(uk.find((x) => x.ruleId === "uk-accounts").due, "2026-10-01");
+  assert.equal(uk.find((x) => x.ruleId === "uk-ct").due, "2026-10-02");
+  const c = generateDeadlines({ entity: "de-ccorp", residence: "US", stockGrant: "2026-08-20" }, now);
+  assert.equal(c.find((x) => x.ruleId === "us-83b").due, "2026-09-19");
+  assert.ok(!generateDeadlines({ entity: "de-ccorp", residence: "US", stockGrant: "2026-01-01" }, now).some((x) => x.ruleId === "us-83b"), "a passed one-off stays gone");
+});
+
 test("the stand block carries the numbers the coaches reason over", () => {
   const b = standBlock({ name: "Soup Ticket", oneLiner: "Prepaid meal passes for small shops.", pitch: "", currency: "EUR", mrr: 1200, burn: 6000, cash: 40000, founderSalary: 2000, entity: "de-llc", residence: "CY" });
   assert.match(b, /rank Ramen Profitable, 8800 to the next/);

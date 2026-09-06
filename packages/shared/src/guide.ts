@@ -81,7 +81,7 @@ export function coachReply(coach: string, prompt: string, ctx: CoachContext): { 
       return { text: `Today: ${runwayLine(rw, cur)}.\nAt ${s.line}.\n\n${Number.isFinite(s.runway) && s.runway < 6 ? "Under six months is where fundraising stops being a choice. I would not take the raise before the next two customers." : "You can afford it on paper. Whether you should depends on what the money would buy instead."}\n\nWhat would the extra ${fmtMoney(Math.max(0, amt - r.founderSalary), cur)} a month change about how you work?` };
     }
     if (/file|filing|deadline|due|5472|tax|vat|franchise|calendar/.test(p)) {
-      const ds = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn }, new Date()).slice(0, 3);
+      const ds = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant }, new Date()).slice(0, 3);
       if (r.entity === "none") return { text: "There is no entity on the stand, so there is nothing to file yet, and nothing protecting you either. When you choose one, put it on the stand and I will generate the calendar with a source for each date.\n\nWhich are you leaning towards, and where do you live?" };
       if (ds.length === 0) return { text: `Nothing on the rule sheet for a ${r.entity} owned from ${r.residence} that I can date without more information. Check the official source for your registrar.\n\nWhen was the company formed?` };
       const lines = ds.map((d) => `${d.title} — ${d.due}, ${d.daysLeft} days. ${d.what.split(". ")[0]}. Source: ${d.source}`);

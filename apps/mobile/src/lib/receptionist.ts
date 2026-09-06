@@ -12,8 +12,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
-import { coachReply, whereAmI } from "@founderfloor/shared";
-import { fmtMoney, runwayLine } from "@founderfloor/shared";
+import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, standBlock, type CoachId } from "@founderfloor/shared";
+import { askModel, aiMode, AiError } from "./ai";
 
 export type Turn = { id: string; role: "you" | "desk"; text: string; streaming?: boolean };
 
@@ -28,6 +28,9 @@ export function useReceptionist(coachId?: string) {
   const [messages, setMessages] = useState<Turn[]>(seed);
   const [busy, setBusy] = useState(false);
   const [thinking, setThinking] = useState(false);
+  /** What answered the last turn. The status line shows this, never a wish. */
+  const [source, setSource] = useState<"rehearsal" | "live">("rehearsal");
+  const [quota, setQuota] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const ctx = useRef({ stand, founder });
   ctx.current = { stand, founder };
@@ -63,6 +66,41 @@ export function useReceptionist(coachId?: string) {
     return "I can do three things from the desk: tell you about your stand, tell you who is in the building, or hand you to a coach: Ines for the plan, Rook for sales, Marguerite for the pitch, Teodor for the money.\n\nWhich?";
   };
 
+  /** Stream `full` word by word into a new desk turn. */
+  const reveal = (full: string, pause: number) => {
+    const words = full.split(/(\s+)/);
+    const id = nid();
+    timers.current.push(
+      setTimeout(() => {
+        setThinking(false);
+        setMessages((m) => [...m, { id, role: "desk", text: "", streaming: true }]);
+        let i = 0;
+        const step = () => {
+          i = Math.min(words.length, i + 2);
+          const slice = words.slice(0, i).join("");
+          const done = i >= words.length;
+          setMessages((m) => m.map((x) => (x.id === id ? { ...x, text: slice, streaming: !done } : x)));
+          if (done) setBusy(false);
+          else timers.current.push(setTimeout(step, 22 + Math.random() * 30));
+        };
+        step();
+      }, pause),
+    );
+  };
+
+  const scripted = (t: string): string => {
+    const { stand: s, founder: f } = ctx.current;
+    if (coach.id === "desk") return deskReply(t);
+    const out = coachReply(coach.id, t, { record: s.record, ticks: f.ticks, scores: f.scores, quota: f.quota, streak: s.streak, weekday: new Date().getDay() });
+    if (out.score) f.addScore(out.score);
+    if (out.sent) f.countSent(out.sent);
+    if (typeof out.sent === "number" && out.sent === 0) {
+      const m = t.match(/(\d+)/);
+      if (m) f.setQuota(Number(m[1]));
+    }
+    return out.text;
+  };
+
   const send = useCallback(
     (text: string) => {
       const t = text.trim();
@@ -70,40 +108,40 @@ export function useReceptionist(coachId?: string) {
       setMessages((m) => [...m, { id: nid(), role: "you", text: t }]);
       setBusy(true);
       setThinking(true);
-      const { stand: s, founder: f } = ctx.current;
-      let full: string;
-      if (coach.id === "desk") full = deskReply(t);
-      else {
-        const out = coachReply(coach.id, t, { record: s.record, ticks: f.ticks, scores: f.scores, quota: f.quota, streak: s.streak, weekday: new Date().getDay() });
-        full = out.text;
-        if (out.score) f.addScore(out.score);
-        if (out.sent) f.countSent(out.sent);
-        if (typeof out.sent === "number" && out.sent === 0) {
-          const m = t.match(/(\d+)/);
-          if (m) f.setQuota(Number(m[1]));
-        }
+      setQuota(null);
+      const live = coach.id !== "desk" && aiMode() !== "rehearsal";
+      if (!live) {
+        const full = scripted(t);
+        setSource("rehearsal");
+        reveal(full, 550 + Math.min(700, full.length * 2));
+        return;
       }
-      const words = full.split(/(\s+)/);
-      const id = nid();
-      const pause = 550 + Math.min(700, full.length * 2);
-      timers.current.push(
-        setTimeout(() => {
-          setThinking(false);
-          setMessages((m) => [...m, { id, role: "desk", text: "", streaming: true }]);
-          let i = 0;
-          const step = () => {
-            i = Math.min(words.length, i + 2);
-            const slice = words.slice(0, i).join("");
-            const done = i >= words.length;
-            setMessages((m) => m.map((x) => (x.id === id ? { ...x, text: slice, streaming: !done } : x)));
-            if (done) setBusy(false);
-            else timers.current.push(setTimeout(step, 22 + Math.random() * 30));
-          };
-          step();
-        }, pause),
-      );
+      // a coach, with a key in the door: the model answers over the stand block; the script is the fallback
+      const { stand: s } = ctx.current;
+      const p = COACH_PROMPTS[coach.id as CoachId];
+      const history = messages.slice(-10).map((m) => ({ role: (m.role === "you" ? "user" : "assistant") as "user" | "assistant", content: m.text }));
+      void askModel({
+        fn: "coach-chat",
+        body: { coach: coach.id, message: t, stand: s.record, turns: history },
+        direct: { system: p.system, cached: standBlock(s.record), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
+      })
+        .then((full) => {
+          setSource("live");
+          reveal(full, 0);
+        })
+        .catch((e: unknown) => {
+          if (e instanceof AiError && e.status === 402) {
+            setQuota(e.message);
+            setThinking(false);
+            setBusy(false);
+            return;
+          }
+          const full = scripted(t);
+          setSource("rehearsal");
+          reveal(full, 0);
+        });
     },
-    [coach],
+    [coach, messages],
   );
 
   const reset = useCallback(() => {
@@ -113,5 +151,5 @@ export function useReceptionist(coachId?: string) {
     setThinking(false);
   }, [seed]);
 
-  return { coach, messages, busy, thinking, send, reset, starters: coach.topics };
+  return { coach, messages, busy, thinking, send, reset, starters: coach.topics, source, quota };
 }

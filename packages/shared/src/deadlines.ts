@@ -18,8 +18,8 @@ export interface DeadlineRule {
   residence?: Residence[];
   /** Recurs every year on this month (1–12) and day. */
   fixed?: { month: number; day: number };
-  /** Counts from an event date instead: `daysAfter` from `event`. */
-  event?: { from: "formedOn" | "stockGrant" | "yearEnd"; daysAfter: number };
+  /** Counts from an event date instead: `daysAfter` from `event`. `yearly` rules roll forward a year at a time until they are ahead of today. */
+  event?: { from: "formedOn" | "stockGrant" | "yearEnd"; daysAfter: number; yearly?: boolean };
   source: string;
   checked: string;
   /** Something the founder must verify rather than a date to hit. */
@@ -146,7 +146,7 @@ export const RULES: readonly DeadlineRule[] = [
     title: "Cyprus annual return (HE32)",
     what: "Filed with the Registrar of Companies within 28 days of the annual return date, with the financial statements.",
     entity: ["cy-ltd"],
-    event: { from: "yearEnd", daysAfter: 28 },
+    event: { from: "yearEnd", daysAfter: 28, yearly: true },
     source: "https://www.companies.gov.cy/en/",
     checked: "2026-09-05",
   },
@@ -155,7 +155,7 @@ export const RULES: readonly DeadlineRule[] = [
     title: "UK confirmation statement",
     what: "Confirm the company's details with Companies House at least once a year, within 14 days of the review period ending.",
     entity: ["uk-ltd"],
-    event: { from: "formedOn", daysAfter: 365 + 14 },
+    event: { from: "formedOn", daysAfter: 365 + 14, yearly: true },
     source: "https://www.gov.uk/guidance/confirmation-statement-guidance",
     checked: "2026-09-05",
   },
@@ -164,7 +164,7 @@ export const RULES: readonly DeadlineRule[] = [
     title: "UK annual accounts",
     what: "File accounts with Companies House nine months after the accounting reference date (21 months after incorporation for the first set).",
     entity: ["uk-ltd"],
-    event: { from: "yearEnd", daysAfter: 274 },
+    event: { from: "yearEnd", daysAfter: 274, yearly: true },
     source: "https://www.gov.uk/prepare-file-annual-accounts-for-limited-company",
     checked: "2026-09-05",
   },
@@ -173,7 +173,7 @@ export const RULES: readonly DeadlineRule[] = [
     title: "UK corporation tax payment",
     what: "Pay corporation tax nine months and one day after the end of the accounting period; the CT600 return is due three months later.",
     entity: ["uk-ltd"],
-    event: { from: "yearEnd", daysAfter: 275 },
+    event: { from: "yearEnd", daysAfter: 275, yearly: true },
     source: "https://www.gov.uk/corporation-tax",
     checked: "2026-09-05",
   },
@@ -249,9 +249,10 @@ export function generateDeadlines(input: DeadlineInput, now = new Date()): Deadl
       const b = new Date(base);
       if (Number.isNaN(b.getTime())) continue;
       due = new Date(b.getTime() + r.event.daysAfter * 86_400_000);
-      if (due < today && r.event.from === "yearEnd") {
-        // roll to next year's equivalent
-        due = new Date(Date.UTC(due.getUTCFullYear() + 1, due.getUTCMonth(), due.getUTCDate()));
+      if (r.event.yearly) {
+        // a recurring filing: the next occurrence on or after today
+        let guard = 0;
+        while (due < today && guard++ < 200) due = new Date(Date.UTC(due.getUTCFullYear() + 1, due.getUTCMonth(), due.getUTCDate()));
       }
       if (due < today) continue; // a one-off already passed
     }

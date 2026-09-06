@@ -24,7 +24,7 @@ export default function Reception() {
   const bottom = useBottomChrome();
   const { coach: coachParam } = useLocalSearchParams<{ coach?: string }>();
   const gate = useGate();
-  const { coach, messages, busy, thinking, send, reset, starters } = useReceptionist(coachParam);
+  const { coach, messages, busy, thinking, send, reset, starters, source, quota } = useReceptionist(coachParam);
   const stand = useStand();
   const [draft, setDraft] = useState("");
   const [hallId, setHallId] = useState<HallId>("main-hall");
@@ -42,7 +42,8 @@ export default function Reception() {
 
   const submit = (text = draft) => {
     if (!text.trim() || busy) return;
-    if (!atDesk && !gate("coachTurn", { coach: coach.id })) return;
+    // Free's turns are counted only when a model will answer; a script is free
+    if (!atDesk && aiMode() !== "rehearsal" && !gate("coachTurn", { coach: coach.id })) return;
     send(text);
     setDraft("");
   };
@@ -129,6 +130,11 @@ export default function Reception() {
               {messages.map((m) => (
                 <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} avatar={m.role === "desk" ? <Keeper look={coach.look} scale={1} speaking={!!m.streaming} color={coach.color} /> : undefined} />
               ))}
+              {quota ? (
+                <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: quota } })} accessibilityRole="button">
+                  <Chip grow={false} hint="See the plans →">{quota}</Chip>
+                </Pressable>
+              ) : null}
               {thinking ? <Thinking label={atDesk ? "At the desk…" : `${coach.name} is looking…`} avatar={<Keeper look={coach.look} scale={1} speaking color={coach.color} />} /> : null}
             </>
           )}
@@ -151,7 +157,7 @@ export default function Reception() {
             onAttach={() => router.push("/drawer")}
             placeholder={atDesk ? "Ask the desk…" : `Ask ${coach.name}…`}
             busy={busy}
-            status={`${MODE_LINE[aiMode()]} · ${hall.name}`}
+            status={`${atDesk || aiMode() === "rehearsal" ? MODE_LINE.rehearsal : source === "live" ? MODE_LINE[aiMode()] : `${MODE_LINE[aiMode()]} · last reply was scripted`} · ${hall.name}`}
           />
         </View>
       </KeyboardAvoidingView>

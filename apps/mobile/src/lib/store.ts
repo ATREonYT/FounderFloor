@@ -310,7 +310,14 @@ export const useFounder = create<FounderState>()(
         set({ streak: { days: s.last === yesterday ? s.days + 1 : 1, last: today } });
       },
     }),
-    { name: "ff.founder", storage: createJSONStorage(() => AsyncStorage), version: 2, migrate: (persisted) => ({ ...(persisted as object) }) as unknown as FounderState },
+    {
+      name: "ff.founder",
+      storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      migrate: (persisted) => ({ ...(persisted as object) }) as unknown as FounderState,
+      // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
+      onRehydrateStorage: () => (s) => s?.touchStreak(),
+    },
   ),
 );
 

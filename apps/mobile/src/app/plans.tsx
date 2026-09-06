@@ -6,7 +6,7 @@
  * happen on day zero — so the trial starts from a screen where something
  * useful just happened, never from the app's first launch.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { APP_PLANS, PLAN_COPY, type Plan } from "@founderfloor/shared";
@@ -22,6 +22,10 @@ export default function Plans() {
   const [toast, setToast] = useState<string | null>(null);
   const planState = useFounder((s) => s.plan);
   const current = effectivePlan();
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
   const say = (t: string) => {
     setToast(t);
     setTimeout(() => setToast(null), 2600);
@@ -31,7 +35,9 @@ export default function Plans() {
     const r = await purchase(o);
     if (r.ok) {
       say(`${PLAN_COPY[plan].name} for ${o.trialDays} days, then $${o.price}/${cycle === "monthly" ? "mo" : "yr"}.`);
-      setTimeout(() => router.back(), 1200);
+      timer.current = setTimeout(() => {
+        if (router.canGoBack()) router.back();
+      }, 1200);
     } else say(r.error);
   };
   return (

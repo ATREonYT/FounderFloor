@@ -79,7 +79,7 @@ export default function Stand() {
   const months = runwayMonths(rw);
   const ends = runwayEnds(rw);
   const next = nextRank(r.mrr);
-  const deadlines = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn });
+  const deadlines = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant });
   const nextFiling = deadlines[0];
   const stage = currentStage(ticks);
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
@@ -153,7 +153,7 @@ export default function Stand() {
               {stand.oneLiner}
             </Body>
             <ButtonRow>
-              <Button onPress={() => setNumbers(true)}>The numbers</Button>
+              <Button onPress={() => { setDraft({ ...stand.record }); setNumbers(true); }}>The numbers</Button>
               <Button variant="secondary" onPress={() => setPaint(true)}>
                 Repaint
               </Button>
@@ -344,7 +344,17 @@ export default function Stand() {
           </View>
           {draft.burn ? <Mono size="xs" tone="muted">{runwayLine({ cash: draft.cash, burn: draft.burn, mrr: draft.mrr }, draft.currency)}</Mono> : null}
           <Choices label="Entity" value={draft.entity} options={ENTITIES} onChange={(entity) => setDraft((d) => ({ ...d, entity }))} />
-          {draft.entity !== "none" ? <Input label="Formed on (YYYY-MM-DD)" value={draft.formedOn ?? ""} onChangeText={(formedOn) => setDraft((d) => ({ ...d, formedOn }))} mono placeholder="2026-08-20" /> : null}
+          {draft.entity !== "none" ? (
+            <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Input label="Formed on (YYYY-MM-DD)" value={draft.formedOn ?? ""} onChangeText={(formedOn) => setDraft((d) => ({ ...d, formedOn }))} mono placeholder="2026-08-20" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input label="Last financial year end" value={draft.yearEnd ?? ""} onChangeText={(yearEnd) => setDraft((d) => ({ ...d, yearEnd }))} mono placeholder="2025-12-31" />
+              </View>
+            </View>
+          ) : null}
+          {draft.entity === "de-ccorp" ? <Input label="Date you received vesting stock (for the 83(b))" value={draft.stockGrant ?? ""} onChangeText={(stockGrant) => setDraft((d) => ({ ...d, stockGrant }))} mono placeholder="2026-09-01" /> : null}
           <Choices label="Where you live" value={draft.residence} options={RESIDENCES} onChange={(residence) => setDraft((d) => ({ ...d, residence }))} />
           <Input label="This week's goal, with a number" value={draft.weeklyGoal ?? ""} onChangeText={(weeklyGoal) => setDraft((d) => ({ ...d, weeklyGoal, weeklyGoalProgress: weeklyGoal === d.weeklyGoal ? d.weeklyGoalProgress : 0 }))} placeholder="Ten cold messages out by Friday" />
           <Input label="90-day target" value={draft.target90 ?? ""} onChangeText={(target90) => setDraft((d) => ({ ...d, target90 }))} placeholder="€2,000 MRR by 5 December" />

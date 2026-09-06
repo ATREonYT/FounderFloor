@@ -35,7 +35,7 @@ export default function Office() {
   const last = kpi.at(-1);
   const [entry, setEntry] = useState<KpiEntry>({ week: wk, revenue: last?.revenue ?? r.mrr, customers: last?.customers ?? 0, cash: last?.cash ?? r.cash, hoursOnCustomers: 0, shipped: "", note: "" });
   const d = deltas(kpi);
-  const deadlines = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn });
+  const deadlines = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant });
   const ines = COACHES[0];
   const say = (t: string) => {
     setToast(t);
