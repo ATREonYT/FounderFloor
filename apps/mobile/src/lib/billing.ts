@@ -32,7 +32,9 @@ export function offerings(): Offering[] {
 
 /** The plan the gates use: the app's own, or the site's membership, whichever is higher. */
 export function effectivePlan(): Plan {
-  const app = useFounder.getState().plan.plan;
+  const p = useFounder.getState().plan;
+  // a sandbox plan is a development convenience; a release build ignores it
+  const app: Plan = p.sandbox && !__DEV__ ? "free" : p.plan;
   const site = useSession.getState().floor?.paid?.tier ?? "free";
   const order: Plan[] = ["free", "pro", "founder"];
   return order[Math.max(order.indexOf(app), order.indexOf(site))];

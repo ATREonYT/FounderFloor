@@ -11,7 +11,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "rea
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Body, Button, Chip, Composer, Desk, Dialogue, Display, Keeper, Message, Pill, Sign, Spec, Thinking, radius, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
-import { COLUMN, useBottomChrome } from "../../lib/chrome";
+import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
 import { COACHES, HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
 import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
@@ -22,7 +22,7 @@ export default function Reception() {
   const L = useLayout();
   const router = useRouter();
   const bottom = useBottomChrome();
-  const { coach: coachParam, say } = useLocalSearchParams<{ coach?: string; say?: string }>();
+  const { coach: coachParam } = useLocalSearchParams<{ coach?: string }>();
   const gate = useGate();
   const { coach, messages, busy, thinking, send, reset, starters } = useReceptionist(coachParam);
   const stand = useStand();
@@ -46,15 +46,14 @@ export default function Reception() {
     send(text);
     setDraft("");
   };
-  const said = useRef<string | null>(null);
   useEffect(() => {
-    if (say && said.current !== say && !busy) {
-      said.current = say;
+    const say = takePendingSay(coach.id);
+    if (say && !busy) {
       const t = setTimeout(() => submit(say), 400);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [say, coach.id]);
+  }, [coach.id]);
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
 
   return (

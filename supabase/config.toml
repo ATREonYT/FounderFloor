@@ -21,4 +21,6 @@ verify_jwt = true
 [functions.guide]
 verify_jwt = true
 [functions.receptionist]
-verify_jwt = false
+verify_jwt = true
+[functions.idea]
+verify_jwt = true

@@ -6,8 +6,12 @@
  *              caches the stand block, gates Free, logs usage. Production.
  *   dev        EXPO_PUBLIC_DEV_ANTHROPIC_KEY is set and the build is not a
  *              release: call Anthropic directly so Alex can try the live
- *              coaches in the Simulator today. The key ships in the dev
- *              bundle, so this path refuses to run in production.
+ *              coaches in the Simulator today. EXPO_PUBLIC_* values are
+ *              inlined at bundle time, so the key must live ONLY in
+ *              apps/mobile/.env.development or .env.local (git-ignored) and
+ *              must never be in the environment of a release build; the
+ *              __DEV__ check stops use, not inclusion. Rotate it before the
+ *              first store build.
  *   rehearsal  neither: the caller falls back to the scripted generator in
  *              @founderfloor/shared and the status line says so.
  *
@@ -20,6 +24,7 @@ import { useSession } from "./store";
 export type AiMode = "edge" | "dev" | "rehearsal";
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const DEV_KEY = process.env.EXPO_PUBLIC_DEV_ANTHROPIC_KEY ?? "";
 const MODEL_FAST = process.env.EXPO_PUBLIC_ANTHROPIC_MODEL_FAST ?? "claude-haiku-4-5-20251001";
 const isRelease = !__DEV__;
@@ -52,10 +57,12 @@ export class AiError extends Error {
 export async function askModel(a: Ask): Promise<string> {
   const mode = aiMode();
   if (mode === "edge") {
-    const token = useSession.getState().auth?.token ?? "";
+    // the functions trust only a JWT minted by the floor server for this session
+    const jwt = await useSession.getState().supabaseJwt();
+    if (!jwt) throw new AiError("Sign in to talk to the desk.", 401);
     const res = await fetch(`${SUPABASE_URL}/functions/v1/${a.fn}`, {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json", authorization: `Bearer ${token}` },
+      headers: { "content-type": "application/json", accept: "application/json", apikey: SUPABASE_ANON, authorization: `Bearer ${jwt}` },
       body: JSON.stringify(a.body),
     });
     if (!res.ok) {

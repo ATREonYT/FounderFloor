@@ -16,6 +16,20 @@ import { useGate } from "../../lib/gate";
 import { askModel, parseJson, aiMode, MODE_LINE } from "../../lib/ai";
 import { COACHES } from "../../lib/mock";
 
+const strs = (v: unknown, n: number, max: number) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").map((x) => x.trim().slice(0, max)).filter(Boolean).slice(0, n) : []);
+/** The model's read, checked field by field; anything malformed falls back to the rehearsal reader. */
+function asRead(v: unknown): IdeaRead | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const readiness = o.readiness === "sketch" || o.readiness === "forming" || o.readiness === "ready" ? o.readiness : null;
+  const line = typeof o.readinessLine === "string" ? o.readinessLine.slice(0, 300) : null;
+  const talkTo = typeof o.talkTo === "string" ? o.talkTo.slice(0, 400) : null;
+  const sharpen = typeof o.sharpen === "string" ? o.sharpen.slice(0, 300) : null;
+  const strong = strs(o.strong, 3, 300), questions = strs(o.questions, 3, 300), ask = strs(o.ask, 5, 200);
+  if (!readiness || !line || !talkTo || !sharpen || !questions.length || ask.length < 3) return null;
+  return { readiness, readinessLine: line, strong, questions, talkTo, ask, sharpen };
+}
+
 const READY_COLOR = { sketch: shell.faint, forming: shell.gold, ready: shell.verify } as const;
 
 export default function Check() {
@@ -44,8 +58,7 @@ export default function Check() {
     if (aiMode() !== "rehearsal") {
       try {
         const t = await askModel({ fn: "idea", body: { mode: "read", text }, direct: { system: IDEA_READ_PROMPT, turns: [{ role: "user", content: `Idea: ${text}` }], maxTokens: 700 } });
-        const p = parseJson<IdeaRead>(t);
-        if (p && p.readiness && Array.isArray(p.questions)) out = p;
+        out = asRead(parseJson<unknown>(t));
       } catch {
         out = null;
       }

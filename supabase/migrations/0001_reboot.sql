@@ -45,6 +45,8 @@ create table if not exists public.stands (
   faq jsonb not null default '[]'::jsonb,
   public_pricing text,
   sprite_id text,
+  -- the receptionist answers for a stand only when its founder has published it
+  published boolean not null default false,
   updated_at timestamptz not null default now()
 );
 
@@ -163,7 +165,13 @@ alter table public.rsvps enable row level security;
 alter table public.usage_counters enable row level security;
 
 -- you read and write your own rows; the service role (Edge Functions) does the rest
-create policy "own profile" on public.profiles for all using (id = public.me()) with check (id = public.me());
+-- profiles: you may read and edit your own row, but never your tier or founding
+-- flag — those are written by the service role from the store/floor webhooks.
+create policy "own profile read" on public.profiles for select using (id = public.me());
+create policy "own profile insert" on public.profiles for insert with check (id = public.me() and tier = 'free' and founding = false);
+create policy "own profile update" on public.profiles for update using (id = public.me()) with check (id = public.me());
+revoke update on public.profiles from authenticated;
+grant update (name, push_token, timezone, updated_at) on public.profiles to authenticated;
 create policy "own stand" on public.stands for all using (owner_id = public.me()) with check (owner_id = public.me());
 create policy "own notes read" on public.coach_notes for select using (owner_id = public.me());
 create policy "own messages read" on public.coach_messages for select using (owner_id = public.me());
@@ -173,13 +181,18 @@ create policy "own scores read" on public.pitch_scores for select using (owner_i
 create policy "own deadlines" on public.deadlines for all using (owner_id = public.me()) with check (owner_id = public.me());
 create policy "own inbox read" on public.inbox_items for select using (owner_id = public.me());
 create policy "own inbox mark read" on public.inbox_items for update using (owner_id = public.me()) with check (owner_id = public.me());
+revoke update on public.inbox_items from authenticated;
+grant update (read_at) on public.inbox_items to authenticated;
 create policy "own sessions read" on public.receptionist_sessions for select using (stand_owner_id = public.me());
 create policy "own rsvps" on public.rsvps for all using (owner_id = public.me()) with check (owner_id = public.me());
 create policy "own usage read" on public.usage_counters for select using (owner_id = public.me());
 
--- the public stand card the receptionist answers from: pitch, FAQ, pricing only
-create or replace view public.stand_cards as
-  select owner_id, name, one_liner, pitch, segment, faq, public_pricing from public.stands;
+-- the public stand card the receptionist answers from: pitch, FAQ, pricing
+-- only, and only for stands the founder has published. security_invoker
+-- means the view runs as the caller, so the anon policy below is what gates it.
+create policy "published stands are public cards" on public.stands for select to anon using (published);
+create or replace view public.stand_cards with (security_invoker = true) as
+  select owner_id, name, one_liner, pitch, segment, faq, public_pricing from public.stands where published;
 grant select on public.stand_cards to anon, authenticated;
 
 -- realtime for the inbox

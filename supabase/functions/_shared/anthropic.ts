@@ -8,6 +8,8 @@
  * scoring on Founder+. Ids are read from env so a model bump is a config
  * change, not a deploy.
  */
+import { cors } from "./auth.ts";
+
 export const MODELS = {
   fast: Deno.env.get("ANTHROPIC_MODEL_FAST") ?? "claude-haiku-4-5-20251001",
   careful: Deno.env.get("ANTHROPIC_MODEL_CAREFUL") ?? "claude-sonnet-5",
@@ -106,15 +108,21 @@ export async function collect(stream: Stream): Promise<{ text: string; usage?: U
 
 /** SSE by default; a whole JSON body when the client sends Accept: application/json. */
 export async function respond(req: Request, stream: Stream): Promise<Response> {
+  const extra = cors(req);
   if ((req.headers.get("accept") ?? "").includes("application/json")) {
-    const r = await collect(stream);
-    return new Response(JSON.stringify(r), { headers: { "content-type": "application/json", "access-control-allow-origin": "*" } });
+    try {
+      const r = await collect(stream);
+      return new Response(JSON.stringify(r), { headers: { "content-type": "application/json", ...extra } });
+    } catch (e) {
+      console.error("model call failed", e);
+      return new Response(JSON.stringify({ error: "the desk did not answer" }), { status: 502, headers: { "content-type": "application/json", ...extra } });
+    }
   }
-  return sse(stream);
+  return sse(stream, extra);
 }
 
 /** Wrap a Stream as an SSE Response the app can read line by line. */
-export function sse(stream: Stream): Response {
+export function sse(stream: Stream, extra: Record<string, string> = {}): Response {
   const enc = new TextEncoder();
   const body = new ReadableStream({
     async start(ctrl) {
@@ -125,11 +133,12 @@ export function sse(stream: Stream): Response {
         }
         ctrl.enqueue(enc.encode("data: [DONE]\n\n"));
       } catch (e) {
-        ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ error: String(e) })}\n\n`));
+        console.error("model stream failed", e);
+        ctrl.enqueue(enc.encode(`data: ${JSON.stringify({ error: "the desk did not answer" })}\n\n`));
       } finally {
         ctrl.close();
       }
     },
   });
-  return new Response(body, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", "access-control-allow-origin": "*" } });
+  return new Response(body, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", ...extra } });
 }

@@ -11,7 +11,7 @@ import { useRouter, type Href } from "expo-router";
 import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, type KpiEntry } from "@founderfloor/shared";
 import { Bars, Body, Button, ButtonRow, Choices, Dialogue, Display, Input, Keeper, Mono, Plate, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
-import { COLUMN, useBottomChrome } from "../../lib/chrome";
+import { COLUMN, useBottomChrome, setPendingSay } from "../../lib/chrome";
 import { isoWeek, useFounder } from "../../lib/store";
 import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
@@ -82,8 +82,14 @@ export default function Office() {
 
         {/* rituals */}
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
-          <Ritual title="Monday plan" on={weekday === 1} line="Three goals with a number each." onPress={() => router.navigate({ pathname: "/reception", params: { coach: "strategy", say: "Monday plan" } } as Href)} />
-          <Ritual title="Friday review" on={weekday === 5} line="Promised against shipped." onPress={() => router.navigate({ pathname: "/reception", params: { coach: "strategy", say: "Friday review" } } as Href)} />
+          <Ritual title="Monday plan" on={weekday === 1} line="Three goals with a number each." onPress={() => {
+              setPendingSay("strategy", "Monday plan");
+              router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href);
+            }} />
+          <Ritual title="Friday review" on={weekday === 5} line="Promised against shipped." onPress={() => {
+              setPendingSay("strategy", "Friday review");
+              router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href);
+            }} />
         </View>
 
         {/* the log */}

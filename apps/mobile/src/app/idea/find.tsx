@@ -38,9 +38,10 @@ export default function Find() {
     if (aiMode() !== "rehearsal") {
       try {
         const text = await askModel({ fn: "idea", body: { mode: "find", brief }, direct: { system: IDEA_FIND_PROMPT, turns: [{ role: "user", content: `Brief: ${JSON.stringify(brief)}` }], maxTokens: 900 } });
-        const parsed = parseJson<Omit<Idea, "id">[]>(text);
-        if (parsed && Array.isArray(parsed) && parsed.length) {
-          out = parsed.slice(0, 5).map((i, n) => ({ ...i, id: `idea-${n}` }));
+        const parsed = parseJson<unknown>(text);
+        const clean = Array.isArray(parsed) ? parsed.map(asIdea).filter((i): i is Omit<Idea, "id"> => i !== null) : [];
+        if (clean.length) {
+          out = clean.slice(0, 5).map((i, n) => ({ ...i, id: `idea-${n}` }));
           setSource("live");
         }
       } catch {
@@ -112,6 +113,20 @@ export default function Find() {
       {ideas.length ? <Spec tone="faint">None of these? Change who you know above, or take the closest and let the second opinion sharpen it.</Spec> : null}
     </ScrollView>
   );
+}
+
+const SEGMENTS = ["b2b-saas", "consumer", "marketplace", "services", "hardware", "other"] as const;
+const EFFORTS = ["evenings", "part-time", "full-time"] as const;
+const str = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+/** One idea from the model, or null if any required field is not a string. */
+function asIdea(v: unknown): Omit<Idea, "id"> | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const oneLiner = str(o.oneLiner, 200), who = str(o.who, 120), pain = str(o.pain, 300), whatChangesHands = str(o.whatChangesHands, 300), whyNow = str(o.whyNow, 300), firstTen = str(o.firstTen, 300), mustBeTrue = str(o.mustBeTrue, 400);
+  if (!oneLiner || !who || !pain || !whatChangesHands || !whyNow || !firstTen || !mustBeTrue) return null;
+  const segment = (SEGMENTS as readonly string[]).includes(String(o.segment)) ? (o.segment as Idea["segment"]) : "other";
+  const effort = (EFFORTS as readonly string[]).includes(String(o.effort)) ? (o.effort as Idea["effort"]) : "part-time";
+  return { oneLiner, who, pain, whatChangesHands, whyNow, firstTen, mustBeTrue, segment, effort };
 }
 
 function Row({ k, v }: { k: string; v: string }) {
