@@ -14,6 +14,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "
 import { Plate } from "./Plate";
 import { Body, Spec } from "./Text";
 import { ease, fontFamily, ms, radius, shell, type as T } from "./tokens";
+import { alpha } from "./theme";
 
 export function Composer({
   value,
@@ -85,7 +86,7 @@ export function Composer({
             multiline
             autoFocus={autoFocus}
             placeholder={placeholder}
-            placeholderTextColor="rgba(77,83,90,0.6)"
+            placeholderTextColor={alpha.placeholder()}
             accessibilityLabel="Message"
             style={{
               flex: 1,

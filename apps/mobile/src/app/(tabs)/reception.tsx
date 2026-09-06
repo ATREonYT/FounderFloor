@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Body, Button, Chip, Composer, Desk, Dialogue, Display, Keeper, Message, Pill, Sign, Spec, Thinking, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, Chip, Composer, Dialogue, Display, Keeper, Message, Pill, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
 import { COACHES, HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
@@ -33,6 +33,10 @@ export default function Reception() {
   const scroll = useRef<ScrollView>(null);
   const empty = messages.length === 0;
   const atDesk = coach.id === "desk";
+  const streaming = messages.some((m) => m.streaming);
+  const mood: Mood = thinking || streaming ? "talk" : "idle";
+  const lastDesk = [...messages].reverse().find((m) => m.role === "desk");
+  const streak = stand.streak;
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -86,11 +90,13 @@ export default function Reception() {
         >
           {empty ? (
             <View style={{ gap: 20, paddingBottom: 8 }}>
-              <Desk look={coach.look} scale={L.compact ? 2 : 3} />
+              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240}>
+                <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
+              </Stage>
               <View style={{ gap: 8 }}>
-                <Display size={L.compact ? "3xl" : "4xl"}>{greeting(stand.founder || undefined)}</Display>
+                <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "What do you need?" : coach.title}</Display>
                 <Body tone="muted" size={L.compact ? "base" : "lg"} style={{ maxWidth: 560 }}>
-                  The desk is open. Ask about your stand, the floor, or a person, and the keeper who knows will answer.
+                  {atDesk ? "Your stand, the floor, or a person. The keeper who knows will answer." : coach.blurb}
                 </Body>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -122,11 +128,7 @@ export default function Reception() {
             </View>
           ) : (
             <>
-              {!atDesk ? (
-                <View style={{ alignSelf: "flex-start" }}>
-                  <Sign glyph="heart" label={coach.sign} code={coach.name} tone="paper" />
-                </View>
-              ) : null}
+              <Stage look={coach.look} color={coach.color} mood={mood} scale={2} height={112} radiusPx={20} who={atDesk ? "The desk" : coach.name} say={lastDesk && !lastDesk.streaming ? undefined : undefined} />
               {messages.map((m) => (
                 <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} avatar={m.role === "desk" ? <Keeper look={coach.look} scale={1} speaking={!!m.streaming} color={coach.color} /> : undefined} />
               ))}

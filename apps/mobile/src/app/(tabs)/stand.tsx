@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter } from "expo-router";
 import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, builderBrief, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
-import { Body, Booth, Button, ButtonRow, Choices, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Spec, Sprite, TierTag, Toast, art, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId } from "@founderfloor/ui";
+import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder, useSession } from "../../lib/store";
@@ -166,19 +166,24 @@ export default function Stand() {
 
         {/* this week */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Spec tone="muted">THIS WEEK</Spec>
-            <Spec tone="faint">{stand.streak ? `${stand.streak}-day streak` : "no streak yet"}</Spec>
+            <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "1 day" : stand.streak ? `${stand.streak} days` : "day one"} />
           </View>
           {r.weeklyGoal ? (
-            <View style={{ marginTop: 12 }}>
-              <Progress value={r.weeklyGoalProgress ?? 0} label={r.weeklyGoal} right={`${Math.round((r.weeklyGoalProgress ?? 0) * 100)}%`} />
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-                {[0.25, 0.5, 0.75, 1].map((v) => (
-                  <Pressable key={v} onPress={() => setRecord({ weeklyGoalProgress: v })} accessibilityRole="button" accessibilityLabel={`${v * 100} percent done`} style={{ borderWidth: 1, borderColor: (r.weeklyGoalProgress ?? 0) >= v ? shell.ink : shell.line, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Spec tone="ink">{`${v * 100}%`}</Spec>
-                  </Pressable>
-                ))}
+            <View style={{ marginTop: 12, flexDirection: "row", gap: 16, alignItems: "center" }}>
+              <Ring value={r.weeklyGoalProgress ?? 0} size={84} label={`${Math.round((r.weeklyGoalProgress ?? 0) * 100)}%`} sub="done" />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Body size="sm" medium>
+                  {r.weeklyGoal}
+                </Body>
+                <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
+                  {[0.25, 0.5, 0.75, 1].map((v) => (
+                    <Tap key={v} haptic={v === 1 ? "success" : "light"} onPress={() => setRecord({ weeklyGoalProgress: v })} accessibilityLabel={`${v * 100} percent done`} style={{ borderWidth: 1, borderColor: (r.weeklyGoalProgress ?? 0) >= v ? shell.ink : shell.line, backgroundColor: (r.weeklyGoalProgress ?? 0) >= v ? shell.ink : "transparent", borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <Spec tone={(r.weeklyGoalProgress ?? 0) >= v ? "paper" : "ink"}>{`${v * 100}%`}</Spec>
+                    </Tap>
+                  ))}
+                </View>
               </View>
             </View>
           ) : (
@@ -199,9 +204,9 @@ export default function Stand() {
             <Spec tone="muted">RUNWAY</Spec>
             {r.burn ? (
               <>
-                <Display size="xl" style={{ marginTop: 8 }}>
-                  {fmtMonths(months)}
-                </Display>
+                <View style={{ marginTop: 8 }}>
+                  {Number.isFinite(months) ? <CountUp to={Math.round(months * 10) / 10} suffix=" months" format={(n) => (Math.round(n * 10) / 10).toLocaleString("en-GB")} /> : <Display size="xl">{fmtMonths(months)}</Display>}
+                </View>
                 <Mono size="xs" tone="muted" style={{ marginTop: 4 }}>
                   {runwayLine(rw, cur)}
                 </Mono>
@@ -220,9 +225,9 @@ export default function Stand() {
           </Plate>
           <Plate tone="panel" radius={radius.xl} padding={20} style={{ flex: 1 }}>
             <Spec tone="muted">MRR</Spec>
-            <Display size="xl" style={{ marginTop: 8 }}>
-              {fmtMoney(r.mrr, cur)}
-            </Display>
+            <View style={{ marginTop: 8 }}>
+              <CountUp to={r.mrr} prefix={cur === "USD" ? "$" : cur === "GBP" ? "£" : "€"} delay={150} />
+            </View>
             <View style={{ marginTop: 6 }}>
               <RankBadge monthlyRevenue={r.mrr} />
             </View>
@@ -363,6 +368,7 @@ export default function Stand() {
               onPress={() => {
                 setRecord(draft);
                 setNumbers(false);
+                void haptic("success");
                 say("Numbers saved — the coaches use them now.");
               }}
             >

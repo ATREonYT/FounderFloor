@@ -10,7 +10,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useRouter } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Button, ButtonRow, Dialogue, Display, Keeper, Plate, Progress, Signage, Spec, Tick, Toast, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Dialogue, Display, Door, Keeper, Plate, Progress, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
@@ -30,18 +30,38 @@ export default function Build() {
   const [open, setOpen] = useState<BuildStage | null>(null);
   const [guide, setGuide] = useState<{ q: string; text: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [mood, setMood] = useState<Mood>("idle");
+  const [opening, setOpening] = useState<string | null>(null);
   const cur = currentStage(ticks);
-  const cols = L.compact ? 2 : 3;
+  const cols = L.compact ? 3 : 3;
+  const react = (m: Mood) => {
+    setMood(m);
+    setTimeout(() => setMood("idle"), 900);
+  };
   const ines = COACHES.find((c) => c.id === "strategy")!;
 
   const tick = (stage: BuildStage, id: string) => {
     const before = stageProgress(stage, ticks);
+    const on = !ticks.includes(id);
     toggleTick(id);
-    const after = stageProgress(stage, ticks.includes(id) ? ticks.filter((t) => t !== id) : [...ticks, id]);
+    const after = stageProgress(stage, on ? [...ticks, id] : ticks.filter((t) => t !== id));
+    if (on) {
+      void haptic(after >= 1 ? "success" : "light");
+      react(after >= 1 ? "cheer" : "nod");
+    }
     if (before < 1 && after >= 1) {
       setToast(`${stage.name} is done — a badge is on your stand.`);
       setTimeout(() => setToast(null), 2800);
     }
+  };
+  const openRoom = (s: BuildStage) => {
+    setGuide(null);
+    setOpening(s.id);
+    void haptic("light");
+    setTimeout(() => {
+      setOpen(s);
+      setOpening(null);
+    }, 260);
   };
 
   return (
@@ -55,29 +75,13 @@ export default function Build() {
           </Body>
         </View>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {STAGES.map((s, i) => {
             const p = stageProgress(s, ticks);
-            const here = s.id === cur.id;
-            const done = p >= 1;
             return (
-              <Pressable key={s.id} onPress={() => { setGuide(null); setOpen(s); }} accessibilityRole="button" accessibilityLabel={`${s.name}, ${Math.round(p * 100)} percent`} style={({ pressed }) => ({ flexBasis: `${Math.floor(100 / cols) - 2}%`, flexGrow: 1, opacity: pressed ? 0.8 : 1 })}>
-                <Plate tone="panel" radius={radius.xl}>
-                  {/* the door: a sign plate over a painted door with a lit or dark lamp */}
-                  <View style={{ alignItems: "center", paddingTop: 14, paddingHorizontal: 12 }}>
-                    <View style={{ backgroundColor: shell.blackout, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 4 }}>
-                      <Signage tone={here ? "accentLift" : "paper"}>{s.sign}</Signage>
-                    </View>
-                    <View style={{ width: 56, height: 72, marginTop: 8, backgroundColor: DOOR[i], borderRadius: 2, borderWidth: 2, borderColor: shell.ink, alignItems: "flex-end", justifyContent: "center", paddingRight: 8, opacity: done ? 0.55 : 1 }}>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: done ? shell.verify : here ? shell.accentLift : shell.faint }} />
-                    </View>
-                  </View>
-                  <View style={{ padding: 12, gap: 6 }}>
-                    <Body medium numberOfLines={1}>{`${s.n}. ${s.name}`}</Body>
-                    <Progress value={p} right={`${s.items.filter((x) => ticks.includes(x.id)).length}/${s.items.length}`} color={done ? shell.verify : shell.accent} />
-                  </View>
-                </Plate>
-              </Pressable>
+              <View key={s.id} style={{ width: `${Math.floor(100 / cols) - 2}%`, minWidth: 0 }}>
+                <Door color={DOOR[i]} sign={s.sign} name={s.name} meta={`${s.items.filter((x) => ticks.includes(x.id)).length}/${s.items.length}`} here={s.id === cur.id} done={p >= 1} open={opening === s.id} onPress={() => openRoom(s)} size={L.compact ? 52 : 56} />
+              </View>
             );
           })}
         </View>
@@ -87,6 +91,7 @@ export default function Build() {
       <Dialogue open={!!open} onClose={() => setOpen(null)} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tick what is true, not what you intend.">
         {open ? (
           <View style={{ gap: 12 }}>
+            <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
             <Progress value={stageProgress(open, ticks)} label={open.name} right={`${Math.round(stageProgress(open, ticks) * 100)}%`} color={stageProgress(open, ticks) >= 1 ? shell.verify : shell.accent} />
             <View>
               {open.items.map((it, i) => (

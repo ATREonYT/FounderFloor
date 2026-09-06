@@ -21,16 +21,18 @@ import { useState, type ReactNode } from "react";
 import { View, type LayoutChangeEvent, type ViewStyle, StyleSheet } from "react-native";
 import Svg, { Polygon, Polyline } from "react-native-svg";
 import { BEVEL, radius as R, shell, shadow } from "./tokens";
+import { alpha } from "./theme";
 
 export type PlateTone = "panel" | "glass" | "plate" | "paperSign" | "paper";
 
-const TONES: Record<PlateTone, { fill: string; line: string; shadow?: "card" | "float" }> = {
-  panel: { fill: shell.panel, line: "rgba(208,213,217,0.7)", shadow: "card" },
-  glass: { fill: "rgba(255,255,255,0.86)", line: "rgba(208,213,217,0.6)", shadow: "float" },
+// computed per render: the shell's colours change with the scheme
+const TONES = (): Record<PlateTone, { fill: string; line: string; shadow?: "card" | "float" }> => ({
+  panel: { fill: shell.panel, line: alpha.hairline(), shadow: "card" },
+  glass: { fill: alpha.glassFill(), line: alpha.hairline(), shadow: "float" },
   plate: { fill: shell.blackout, line: shell.blackout },
   paperSign: { fill: shell.panel, line: shell.line },
   paper: { fill: shell.paper, line: shell.line },
-};
+});
 
 /** The bevelled outline for a w x h plate with radius r. */
 function outline(w: number, h: number, r: number): string {
@@ -63,7 +65,8 @@ export function Plate({
   testID?: string;
 }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
-  const t = lineColor ? { ...TONES[tone], line: lineColor } : TONES[tone];
+  const base = TONES()[tone];
+  const t = lineColor ? { ...base, line: lineColor } : base;
   const onLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
     if (width !== size.w || height !== size.h) setSize({ w: width, h: height });

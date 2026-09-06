@@ -22,6 +22,7 @@ import { useLayout } from "./Responsive";
 import { Plate } from "./Plate";
 import { Body, Display, Spec } from "./Text";
 import { ease, ms, radius, shell } from "./tokens";
+import { alpha } from "./theme";
 
 export function Dialogue({
   open,
@@ -75,7 +76,7 @@ export function Dialogue({
   return (
     <Modal visible={open} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <View style={{ flex: 1, justifyContent: sheet ? "flex-end" : "center", alignItems: "center", padding: sheet ? 0 : L.panel.gutter }}>
-        <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: "rgba(18,23,27,0.45)" }, scrim]}>
+        <Animated.View style={[{ position: "absolute", inset: 0, backgroundColor: alpha.scrim() }, scrim]}>
           <Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={onClose} style={{ flex: 1 }} />
         </Animated.View>
 

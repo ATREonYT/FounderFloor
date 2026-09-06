@@ -17,6 +17,7 @@ import { Spec } from "./Text";
 import { useLayout } from "./Responsive";
 import { radius, shell } from "./tokens";
 import type { GlyphId } from "./Sign";
+import { scheme } from "./theme";
 
 export type MenuEntry = { key: string; label: string; glyph: GlyphId; badge?: number };
 
@@ -36,7 +37,7 @@ export function Menu({ active, onSelect, entries = MENU }: { active: string; onS
       <View style={{ flexDirection: rail ? "column" : "row", paddingHorizontal: rail ? 8 : 4, paddingVertical: rail ? 8 : 4, gap: rail ? 4 : 0 }}>
         {entries.map((e) => {
           const on = e.key === active;
-          const glyph = `glyph-${e.glyph}-ink` as SpriteId;
+          const glyph = `glyph-${e.glyph}-${scheme() === "dark" ? "paper" : "ink"}` as SpriteId;
           return (
             <Pressable
               key={e.key}

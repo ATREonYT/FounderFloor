@@ -5,9 +5,10 @@
  * the stand to fill in when they like. The floor is not mentioned yet: it
  * is the last room, for when there is something to show.
  */
-import { View, ScrollView, Pressable } from "react-native";
+import { View, ScrollView } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { Body, Display, Plate, Signage, Spec, Sprite, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Display, Plate, Signage, Spec, Sprite, Stage, Tap, radius, shell, useLayout } from "@founderfloor/ui";
+import { RECEPTIONIST } from "../lib/mock";
 import { useFounder, type Door } from "../lib/store";
 
 const DOORS: { door: Door; sign: string; title: string; line: string; color: string; to: string }[] = [
@@ -30,13 +31,14 @@ export default function Start() {
         <Sprite id="logo-mark" scale={2} />
         <Spec tone="muted">FounderFloor</Spec>
       </View>
-      <Display size={L.compact ? "3xl" : "4xl"}>Three doors. Take the one that is true today.</Display>
+      <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say="Three doors. Take the one that is true today; you can change your mind." height={L.compact ? 200 : 230} scale={2} />
+      <Display size={L.compact ? "3xl" : "4xl"}>Which is true today?</Display>
       <Body tone="muted" size="lg">
         A building for one founder alone: an idea, a plan, the numbers, and staff who remember. The hall full of other founders is at the end, when you have a stand worth showing.
       </Body>
       <View style={{ gap: 12 }}>
         {DOORS.map((d) => (
-          <Pressable key={d.door} onPress={() => go(d)} accessibilityRole="button" accessibilityLabel={d.title} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+          <Tap key={d.door} onPress={() => go(d)} accessibilityLabel={d.title}>
             <Plate tone="panel" radius={radius.xl}>
               <View style={{ flexDirection: "row", gap: 16, padding: 16, alignItems: "center" }}>
                 <View style={{ width: 44, height: 60, backgroundColor: d.color, borderRadius: 2, borderWidth: 2, borderColor: shell.ink, alignItems: "flex-end", justifyContent: "center", paddingRight: 6 }}>
@@ -54,7 +56,7 @@ export default function Start() {
                 <Body tone="accent">→</Body>
               </View>
             </Plate>
-          </Pressable>
+          </Tap>
         ))}
       </View>
       <Spec tone="faint">You can change doors any time. Nothing here is a commitment, and nothing is a test.</Spec>

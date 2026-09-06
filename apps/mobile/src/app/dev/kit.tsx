@@ -13,6 +13,12 @@ import { ScrollView, View } from "react-native";
 import { Image } from "expo-image";
 import {
   Bars,
+  CountUp,
+  Door,
+  Ring,
+  Stage,
+  Streak,
+  TabBar,
   Chip,
   Choices,
   Composer,
@@ -239,6 +245,29 @@ export default function Kit() {
           <Tick done={ticked} text="Write the problem in one sentence with no product in it" proof="A sentence a stranger can repeat back" onToggle={() => setTicked((t) => !t)} />
           <Choices label="Entity" value={entity} options={[{ v: "none", label: "None yet" }, { v: "de-llc", label: "Delaware LLC" }, { v: "cy-ltd", label: "Cyprus Ltd" }]} onChange={setEntity} />
           <Bars values={[4.2, 5.8, 5.4, 7.0, 7.6, 8.6]} labels={["6 pitches scored", "latest 8.6/10"]} color="#7A6070" />
+        </Row>
+
+        <Row title="The stage" note="the companion: a keeper at a counter who talks and reacts — idle, talk, nod, cheer, rest" isNew>
+          <Stage look={{ skin: 1, outfit: 4, hair: 2 }} color="#4F6E6B" who="Ines" say="Three goals for the week, each with a number in it." mood="talk" height={190} scale={2}>
+            <Streak days={[true, true, true, false, true, false, false]} rest={[3]} label="4 days" />
+          </Stage>
+        </Row>
+
+        <Row title="Doors, rings, count-ups" note="rooms that open on a spring; a ring that draws; a number that counts from where it was" isNew>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}><Door color="#3B5B92" sign="IDEA" name="1. Idea" meta="2/5" here open /></View>
+            <View style={{ flex: 1 }}><Door color="#4E6E4E" sign="VALIDATE" name="2. Validate" meta="0/5" /></View>
+            <View style={{ flex: 1 }}><Door color="#B4762E" sign="SET UP" name="3. Set up" meta="5/5" done /></View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
+            <Ring value={0.62} label="62%" sub="week" />
+            <CountUp to={1200} prefix="€" />
+            <CountUp to={8.3} suffix=" mo" size="lg" format={(n) => (Math.round(n * 10) / 10).toString()} />
+          </View>
+        </Row>
+
+        <Row title="Tab bar" note="the floating pill; the active disc slides on a spring; a haptic on every tap" isNew>
+          <TabBar active={menu} onSelect={setMenu} badge={{ office: 2 }} />
         </Row>
 
         <Row title="Bottom menu" note="five entries · a glass bar on phones, a rail on wider screens" isNew>

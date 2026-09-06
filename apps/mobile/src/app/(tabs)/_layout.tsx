@@ -6,7 +6,7 @@
  */
 import { Tabs, usePathname, useRouter, type Href } from "expo-router";
 import { View } from "react-native";
-import { Menu, shell, useLayout } from "@founderfloor/ui";
+import { Menu, TabBar, shell, useLayout } from "@founderfloor/ui";
 import { BAR } from "../../lib/chrome";
 
 export default function TabsLayout() {
@@ -32,8 +32,8 @@ export default function TabsLayout() {
           <Tabs.Screen name="floor" />
         </Tabs>
         {!rail ? (
-          <View pointerEvents="box-none" style={{ position: "absolute", left: BAR.inset, right: BAR.inset, bottom: L.insets.bottom + BAR.inset }}>
-            <Menu active={active} onSelect={go} />
+          <View pointerEvents="box-none" style={{ position: "absolute", left: BAR.inset + 4, right: BAR.inset + 4, bottom: L.insets.bottom + BAR.inset }}>
+            <TabBar active={active} onSelect={go} />
           </View>
         ) : null}
       </View>

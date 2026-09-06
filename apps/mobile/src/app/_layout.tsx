@@ -8,28 +8,31 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { Platform, View } from "react-native";
+import { Platform, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { FONT_MAP, PIXELATED_CSS, shell } from "@founderfloor/ui";
+import { FONT_MAP, PIXELATED_CSS, shell, applyScheme } from "@founderfloor/ui";
 
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts(FONT_MAP);
+  // the building at night: the system decides, the shell swaps, the tree remounts
+  const scheme = useColorScheme() === "dark" ? "dark" : "light";
+  applyScheme(scheme);
   useEffect(() => {
     if (loaded) void SplashScreen.hideAsync();
   }, [loaded]);
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const s = document.createElement("style");
-    s.textContent = PIXELATED_CSS + `html,body,#root{background:${shell.paper};height:100%}`;
+    s.textContent = PIXELATED_CSS + `html,body,#root{background:${shell.paper};height:100%;color-scheme:${scheme}}`;
     document.head.appendChild(s);
     return () => s.remove();
-  }, []);
+  }, [scheme]);
   if (!loaded) return <View style={{ flex: 1, backgroundColor: shell.paper }} />;
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: shell.paper }}>
+    <GestureHandlerRootView key={scheme} style={{ flex: 1, backgroundColor: shell.paper }}>
       <SafeAreaProvider>
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: shell.paper } }}>
           <Stack.Screen name="(tabs)" />

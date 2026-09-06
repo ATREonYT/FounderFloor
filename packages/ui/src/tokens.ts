@@ -11,7 +11,11 @@
  */
 
 // ─── colour: the shell (app/globals.css :root, resolved to sRGB) ──────────
-export const shell = {
+// Mutable on purpose: theme.ts swaps every value for the dark scheme and the
+// root remounts, so components keep reading `shell.x` at render and never
+// carry a stale colour. Never destructure a colour at module scope.
+export type ShellKey = "panel" | "paper" | "well" | "line" | "faint" | "muted" | "strong" | "ink" | "blackout" | "accent" | "accentLift" | "accentSoft" | "gold" | "goldDeep" | "fountain" | "verify";
+export const shell: Record<ShellKey, string> = {
   panel: "#FAFDFF", // foamcore — cards, header, footer
   paper: "#EDF0F4", // screed — page ground, inputs
   well: "#E3E7EB", // laminate — inset wells
@@ -28,7 +32,7 @@ export const shell = {
   goldDeep: "#775800", // brass-deep — membership as TEXT
   fountain: "#207582", // WAYFINDING ONLY — input focus
   verify: "#298646", // exitsign — online, success, verified
-} as const;
+};
 
 /** Paper at the alphas the site uses on dark grounds (composited on blackout). */
 export const onDark = {

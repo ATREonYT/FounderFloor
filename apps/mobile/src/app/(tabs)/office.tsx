@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, type KpiEntry } from "@founderfloor/shared";
-import { Bars, Body, Button, ButtonRow, Choices, Dialogue, Display, Input, Keeper, Mono, Plate, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
+import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, Keeper, Mono, Plate, Spec, Tap, Toast, haptic, radius, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, setPendingSay } from "../../lib/chrome";
 import { isoWeek, useFounder } from "../../lib/store";
@@ -46,6 +46,7 @@ export default function Office() {
   const weekday = new Date().getDay();
 
   const saveLog = () => {
+    void haptic("success");
     logWeek({ ...entry, week: wk });
     // the log is the truth for MRR and cash; the stand follows it
     setRecord({ mrr: entry.revenue, cash: entry.cash });
@@ -102,14 +103,14 @@ export default function Office() {
             <View style={{ marginTop: 12, gap: 12 }}>
               <View style={{ flexDirection: "row" }}>
                 {[
-                  ["Revenue", fmtMoney(d.latest.revenue, cur), d.revenue],
-                  ["Customers", String(d.latest.customers), d.customers],
-                  ["Cash", fmtMoney(d.latest.cash, cur), d.cash],
-                ].map(([k, v, delta], i) => (
-                  <View key={k} style={{ flex: 1, borderLeftWidth: i ? 1 : 0, borderLeftColor: shell.line, paddingLeft: i ? 12 : 0 }}>
-                    <Display size="lg">{v}</Display>
-                    <Spec tone="muted">{k}</Spec>
-                    <Spec tone={delta.startsWith("+") ? "verify" : delta.startsWith("-") ? "accent" : "faint"}>{delta}</Spec>
+                  ["Revenue", d.latest.revenue, d.revenue, true],
+                  ["Customers", d.latest.customers, d.customers, false],
+                  ["Cash", d.latest.cash, d.cash, true],
+                ].map(([k, v, delta, money], i) => (
+                  <View key={String(k)} style={{ flex: 1, borderLeftWidth: i ? 1 : 0, borderLeftColor: shell.line, paddingLeft: i ? 12 : 0 }}>
+                    <CountUp to={Number(v)} size="lg" delay={i * 120} prefix={money ? (cur === "USD" ? "$" : cur === "GBP" ? "£" : "€") : ""} />
+                    <Spec tone="muted">{String(k)}</Spec>
+                    <Spec tone={String(delta).startsWith("+") ? "verify" : String(delta).startsWith("-") ? "accent" : "faint"}>{String(delta)}</Spec>
                   </View>
                 ))}
               </View>
@@ -289,7 +290,7 @@ export default function Office() {
 
 function Ritual({ title, on, line, onPress }: { title: string; on: boolean; line: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.8 : 1 })}>
+    <Tap onPress={onPress} accessibilityLabel={title} style={{ flex: 1 }}>
       <Plate tone={on ? "plate" : "panel"} radius={radius.xl} padding={16}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: on ? shell.accentLift : shell.faint }} />
@@ -302,6 +303,6 @@ function Ritual({ title, on, line, onPress }: { title: string; on: boolean; line
           <Body tone={on ? "accentLift" : "accent"}>→</Body>
         </View>
       </Plate>
-    </Pressable>
+    </Tap>
   );
 }

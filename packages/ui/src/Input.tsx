@@ -8,6 +8,7 @@ import { useState } from "react";
 import { TextInput, View, type TextInputProps } from "react-native";
 import { Spec } from "./Text";
 import { fontFamily, radius, shell, type as T } from "./tokens";
+import { alpha } from "./theme";
 
 export function Input({
   label,
@@ -30,7 +31,7 @@ export function Input({
           setFocused(false);
           rest.onBlur?.(e);
         }}
-        placeholderTextColor={onDark ? "rgba(237,240,244,0.6)" : "rgba(77,83,90,0.6)"}
+        placeholderTextColor={onDark ? "rgba(237,240,244,0.6)" : alpha.placeholder()}
         style={[
           {
             minHeight: 44,

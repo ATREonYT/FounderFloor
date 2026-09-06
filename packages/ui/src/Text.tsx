@@ -16,17 +16,19 @@ import { Text as RNText, View, type TextStyle, type StyleProp } from "react-nati
 import { fontFamily as F, type as T, shell, onDark, radius, signage } from "./tokens";
 
 type Tone = "ink" | "muted" | "paper" | "paperQuiet" | "accent" | "accentLift" | "goldDeep" | "verify" | "faint";
-const TONE: Record<Tone, string> = {
-  ink: shell.ink,
-  muted: shell.muted,
-  paper: shell.paper,
-  paperQuiet: onDark.quiet,
-  accent: shell.accent,
-  accentLift: shell.accentLift,
-  goldDeep: shell.goldDeep,
-  verify: shell.verify,
-  faint: shell.faint,
-};
+// a function, not a table: the shell's colours change with the scheme
+const TONE = (t: Tone): string =>
+  ({
+    ink: shell.ink,
+    muted: shell.muted,
+    paper: shell.paper,
+    paperQuiet: onDark.quiet,
+    accent: shell.accent,
+    accentLift: shell.accentLift,
+    goldDeep: shell.goldDeep,
+    verify: shell.verify,
+    faint: shell.faint,
+  })[t];
 
 type Common = { children: ReactNode; tone?: Tone; style?: StyleProp<TextStyle>; numberOfLines?: number; accessibilityRole?: "header" | "text" | "link"; onPress?: () => void };
 
@@ -37,7 +39,7 @@ export function Display({ children, tone = "ink", size = "xl", style, ...rest }:
       {...rest}
       accessibilityRole={rest.accessibilityRole ?? "header"}
       style={[
-        { fontFamily: F.display, fontSize: s.size, lineHeight: s.line, color: TONE[tone] },
+        { fontFamily: F.display, fontSize: s.size, lineHeight: s.line, color: TONE(tone) },
         "tracking" in s ? { letterSpacing: s.tracking } : null,
         style,
       ]}
@@ -50,7 +52,7 @@ export function Display({ children, tone = "ink", size = "xl", style, ...rest }:
 export function Body({ children, tone = "ink", size = "base", medium = false, style, ...rest }: Common & { size?: "xs" | "sm" | "base" | "lg"; medium?: boolean }) {
   const s = T[size];
   return (
-    <RNText {...rest} style={[{ fontFamily: medium ? F.bodyMedium : F.body, fontWeight: medium ? "500" : "400", fontSize: s.size, lineHeight: s.line, color: TONE[tone] }, style]}>
+    <RNText {...rest} style={[{ fontFamily: medium ? F.bodyMedium : F.body, fontWeight: medium ? "500" : "400", fontSize: s.size, lineHeight: s.line, color: TONE(tone) }, style]}>
       {children}
     </RNText>
   );
@@ -59,7 +61,7 @@ export function Body({ children, tone = "ink", size = "base", medium = false, st
 export function Mono({ children, tone = "ink", size = "sm", medium = false, style, ...rest }: Common & { size?: "xs" | "sm" | "base"; medium?: boolean }) {
   const s = T[size];
   return (
-    <RNText {...rest} style={[{ fontFamily: medium ? F.monoMedium : F.mono, fontSize: s.size, lineHeight: s.line, color: TONE[tone], fontVariant: ["tabular-nums"] }, style]}>
+    <RNText {...rest} style={[{ fontFamily: medium ? F.monoMedium : F.mono, fontSize: s.size, lineHeight: s.line, color: TONE(tone), fontVariant: ["tabular-nums"] }, style]}>
       {children}
     </RNText>
   );
@@ -68,7 +70,7 @@ export function Mono({ children, tone = "ink", size = "sm", medium = false, styl
 /** `.micro` — the metadata label. Mono 12, normal case, normal tracking. */
 export function Spec({ children, tone = "muted", style, ...rest }: Common) {
   return (
-    <RNText {...rest} style={[{ fontFamily: F.mono, fontSize: T.xs.size, lineHeight: T.xs.line, color: TONE[tone], fontVariant: ["tabular-nums"] }, style]}>
+    <RNText {...rest} style={[{ fontFamily: F.mono, fontSize: T.xs.size, lineHeight: T.xs.line, color: TONE(tone), fontVariant: ["tabular-nums"] }, style]}>
       {children}
     </RNText>
   );
@@ -80,7 +82,7 @@ export function Signage({ children, tone = "paper", style, ...rest }: Common) {
     <RNText
       {...rest}
       style={[
-        { fontFamily: F.display, fontSize: signage.size, lineHeight: 14, letterSpacing: signage.letterSpacing, textTransform: "uppercase", color: TONE[tone] },
+        { fontFamily: F.display, fontSize: signage.size, lineHeight: 14, letterSpacing: signage.letterSpacing, textTransform: "uppercase", color: TONE(tone) },
         style,
       ]}
     >
