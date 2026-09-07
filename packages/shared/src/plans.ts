@@ -33,7 +33,7 @@ export const FREE_LIMITS = {
   ideaChecks: 2, // second opinions, lifetime
   coachTurnsPerDay: 10,
   draftsPerMonth: 3,
-  coaches: ["strategy"] as readonly string[],
+  coaches: ["strategy", "desk"] as readonly string[],
   /** The one thing Free never has: the staff's memory between visits. */
   remembers: false,
   kpiWeeks: Infinity,

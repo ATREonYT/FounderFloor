@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
-import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, standBlock, memoryBlock, remembers, type CoachId } from "@founderfloor/shared";
+import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, DESK_PROMPT, standBlock, memoryBlock, remembers, type CoachId } from "@founderfloor/shared";
 import { effectivePlan } from "./billing";
 import { valueMoment } from "./trial";
 import { askModel, aiMode, AiError } from "./ai";
@@ -75,7 +75,7 @@ export function useReceptionist(coachId?: string) {
   };
   /** A note for next time, and the value moment on a coach's first real reply. */
   const remember = (asked: string, said: string) => {
-    if (coach.id === "desk") return;
+    if (coach.id === "desk") return; // the desk keeps no notes; it points
     ctx.current.founder.addNote({ coach: coach.name, asked, said });
     void valueMoment("coach");
   };
@@ -123,7 +123,7 @@ export function useReceptionist(coachId?: string) {
       setBusy(true);
       setThinking(true);
       setQuota(null);
-      const live = coach.id !== "desk" && aiMode() !== "rehearsal";
+      const live = aiMode() !== "rehearsal";
       if (!live) {
         const full = scripted(t);
         setSource("rehearsal");
@@ -133,12 +133,12 @@ export function useReceptionist(coachId?: string) {
       }
       // a coach, with a key in the door: the model answers over the stand block; the script is the fallback
       const { stand: s } = ctx.current;
-      const p = COACH_PROMPTS[coach.id as CoachId];
+      const system = coach.id === "desk" ? DESK_PROMPT : COACH_PROMPTS[coach.id as CoachId].system;
       const history = messages.slice(-10).map((m) => ({ role: (m.role === "you" ? "user" : "assistant") as "user" | "assistant", content: m.text }));
       void askModel({
         fn: "coach-chat",
         body: { coach: coach.id, message: t, stand: s.record, turns: history },
-        direct: { system: p.system, cached: standBlock(s.record) + memory(), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
+        direct: { system, cached: standBlock(s.record) + memory(), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
       })
         .then((full) => {
           setSource("live");

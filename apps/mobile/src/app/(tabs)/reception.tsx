@@ -63,7 +63,7 @@ export default function Reception() {
   const submit = (text = draft) => {
     if (!text.trim() || busy) return;
     // Free's turns are counted only when a model will answer; a script is free
-    if (!atDesk && aiMode() !== "rehearsal" && !gate("coachTurn", { coach: coach.id })) return;
+    if (aiMode() !== "rehearsal" && !gate("coachTurn", { coach: coach.id })) return;
     send(text);
     setDraft("");
   };
@@ -214,7 +214,7 @@ export default function Reception() {
             onAttach={() => router.push("/drawer")}
             placeholder={atDesk ? "Ask the desk…" : `Ask ${coach.name}…`}
             busy={busy}
-            status={`${atDesk || aiMode() === "rehearsal" ? MODE_LINE.rehearsal : source === "live" ? MODE_LINE[aiMode()] : `${MODE_LINE[aiMode()]} · last reply was scripted`} · ${hall.name}`}
+            status={`${aiMode() === "rehearsal" ? MODE_LINE.rehearsal : source === "live" ? MODE_LINE[aiMode()] : `${MODE_LINE[aiMode()]} · last reply was scripted`} · ${hall.name}`}
           />
         </View>
       </KeyboardAvoidingView>
