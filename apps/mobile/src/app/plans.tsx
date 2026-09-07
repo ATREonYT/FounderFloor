@@ -9,7 +9,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { APP_PLANS, PLAN_COPY, type Plan } from "@founderfloor/shared";
+import { APP_PLANS, PLAN_COPY, trialTimeline, type Plan } from "@founderfloor/shared";
+import { trialLeft } from "../lib/trial";
+import { useSession } from "../lib/store";
 import { Body, Button, Choices, Display, Glyph, Plate, Scene, Spec, Toast, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
 
 const PLAN_GLYPH: Record<Plan, GlyphId> = { free: "leaf", pro: "bolt", founder: "star" };
@@ -24,6 +26,8 @@ export default function Plans() {
   const [toast, setToast] = useState<string | null>(null);
   const planState = useFounder((s) => s.plan);
   const current = effectivePlan();
+  const week = trialLeft();
+  const trialUsed = useSession((s) => s.account?.trialUsed ?? false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -54,7 +58,7 @@ export default function Plans() {
           </Plate>
         ) : null}
         <Scene set="cafe" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The staff room">
-          <Spec tone="muted">THREE DAYS FREE ON EITHER PAID PLAN</Spec>
+          <Spec tone="muted">{week ? `THE WHOLE STAFF · ${week.days} DAY${week.days === 1 ? "" : "S"} LEFT` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} DAYS OF THE WHOLE STAFF, FREE, AT YOUR FIRST VALUE MOMENT`}</Spec>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The whole staff, every day.</Display>
         <Body tone="muted" size="lg">
@@ -95,10 +99,11 @@ export default function Plans() {
                     ))}
                   </View>
                   {paid && !mine ? (
-                    <View style={{ marginTop: 8 }}>
+                    <View style={{ marginTop: 8, gap: 6 }}>
                       <Button onPress={() => buy(p as "pro" | "founder")} variant={p === "founder" ? "secondary" : "primary"} onDark={p === "founder"} arrow>
-                        {`Try ${paid.trialDays} days free`}
+                        {week || trialUsed ? `Keep ${PLAN_COPY[p].name}` : `Start ${paid.trialDays} days free`}
                       </Button>
+                      <Spec tone={p === "founder" ? "paperQuiet" : "faint"}>{week || trialUsed ? `${price}, billed ${cycle === "monthly" ? "monthly" : "yearly"}. Cancel any time.` : `Then ${price}, billed ${cycle === "monthly" ? "monthly" : "yearly"}. Cancel any time.`}</Spec>
                     </View>
                   ) : null}
                 </View>
@@ -106,6 +111,21 @@ export default function Plans() {
             );
           })}
         </View>
+        {!week && !trialUsed ? (
+          <Plate tone="paper" radius={radius.md} padding={12}>
+            <Spec tone="muted">HOW THE FREE WEEK GOES</Spec>
+            {trialTimeline(APP_PLANS.pro.trialDays).map((r) => (
+              <View key={r.day} style={{ flexDirection: "row", gap: 10, paddingTop: 6 }}>
+                <Spec tone="muted" style={{ width: 56 }}>
+                  {r.when}
+                </Spec>
+                <Body size="sm" style={{ flex: 1 }}>
+                  {r.label}
+                </Body>
+              </View>
+            ))}
+          </Plate>
+        ) : null}
         <Spec tone="faint">
           {planState.sandbox ? `Sandbox plan on this device${planState.trialEnds ? `, trial to ${planState.trialEnds.slice(0, 10)}` : ""}. Real purchases arrive with the store build.` : "Cancel any time in the store. Your stand and the floor stay free forever."}
         </Spec>

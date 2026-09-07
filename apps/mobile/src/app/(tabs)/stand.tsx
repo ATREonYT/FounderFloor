@@ -9,7 +9,7 @@
  */
 import { useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Share, View } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, builderBrief, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
 import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId, Backdrop, Furniture, wash, scheme, type Hall } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
@@ -50,6 +50,10 @@ export default function Stand() {
   const auth = useSession((s) => s.auth);
   const sessionError = useSession((s) => s.error);
   const signOut = useSession((s) => s.signOut);
+  const me = useSession((s) => s.account);
+  const verify = useSession((s) => s.verify);
+  const resendCode = useSession((s) => s.resendCode);
+  const setWeeklyMail = useSession((s) => s.setWeeklyMail);
   const { record, setRecord, ticks, interviews, docs, saveDoc } = useFounder();
   const [brief, setBrief] = useState<string | null>(null);
   const [paint, setPaint] = useState(false);
@@ -59,6 +63,7 @@ export default function Stand() {
   const [look, setLook] = useState({ swatch: stand.swatch, carpetSwatch: stand.carpetSwatch, pattern: stand.pattern as CarpetPattern });
   const [draft, setDraft] = useState(() => ({ ...stand.record }));
   const [heroW, setHeroW] = useState(360);
+  const [code, setCode] = useState("");
   const r = stand.record;
   const cur = r.currency;
   const floor = art.floors[(stand.hall as keyof typeof art.floors) ?? "main-hall"] ?? art.floors["main-hall"];
@@ -432,6 +437,41 @@ export default function Stand() {
           <Body size="sm" tone="muted">
             {stand.source === "floor" ? "Your stand, tickets and connections are the site's; this app reads them from the same floor server." : "This account has no stand on a floor yet. Set one up on the Floor tab, at any vacant plinth."}
           </Body>
+          {me && !me.verified ? (
+            <Plate tone="paper" radius={radius.md} padding={12} lineColor={shell.accent}>
+              <Spec tone="muted">CONFIRM YOUR EMAIL</Spec>
+              <Body size="sm" style={{ marginTop: 4 }}>
+                The welcome email has a six-digit code. The Friday review and the hand-offs go only to a confirmed address.
+              </Body>
+              <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end", marginTop: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Input value={code} onChangeText={(v) => setCode(v.replace(/\D/g, "").slice(0, 6))} keyboardType="number-pad" mono placeholder="123456" />
+                </View>
+                <Button size="sm" disabled={code.length !== 6} onPress={async () => say((await verify(code)) ? "Email confirmed." : sessionError ?? "That is not the code.")}>
+                  Confirm
+                </Button>
+              </View>
+              <Pressable onPress={async () => say((await resendCode()) ? "Sent again." : "Could not send just now.")} accessibilityRole="button" style={{ marginTop: 6 }}>
+                <Spec tone="accent">Send the code again</Spec>
+              </Pressable>
+            </Plate>
+          ) : null}
+          {me ? (
+            <View style={{ gap: 6 }}>
+              <Choices label="Friday review by email" value={me.weeklyMail ? "on" : "off"} options={[{ v: "on", label: "Every Friday" }, { v: "off", label: "Off" }]} onChange={async (v) => say((await setWeeklyMail(v === "on")) ? (v === "on" ? "Fridays, then. One email, no others." : "Off.") : "Could not save that.")} />
+              {!me.verified ? <Spec tone="faint">Goes out once the email is confirmed.</Spec> : null}
+            </View>
+          ) : null}
+          {me?.admin ? (
+            <Pressable onPress={() => { setAccount(false); router.push("/dev/console" as Href); }} accessibilityRole="button" accessibilityLabel="Dev console">
+              <Plate tone="plate" radius={radius.md} padding={12}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Spec tone="paper" style={{ flex: 1 }}>OPERATOR · DEV CONSOLE</Spec>
+                  <Body tone="accentLift">→</Body>
+                </View>
+              </Plate>
+            </Pressable>
+          ) : null}
           <ButtonRow>
             <Button
               variant="secondary"

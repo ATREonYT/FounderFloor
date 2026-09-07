@@ -1119,8 +1119,8 @@ const emailRecipientLog = new Map(); // `${bucket}|${email}` -> ts[] within the 
 // more), and the per-recipient cap of 2/hour means even a bug that fires
 // the send twice cannot bomb an inbox. It is not a new category of mail:
 // it is the promised category finally being sent.
-const RECIPIENT_HOURLY = { courtesy: 4, reset: 6, notice: 12, operator: 20, doors: 2 };
-const DAILY_CEILING = { courtesy: 300, reset: 200, notice: 300, operator: 100, doors: 20000 };
+const RECIPIENT_HOURLY = { courtesy: 4, reset: 6, notice: 12, operator: 20, doors: 2, weekly: 2 };
+const DAILY_CEILING = { courtesy: 300, reset: 200, notice: 300, operator: 100, doors: 20000, weekly: 20000 };
 
 /**
  * Where beta feedback and abuse reports get mailed (they're stored in
@@ -1144,7 +1144,7 @@ function sendOperatorEmail(subject, title, rows, footer) {
     rows.map(([k, v]) => `${k}: ${v}`).join("\n") + `\n\n${footer}`;
   sendEmail(OPERATOR_EMAIL, subject, emailShell(title, bodyHtml), text, "operator");
 }
-const emailDay = { day: "", courtesy: 0, reset: 0, notice: 0, operator: 0 };
+const emailDay = { day: "", courtesy: 0, reset: 0, notice: 0, operator: 0, doors: 0, weekly: 0 };
 
 function rollEmailDay() {
   const day = new Date().toISOString().slice(0, 10);
@@ -1255,11 +1255,15 @@ function sendWelcomeEmail(acct) {
       `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Your account is live. ` +
         `Your booth, connections, streaks and badges now follow you — sign in with this ` +
         `email on any device and everything comes with you.</p>` +
+        (acct.verifyCode
+          ? `<p style="margin:0 0 6px;font-size:14px;line-height:1.6">Your confirmation code, for the app or the site:</p>` +
+            `<p style="margin:0 0 16px;font-family:Courier,monospace;font-size:30px;letter-spacing:8px">${esc(acct.verifyCode)}</p>`
+          : "") +
         `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">If a sign-in ever happens ` +
         `from a browser we haven&#39;t seen before, we&#39;ll drop you a note here.</p>` +
         emailBtn(SITE_URL + "/lobby", "Walk the floor"),
       ),
-    `Welcome to FounderFloor, ${acct.name}!\n\nYour account is live: sign in with this email on any device and your booth, connections and progress come with you.\n\nWalk the floor: ${SITE_URL}/lobby`,
+    (acct.verifyCode ? `Your confirmation code: ${acct.verifyCode}\n\n` : "") + `Welcome to FounderFloor, ${acct.name}!\n\nYour account is live: sign in with this email on any device and your booth, connections and progress come with you.\n\nWalk the floor: ${SITE_URL}/lobby`,
     "courtesy",
   );
 }
@@ -1286,7 +1290,11 @@ function sendSigninAlertEmail(acct) {
   );
 }
 
-function sendResetEmail(acct, link) {
+function sendResetEmail(acct, link, code = "") {
+  const codeHtml = code
+    ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">In the app, tap <em>Forgot the password</em> and enter this code instead:</p>` +
+      `<p style="margin:0 0 16px;font-family:Courier,monospace;font-size:26px;letter-spacing:6px">${esc(code)}</p>`
+    : "";
   sendEmail(
     acct.email,
     "Reset your FounderFloor password",
@@ -1296,13 +1304,105 @@ function sendResetEmail(acct, link) {
         `asked to reset the password for <strong>${esc(acct.name)}</strong>. The link below ` +
         `works once and expires in 30 minutes.</p>` +
         emailBtn(link, "Choose a new password") +
+        codeHtml +
         `<p style="margin:0;font-size:13px;color:#6F6A5E;line-height:1.6">Didn&#39;t ask? ` +
         `Ignore this email — your password is unchanged and the link dies on its own.</p>`,
     ),
-    `Reset your FounderFloor password (account "${acct.name}"):\n\n${link}\n\nThe link works once and expires in 30 minutes. If you didn't ask for this, ignore it — your password is unchanged.`,
+    `Reset your FounderFloor password (account "${acct.name}"):\n\n${link}\n\n` +
+      (code ? `In the app, tap "Forgot the password" and enter this code: ${code}\n\n` : "") +
+      `The link works once and expires in 30 minutes. If you didn't ask for this, ignore it — your password is unchanged.`,
     "reset",
   );
 }
+
+/*
+ * Email confirmation. An account is created the moment someone registers
+ * (the floor was built that way and the site depends on it), so proof of
+ * the address comes afterwards: a six-digit code in the welcome mail,
+ * typed into the app or the site. `verifiedAt` is what the weekly mail
+ * and the app's hand-off delivery look at — nothing else is gated on it.
+ */
+const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
+const sixDigits = () => String(100000 + (randomBytes(4).readUInt32BE(0) % 900000));
+/** Eight characters from an alphabet without 0/O/1/I, typed from an email. */
+const RESET_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function shortCode(n = 8) {
+  const b = randomBytes(n);
+  let out = "";
+  for (let i = 0; i < n; i++) out += RESET_CODE_ALPHABET[b[i] % RESET_CODE_ALPHABET.length];
+  return out;
+}
+function issueVerifyCode(acct) {
+  acct.verifyCode = sixDigits();
+  acct.verifyIssued = Date.now();
+  acct.verifyTries = 0;
+}
+function sendVerifyEmail(acct) {
+  if (!acct.email || !acct.verifyCode) return;
+  sendEmail(
+    acct.email,
+    `${acct.verifyCode} is your FounderFloor code`,
+    emailShell(
+      "Confirm your email",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Enter this code in the app or on the site to confirm that ` +
+        `<strong>${esc(acct.email)}</strong> is yours. It works for 24 hours.</p>` +
+        `<p style="margin:0 0 16px;font-family:Courier,monospace;font-size:30px;letter-spacing:8px">${esc(acct.verifyCode)}</p>` +
+        `<p style="margin:0;font-size:13px;color:#6F6A5E;line-height:1.6">Didn&#39;t sign up? Ignore this and nothing happens.</p>`,
+    ),
+    `Your FounderFloor confirmation code: ${acct.verifyCode}\n\nEnter it in the app or on the site. It works for 24 hours. If you didn't sign up, ignore this.`,
+    "courtesy",
+  );
+}
+
+/*
+ * The Friday review — the one recurring email, and only for people who
+ * switched it on in the app (acct.prefs.weeklyMail) and confirmed their
+ * address. Sent once per ISO week, Fridays from 07:00 UTC, with the
+ * marker written before the send so a restart cannot double it.
+ */
+function isoWeekOf(now = Date.now()) {
+  const d = new Date(now);
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const week = 1 + Math.round(((d - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+function sendFridayReviewEmail(acct, week) {
+  const startup = profileStates.get(acct.id)?.state?.myStartup;
+  const company = startup?.name ? esc(startup.name) : "your company";
+  const goal = typeof startup?.weeklyGoal === "string" && startup.weeklyGoal ? esc(startup.weeklyGoal) : "";
+  sendEmail(
+    acct.email,
+    `Friday review · ${week}`,
+    emailShell(
+      `Friday. Five numbers for ${company}.`,
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">Revenue, paying customers, cash, hours with customers, and what shipped. ` +
+        `Two minutes, then Theo reads the week back to you.</p>` +
+        (goal ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">You said this week: &ldquo;${goal}&rdquo;. Promised against shipped is the whole review.</p>` : "") +
+        emailBtn(SITE_URL + "/app/office", "Log the week") +
+        `<p style="margin:0;font-size:13px;color:#6F6A5E;line-height:1.6">You asked for this one in the app (Stand → Account → Friday review by email). ` +
+        `Switch it off there any time.</p>`,
+    ),
+    `Friday. Five numbers for ${startup?.name || "your company"}: revenue, paying customers, cash, hours with customers, what shipped.` +
+      (goal ? `\n\nYou said this week: "${startup.weeklyGoal}".` : "") +
+      `\n\nLog the week: ${SITE_URL}/app/office\n\nYou asked for this one in the app; switch it off under Stand → Account.`,
+    "weekly",
+  );
+}
+function maybeSendFridayReview(force = false) {
+  const now = new Date();
+  if (!force && (now.getUTCDay() !== 5 || now.getUTCHours() < 7)) return { sent: 0, reason: "not Friday morning yet" };
+  const week = isoWeekOf(now.getTime());
+  const list = [...accountsById.values()].filter((a) => a.email && a.verifiedAt && a.prefs?.weeklyMail && a.weeklyMailedWeek !== week && !isBannedAcct(a));
+  if (!list.length) return { sent: 0, reason: "nobody is due" };
+  for (const a of list) a.weeklyMailedWeek = week;
+  saveNow();
+  list.forEach((a, i) => setTimeout(() => sendFridayReviewEmail(a, week), i * 150));
+  console.log(`[weekly] queued ${list.length} Friday review(s) for ${week}`);
+  return { sent: list.length, reason: "" };
+}
+setInterval(maybeSendFridayReview, 10 * 60 * 1000).unref();
 
 function sendEmailChangedNotice(oldEmail, acct, newEmail) {
   sendEmail(
@@ -3579,6 +3679,7 @@ async function handleAuthPost(req, res, pathname) {
     // ...and only then the founding seat, so it upgrades whatever they
     // already had rather than being overwritten by it.
     const seat = grantFoundingSeat(acct);
+    issueVerifyCode(acct);
     const token = randomBytes(32).toString("hex");
     tokens.set(token, { id: acct.id, ts: Date.now() });
     scheduleSave();
@@ -3829,15 +3930,26 @@ async function handleAuthPost(req, res, pathname) {
     }
     if (resetTokens.size >= MAX_RESET_TOKENS) return;
     const token = randomBytes(32).toString("hex");
-    resetTokens.set(token, { id: acct.id, ts: Date.now() });
+    const code = shortCode();
+    resetTokens.set(token, { id: acct.id, ts: Date.now(), code });
     scheduleSave();
-    sendResetEmail(acct, `${SITE_URL}/reset?token=${token}`);
+    sendResetEmail(acct, `${SITE_URL}/reset?token=${token}`, code);
     return;
   }
 
   if (pathname === "/auth/reset") {
-    const token = typeof body.token === "string" ? body.token : "";
+    let token = typeof body.token === "string" ? body.token : "";
     const password = typeof body.password === "string" ? body.password : "";
+    // The app's path: the eight-character code from the email, with the
+    // email it was sent to, instead of the link's token.
+    if (!token && typeof body.code === "string") {
+      const code = body.code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const email = normalizeEmail(body.email);
+      const owner = email ? accountsByEmail.get(email) : undefined;
+      for (const [tok, v] of resetTokens) {
+        if (owner && v.id === owner.id && v.code && v.code === code) token = tok;
+      }
+    }
     const entry = resetTokens.get(token);
     if (entry) resetTokens.delete(token); // single-use, even on a weak password
     if (!entry || Date.now() - entry.ts > RESET_TTL_MS) {
@@ -3872,6 +3984,75 @@ async function handleAuthPost(req, res, pathname) {
     saveNow();
     sendPasswordChangedEmail(acct);
     sendJson(res, { id: acct.id, name: acct.name, email: acct.email ?? "", token: fresh });
+    return;
+  }
+
+  // Confirm the address with the six-digit code from the welcome mail.
+  if (pathname === "/auth/verify" || pathname === "/auth/verify/start" || pathname === "/auth/prefs" || pathname === "/auth/me") {
+    const token = typeof body.token === "string" ? body.token : "";
+    const entry = tokens.get(token);
+    const acct = entry ? accountsById.get(entry.id) : undefined;
+    if (!acct || isBannedAcct(acct)) {
+      notFound(res);
+      return;
+    }
+    const me = () => ({
+      id: acct.id,
+      name: acct.name,
+      email: acct.email ?? "",
+      verified: Boolean(acct.verifiedAt),
+      admin: Boolean(acct.email && ADMIN_EMAILS.has(acct.email)),
+      weeklyMail: Boolean(acct.prefs?.weeklyMail),
+      paid: entitlementOf(acct),
+      trialUsed: Boolean(acct.trialStarted),
+      trialDays: TRIAL_DAYS,
+    });
+    if (pathname === "/auth/me") {
+      sendJson(res, me());
+      return;
+    }
+    if (pathname === "/auth/verify/start") {
+      if (acct.verifiedAt) {
+        sendJson(res, { ok: true, already: true });
+        return;
+      }
+      if (!acct.email) {
+        sendJson(res, { error: "no email on this account yet" });
+        return;
+      }
+      issueVerifyCode(acct);
+      scheduleSave();
+      sendVerifyEmail(acct);
+      sendJson(res, { ok: true });
+      return;
+    }
+    if (pathname === "/auth/verify") {
+      if (acct.verifiedAt) {
+        sendJson(res, { ok: true, ...me() });
+        return;
+      }
+      const code = typeof body.code === "string" ? body.code.replace(/\D/g, "") : "";
+      const fresh = acct.verifyCode && Date.now() - (acct.verifyIssued ?? 0) < VERIFY_TTL_MS;
+      acct.verifyTries = (acct.verifyTries ?? 0) + 1;
+      if (!fresh || acct.verifyTries > 8 || code !== acct.verifyCode) {
+        if (acct.verifyTries > 8) acct.verifyCode = undefined; // burn it: eight guesses is not a person typing
+        scheduleSave();
+        sendJson(res, { error: !fresh ? "that code has expired — send a new one" : "that is not the code — check the email" });
+        return;
+      }
+      acct.verifiedAt = Date.now();
+      acct.verifyCode = undefined;
+      scheduleSave();
+      console.log(`[auth] verified ${acct.id}`);
+      sendJson(res, { ok: true, ...me() });
+      return;
+    }
+    // prefs
+    if (typeof body.weeklyMail === "boolean") {
+      acct.prefs = { ...(acct.prefs ?? {}), weeklyMail: body.weeklyMail };
+      scheduleSave();
+    }
+    sendJson(res, { ok: true, ...me() });
     return;
   }
 
@@ -4094,6 +4275,11 @@ async function handleAdminPost(req, res, pathname) {
         // are signed with, and the only way to answer it was to SSH in.
         emailFrom: EMAIL_FROM,
         emailReplyTo: EMAIL_REPLY_TO || null,
+        emailEcho: EMAIL_ECHO,
+        verified: [...accountsById.values()].filter((a) => a.verifiedAt).length,
+        weeklyMail: [...accountsById.values()].filter((a) => a.prefs?.weeklyMail).length,
+        trialsStarted: [...accountsById.values()].filter((a) => a.trialStarted).length,
+        paid: [...accountsById.values()].reduce((n, a) => n + (isPermanent(entitlementOf(a)) ? 1 : 0), 0),
         uptimeSec: Math.round(process.uptime()),
         subscribers: subscribers.size,
         demoNightRsvps: [...subscribers.values()].filter((s) => s.demoNight).length,
@@ -4107,6 +4293,16 @@ async function handleAdminPost(req, res, pathname) {
     // The mailing list, newest first — so the operator can actually send the
     // Open Doors reminder the RSVP promised. `demoNightOnly` narrows it to
     // the people who asked for exactly that.
+    // What the mailer would have sent (EMAIL_ECHO) or has sent lately.
+    if (pathname === "/admin/outbox") {
+      sendJson(res, { echo: EMAIL_ECHO, live: !!RESEND_API_KEY && !EMAIL_ECHO, emails: echoedEmails.slice(-30).reverse().map((e) => ({ to: e.to, subject: e.subject, text: e.text, ts: e.ts })) });
+      return;
+    }
+    if (pathname === "/admin/friday-review") {
+      sendJson(res, maybeSendFridayReview(body.force === true));
+      return;
+    }
+
     if (pathname === "/admin/subscribers") {
       const onlyRsvp = body.demoNightOnly === true;
       const list = [...subscribers.values()]
@@ -5138,7 +5334,7 @@ const server = createServer((req, res) => {
       // drift, and the symptom is always the same — the new UI calls an
       // endpoint the old server has never heard of and shows an empty
       // panel. One curl on /health now says which side is behind.
-      features: { boards: true, awards: true, playtime: true, people: true, stands: true, standPages: true, supabaseJwt: Boolean(SUPABASE_JWT_SECRET) },
+      features: { boards: true, awards: true, playtime: true, people: true, stands: true, standPages: true, supabaseJwt: Boolean(SUPABASE_JWT_SECRET), verify: true, weeklyMail: true },
     });
     return;
   }

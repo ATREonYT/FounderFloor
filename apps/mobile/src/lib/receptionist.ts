@@ -12,7 +12,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
-import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, standBlock, type CoachId } from "@founderfloor/shared";
+import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, standBlock, memoryBlock, remembers, type CoachId } from "@founderfloor/shared";
+import { effectivePlan } from "./billing";
+import { valueMoment } from "./trial";
 import { askModel, aiMode, AiError } from "./ai";
 
 export type Turn = { id: string; role: "you" | "desk"; text: string; streaming?: boolean };
@@ -66,6 +68,18 @@ export function useReceptionist(coachId?: string) {
     return "I can do three things from the desk: tell you about your stand, tell you who is in the building, or hand you to a coach: Ines for the plan, Jonah for sales, Margot for the pitch, Theo for the money.\n\nWhich?";
   };
 
+  /** What the coach is told beyond the stand: the log, the book, the notes — on a plan that remembers. */
+  const memory = () => {
+    const { founder: f } = ctx.current;
+    return memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
+  };
+  /** A note for next time, and the value moment on a coach's first real reply. */
+  const remember = (asked: string, said: string) => {
+    if (coach.id === "desk") return;
+    ctx.current.founder.addNote({ coach: coach.name, asked, said });
+    void valueMoment("coach");
+  };
+
   /** Stream `full` word by word into a new desk turn. */
   const reveal = (full: string, pause: number) => {
     const words = full.split(/(\s+)/);
@@ -114,6 +128,7 @@ export function useReceptionist(coachId?: string) {
         const full = scripted(t);
         setSource("rehearsal");
         reveal(full, 550 + Math.min(700, full.length * 2));
+        remember(t, full);
         return;
       }
       // a coach, with a key in the door: the model answers over the stand block; the script is the fallback
@@ -123,11 +138,12 @@ export function useReceptionist(coachId?: string) {
       void askModel({
         fn: "coach-chat",
         body: { coach: coach.id, message: t, stand: s.record, turns: history },
-        direct: { system: p.system, cached: standBlock(s.record), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
+        direct: { system: p.system, cached: standBlock(s.record) + memory(), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
       })
         .then((full) => {
           setSource("live");
           reveal(full, 0);
+          remember(t, full);
         })
         .catch((e: unknown) => {
           if (e instanceof AiError && e.status === 402) {

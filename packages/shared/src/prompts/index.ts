@@ -67,3 +67,39 @@ export function standBlock(s: StandRecord): string {
   ];
   return lines.filter(Boolean).join("\n");
 }
+
+/**
+ * What the staff remember. On Pro the cached block carries the last weeks
+ * of the log, the latest interviews and the notes from the founder's last
+ * conversations; on Free it is empty and the coach starts from the stand.
+ * Kept short: it rides in the prompt cache, so it should change slowly.
+ */
+export interface CoachNote {
+  coach: string;
+  at: string;
+  asked: string;
+  said: string;
+}
+export function memoryBlock(
+  m: { kpi?: { week: string; revenue: number; customers: number; cash: number; hoursOnCustomers: number; shipped?: string }[]; interviews?: { who: string; at: string; said: string; paysToday?: string }[]; notes?: CoachNote[] },
+  remembers: boolean,
+): string {
+  if (!remembers) return "";
+  const lines: string[] = ["", "What the staff remember (use it; refer to it by week or by name):"];
+  const kpi = (m.kpi ?? []).slice(-8);
+  if (kpi.length) {
+    lines.push("The weekly log:");
+    for (const e of kpi) lines.push(`  ${e.week}: revenue ${e.revenue}, customers ${e.customers}, cash ${e.cash}, ${e.hoursOnCustomers}h with customers${e.shipped ? `, shipped: ${e.shipped}` : ""}`);
+  }
+  const iv = (m.interviews ?? []).slice(0, 5);
+  if (iv.length) {
+    lines.push("The interview book:");
+    for (const i of iv) lines.push(`  ${i.at.slice(0, 10)} ${i.who}: "${i.said}"${i.paysToday ? ` (pays today: ${i.paysToday})` : ""}`);
+  }
+  const notes = (m.notes ?? []).slice(-6);
+  if (notes.length) {
+    lines.push("Last conversations:");
+    for (const n of notes) lines.push(`  ${n.at.slice(0, 10)} with ${n.coach}: asked "${n.asked.slice(0, 120)}" — told "${n.said.slice(0, 160)}"`);
+  }
+  return lines.length > 2 ? lines.join("\n") : "";
+}

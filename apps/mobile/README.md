@@ -84,3 +84,40 @@ brief for anyone who never sets up MCP.
 
 The composer says **Rehearsal** in its status line while `receptionist.ts` is
 answering. It must never say anything else while it is.
+
+## Accounts, email, and the dev console
+
+The app signs in at the floor server (`EXPO_PUBLIC_FLOOR_URL`). Taking a
+badge sends a welcome email with a six-digit code; the sheet asks for it
+next (or later, from Stand → your name → Confirm your email). Forgot the
+password sends an eight-character code that the sheet accepts in place
+of the site's link. Both need the server to have `RESEND_API_KEY` and a
+verified `EMAIL_FROM`; without them the server still answers and simply
+does not send.
+
+An account whose email is on the server's `ADMIN_EMAILS` (default
+`ak@founderfloor.net,ak@founder-floor.com`) sees **Operator · Dev
+console** in the badge dialogue: server counts, mail status, the outbox,
+a grant form, the Friday sweep, and this device's AI mode, sandbox plan
+and counters.
+
+To try it all against a local server:
+
+```
+FF_DATA_FILE=/tmp/floor.json PORT_WS=3569 EMAIL_ECHO=1 ADMIN_EMAILS=ak@founder-floor.com node server/index.mjs
+EXPO_PUBLIC_FLOOR_URL=http://127.0.0.1:3569 npx expo start
+```
+
+`EMAIL_ECHO=1` keeps every email in memory (`GET /debug/emails`, and the
+console's outbox) instead of sending it.
+
+## The subscription
+
+Free is the whole loop: the stand, the floor, the workshop, the weekly
+log, Ines every day, three idea runs, two second opinions, three drafts a
+month. The first value moment (a second opinion read, a week logged, a
+coach's first reply) starts seven days of the whole staff on the server,
+once per account. After that, Pro is the staff's memory: coaches carry the
+log, the interview book and past conversations; Theo reads week against
+week; the update drafts itself. The reasoning and sources are in
+`docs/reboot-plan.md`, section 6.

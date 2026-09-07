@@ -84,11 +84,29 @@ test("free limits gate exactly as the copy promises", () => {
   assert.equal(canUse("ideaRun", { ...u, ideaRuns: 3 }, "free").ok, false);
   assert.equal(canUse("ideaRun", { ...u, ideaRuns: 30 }, "pro").ok, true);
   assert.equal(canUse("coachTurn", u, "free", { coach: "sales", weekday: 1 }).ok, false);
-  assert.equal(canUse("coachTurn", u, "free", { coach: "strategy", weekday: 3 }).ok, false);
+  // Ines is at the counter every day on Free; only the other three and the memory are Pro
+  assert.equal(canUse("coachTurn", u, "free", { coach: "strategy", weekday: 3 }).ok, true);
   assert.equal(canUse("coachTurn", u, "free", { coach: "strategy", weekday: 1 }).left, FREE_LIMITS.coachTurnsPerDay);
+  assert.equal(canUse("handoff", { ...u, handoffsThisMonth: 99 }, "free").ok, true, "every hand-off is delivered");
   assert.equal(canUse("coachTurn", { ...u, coachTurnsToday: 10 }, "free", { coach: "strategy", weekday: 5 }).ok, false);
   assert.equal(canUse("draft", { ...u, draftsThisMonth: 3 }, "free").ok, false);
   assert.match(canUse("draft", { ...u, draftsThisMonth: 3 }, "free").reason, /Pro drafts everything/);
+});
+
+test("the mine: memory is the one thing Free never has, and the preview is honest", async () => {
+  const { remembers, readingPreview, MINES, trialTimeline } = await import("../src/plans.ts");
+  const { memoryBlock } = await import("../src/prompts/index.ts");
+  assert.equal(remembers("free"), false);
+  assert.equal(remembers("pro"), true);
+  assert.match(readingPreview({ revenue: 1450, customers: 9, cash: 39000 }, { revenue: 1200, customers: 8, cash: 40000 }, "EUR"), /€1,200 → €1,450, \+21%/);
+  assert.match(readingPreview({ revenue: 1200, customers: 9, cash: 39000 }, undefined, "EUR"), /One week in the log/);
+  assert.equal(memoryBlock({ kpi: [{ week: "2026-W36", revenue: 1, customers: 1, cash: 1, hoursOnCustomers: 1 }] }, false), "", "Free gets no memory block");
+  const m = memoryBlock({ kpi: [{ week: "2026-W36", revenue: 1200, customers: 8, cash: 40000, hoursOnCustomers: 3, shipped: "the QR" }], notes: [{ coach: "Ines", at: "2026-09-01T10:00:00Z", asked: "Monday plan", said: "Three goals with a number each." }] }, true);
+  assert.match(m, /2026-W36: revenue 1200/);
+  assert.match(m, /with Ines: asked "Monday plan"/);
+  assert.ok(MINES["office-reading"].title.length && MINES["coach-memory"].why.length);
+  assert.equal(trialTimeline(7).length, 3);
+  assert.equal(trialTimeline(7)[1].day, 5);
 });
 
 test("the builder brief carries the stand, marks what is missing, and never invents interviews", async () => {

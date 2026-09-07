@@ -8,11 +8,13 @@
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, type KpiEntry } from "@founderfloor/shared";
+import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, remembers, readingPreview, MINES, type KpiEntry } from "@founderfloor/shared";
+import { effectivePlan } from "../../lib/billing";
 import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Glyph, GlyphTile, Input, Keeper, Mono, Plate, Scene, Spec, Tap, Toast, haptic, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, setPendingSay } from "../../lib/chrome";
 import { isoWeek, useFounder } from "../../lib/store";
+import { valueMoment } from "../../lib/trial";
 import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
 import { COACHES } from "../../lib/mock";
@@ -35,6 +37,9 @@ export default function Office() {
   const last = kpi.at(-1);
   const [entry, setEntry] = useState<KpiEntry>({ week: wk, revenue: last?.revenue ?? r.mrr, customers: last?.customers ?? 0, cash: last?.cash ?? r.cash, hoursOnCustomers: 0, shipped: "", note: "" });
   const d = deltas(kpi);
+  // the mine: Theo's reading of week against week is the staff's memory, which Free does not have
+  const canRead = remembers(effectivePlan());
+  const theo = COACHES.find((c) => c.id === "finance")!;
   const deadlines = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant });
   const ines = COACHES[0];
   const say = (t: string) => {
@@ -52,8 +57,13 @@ export default function Office() {
     setRecord({ mrr: entry.revenue, cash: entry.cash });
     setLog(false);
     say("Week logged — the coaches read it now.");
+    void valueMoment("log");
   };
   const makeUpdate = (audience: "investors" | "myself" | "partner") => {
+    if (!canRead) {
+      router.push({ pathname: "/plans", params: { why: MINES["update-from-log"].why } } as Href);
+      return;
+    }
     if (!gate("draft")) return;
     const text = draftUpdate(kpi, r, audience);
     setUpdate({ audience, text });
@@ -108,7 +118,47 @@ export default function Office() {
             <Spec tone="muted">THE WEEKLY LOG</Spec>
             <Spec tone="faint">{kpi.length ? `${kpi.length} week${kpi.length === 1 ? "" : "s"}` : "nothing yet"}</Spec>
           </View>
-          {d ? (
+          {d && !canRead ? (
+            <View style={{ marginTop: 12, gap: 12 }}>
+              <View style={{ flexDirection: "row" }}>
+                {[
+                  ["Revenue", d.latest.revenue, true],
+                  ["Customers", d.latest.customers, false],
+                  ["Cash", d.latest.cash, true],
+                ].map(([k, v, money], i) => (
+                  <View key={String(k)} style={{ flex: 1, borderLeftWidth: i ? 1 : 0, borderLeftColor: shell.line, paddingLeft: i ? 12 : 0 }}>
+                    <CountUp to={Number(v)} size="lg" delay={i * 120} prefix={money ? (cur === "USD" ? "$" : cur === "GBP" ? "£" : "€") : ""} />
+                    <Spec tone="muted">{String(k)}</Spec>
+                  </View>
+                ))}
+              </View>
+              <Bars values={kpi.slice(-16).map((e) => e.revenue)} max={Math.max(1, ...kpi.map((e) => e.revenue))} labels={[kpi[Math.max(0, kpi.length - 16)].week, d.latest.week]} color={stand.rank.color} />
+              {d.prev ? (
+                <Tap onPress={() => router.push({ pathname: "/plans", params: { why: MINES["office-reading"].why } } as Href)} accessibilityLabel="Theo's reading, on Pro">
+                  <Plate tone="paper" radius={radius.lg} padding={14} lineColor={theo.color}>
+                    <View style={{ flexDirection: "row", gap: 12 }}>
+                      <Keeper look={theo.look} scale={1} color={theo.color} />
+                      <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                        <Spec tone="muted">THEO · THE READING</Spec>
+                        <Body size="sm">{readingPreview(d.latest, d.prev, cur)}</Body>
+                        <Body size="sm" medium>
+                          {MINES["office-reading"].title}
+                        </Body>
+                        <Body size="sm" tone="muted">
+                          {MINES["office-reading"].line}
+                        </Body>
+                        <Spec tone="accent" style={{ marginTop: 4 }}>
+                          Open the reading · Pro →
+                        </Spec>
+                      </View>
+                    </View>
+                  </Plate>
+                </Tap>
+              ) : (
+                <Spec tone="faint">One week in. Next Friday there is something to read against it.</Spec>
+              )}
+            </View>
+          ) : d ? (
             <View style={{ marginTop: 12, gap: 12 }}>
               <View style={{ flexDirection: "row" }}>
                 {[

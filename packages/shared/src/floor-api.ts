@@ -37,6 +37,19 @@ export interface FloorStandEntry {
   holdUntil?: number;
 }
 
+/** POST /auth/me — who the token belongs to, as the app needs it. */
+export interface FloorMe {
+  id: string;
+  name: string;
+  email: string;
+  verified: boolean;
+  admin: boolean;
+  weeklyMail: boolean;
+  paid: { tier: "pro" | "founder"; until?: number | null } | null;
+  trialUsed: boolean;
+  trialDays: number;
+}
+
 type Fetch = typeof fetch;
 
 export class FloorApi {
@@ -44,7 +57,8 @@ export class FloorApi {
   private readonly f: Fetch;
   constructor(base: string, f: Fetch = fetch) {
     this.base = base;
-    this.f = f;
+    // never store fetch itself: called as a method it runs with the wrong `this`, which browsers refuse ("Illegal invocation")
+    this.f = (input, init) => f(input, init);
   }
 
   private async post<T>(path: string, body: unknown, token?: string): Promise<T | { error: string }> {
@@ -85,6 +99,30 @@ export class FloorApi {
   }
   forgot(email: string): Promise<unknown> {
     return this.post("/auth/forgot", { email });
+  }
+  /** The app's reset: the eight-character code from the email, not the link. Signs in on success. */
+  resetWithCode(email: string, code: string, password: string): Promise<FloorAuth | { error: string }> {
+    return this.post<FloorAuth>("/auth/reset", { email, code, password });
+  }
+  me(token: string): Promise<FloorMe | { error: string }> {
+    return this.post<FloorMe>("/auth/me", { token });
+  }
+  verify(token: string, code: string): Promise<(FloorMe & { ok: true }) | { error: string }> {
+    return this.post<FloorMe & { ok: true }>("/auth/verify", { token, code });
+  }
+  verifyStart(token: string): Promise<{ ok: true; already?: boolean } | { error: string }> {
+    return this.post<{ ok: true; already?: boolean }>("/auth/verify/start", { token });
+  }
+  prefs(token: string, prefs: { weeklyMail?: boolean }): Promise<(FloorMe & { ok: true }) | { error: string }> {
+    return this.post<FloorMe & { ok: true }>("/auth/prefs", { token, ...prefs });
+  }
+  /** The week of the whole staff: server-side, once per account (server /trial/start). */
+  trialStart(token: string): Promise<{ ok: true; until: number; days: number } | { error: string }> {
+    return this.post<{ ok: true; until: number; days: number }>("/trial/start", { token });
+  }
+  /** The operator's routes. A non-admin token gets "not found", exactly like an unknown path. */
+  admin<T>(path: "overview" | "outbox" | "grant" | "people" | "friday-review" | "stands", token: string, body: Record<string, unknown> = {}): Promise<T | { error: string }> {
+    return this.post<T>(`/admin/${path}`, { token, ...body });
   }
   /** A Supabase-compatible JWT for a live floor session (server /auth/supabase). "not configured" when the VPS has no secret. */
   supabaseJwt(token: string): Promise<{ jwt: string; expiresIn: number; sub: string } | { error: string }> {

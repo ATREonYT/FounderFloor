@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Body, Button, Chip, Composer, Dialogue, Display, Keeper, Message, Pill, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { Body, Button, Chip, Composer, Dialogue, Display, Keeper, Message, Pill, Plate, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
 import { COACH_SET } from "../../lib/glyphs";
@@ -18,6 +18,10 @@ import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
 import { aiMode, MODE_LINE } from "../../lib/ai";
 import { useReceptionist } from "../../lib/receptionist";
+import { effectivePlan } from "../../lib/billing";
+import { trialLeft } from "../../lib/trial";
+import { useFounder } from "../../lib/store";
+import { remembers, MINES } from "@founderfloor/shared";
 
 export default function Reception() {
   const L = useLayout();
@@ -38,6 +42,9 @@ export default function Reception() {
   const mood: Mood = thinking || streaming ? "talk" : "idle";
   const lastDesk = [...messages].reverse().find((m) => m.role === "desk");
   const streak = stand.streak;
+  const notes = useFounder((s) => s.notes);
+  const week = trialLeft();
+  const forgets = !remembers(effectivePlan()) && !atDesk && notes.some((n) => n.coach === coach.name);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -94,6 +101,25 @@ export default function Reception() {
               <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
                 <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
               </Stage>
+              {week ? (
+                <Pressable onPress={() => router.push("/plans")} accessibilityRole="button" style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: shell.line, borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: week.days <= 2 ? shell.accent : shell.verify }} />
+                  <Spec tone="ink">{week.days <= 2 ? `The whole staff: ${week.days === 1 ? "last day" : "two days left"}. Keep them for $19/month.` : `The whole staff · ${week.days} days left`}</Spec>
+                </Pressable>
+              ) : null}
+              {forgets ? (
+                <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: MINES["coach-memory"].why } })} accessibilityRole="button" accessibilityLabel="The staff remember, on Pro">
+                  <Plate tone="paper" radius={radius.lg} padding={12} lineColor={coach.color}>
+                    <Spec tone="muted">{`${coach.name.toUpperCase()} · ${notes.filter((n) => n.coach === coach.name).length} NOTES, UNREAD`}</Spec>
+                    <Body size="sm" style={{ marginTop: 4 }}>
+                      {`${MINES["coach-memory"].title} ${MINES["coach-memory"].line}`}
+                    </Body>
+                    <Spec tone="accent" style={{ marginTop: 4 }}>
+                      Keep the notes · Pro →
+                    </Spec>
+                  </Plate>
+                </Pressable>
+              ) : null}
               <View style={{ gap: 8 }}>
                 <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "What do you need?" : coach.title}</Display>
                 <Body tone="muted" size={L.compact ? "base" : "lg"} style={{ maxWidth: 560 }}>

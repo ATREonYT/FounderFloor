@@ -11,6 +11,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { readIdea, IDEA_READ_PROMPT, draftDocument, type IdeaRead } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Display, Input, Keeper, Plate, Spec, Stage, Thinking, Toast, haptic, radius, shell, useLayout } from "@founderfloor/ui";
+import { valueMoment } from "../../lib/trial";
 import { useFounder } from "../../lib/store";
 import { useGate } from "../../lib/gate";
 import { askModel, parseJson, aiMode, MODE_LINE } from "../../lib/ai";
@@ -68,6 +69,7 @@ export default function Check() {
       out = readIdea(text);
     }
     addRead(text, out);
+    void valueMoment("read");
     setRead(out);
     setBusy(false);
     void haptic(out.readiness === "ready" ? "success" : "light");

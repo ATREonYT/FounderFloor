@@ -18,7 +18,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage } from "@founderfloor/shared";
+import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -95,10 +95,20 @@ interface SessionState {
   fetchedAt: number;
   /** The Supabase JWT from the floor server's bridge, held in memory only. */
   supabase: { jwt: string; exp: number } | null;
+  /** Who the server says this is: confirmed email, operator rights, the Friday mail switch, the trial. */
+  account: FloorMe | null;
   /** A live Supabase JWT, minted on demand; null when signed out or the VPS has no secret. */
   supabaseJwt(): Promise<string | null>;
   signIn(email: string, password: string): Promise<boolean>;
   register(email: string, name: string, password: string): Promise<boolean>;
+  /** Sends the reset email (link for the site, code for the app). Always "ok": the server never says whether the address exists. */
+  forgot(email: string): Promise<void>;
+  resetWithCode(email: string, code: string, password: string): Promise<boolean>;
+  verify(code: string): Promise<boolean>;
+  resendCode(): Promise<boolean>;
+  setWeeklyMail(on: boolean): Promise<boolean>;
+  /** The week of the whole staff, started on the server. False if it was already had, or nobody is signed in. */
+  startTrial(): Promise<{ ok: true; until: number } | { ok: false; error: string }>;
   signOut(): Promise<void>;
   refresh(): Promise<void>;
 }
@@ -113,6 +123,7 @@ export const useSession = create<SessionState>()(
       error: null,
       fetchedAt: 0,
       supabase: null,
+      account: null,
       async supabaseJwt() {
         const a = get().auth;
         if (!a) return null;
@@ -145,28 +156,83 @@ export const useSession = create<SessionState>()(
         await get().refresh();
         return true;
       },
+      async forgot(email) {
+        set({ error: null });
+        await api.forgot(email.trim());
+      },
+      async resetWithCode(email, code, password) {
+        set({ status: "signing", error: null });
+        const r = await api.resetWithCode(email.trim(), code.trim(), password);
+        if (isErr(r)) {
+          set({ status: "out", error: r.error });
+          return false;
+        }
+        set({ auth: r, status: "in", error: null });
+        await get().refresh();
+        return true;
+      },
+      async verify(code) {
+        const a = get().auth;
+        if (!a) return false;
+        const r = await api.verify(a.token, code.trim());
+        if (isErr(r)) {
+          set({ error: r.error });
+          return false;
+        }
+        set({ account: r, error: null });
+        return true;
+      },
+      async resendCode() {
+        const a = get().auth;
+        if (!a) return false;
+        const r = await api.verifyStart(a.token);
+        if (isErr(r)) {
+          set({ error: r.error });
+          return false;
+        }
+        return true;
+      },
+      async setWeeklyMail(on) {
+        const a = get().auth;
+        if (!a) return false;
+        const r = await api.prefs(a.token, { weeklyMail: on });
+        if (isErr(r)) {
+          set({ error: r.error });
+          return false;
+        }
+        set({ account: r });
+        return true;
+      },
+      async startTrial() {
+        const a = get().auth;
+        if (!a) return { ok: false, error: "sign in first" };
+        const r = await api.trialStart(a.token);
+        if (isErr(r)) return { ok: false, error: r.error };
+        await get().refresh();
+        return { ok: true, until: r.until };
+      },
       async signOut() {
         const a = get().auth;
         if (a) void api.logout(a.token);
-        set({ auth: null, floor: null, stand: null, status: "out", error: null, fetchedAt: 0, supabase: null });
+        set({ auth: null, floor: null, stand: null, account: null, status: "out", error: null, fetchedAt: 0, supabase: null });
       },
       async refresh() {
         const a = get().auth;
         if (!a) return;
-        const [st, en] = await Promise.all([api.state(a.id, a.token), api.startup(a.id)]);
+        const [st, en, me] = await Promise.all([api.state(a.id, a.token), api.startup(a.id), api.me(a.token)]);
         if (isErr(st)) {
           // "not found" means the token is dead: the server answers 404 rather than 401 on purpose
-          if (st.error === "not found") set({ auth: null, floor: null, stand: null, status: "out", error: "Signed out — that session had expired." });
+          if (st.error === "not found") set({ auth: null, floor: null, stand: null, account: null, status: "out", error: "Signed out — that session had expired." });
           else set({ error: st.error });
           return;
         }
-        set({ floor: st, stand: isErr(en) ? null : en.entry, fetchedAt: Date.now(), error: null, status: "in" });
+        set({ floor: st, stand: isErr(en) ? null : en.entry, account: isErr(me) ? get().account : me, fetchedAt: Date.now(), error: null, status: "in" });
       },
     }),
     {
       name: "ff.session",
       storage: createJSONStorage(() => splitStorage),
-      partialize: (s) => ({ auth: s.auth, floor: s.floor, stand: s.stand, fetchedAt: s.fetchedAt }) as unknown as SessionState,
+      partialize: (s) => ({ auth: s.auth, floor: s.floor, stand: s.stand, account: s.account, fetchedAt: s.fetchedAt }) as unknown as SessionState,
       onRehydrateStorage: () => (s) => {
         if (s?.auth) {
           useSession.setState({ status: "in" });
@@ -228,6 +294,12 @@ interface FounderState {
   interviews: Interview[];
   usage: Usage & { day: string; month: string };
   plan: PlanState;
+  /** What the coaches would remember: one line per conversation. Read by the prompts only on Pro. */
+  notes: CoachNote[];
+  /** The value moment that started (or offered) the week of the whole staff, so it is offered once. */
+  offered: string | null;
+  addNote(n: Omit<CoachNote, "at">): void;
+  setOffered(moment: string): void;
   setRecord(patch: Partial<StandRecord>): void;
   toggleTick(id: string): void;
   addScore(s: PitchScore): void;
@@ -274,6 +346,10 @@ export const useFounder = create<FounderState>()(
       interviews: [],
       usage: EMPTY_USAGE,
       plan: { plan: "free" },
+      notes: [],
+      offered: null,
+      addNote: (n) => set({ notes: [...get().notes, { ...n, at: new Date().toISOString() }].slice(-40) }),
+      setOffered: (offered) => set({ offered }),
       setRecord: (patch) => set({ record: { ...get().record, ...patch } }),
       setDoor: (door) => set({ door }),
       setIdeas: (brief, ideas) => set({ ideas: { brief, ideas, at: new Date().toISOString() } }),
@@ -313,8 +389,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 2,
-      migrate: (persisted) => ({ ...(persisted as object) }) as unknown as FounderState,
+      version: 3,
+      migrate: (persisted) => ({ notes: [], offered: null, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

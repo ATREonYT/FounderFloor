@@ -1,0 +1,88 @@
+/**
+ * The one sheet for the week of the whole staff. Three states: the week
+ * just started (timeline, what changed, the price after); sign in first
+ * (the same, with the badge as the first step); or nothing to start.
+ * Apple's rules and Blinkist's lesson in one place: the renewal price is
+ * the biggest number, the trial's length and end are dated, and the
+ * reminder is promised before anyone taps.
+ */
+import { View } from "react-native";
+import { useRouter, type Href } from "expo-router";
+import { APP_PLANS, PLAN_COPY, trialTimeline } from "@founderfloor/shared";
+import { Body, Button, ButtonRow, Dialogue, Display, Glyph, Plate, Spec, radius, shell } from "@founderfloor/ui";
+import { useOffer } from "../lib/trial";
+
+const LINE: Record<string, string> = {
+  read: "That was the second opinion. The rest of the staff are in the building too.",
+  log: "The first week is in the log. Theo reads it from here.",
+  coach: "Ines answered. The other three know your numbers as well.",
+};
+
+export function TrialSheet() {
+  const router = useRouter();
+  const open = useOffer((s) => s.open);
+  const dismiss = useOffer((s) => s.dismiss);
+  if (!open) return null;
+  const rows = trialTimeline(APP_PLANS.pro.trialDays, open.started ? open.until! - APP_PLANS.pro.trialDays * 86_400_000 : undefined);
+  const title = open.needsSignIn ? "A week with the whole staff. Take a badge first." : open.started ? "The whole staff, for a week." : "The whole staff is on Pro.";
+  return (
+    <Dialogue open onClose={dismiss} sign="THE STAFF ROOM" keeper="Free, for seven days" blurb={LINE[open.moment]} color="#2F6F6A" footer={null}>
+      <View style={{ gap: 14 }}>
+        <Display size="xl">{title}</Display>
+        <View style={{ gap: 8 }}>
+          {PLAN_COPY.pro.buys.slice(0, 4).map((b) => (
+            <View key={b} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Glyph id="star" tone="accent" scale={1} />
+              <Body size="sm" style={{ flex: 1 }}>
+                {b}
+              </Body>
+            </View>
+          ))}
+        </View>
+        <Plate tone="paper" radius={radius.md} padding={12}>
+          {rows.map((r) => (
+            <View key={r.day} style={{ flexDirection: "row", gap: 10, paddingVertical: 4 }}>
+              <Spec tone="muted" style={{ width: 84 }}>
+                {r.when}
+              </Spec>
+              <Body size="sm" style={{ flex: 1 }}>
+                {r.label}
+              </Body>
+            </View>
+          ))}
+        </Plate>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+          <Display size="lg">{`$${APP_PLANS.pro.monthly}/month`}</Display>
+          <Spec tone="muted">after the week, only if you keep it · cancel any time</Spec>
+        </View>
+        <ButtonRow>
+          {open.needsSignIn ? (
+            <Button
+              arrow
+              onPress={() => {
+                dismiss();
+                router.push({ pathname: "/sign-in", params: { then: "trial" } } as Href);
+              }}
+            >
+              Take a badge
+            </Button>
+          ) : (
+            <Button arrow onPress={dismiss}>
+              {open.started ? "Back to work" : "Understood"}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            onPress={() => {
+              dismiss();
+              router.push("/plans" as Href);
+            }}
+          >
+            See the plans
+          </Button>
+        </ButtonRow>
+        <Spec tone="faint">Nothing is charged by the week itself. Your stand, the workshop and the log stay free after it, whatever you decide.</Spec>
+      </View>
+    </Dialogue>
+  );
+}

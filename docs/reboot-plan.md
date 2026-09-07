@@ -123,3 +123,82 @@ key is in, everything says "Rehearsal" and nothing should be charged.
    listing at the prices above.
 4. Receptionist end to end (Gate 6) — the one feature no competitor has.
 5. Store readiness (Gate 8).
+
+## 6. The mine (7 Sep 2026)
+
+Where the subscription stands, and why there. The research pass could read
+only Apple's pages in full (the sandbox proxy blocked the rest), so every
+number below came from search snippets of the named pages and should be
+spot-checked before it is quoted anywhere public.
+
+**What the data says.**
+
+- RevenueCat, State of Subscription Apps 2025/2026: hard paywalls convert
+  roughly five times better than freemium by day 35 (10–12% vs ~2%) with
+  near-identical year-one retention; a third to a half of all conversions
+  happen on day zero; trial-to-paid sits near a third on both stores.
+  https://www.revenuecat.com/state-of-subscription-apps
+- Reverse trials (full access first, then Free): Canva, Notion, Linear,
+  Airtable; reported freemium-to-paid lifts of 10–40% (Elena Verna,
+  Amplitude); Kyle Poyar's 2026 report puts a good free trial at 8–12%
+  and a great one at 15–25% against freemium's 3–5%.
+  https://amplitude.com/blog/reverse-trial ·
+  https://www.growthunhinged.com/p/free-to-paid-conversion-report
+- Usage meters in AI apps: ChatGPT's free message cap, Notion AI's twenty
+  complimentary responses, Grammarly's blurred suggestions (widely read as
+  shaming), Duolingo's hearts (revenue-positive, loop-breaking, reverted
+  when retention dips). The one pattern with consistent backlash is
+  Strava's: taking away something that used to be free.
+  https://www.bikeradar.com/news/strava-leaderboards-routes-subscription
+- Placement: Headspace paywalls the aha moment with a "high double-digit"
+  lift; Blinkist's honest trial timeline ("today / day 5 reminder / day 7
+  charged") lifted trial conversion 23% and cut complaints 55%.
+  https://growth.design/case-studies/trial-paywall-challenge
+- Apple 3.1.2: state what the price buys before subscribing; the full
+  renewal price is the most prominent number; trial length and post-trial
+  charge are stated; nothing core may need a login it does not require.
+  https://developer.apple.com/app-store/review/guidelines/
+
+**The six rules this app follows.**
+
+1. One closable paywall on day zero, after value, never as the first screen.
+2. The core loop is free forever and is never taken back: the stand, the
+   floor, the workshop, the weekly log, Ines every day.
+3. The whole staff for seven days, started by the first value moment (a
+   second opinion read, a week logged, a coach's first reply), server-side
+   and once per account — so the downgrade, not a blur, creates the intent.
+4. The thing Pro adds compounds with use: **the staff remember.** Coaches
+   carry the log, the interview book and the last conversations; Theo reads
+   week against week; the update drafts itself from the log. On Free every
+   visit starts from the stand alone.
+5. The mine fires where the memory would have spoken — the second weekly
+   log, the second visit to a coach — with an honest preview (the first line
+   of the reading, the count of unread notes), never a blur over work done.
+6. Every sheet shows the renewal price largest, the trial's dates, the
+   reminder promise (two days before, at the desk), and a way past it.
+
+**What was built.** `packages/shared/src/plans.ts` (limits, `remembers`,
+`MINES`, `readingPreview`, `trialTimeline`); `memoryBlock` in the prompts;
+`apps/mobile/src/lib/trial.ts` (value moments → `/trial/start`, the offer
+sheet); the Office reading gate and the update gate; Ines's unread-notes
+line; the plans page timeline. Hand-offs are delivered on every plan and
+the Monday/Friday restriction on Ines is gone: both read as pettiness.
+
+## 7. Accounts and email (7 Sep 2026)
+
+The floor server was already the identity authority with Resend outbound
+mail. Added: a six-digit confirmation code in the welcome mail
+(`/auth/verify`, `/auth/verify/start`, `acct.verifiedAt`), an
+eight-character reset code beside the reset link so the app can reset
+without leaving (`/auth/reset` with `email` + `code`), `/auth/me` (who the
+token is, operator or not, Friday mail on or off, trial used), `/auth/prefs`
+(the Friday review switch), the Friday review sweep (Fridays from 07:00
+UTC, once per ISO week, confirmed opt-ins only), and `/admin/outbox` +
+`/admin/friday-review` for the console. The app's sign-in sheet now has
+walk in / take a badge / confirm / forgot / reset; the badge dialogue has
+the confirmation, the Friday switch and, for `ADMIN_EMAILS`, the door to
+`/dev/console`. Test: `node server/test/auth-email.mjs`.
+
+To make mail leave the VPS: `RESEND_API_KEY`, `EMAIL_FROM` (a verified
+domain in Resend), optionally `EMAIL_REPLY_TO`, then `systemctl restart
+founderfloor`. `EMAIL_ECHO=1` is a test seam only.

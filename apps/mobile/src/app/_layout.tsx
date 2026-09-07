@@ -7,6 +7,7 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { TrialSheet } from "../components/TrialSheet";
 import { useEffect } from "react";
 import { Platform, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -44,7 +45,9 @@ export default function RootLayout() {
           <Stack.Screen name="start" />
           <Stack.Screen name="idea/find" />
           <Stack.Screen name="idea/check" />
+          <Stack.Screen name="dev/console" options={{ presentation: "card" }} />
         </Stack>
+        <TrialSheet />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
