@@ -134,7 +134,7 @@ export default function Reception() {
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                       <GlyphTile id={ROOM_GLYPH[cur.id] ?? "bolt"} color={DOOR[cur.n - 1]} size={44} />
                       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                        <Spec tone="muted">{`NEXT · ROOM ${cur.n}, ${cur.name.toUpperCase()} · ${curDone} OF ${cur.items.length}`}</Spec>
+                        <Spec tone="muted">{`Up next · Room ${cur.n}, ${cur.name} · ${curDone} of ${cur.items.length}`}</Spec>
                         <Body size="sm" medium numberOfLines={2}>
                           {nextItem ? nextItem.text : "Every room walked. Time for the floor."}
                         </Body>
@@ -149,9 +149,9 @@ export default function Reception() {
                 </Pressable>
               ) : null}
               <View style={{ gap: 6 }}>
-                <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "Ask the desk." : coach.title}</Display>
+                <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "What do you need?" : coach.title}</Display>
                 <Body tone="muted" size={L.compact ? "base" : "lg"} style={{ maxWidth: 560 }}>
-                  {atDesk ? "About your company, the floor, or who to talk to." : coach.blurb}
+                  {atDesk ? "Ask about your company, or pick a coach." : coach.blurb}
                 </Body>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -162,7 +162,7 @@ export default function Reception() {
                 ))}
               </View>
               <View style={{ gap: 8 }}>
-                <Spec tone="muted">THE STAFF</Spec>
+                <Body medium>Coaches</Body>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   {COACHES.map((c) => (
                     <Pressable key={c.id} onPress={() => router.setParams({ coach: c.id })} accessibilityRole="button" accessibilityLabel={`Talk to ${c.name}`} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: shell.line, borderRadius: radius.full, paddingRight: 12, paddingLeft: 4, paddingVertical: 4 })}>

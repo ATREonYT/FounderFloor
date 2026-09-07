@@ -34,10 +34,10 @@ export default function Start() {
         <Sprite id="logo-mark" scale={2} />
         <Spec tone="muted">FounderFloor</Spec>
       </View>
-      <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say="Three doors. Take the one that is true today; you can change your mind." height={L.compact ? 200 : 230} scale={2} set="doors" />
-      <Display size={L.compact ? "3xl" : "4xl"}>Which is true today?</Display>
+      <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say="Hi. Three doors, pick whichever fits today." height={L.compact ? 200 : 230} scale={2} set="doors" />
+      <Display size={L.compact ? "3xl" : "4xl"}>Where are you starting from?</Display>
       <Body tone="muted" size="lg">
-        One building for one founder: the idea, the plan, the numbers, and staff who remember.
+        Pick the door that fits. You can switch later.
       </Body>
       <View style={{ gap: 12 }}>
         {DOORS.map((d) => (

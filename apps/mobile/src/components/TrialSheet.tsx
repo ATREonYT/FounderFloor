@@ -13,10 +13,10 @@ import { Body, Button, ButtonRow, Dialogue, Display, Glyph, Plate, Spec, radius,
 import { useOffer } from "../lib/trial";
 
 const LINE: Record<string, string> = {
-  read: "That was the second opinion. The rest of the staff are in the building too.",
-  log: "The first week is in the log. Theo reads it from here.",
-  coach: "Ines answered. The other three know your numbers as well.",
-  map: "Three rooms walked on your own. The last three are where the staff earn their keep.",
+  read: "That was one coach. There are three more, and they know your numbers.",
+  log: "First week logged. From here, Theo reads it back to you.",
+  coach: "Ines answered. Jonah, Margot and Theo are around too.",
+  map: "You have done the first three rooms on your own. The last three come with the coaches.",
 };
 
 export function TrialSheet() {
@@ -25,9 +25,9 @@ export function TrialSheet() {
   const dismiss = useOffer((s) => s.dismiss);
   if (!open) return null;
   const rows = trialTimeline(APP_PLANS.pro.trialDays, open.started ? open.until! - APP_PLANS.pro.trialDays * 86_400_000 : undefined);
-  const title = open.needsSignIn ? "A week with the whole staff. Take a badge first." : open.started ? "The whole staff, for a week." : "The whole staff is on Pro.";
+  const title = open.needsSignIn ? "Your free week is ready. Sign in to start it." : open.started ? "Your free week starts now." : "The rest of the staff is on Pro.";
   return (
-    <Dialogue open onClose={dismiss} sign="THE STAFF ROOM" keeper="Free, for seven days" blurb={LINE[open.moment]} color="#2F6F6A" footer={null}>
+    <Dialogue open onClose={dismiss} sign="THE STAFF ROOM" keeper="Free for seven days" blurb={LINE[open.moment]} color="#2F6F6A" footer={null}>
       <View style={{ gap: 14 }}>
         <Display size="xl">{title}</Display>
         <View style={{ gap: 8 }}>
@@ -65,7 +65,7 @@ export function TrialSheet() {
                 router.push({ pathname: "/sign-in", params: { then: "trial" } } as Href);
               }}
             >
-              Take a badge
+              Sign in
             </Button>
           ) : (
             <Button arrow onPress={dismiss}>
@@ -82,7 +82,7 @@ export function TrialSheet() {
             See the plans
           </Button>
         </ButtonRow>
-        <Spec tone="faint">Nothing is charged by the week itself. Your stand, the workshop and the log stay free after it, whatever you decide.</Spec>
+        <Spec tone="faint">The week costs nothing. Your stand, the map and the log stay free afterwards, whatever you decide.</Spec>
       </View>
     </Dialogue>
   );

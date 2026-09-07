@@ -13,7 +13,7 @@ import { DOC_GLYPH } from "../lib/glyphs";
 import { useFounder, type SavedDoc } from "../lib/store";
 import { useStand } from "../lib/stand";
 import { useGate } from "../lib/gate";
-import { askModel, aiMode, MODE_LINE } from "../lib/ai";
+import { askModel, aiMode } from "../lib/ai";
 
 export default function Drawer() {
   const L = useLayout();
@@ -54,7 +54,7 @@ export default function Drawer() {
           <Spec tone="muted">{docs.length ? `${docs.length} DOCUMENT${docs.length === 1 ? "" : "S"}` : "EMPTY SO FAR"}</Spec>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The drawer</Display>
-        <Body tone="muted">{`Drafted from ${stand.name}'s stand, in your words and numbers. ${MODE_LINE[aiMode()]}.`}</Body>
+        <Body tone="muted">{`Written from ${stand.name}'s numbers, in your words.`}</Body>
         {docs.length ? (
           <Plate tone="panel" radius={radius.xl}>
             {docs.map((d, i) => (

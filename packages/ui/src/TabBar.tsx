@@ -62,7 +62,7 @@ export function TabBar({
       placed.current = true;
       return;
     }
-    x.value = withSpring(centre, { damping: 15, stiffness: 190 });
+    x.value = withSpring(centre, { damping: 26, stiffness: 420, overshootClamping: true });
   }, [centre, width, reduced, x]);
 
   const disc = useAnimatedStyle(() => ({ transform: [{ translateX: x.value - DISC / 2 }] }));

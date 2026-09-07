@@ -119,8 +119,8 @@ export default function Stand() {
         ) : null}
         {!stand.record.oneLiner && stand.source !== "rehearsal" ? (
           <Plate tone="panel" radius={radius.xl} padding={16}>
-            <Spec tone="muted">THE SIGN IS BLANK</Spec>
-            <Body style={{ marginTop: 6 }}>Start with the idea. Find one from who you know, or write yours and have it read back.</Body>
+            <Body medium>No idea on the sign yet</Body>
+            <Body style={{ marginTop: 6 }}>Find one from who you know, or write yours down and get a read on it.</Body>
             <ButtonRow>
               <View style={{ marginTop: 10 }}>
                 <Button size="sm" onPress={() => router.push("/idea/find")}>Find me an idea</Button>

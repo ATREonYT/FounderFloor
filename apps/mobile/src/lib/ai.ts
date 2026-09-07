@@ -106,5 +106,5 @@ export function parseJson<T>(text: string): T | null {
 export const MODE_LINE: Record<AiMode, string> = {
   edge: "Live · the desk answers through your project",
   dev: "Live · dev key on this device only",
-  rehearsal: "Rehearsal · scripted over your real numbers",
+  rehearsal: "Practice mode · answers use your numbers, no AI yet",
 };

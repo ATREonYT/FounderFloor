@@ -96,7 +96,7 @@ export default function Office() {
         <View style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The Office</Display>
           <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>
-            Five numbers a week, and everything that follows from them.
+            Log five numbers each Friday. Everything here reads from them.
           </Body>
         </View>
 
@@ -115,7 +115,7 @@ export default function Office() {
         {/* the log */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Spec tone="muted">THE WEEKLY LOG</Spec>
+            <Body medium>This week's numbers</Body>
             <Spec tone="faint">{kpi.length ? `${kpi.length} week${kpi.length === 1 ? "" : "s"}` : "nothing yet"}</Spec>
           </View>
           {d && !canRead ? (
@@ -178,7 +178,7 @@ export default function Office() {
             </View>
           ) : (
             <Body size="sm" tone="muted" style={{ marginTop: 10 }}>
-              Five numbers, two minutes, every Friday. Everything else reads from it.
+              Revenue, customers, cash, hours with customers, what shipped. Two minutes.
             </Body>
           )}
           <ButtonRow>
@@ -198,11 +198,11 @@ export default function Office() {
         {/* interviews */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Spec tone="muted">THE INTERVIEW BOOK</Spec>
+            <Body medium>Conversations</Body>
             <Spec tone="faint">{interviews.length ? `${interviews.length} of 10 conversations` : "0 of 10"}</Spec>
           </View>
           <Body size="sm" tone="muted" style={{ marginTop: 8 }}>
-            Their words, not yours.
+            Write down what people actually said.
           </Body>
           {interviews.slice(0, 5).map((x) => (
             <View key={x.id} style={{ borderTopWidth: 1, borderTopColor: shell.line, paddingVertical: 10, gap: 2 }}>
@@ -228,7 +228,7 @@ export default function Office() {
 
         {/* calendar */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
-          <Spec tone="muted">THE FILING CALENDAR</Spec>
+          <Body medium>Filing dates</Body>
           {deadlines.length ? (
             deadlines.slice(0, 5).map((x) => (
               <View key={x.ruleId} style={{ flexDirection: "row", gap: 12, borderTopWidth: 1, borderTopColor: shell.line, paddingVertical: 10, alignItems: "flex-start" }}>
@@ -259,7 +259,7 @@ export default function Office() {
           <Plate tone="panel" radius={radius.xl} padding={20}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <Spec tone="muted">THE DRAWER</Spec>
+                <Body medium>Drafts</Body>
                 <Body style={{ marginTop: 4 }}>{docs.length ? `${docs.length} document${docs.length === 1 ? "" : "s"}: ${docs.slice(0, 3).map((x) => x.title).join(", ")}${docs.length > 3 ? "…" : ""}` : "One-pager, interview script, landing copy, pricing sheet, entity comparison, launch checklist — drafted from your stand."}</Body>
               </View>
               <Body tone="accent">→</Body>

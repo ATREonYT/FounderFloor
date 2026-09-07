@@ -11,12 +11,12 @@ import { Body, Button, ButtonRow, Display, GlyphTile, Scene, Spec, radius, shell
 import { useFounder } from "../lib/store";
 
 const PAGES: { set: SceneSet; glyph: GlyphId; color: string; title: string; line: string; tab: string }[] = [
-  { set: "lobby", glyph: "wave", color: "#4F6E6B", title: "Home is the desk.", line: "Your streak, the next thing to do, and a keeper who answers. Ask anything about your company here.", tab: "Home" },
-  { set: "workshop", glyph: "cube", color: "#A28457", title: "The map is the path.", line: "Six rooms from idea to money. Tap the room you are in, tick what is true. The first three are free for every founder.", tab: "Map" },
-  { set: "stand", glyph: "star", color: "#8C3B2E", title: "The stand is your company, drawn.", line: "Your numbers, your runway, your rank. Share the card; the numbers update the coaches.", tab: "Stand" },
-  { set: "office", glyph: "coin", color: "#5E7C93", title: "The Office is Friday.", line: "Five numbers a week, two minutes. Theo reads them back. The drawer holds what the staff drafted for you.", tab: "Office" },
-  { set: "cafe", glyph: "heart", color: "#2F6F6A", title: "The staff remember, on Pro.", line: "Free is the whole loop. Your first week with the whole staff is free too. Pro keeps their notes between visits.", tab: "Plans" },
-  { set: "market", glyph: "flask", color: "#3B5B92", title: "The floor is last.", line: "When there is something to show, take a spot in the hall with other founders. Visitors leave notes; the receptionist keeps them.", tab: "Floor" },
+  { set: "lobby", glyph: "wave", color: "#4F6E6B", title: "Start at home.", line: "Your streak, what to do next, and a desk that answers questions about your company.", tab: "Home" },
+  { set: "workshop", glyph: "cube", color: "#A28457", title: "Follow the map.", line: "Six rooms from idea to money, one step at a time. Tap the next button, do the thing, mark it done. The first three rooms are free.", tab: "Map" },
+  { set: "stand", glyph: "star", color: "#8C3B2E", title: "Your stand is your company.", line: "Your numbers, your runway, your rank, in one place you can share. The coaches read from it.", tab: "Stand" },
+  { set: "office", glyph: "coin", color: "#5E7C93", title: "Fridays are for the Office.", line: "Log five numbers, two minutes. Theo reads them back. Drafts the coaches wrote for you live here too.", tab: "Office" },
+  { set: "cafe", glyph: "heart", color: "#2F6F6A", title: "Free does a lot. Pro remembers.", line: "Everything you need to start is free, and your first week with all four coaches is free too. Pro keeps their notes between visits.", tab: "Plans" },
+  { set: "market", glyph: "flask", color: "#3B5B92", title: "The floor comes last.", line: "When you have something to show, take a spot in the hall with other founders. Visitors leave notes and the receptionist keeps them for you.", tab: "Floor" },
 ];
 
 export default function Guide() {
@@ -37,7 +37,7 @@ export default function Guide() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <ScrollView ref={scroll} contentContainerStyle={{ paddingTop: L.insets.top + 16, paddingBottom: L.insets.bottom + 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 560, alignSelf: "center", gap: 18, flexGrow: 1, justifyContent: "center" }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Spec tone="muted">{`HOW IT WORKS · ${i + 1} OF ${PAGES.length}`}</Spec>
+          <Spec tone="muted">{`How it works · ${i + 1} of ${PAGES.length}`}</Spec>
           <Pressable onPress={done} accessibilityRole="button" accessibilityLabel="Skip the guide">
             <Spec tone="accent">Skip</Spec>
           </Pressable>

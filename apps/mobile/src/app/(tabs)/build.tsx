@@ -10,7 +10,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useRouter } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood, type PathItem, type PathUnit } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
@@ -68,11 +68,11 @@ export default function Build() {
       setOpening(null);
     }, 260);
   };
-  const stops = STAGES.map((s, i) => {
-    const p = stageProgress(s, ticks);
-    return { id: s.id, name: s.name, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length}`, color: DOOR[i], progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
-  });
-  const hereIndex = STAGES.findIndex((s) => s.id === cur.id);
+  const units: PathUnit[] = STAGES.map((s, i) => ({ id: s.id, n: s.n, name: s.name, color: DOOR[i], locked: s.n > FREE_ROOMS && !opened, items: s.items.map((it) => ({ id: it.id, text: it.text, done: ticks.includes(it.id) })) }));
+  const hereId = cur.items.find((x) => !ticks.includes(x.id))?.id ?? null;
+  const [picked, setPicked] = useState<{ item: PathItem; unit: PathUnit } | null>(null);
+  const pickedStage = picked ? STAGES.find((s) => s.id === picked.unit.id)! : null;
+  const pickedProof = picked ? pickedStage!.items.find((x) => x.id === picked.item.id)?.proof : undefined;
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
@@ -88,17 +88,48 @@ export default function Build() {
           </View>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
-        <Plate tone="panel" radius={radius.xl} padding={16}>
-          <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
-          {!opened ? (
-            <Spec tone="faint" style={{ marginTop: 4 }}>
-              {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
-            </Spec>
-          ) : null}
-        </Plate>
+        <Journey
+          units={units}
+          hereId={hereId}
+          look={stand.look}
+          picked={picked?.item.id ?? null}
+          onPick={(item, unit) => {
+            void haptic("light");
+            setPicked(picked?.item.id === item.id ? null : { item, unit });
+          }}
+          onOpenUnit={(u) => void openRoom(STAGES.find((s) => s.id === u.id)!)}
+          card={
+            picked ? (
+              <Plate tone="panel" radius={radius.lg} padding={14} lineColor={picked.unit.color}>
+                <Spec tone="muted">{`ROOM ${picked.unit.n} · ${picked.unit.name.toUpperCase()}`}</Spec>
+                <Body medium style={{ marginTop: 4 }}>
+                  {picked.item.text}
+                </Body>
+                {pickedProof ? (
+                  <Body size="sm" tone="muted" style={{ marginTop: 2 }}>
+                    {`Counts when: ${pickedProof.toLowerCase()}`}
+                  </Body>
+                ) : null}
+                <ButtonRow>
+                  <View style={{ marginTop: 10 }}>
+                    <Button size="sm" onPress={() => { tick(pickedStage!, picked.item.id); setPicked(null); }}>
+                      {picked.item.done ? "Undo" : "Done"}
+                    </Button>
+                  </View>
+                  <View style={{ marginTop: 10 }}>
+                    <Button size="sm" variant="ghost" onPress={() => { setPicked(null); void openRoom(pickedStage!); }}>
+                      Open the room
+                    </Button>
+                  </View>
+                </ButtonRow>
+              </Plate>
+            ) : null
+          }
+        />
+        {!opened ? <Spec tone="faint">{`Rooms 1 to ${FREE_ROOMS} are yours. The last three open with your free week.`}</Spec> : null}
         <Plate tone="panel" radius={radius.xl} padding={16}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Spec tone="muted">THE TRAIL</Spec>
+            <Body medium>Your trail</Body>
             <Spec tone="faint">{streak.days ? `${streak.days}-day streak` : "day one"}</Spec>
           </View>
           <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 12 }}>

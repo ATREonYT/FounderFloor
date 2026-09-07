@@ -40,7 +40,7 @@ export default function Settings() {
         <Display size={L.compact ? "3xl" : "4xl"}>Settings</Display>
 
         <Plate tone="panel" radius={radius.xl} padding={20}>
-          <Spec tone="muted">REMINDERS</Spec>
+          <Body medium>Reminders</Body>
           <View style={{ gap: 12, marginTop: 10 }}>
             <Choices label="A nudge every day" value={reminders.daily} options={[{ v: "off", label: "Off" }, { v: "09:00", label: "9:00" }, { v: "13:00", label: "13:00" }, { v: "19:00", label: "19:00" }]} onChange={(v) => remind({ ...reminders, daily: v as DailyTime })} />
             <Choices label="Friday review, 16:00" value={reminders.friday ? "on" : "off"} options={[{ v: "on", label: "Remind me" }, { v: "off", label: "Off" }]} onChange={(v) => remind({ ...reminders, friday: v === "on" })} />
@@ -49,7 +49,7 @@ export default function Settings() {
         </Plate>
 
         <Plate tone="panel" radius={radius.xl} padding={20}>
-          <Spec tone="muted">EMAIL</Spec>
+          <Body medium>Email</Body>
           {!auth ? (
             <View style={{ marginTop: 10, gap: 10 }}>
               <Body size="sm" tone="muted">
@@ -87,7 +87,7 @@ export default function Settings() {
         </Plate>
 
         <Plate tone="panel" radius={radius.xl} padding={20}>
-          <Spec tone="muted">THE BUILDING</Spec>
+          <Body medium>More</Body>
           <View style={{ marginTop: 10, gap: 10 }}>
             <Pressable onPress={() => router.push("/guide" as Href)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center" }}>
               <Body style={{ flex: 1 }}>How it works, again</Body>

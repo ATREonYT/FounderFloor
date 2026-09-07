@@ -79,7 +79,7 @@ export default function Inbox() {
             </Pressable>
           ))}
         </Plate>
-        <Spec tone="faint">Rehearsal · these arrive over Supabase Realtime and push once the desk is wired.</Spec>
+        <Spec tone="faint">Sample messages for now. Real ones arrive once your stand is on the floor.</Spec>
       </ScrollView>
 
       <Dialogue open={!!open} onClose={() => setOpenId(null)} sign={open?.who ?? ""} keeper={open ? KIND[open.kind].label : ""} blurb={open?.stand} color={open ? KIND[open.kind].color : shell.accent} footer={null}>

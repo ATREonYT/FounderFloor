@@ -37,7 +37,7 @@ export { Streak } from "./Streak";
 export { Door } from "./Door";
 export { Stage, wash, type Mood } from "./Stage";
 export { Sparks } from "./Sparks";
-export { Journey, type JourneyStop } from "./Journey";
+export { Journey, type PathUnit, type PathItem } from "./Journey";
 export { Calendar } from "./Calendar";
 export { Scene, Backdrop, Furniture, Glyph, GlyphTile, SCENE_SETS, type SceneSet, type SceneProp, type Hall } from "./Scene";
 export { applyScheme, scheme, alpha, LIGHT, DARK, type Scheme } from "./theme";

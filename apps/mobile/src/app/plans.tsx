@@ -60,9 +60,9 @@ export default function Plans() {
         <Scene set="cafe" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The staff room">
           <Spec tone="muted">{week ? `THE WHOLE STAFF · ${week.days} DAY${week.days === 1 ? "" : "S"} LEFT` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} DAYS OF THE WHOLE STAFF, FREE, AT YOUR FIRST VALUE MOMENT`}</Spec>
         </Scene>
-        <Display size={L.compact ? "3xl" : "4xl"}>The whole staff, every day.</Display>
+        <Display size={L.compact ? "3xl" : "4xl"}>Keep the whole staff.</Display>
         <Body tone="muted" size="lg">
-          Free finds out whether this is for you. Pro is the four coaches and every draft. Founder+ adds the careful model and a better address on the floor.
+          Free covers the whole loop. Pro adds the coaches' memory, all four of them, and every draft. Founder+ adds the careful model and a better spot on the floor.
         </Body>
         <Choices value={cycle} options={[{ v: "monthly", label: "Monthly" }, { v: "annual", label: "Yearly · two months free" }]} onChange={setCycle} />
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
@@ -113,7 +113,7 @@ export default function Plans() {
         </View>
         {!week && !trialUsed ? (
           <Plate tone="paper" radius={radius.md} padding={12}>
-            <Spec tone="muted">HOW THE FREE WEEK GOES</Spec>
+            <Body medium>How the free week works</Body>
             {trialTimeline(APP_PLANS.pro.trialDays).map((r) => (
               <View key={r.day} style={{ flexDirection: "row", gap: 10, paddingTop: 6 }}>
                 <Spec tone="muted" style={{ width: 56 }}>
