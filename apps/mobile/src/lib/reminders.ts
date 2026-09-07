@@ -7,7 +7,7 @@
  * is a quiet no-op there.
  */
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
+import type * as NotificationsModule from "expo-notifications";
 
 export type DailyTime = "off" | "09:00" | "13:00" | "19:00";
 export interface ReminderPrefs {
@@ -18,17 +18,37 @@ export const DEFAULT_REMINDERS: ReminderPrefs = { daily: "off", friday: false };
 
 const native = Platform.OS !== "web";
 
-if (native) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
-  });
+/**
+ * The module is loaded lazily and guarded: a build made before the
+ * notifications package was added has no native half, and requiring it
+ * throws at import time. That must switch reminders off, not the app.
+ */
+let cached: typeof NotificationsModule | null | undefined;
+function Notifications(): typeof NotificationsModule | null {
+  if (cached !== undefined) return cached;
+  if (!native) return (cached = null);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const m = require("expo-notifications") as typeof NotificationsModule;
+    m.setNotificationHandler({
+      handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }),
+    });
+    cached = m;
+  } catch {
+    cached = null;
+  }
+  return cached;
 }
 
+/** Can this build schedule reminders at all? */
+export const remindersAvailable = (): boolean => Notifications() !== null;
+
 export async function askPermission(): Promise<boolean> {
-  if (!native) return false;
-  const have = await Notifications.getPermissionsAsync();
+  const N = Notifications();
+  if (!N) return false;
+  const have = await N.getPermissionsAsync();
   if (have.granted) return true;
-  const r = await Notifications.requestPermissionsAsync();
+  const r = await N.requestPermissionsAsync();
   return r.granted;
 }
 
@@ -41,22 +61,24 @@ const DAILY_LINES = [
 
 /** Replace every scheduled reminder with the ones these prefs ask for. */
 export async function applyReminders(p: ReminderPrefs): Promise<{ ok: boolean; reason?: string }> {
+  const N = Notifications();
   if (!native) return { ok: false, reason: "Reminders arrive on the phone, not in the browser." };
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  if (!N) return { ok: false, reason: "This build cannot schedule reminders yet. Rebuild the app once and they will." };
+  await N.cancelAllScheduledNotificationsAsync();
   if (p.daily === "off" && !p.friday) return { ok: true };
   if (!(await askPermission())) return { ok: false, reason: "Notifications are off for FounderFloor in the phone's Settings." };
   if (p.daily !== "off") {
     const [h, m] = p.daily.split(":").map(Number);
-    await Notifications.scheduleNotificationAsync({
+    await N.scheduleNotificationAsync({
       content: { title: "FounderFloor", body: DAILY_LINES[new Date().getDate() % DAILY_LINES.length] },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: h, minute: m },
+      trigger: { type: N.SchedulableTriggerInputTypes.DAILY, hour: h, minute: m },
     });
   }
   if (p.friday) {
-    await Notifications.scheduleNotificationAsync({
+    await N.scheduleNotificationAsync({
       content: { title: "Friday review", body: "Five numbers, two minutes. Theo reads the week back after." },
       // expo counts Sunday as 1, so Friday is 6
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.WEEKLY, weekday: 6, hour: 16, minute: 0 },
+      trigger: { type: N.SchedulableTriggerInputTypes.WEEKLY, weekday: 6, hour: 16, minute: 0 },
     });
   }
   return { ok: true };
