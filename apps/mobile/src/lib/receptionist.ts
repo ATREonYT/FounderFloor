@@ -33,6 +33,8 @@ export function useReceptionist(coachId?: string) {
   /** What answered the last turn. The status line shows this, never a wish. */
   const [source, setSource] = useState<"rehearsal" | "live">("rehearsal");
   const [quota, setQuota] = useState<string | null>(null);
+  /** Why the last live attempt fell back to the script, so nobody has to guess. */
+  const [lastError, setLastError] = useState<string | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const ctx = useRef({ stand, founder });
   ctx.current = { stand, founder };
@@ -123,6 +125,7 @@ export function useReceptionist(coachId?: string) {
       setBusy(true);
       setThinking(true);
       setQuota(null);
+      setLastError(null);
       const live = aiMode() !== "rehearsal";
       if (!live) {
         const full = scripted(t);
@@ -154,6 +157,7 @@ export function useReceptionist(coachId?: string) {
           }
           const full = scripted(t);
           setSource("rehearsal");
+          setLastError(e instanceof Error ? e.message : "The model did not answer.");
           reveal(full, 0);
         });
     },
@@ -167,5 +171,5 @@ export function useReceptionist(coachId?: string) {
     setThinking(false);
   }, [seed]);
 
-  return { coach, messages, busy, thinking, send, reset, starters: coach.topics, source, quota };
+  return { coach, messages, busy, thinking, send, reset, starters: coach.topics, source, quota, lastError };
 }

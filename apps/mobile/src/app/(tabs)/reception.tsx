@@ -30,7 +30,7 @@ export default function Reception() {
   const bottom = useBottomChrome();
   const { coach: coachParam } = useLocalSearchParams<{ coach?: string }>();
   const gate = useGate();
-  const { coach, messages, busy, thinking, send, reset, starters, source, quota } = useReceptionist(coachParam);
+  const { coach, messages, busy, thinking, send, reset, starters, source, quota, lastError } = useReceptionist(coachParam);
   const stand = useStand();
   const [draft, setDraft] = useState("");
   const [hallId, setHallId] = useState<HallId>("main-hall");
@@ -214,7 +214,7 @@ export default function Reception() {
             onAttach={() => router.push("/drawer")}
             placeholder={atDesk ? "Ask the desk…" : `Ask ${coach.name}…`}
             busy={busy}
-            status={`${aiMode() === "rehearsal" ? MODE_LINE.rehearsal : source === "live" ? MODE_LINE[aiMode()] : `${MODE_LINE[aiMode()]} · last reply was scripted`} · ${hall.name}`}
+            status={aiMode() === "rehearsal" ? `${MODE_LINE.rehearsal} · ${hall.name}` : source === "live" ? `${MODE_LINE[aiMode()]} · ${hall.name}` : lastError ? `Scripted reply. ${lastError}` : `${MODE_LINE[aiMode()]} · ${hall.name}`}
           />
         </View>
       </KeyboardAvoidingView>

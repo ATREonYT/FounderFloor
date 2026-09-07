@@ -85,7 +85,14 @@ export async function askModel(a: Ask): Promise<string> {
         messages: a.direct.turns,
       }),
     });
-    if (!res.ok) throw new AiError(`anthropic ${res.status}`, res.status);
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = ((await res.json()) as { error?: { message?: string } }).error?.message ?? "";
+      } catch {}
+      const why = res.status === 401 ? "the key was refused (revoked or mistyped)" : res.status === 400 && /credit|billing/i.test(detail) ? "the Anthropic account has no credit yet" : res.status === 404 ? "the model name is not available to this key" : res.status === 429 ? "rate limited, try again in a moment" : detail || `error ${res.status}`;
+      throw new AiError(`The model did not answer: ${why}.`, res.status);
+    }
     const j = (await res.json()) as { content: { type: string; text?: string }[] };
     return j.content.map((c) => c.text ?? "").join("");
   }
