@@ -21,9 +21,12 @@ export default function Start() {
   const L = useLayout();
   const router = useRouter();
   const setDoor = useFounder((s) => s.setDoor);
+  const guided = useFounder((s) => s.guided);
   const go = (d: (typeof DOORS)[number]) => {
     setDoor(d.door);
-    router.replace(d.to as Href);
+    // the first time, the six-card guide comes first and then the door
+    if (!guided) router.replace({ pathname: "/guide", params: { then: d.to } } as Href);
+    else router.replace(d.to as Href);
   };
   return (
     <ScrollView style={{ flex: 1, backgroundColor: shell.paper }} contentContainerStyle={{ paddingTop: L.insets.top + 32, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 20 }}>
@@ -60,7 +63,7 @@ export default function Start() {
           </Tap>
         ))}
       </View>
-      <Spec tone="faint">You can change doors any time. Nothing here is a commitment, and nothing is a test.</Spec>
+      <Spec tone="faint">Change doors any time. Nothing here is a test.</Spec>
     </ScrollView>
   );
 }

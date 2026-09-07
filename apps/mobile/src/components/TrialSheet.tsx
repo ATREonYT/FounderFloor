@@ -16,6 +16,7 @@ const LINE: Record<string, string> = {
   read: "That was the second opinion. The rest of the staff are in the building too.",
   log: "The first week is in the log. Theo reads it from here.",
   coach: "Ines answered. The other three know your numbers as well.",
+  map: "Three rooms walked on your own. The last three are where the staff earn their keep.",
 };
 
 export function TrialSheet() {

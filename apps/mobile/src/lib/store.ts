@@ -15,6 +15,7 @@
  */
 import { Platform } from "react-native";
 import { create } from "zustand";
+import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
@@ -294,6 +295,14 @@ interface FounderState {
   interviews: Interview[];
   usage: Usage & { day: string; month: string };
   plan: PlanState;
+  /** Every day the building was opened, ISO dates, for the calendar. */
+  visits: string[];
+  /** Local reminders, as chosen in Settings. */
+  reminders: ReminderPrefs;
+  /** The guide has been read once, or skipped. */
+  guided: boolean;
+  setReminders(p: ReminderPrefs): void;
+  setGuided(): void;
   /** What the coaches would remember: one line per conversation. Read by the prompts only on Pro. */
   notes: CoachNote[];
   /** The value moment that started (or offered) the week of the whole staff, so it is offered once. */
@@ -348,6 +357,11 @@ export const useFounder = create<FounderState>()(
       plan: { plan: "free" },
       notes: [],
       offered: null,
+      visits: [],
+      reminders: DEFAULT_REMINDERS,
+      guided: false,
+      setReminders: (reminders) => set({ reminders }),
+      setGuided: () => set({ guided: true }),
       addNote: (n) => set({ notes: [...get().notes, { ...n, at: new Date().toISOString() }].slice(-40) }),
       setOffered: (offered) => set({ offered }),
       setRecord: (patch) => set({ record: { ...get().record, ...patch } }),
@@ -381,6 +395,7 @@ export const useFounder = create<FounderState>()(
       touchStreak: () => {
         const today = new Date().toISOString().slice(0, 10);
         const s = get().streak;
+        if (!get().visits.includes(today)) set({ visits: [...get().visits, today].slice(-400) });
         if (s.last === today) return;
         const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
         set({ streak: { days: s.last === yesterday ? s.days + 1 : 1, last: today } });
@@ -389,8 +404,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 3,
-      migrate: (persisted) => ({ notes: [], offered: null, ...(persisted as object) }) as unknown as FounderState,
+      version: 4,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

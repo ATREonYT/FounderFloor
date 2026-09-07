@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Body, Button, Chip, Composer, Dialogue, Display, Keeper, Message, Pill, Plate, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { Body, Button, Chip, Composer, Dialogue, Display, GlyphTile, Keeper, Message, Pill, Plate, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
 import { COACH_SET } from "../../lib/glyphs";
@@ -20,8 +20,9 @@ import { aiMode, MODE_LINE } from "../../lib/ai";
 import { useReceptionist } from "../../lib/receptionist";
 import { effectivePlan } from "../../lib/billing";
 import { trialLeft } from "../../lib/trial";
-import { useFounder } from "../../lib/store";
-import { remembers, MINES } from "@founderfloor/shared";
+import { useFounder, isoWeek } from "../../lib/store";
+import { remembers, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
+import { ROOM_GLYPH } from "../../lib/glyphs";
 
 export default function Reception() {
   const L = useLayout();
@@ -43,6 +44,13 @@ export default function Reception() {
   const lastDesk = [...messages].reverse().find((m) => m.role === "desk");
   const streak = stand.streak;
   const notes = useFounder((s) => s.notes);
+  const ticks = useFounder((s) => s.ticks);
+  const kpi = useFounder((s) => s.kpi);
+  const cur = currentStage(ticks);
+  const curDone = cur.items.filter((x) => ticks.includes(x.id)).length;
+  const nextItem = cur.items.find((x) => !ticks.includes(x.id));
+  const weekLogged = kpi.some((e) => e.week === isoWeek());
+  const DOOR = ["#8C3B2E", "#3B5B92", "#4E6E4E", "#B4762E", "#2F6F6A", "#6B4E71"];
   const week = trialLeft();
   const forgets = !remembers(effectivePlan()) && !atDesk && notes.some((n) => n.coach === coach.name);
 
@@ -120,10 +128,30 @@ export default function Reception() {
                   </Plate>
                 </Pressable>
               ) : null}
-              <View style={{ gap: 8 }}>
-                <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "What do you need?" : coach.title}</Display>
+              {atDesk ? (
+                <Pressable onPress={() => router.navigate("/build")} accessibilityRole="button" accessibilityLabel="Next on the map">
+                  <Plate tone="panel" radius={radius.xl} padding={14}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                      <GlyphTile id={ROOM_GLYPH[cur.id] ?? "bolt"} color={DOOR[cur.n - 1]} size={44} />
+                      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                        <Spec tone="muted">{`NEXT · ROOM ${cur.n}, ${cur.name.toUpperCase()} · ${curDone} OF ${cur.items.length}`}</Spec>
+                        <Body size="sm" medium numberOfLines={2}>
+                          {nextItem ? nextItem.text : "Every room walked. Time for the floor."}
+                        </Body>
+                      </View>
+                      <Body tone="accent">→</Body>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                      <Chip grow={false} onPress={() => router.navigate("/office")}>{weekLogged ? "Week logged ✓" : "Log the week"}</Chip>
+                      <Chip grow={false} onPress={() => router.push("/guide")}>How it works</Chip>
+                    </View>
+                  </Plate>
+                </Pressable>
+              ) : null}
+              <View style={{ gap: 6 }}>
+                <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "Ask the desk." : coach.title}</Display>
                 <Body tone="muted" size={L.compact ? "base" : "lg"} style={{ maxWidth: 560 }}>
-                  {atDesk ? "Your stand, the floor, or a person. The keeper who knows will answer." : coach.blurb}
+                  {atDesk ? "About your company, the floor, or who to talk to." : coach.blurb}
                 </Body>
               </View>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -148,7 +176,7 @@ export default function Reception() {
                     </Pressable>
                   ))}
                   <Pressable onPress={() => router.push("/coaches")} accessibilityRole="button" style={{ justifyContent: "center", paddingHorizontal: 8 }}>
-                    <Spec tone="accent">About the four →</Spec>
+                    <Spec tone="accent">Who they are →</Spec>
                   </Pressable>
                 </View>
               </View>

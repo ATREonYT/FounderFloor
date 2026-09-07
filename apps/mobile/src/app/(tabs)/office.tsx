@@ -178,7 +178,7 @@ export default function Office() {
             </View>
           ) : (
             <Body size="sm" tone="muted" style={{ marginTop: 10 }}>
-              Revenue, customers, cash, hours with customers, what shipped. Two minutes on a Friday. The update, the runway and the coaches all read from it.
+              Five numbers, two minutes, every Friday. Everything else reads from it.
             </Body>
           )}
           <ButtonRow>
@@ -202,7 +202,7 @@ export default function Office() {
             <Spec tone="faint">{interviews.length ? `${interviews.length} of 10 conversations` : "0 of 10"}</Spec>
           </View>
           <Body size="sm" tone="muted" style={{ marginTop: 8 }}>
-            What they said, in their words, not what you heard. Underline anything they already pay for.
+            Their words, not yours.
           </Body>
           {interviews.slice(0, 5).map((x) => (
             <View key={x.id} style={{ borderTopWidth: 1, borderTopColor: shell.line, paddingVertical: 10, gap: 2 }}>

@@ -22,9 +22,9 @@ import { scheme } from "./theme";
 export type MenuEntry = { key: string; label: string; glyph: GlyphId; badge?: number };
 
 export const MENU: MenuEntry[] = [
-  { key: "reception", label: "Desk", glyph: "wave" },
+  { key: "reception", label: "Home", glyph: "wave" },
+  { key: "build", label: "Map", glyph: "cube" },
   { key: "stand", label: "Stand", glyph: "star" },
-  { key: "build", label: "Build", glyph: "cube" },
   { key: "office", label: "Office", glyph: "coin" },
   { key: "floor", label: "Floor", glyph: "flask" },
 ];

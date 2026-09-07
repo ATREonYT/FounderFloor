@@ -10,7 +10,9 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useRouter } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Button, ButtonRow, Dialogue, Display, Door, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { effectivePlan } from "../../lib/billing";
+import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
@@ -26,7 +28,8 @@ export default function Build() {
   const router = useRouter();
   const gate = useGate();
   const bottom = useBottomChrome();
-  const { ticks, toggleTick, saveDoc } = useFounder();
+  const { ticks, toggleTick, saveDoc, kpi, interviews, visits, streak } = useFounder();
+  const opened = effectivePlan() !== "free" || !!trialLeft();
   const stand = useStand();
   const [open, setOpen] = useState<BuildStage | null>(null);
   const [guide, setGuide] = useState<{ q: string; text: string } | null>(null);
@@ -34,7 +37,6 @@ export default function Build() {
   const [mood, setMood] = useState<Mood>("idle");
   const [opening, setOpening] = useState<string | null>(null);
   const cur = currentStage(ticks);
-  const cols = L.compact ? 3 : 3;
   const react = (m: Mood) => {
     setMood(m);
     setTimeout(() => setMood("idle"), 900);
@@ -55,47 +57,65 @@ export default function Build() {
       setTimeout(() => setToast(null), 2800);
     }
   };
-  const openRoom = (s: BuildStage) => {
+  const openRoom = async (s: BuildStage) => {
     setGuide(null);
-    setOpening(s.id);
     void haptic("light");
+    // the mine: the rooms past the gate open with the week of the whole staff, or Pro
+    if (!(await roomGate(s.n))) return;
+    setOpening(s.id);
     setTimeout(() => {
       setOpen(s);
       setOpening(null);
     }, 260);
   };
+  const stops = STAGES.map((s, i) => {
+    const p = stageProgress(s, ticks);
+    return { id: s.id, name: s.name, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length}`, color: DOOR[i], progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
+  });
+  const hereIndex = STAGES.findIndex((s) => s.id === cur.id);
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Spec tone="muted">{`Workshop · ${Math.round(pathProgress(ticks) * 100)}% of the path`}</Spec>} />
+      <TopBar center={<Spec tone="muted">{`The map · ${Math.round(pathProgress(ticks) * 100)}% walked`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
-        <Scene set="workshop" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The workshop">
+        <Scene set="workshop" height={L.compact ? 150 : 180} radiusPx={radius.xl} accessibilityLabel="The map">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <GlyphTile id={ROOM_GLYPH[cur.id] ?? "bolt"} color={DOOR[cur.n - 1]} size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Spec tone="muted">YOU ARE IN</Spec>
-              <Body medium numberOfLines={1}>{cur.name}</Body>
+              <Body medium numberOfLines={1}>{`${cur.name} · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
             </View>
           </View>
         </Scene>
-        <View style={{ gap: 4 }}>
-          <Display size={L.compact ? "3xl" : "4xl"}>The workshop</Display>
-          <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>
-            Six rooms from idea to money. The guide knows which door is next.
-          </Body>
-        </View>
-
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-          {STAGES.map((s, i) => {
-            const p = stageProgress(s, ticks);
-            return (
-              <View key={s.id} style={{ width: `${Math.floor(100 / cols) - 2}%`, minWidth: 0 }}>
-                <Door color={DOOR[i]} sign={s.sign} name={s.name} meta={`${s.items.filter((x) => ticks.includes(x.id)).length}/${s.items.length}`} here={s.id === cur.id} done={p >= 1} open={opening === s.id} onPress={() => openRoom(s)} size={L.compact ? 52 : 56} />
+        <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
+        <Plate tone="panel" radius={radius.xl} padding={16}>
+          <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
+          {!opened ? (
+            <Spec tone="faint" style={{ marginTop: 4 }}>
+              {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
+            </Spec>
+          ) : null}
+        </Plate>
+        <Plate tone="panel" radius={radius.xl} padding={16}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
+            <Spec tone="muted">THE TRAIL</Spec>
+            <Spec tone="faint">{streak.days ? `${streak.days}-day streak` : "day one"}</Spec>
+          </View>
+          <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 12 }}>
+            {[
+              ["Done", ticks.length],
+              ["Weeks", kpi.length],
+              ["Talks", interviews.length],
+              ["Days", visits.length],
+            ].map(([k, v], i) => (
+              <View key={String(k)} style={{ flex: 1, borderLeftWidth: i ? 1 : 0, borderLeftColor: shell.line, paddingLeft: i ? 12 : 0 }}>
+                <Display size="lg">{String(v)}</Display>
+                <Spec tone="muted">{String(k)}</Spec>
               </View>
-            );
-          })}
-        </View>
-        <Spec tone="faint">Ticks are saved on this device until the desk is wired; the badge follows the stand.</Spec>
+            ))}
+          </View>
+          <Calendar active={visits} />
+        </Plate>
       </ScrollView>
 
       <Dialogue open={!!open} onClose={() => setOpen(null)} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tick what is true, not what you intend.">

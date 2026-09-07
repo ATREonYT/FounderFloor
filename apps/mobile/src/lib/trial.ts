@@ -15,7 +15,7 @@ import { create } from "zustand";
 import { useSession, useFounder } from "./store";
 import { effectivePlan } from "./billing";
 
-export type ValueMoment = "read" | "log" | "coach";
+export type ValueMoment = "read" | "log" | "coach" | "map";
 
 interface OfferState {
   /** The sheet that is open, or null. */
@@ -59,4 +59,33 @@ export async function claimAfterSignIn(): Promise<void> {
   if (!s.auth || s.account?.trialUsed) return;
   const r = await s.startTrial();
   if (r.ok) useOffer.setState({ open: { moment: "read", needsSignIn: false, started: true, until: r.until } });
+}
+
+/** The gate on the map: rooms after this many are the whole staff's. */
+export const FREE_ROOMS = 3;
+
+/**
+ * May this room open? Free rooms always. A room past the gate opens on any
+ * paid plan or a running week; otherwise the week is offered here (sign in
+ * first if needed), and if the week has already been had, the plans.
+ * Returns true when the caller may open the room now.
+ */
+export async function roomGate(n: number): Promise<boolean> {
+  if (n <= FREE_ROOMS) return true;
+  if (effectivePlan() !== "free") return true;
+  const s = useSession.getState();
+  const f = useFounder.getState();
+  if (!s.auth) {
+    f.setOffered("map");
+    useOffer.setState({ open: { moment: "map", needsSignIn: true, started: false } });
+    return false;
+  }
+  if (s.account?.trialUsed) {
+    useOffer.setState({ open: { moment: "map", needsSignIn: false, started: false } });
+    return false;
+  }
+  const r = await s.startTrial();
+  f.setOffered("map");
+  useOffer.setState({ open: { moment: "map", needsSignIn: false, started: r.ok, until: r.ok ? r.until : undefined } });
+  return r.ok;
 }

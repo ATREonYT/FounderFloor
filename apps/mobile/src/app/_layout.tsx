@@ -46,6 +46,8 @@ export default function RootLayout() {
           <Stack.Screen name="idea/find" />
           <Stack.Screen name="idea/check" />
           <Stack.Screen name="dev/console" options={{ presentation: "card" }} />
+          <Stack.Screen name="guide" options={{ presentation: "modal" }} />
+          <Stack.Screen name="settings" options={{ presentation: "card" }} />
         </Stack>
         <TrialSheet />
       </SafeAreaProvider>

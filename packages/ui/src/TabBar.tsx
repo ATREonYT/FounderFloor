@@ -24,9 +24,9 @@ import { alpha, scheme } from "./theme";
 import { haptic } from "./Tap";
 import { radius, shadow, shell } from "./tokens";
 
-const HEIGHT = 60;
+const HEIGHT = 64;
 const PAD = 6;
-const DISC = 46;
+const DISC = 50;
 const LABEL_W = 96;
 const cast = shadow.float[1];
 
@@ -120,8 +120,11 @@ export function TabBar({
               accessibilityLabel={e.label}
               style={{ flex: 1, height: HEIGHT - 2, alignItems: "center", justifyContent: "center" }}
             >
-              <View style={{ position: "relative", opacity: on ? 1 : 0.55 }}>
+              <View style={{ position: "relative", opacity: on ? 1 : 0.55, alignItems: "center", gap: 1 }}>
                 <Sprite id={glyph} scale={2} />
+                <Spec tone={on ? (dark ? "ink" : "paper") : "muted"} style={{ fontSize: 9, lineHeight: 11 }}>
+                  {e.label}
+                </Spec>
               </View>
               {count ? (
                 <View

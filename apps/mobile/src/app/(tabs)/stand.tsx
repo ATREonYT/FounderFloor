@@ -135,9 +135,14 @@ export default function Stand() {
         ) : null}
         {stand.source === "rehearsal" ? (
           <Plate tone="paper" radius={radius.md} padding={12} lineColor={shell.line}>
-            <Body size="sm" tone="muted">
-              Rehearsal stand. Sign in with your founderfloor.net account and this becomes your real one, with your numbers.
-            </Body>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Body size="sm" tone="muted" style={{ flex: 1 }}>
+                A rehearsal stand. Sign in and it becomes yours.
+              </Body>
+              <Button size="sm" variant="secondary" onPress={() => router.push("/sign-in")}>
+                Sign in
+              </Button>
+            </View>
           </Plate>
         ) : null}
 
@@ -435,8 +440,16 @@ export default function Stand() {
         <View style={{ gap: 12 }}>
           <Spec tone="muted">{`Account ${auth?.id ?? ""}`}</Spec>
           <Body size="sm" tone="muted">
-            {stand.source === "floor" ? "Your stand, tickets and connections are the site's; this app reads them from the same floor server." : "This account has no stand on a floor yet. Set one up on the Floor tab, at any vacant plinth."}
+            {stand.source === "floor" ? "The same stand as the site." : "No stand on a floor yet. The Floor tab has vacant plinths."}
           </Body>
+          <Pressable onPress={() => { setAccount(false); router.push("/settings" as Href); }} accessibilityRole="button" accessibilityLabel="Settings">
+            <Plate tone="paper" radius={radius.md} padding={12}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <Body style={{ flex: 1 }}>Settings: reminders, email, the guide</Body>
+                <Body tone="accent">→</Body>
+              </View>
+            </Plate>
+          </Pressable>
           {me && !me.verified ? (
             <Plate tone="paper" radius={radius.md} padding={12} lineColor={shell.accent}>
               <Spec tone="muted">CONFIRM YOUR EMAIL</Spec>

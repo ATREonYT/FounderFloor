@@ -121,3 +121,20 @@ once per account. After that, Pro is the staff's memory: coaches carry the
 log, the interview book and past conversations; Theo reads week against
 week; the update drafts itself. The reasoning and sources are in
 `docs/reboot-plan.md`, section 6.
+
+## Getting around
+
+Five tabs, each with its word under the icon: **Home** (the desk, your
+streak, the next thing to do), **Map** (the six rooms as a path, the
+founder's keeper standing at the current one, a calendar of days used),
+**Stand**, **Office**, **Floor**. A six-card guide runs once after the
+doors and again from Home or Settings.
+
+Rooms one to three are every founder's. The gate before room four starts
+the free week of the whole staff (an account is needed, which is where the
+emails begin) or, once the week has been had, opens the plans.
+
+Settings holds the two local reminders (a daily nudge at 9:00, 13:00 or
+19:00, and the Friday review at 16:00), the Friday email switch, the email
+confirmation, and the operator's console.
+
