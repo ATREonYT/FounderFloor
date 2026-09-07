@@ -1,12 +1,11 @@
 /**
- * THE JOURNEY — the track map. Six rooms as stops on a path that winds
- * down the screen, the founder's keeper standing at the room they are in,
- * done rooms stamped, the rooms past the gate drawn with a lock until the
- * week of the whole staff (or Pro) opens them. Props from the hall stand
- * along the path so it reads as a place walked through, not a checklist.
- *
- * Everything here is derived: which stop is "here", what is done, what is
- * locked. The screen decides what a tap does.
+ * THE JOURNEY — the track map. Six rooms as stops on a road that curves
+ * down the screen like a garden path: a warm sand band with soft bends,
+ * the walked part tinted in the next room's colour, the founder's keeper
+ * walking it to the room they are in, done rooms stamped in their own
+ * colour, the rooms past the gate resting under a lock. Hall props stand
+ * in the bends. Nothing is drawn with a hard line: bends are made of many
+ * short pieces, rings are washes, shadows are soft.
  * NEW: not on the site.
  */
 import { useEffect, useRef, useState } from "react";
@@ -15,14 +14,14 @@ import Animated, { Easing, cancelAnimation, runOnJS, useAnimatedStyle, useReduce
 import { Sprite, type SpriteId } from "./Sprite";
 import { Body, Spec } from "./Text";
 import { Glyph } from "./Scene";
-import { shell } from "./tokens";
+import { art, shell } from "./tokens";
 import { scheme } from "./theme";
 import type { Look } from "./Keeper";
 
 export interface JourneyStop {
   id: string;
   name: string;
-  /** "2/5" — what is done in the room. */
+  /** "2 of 5" — what is done in the room. */
   meta: string;
   color: string;
   progress: number;
@@ -30,54 +29,83 @@ export interface JourneyStop {
   locked: boolean;
 }
 
-const STEP = 104;
-const DISC = 46;
-const LABEL_W = 128;
-const PROPS: SpriteId[] = ["prop-lamp", "prop-planter", "prop-crates", "prop-tree", "prop-bench", "prop-planter"];
+const STEP = 112;
+const DISC = 50;
+const ROAD = 20;
+const PIECES = 18;
+const LABEL_W = 132;
+const PROPS: SpriteId[] = ["prop-tree", "prop-lamp", "prop-planter", "prop-bench", "prop-tree", "prop-planter"];
+
+function rgba(hex: string, a: number): string {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+/** Points along a soft S-bend from one stop to the next. */
+function bend(x1: number, y1: number, x2: number, y2: number, k: number): { x: number; y: number }[] {
+  // a cubic with vertical tangents at both ends: the road leaves a stop straight down and arrives straight down
+  const c1 = { x: x1, y: y1 + (y2 - y1) * 0.55 };
+  const c2 = { x: x2, y: y2 - (y2 - y1) * 0.55 };
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i <= k; i++) {
+    const t = i / k, u = 1 - t;
+    pts.push({ x: u * u * u * x1 + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t * t * t * x2, y: u * u * u * y1 + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t * t * t * y2 });
+  }
+  return pts;
+}
 
 export function Journey({ stops, here, look, onPress, width: forced }: { stops: JourneyStop[]; here: number; look: Look; onPress: (i: number) => void; width?: number }) {
   const [w, setW] = useState(forced ?? 340);
   const dark = scheme() === "dark";
-  const xs = stops.map((_, i) => Math.round((i % 2 === 0 ? 0.26 : 0.74) * w));
-  const ys = stops.map((_, i) => 44 + i * STEP);
-  const height = 44 + (stops.length - 1) * STEP + 80;
+  const xs = stops.map((_, i) => Math.round((i % 2 === 0 ? 0.3 : 0.7) * w));
+  const ys = stops.map((_, i) => 56 + i * STEP);
+  const height = 56 + (stops.length - 1) * STEP + 84;
+  const links = stops.slice(1).map((_, i) => bend(xs[i], ys[i], xs[i + 1], ys[i + 1], PIECES));
+  const sand = dark ? rgba("#8A8272", 0.35) : art.floors["main-hall"].a;
   return (
     <View onLayout={(e: LayoutChangeEvent) => !forced && setW(Math.round(e.nativeEvent.layout.width))} style={{ height, position: "relative" }} accessibilityRole="list">
-      {/* the path: a segment between each pair of stops, solid where walked, dashed ahead */}
-      {stops.slice(1).map((_, i) => {
-        const x1 = xs[i], y1 = ys[i], x2 = xs[i + 1], y2 = ys[i + 1];
-        const len = Math.hypot(x2 - x1, y2 - y1);
-        const ang = (Math.atan2(y2 - y1, x2 - x1) * 180) / Math.PI;
-        const walked = i < here;
-        return (
-          <View key={`seg${i}`} pointerEvents="none" style={{ position: "absolute", left: (x1 + x2) / 2 - len / 2, top: (y1 + y2) / 2 - 7, width: len, height: 14, transform: [{ rotate: `${ang}deg` }], alignItems: "center", justifyContent: "center" }}>
-            {/* the road: a pale band, with the walked part drawn on it */}
-            <View style={{ position: "absolute", left: 0, right: 0, height: 14, borderRadius: 7, backgroundColor: shell.well, opacity: 0.9 }} />
-            <View style={{ width: len, height: 0, borderTopWidth: 4, borderColor: walked ? shell.accent : shell.line, borderStyle: walked ? "solid" : "dashed" }} />
-          </View>
-        );
-      })}
-      {/* furniture along the way, on the side away from the label */}
+      {/* the road, in short pieces so the bends are soft; walked pieces tinted with the next room's colour */}
+      {links.map((pts, i) =>
+        pts.slice(1).map((p, j) => {
+          const q = pts[j];
+          const len = Math.hypot(p.x - q.x, p.y - q.y) + 7;
+          const ang = (Math.atan2(p.y - q.y, p.x - q.x) * 180) / Math.PI;
+          const walked = i < here;
+          const tint = walked ? rgba(stops[i + 1].color, dark ? 0.55 : 0.4) : "transparent";
+          return (
+            <View key={`r${i}-${j}`} pointerEvents="none" style={{ position: "absolute", left: (p.x + q.x) / 2 - len / 2, top: (p.y + q.y) / 2 - ROAD / 2, width: len, height: ROAD, borderRadius: 2, backgroundColor: sand, transform: [{ rotate: `${ang}deg` }] }}>
+              <View style={{ position: "absolute", left: 0, right: 0, top: 5, bottom: 5, backgroundColor: tint }} />
+            </View>
+          );
+        }),
+      )}
+      {/* footprints ahead: small dots where the road is still to walk */}
+      {links.map((pts, i) =>
+        i >= here
+          ? pts.filter((_, j) => j % 4 === 2).map((p, j) => <View key={`d${i}-${j}`} pointerEvents="none" style={{ position: "absolute", left: p.x - 2, top: p.y - 2, width: 4, height: 4, borderRadius: 2, backgroundColor: rgba(art.muted, 0.35) }} />)
+          : null,
+      )}
+      {/* furniture in the bends, on the side away from the label */}
       {stops.map((_, i) => (
-        <View key={`prop${i}`} pointerEvents="none" style={{ position: "absolute", left: i % 2 === 0 ? w - 70 : 8, top: ys[i] - 36, opacity: 0.85 }}>
+        <View key={`prop${i}`} pointerEvents="none" style={{ position: "absolute", left: i % 2 === 0 ? w - 74 : 10, top: ys[i] - 48, opacity: 0.9 }}>
           <Sprite id={PROPS[i % PROPS.length]} scale={1} />
         </View>
       ))}
       {stops.map((s, i) => (
         <Stop key={s.id} s={s} i={i} x={xs[i]} y={ys[i]} here={i === here} onPress={() => onPress(i)} left={i % 2 === 1} dark={dark} />
       ))}
-      <Walker xs={xs} ys={ys} here={here} look={look} />
+      <Walker links={links} xs={xs} ys={ys} here={here} look={look} />
     </View>
   );
 }
 
 /**
  * The founder on the road. Stands on the current stop; when the map opens
- * it walks there from the stop before, and whenever `here` advances it
- * walks the new segment. The walk cycle is the floor's three frames; the
- * direction comes from which way the road goes.
+ * it walks there from the stop before along the bend, and whenever `here`
+ * advances it walks the new bend. The walk cycle is the floor's three
+ * frames; the direction comes from which way the road goes.
  */
-function Walker({ xs, ys, here, look }: { xs: number[]; ys: number[]; here: number; look: Look }) {
+function Walker({ links, xs, ys, here, look }: { links: { x: number; y: number }[][]; xs: number[]; ys: number[]; here: number; look: Look }) {
   const reduced = useReducedMotion();
   const t = useSharedValue(1);
   const bob = useSharedValue(0);
@@ -88,7 +116,6 @@ function Walker({ xs, ys, here, look }: { xs: number[]; ys: number[]; here: numb
   const layoutKey = xs.join(",");
 
   useEffect(() => {
-    // first time: from the stop before; afterwards: from wherever we stood
     const a = from.current < 0 || from.current === here ? Math.max(0, here - 1) : from.current;
     from.current = here;
     setSeg({ a, b: here });
@@ -100,7 +127,7 @@ function Walker({ xs, ys, here, look }: { xs: number[]; ys: number[]; here: numb
     }
     t.value = 0;
     setWalking(true);
-    const ms = 700 + Math.hypot((xs[here] ?? 0) - (xs[a] ?? 0), (ys[here] ?? 0) - (ys[a] ?? 0)) * 7;
+    const ms = 900 + Math.abs(here - a) * 700;
     t.value = withTiming(1, { duration: ms, easing: Easing.inOut(Easing.quad) }, (done) => {
       if (done) runOnJS(setWalking)(false);
     });
@@ -119,50 +146,74 @@ function Walker({ xs, ys, here, look }: { xs: number[]; ys: number[]; here: numb
     return () => clearInterval(h);
   }, [walking, reduced, bob]);
 
-  const x1 = xs[seg.a] ?? 0, y1 = ys[seg.a] ?? 0, x2 = xs[seg.b] ?? 0, y2 = ys[seg.b] ?? 0;
-  const style = useAnimatedStyle(() => ({ transform: [{ translateX: x1 + (x2 - x1) * t.value }, { translateY: y1 + (y2 - y1) * t.value + bob.value }] }));
-  const dir = !walking ? "down" : x2 > x1 ? "right" : x2 < x1 ? "left" : "down";
+  // the route: every bend between a and b, flattened to one list of points
+  const lo = Math.min(seg.a, seg.b), hi = Math.max(seg.a, seg.b);
+  let route: { x: number; y: number }[] = [];
+  for (let i = lo; i < hi; i++) route = route.concat(i === lo ? links[i] : links[i].slice(1));
+  if (seg.b < seg.a) route = route.slice().reverse();
+  if (!route.length) route = [{ x: xs[here] ?? 0, y: ys[here] ?? 0 }];
+  const px = route.map((p) => p.x), py = route.map((p) => p.y);
+  const [facing, setFacing] = useState<"left" | "right" | "down">("down");
+  const style = useAnimatedStyle(() => {
+    const n = px.length - 1;
+    const f = t.value * n;
+    const i = Math.min(n - 1, Math.max(0, Math.floor(f)));
+    const k = n ? f - i : 0;
+    const x = n ? px[i] + (px[i + 1] - px[i]) * k : px[0];
+    const y = n ? py[i] + (py[i + 1] - py[i]) * k : py[0];
+    const dx = n ? px[i + 1] - px[i] : 0;
+    runOnJS(setFacing)(Math.abs(dx) < 0.6 ? "down" : dx > 0 ? "right" : "left");
+    return { transform: [{ translateX: x }, { translateY: y + bob.value }] };
+  }, [px, py]);
+  const dir = walking ? facing : "down";
   const id = `avatar-outfit${look.outfit % 8}-${dir}-${walking ? frame : 0}` as SpriteId;
-  // the sprite is 20×28 at 2×: feet land on the disc's centre
   return (
-    <Animated.View pointerEvents="none" style={[{ position: "absolute", left: -20, top: -50 }, style]}>
+    <Animated.View pointerEvents="none" style={[{ position: "absolute", left: -20, top: -52 }, style]}>
       <Sprite id={id} scale={2} />
     </Animated.View>
   );
 }
 
 function Stop({ s, i, x, y, here, onPress, left, dark }: { s: JourneyStop; i: number; x: number; y: number; here: boolean; onPress: () => void; left: boolean; dark: boolean }) {
-  const bg = s.done ? shell.accent : here ? shell.ink : s.locked ? shell.well : shell.panel;
-  const ring = here ? s.color : s.done ? shell.accent : shell.line;
-  // the disc must land on (x, y) whichever side the label sits: a reversed row puts the disc last
-  const boxLeft = left ? x - DISC / 2 - LABEL_W - 10 : x - DISC / 2;
+  const reduced = useReducedMotion();
+  const halo = useSharedValue(1);
+  useEffect(() => {
+    if (!here || reduced) return;
+    halo.value = withRepeat(withSequence(withTiming(1.18, { duration: 1100, easing: Easing.inOut(Easing.quad) }), withTiming(1, { duration: 1100, easing: Easing.inOut(Easing.quad) })), -1, false);
+  }, [here, reduced, halo]);
+  const glow = useAnimatedStyle(() => ({ transform: [{ scale: halo.value }], opacity: 1.35 - halo.value * 0.55 }));
+  const fill = s.locked ? shell.well : s.done || here ? s.color : rgba(s.color, dark ? 0.28 : 0.16);
+  const boxLeft = left ? x - DISC / 2 - LABEL_W - 12 : x - DISC / 2;
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${s.name}, ${s.locked ? "locked" : s.done ? "done" : s.meta}${here ? ", you are here" : ""}`} style={{ position: "absolute", left: boxLeft, top: y - DISC / 2, width: DISC + 10 + LABEL_W, flexDirection: left ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
-      <View style={{ width: DISC, height: DISC, borderRadius: DISC / 2, backgroundColor: bg, borderWidth: 3, borderColor: ring, alignItems: "center", justifyContent: "center", position: "relative" }}>
-        {s.done ? <Glyph id="star" tone={dark ? "ink" : "paper"} scale={2} /> : s.locked ? <Lock /> : <Spec tone={here ? (dark ? "ink" : "paper") : "ink"}>{String(i + 1)}</Spec>}
-        {/* the room's progress, as a small arc-less ring segment: a bar under the disc */}
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${s.name}, ${s.locked ? "locked" : s.done ? "done" : s.meta}${here ? ", you are here" : ""}`} style={{ position: "absolute", left: boxLeft, top: y - DISC / 2, width: DISC + 12 + LABEL_W, flexDirection: left ? "row-reverse" : "row", alignItems: "center", gap: 12 }}>
+      <View style={{ width: DISC, height: DISC, alignItems: "center", justifyContent: "center" }}>
+        {here ? <Animated.View pointerEvents="none" style={[{ position: "absolute", width: DISC + 22, height: DISC + 22, borderRadius: (DISC + 22) / 2, backgroundColor: rgba(s.color, 0.22) }, glow]} /> : null}
+        <View style={{ width: DISC, height: DISC, borderRadius: DISC / 2, backgroundColor: fill, alignItems: "center", justifyContent: "center", shadowColor: s.color, shadowOpacity: s.done || here ? 0.35 : 0, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: s.done || here ? 4 : 0 }}>
+          {s.done ? <Glyph id="star" tone="paper" scale={2} /> : s.locked ? <Lock /> : here ? <Glyph id="bolt" tone="paper" scale={2} /> : <Spec tone={dark ? "paper" : "ink"}>{String(i + 1)}</Spec>}
+        </View>
         {!s.done && !s.locked && s.progress > 0 ? (
-          <View pointerEvents="none" style={{ position: "absolute", bottom: -10, left: 6, right: 6, height: 4, borderRadius: 2, backgroundColor: shell.line, overflow: "hidden" }}>
+          <View pointerEvents="none" style={{ position: "absolute", bottom: -9, left: 9, right: 9, height: 4, borderRadius: 2, backgroundColor: rgba(s.color, 0.2), overflow: "hidden" }}>
             <View style={{ width: `${Math.round(s.progress * 100)}%`, height: 4, backgroundColor: s.color }} />
           </View>
         ) : null}
       </View>
       <View style={{ width: LABEL_W, alignItems: left ? "flex-end" : "flex-start" }}>
-        <Body size="sm" medium numberOfLines={2} style={{ textAlign: left ? "right" : "left" }}>
-          {s.name}
-        </Body>
-        <Spec tone={s.locked ? "faint" : s.done ? "verify" : "muted"}>{s.locked ? "with the staff" : s.done ? "done" : here ? `here · ${s.meta}` : s.meta}</Spec>
+        <View style={{ backgroundColor: dark ? shell.panel : "rgba(255,255,255,0.86)", borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6, alignItems: left ? "flex-end" : "flex-start", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }}>
+          <Body size="sm" medium numberOfLines={2} style={{ textAlign: left ? "right" : "left" }}>
+            {s.name}
+          </Body>
+          <Spec tone={s.locked ? "faint" : s.done ? "verify" : "muted"}>{s.locked ? "with the coaches" : s.done ? "done" : here ? `you are here · ${s.meta}` : s.meta}</Spec>
+        </View>
       </View>
     </Pressable>
   );
 }
 
-/** A small padlock, drawn: a shackle over a body. */
 function Lock() {
   return (
-    <View style={{ alignItems: "center" }}>
+    <View style={{ alignItems: "center", opacity: 0.7 }}>
       <View style={{ width: 10, height: 8, borderWidth: 2, borderBottomWidth: 0, borderColor: shell.muted, borderTopLeftRadius: 5, borderTopRightRadius: 5 }} />
-      <View style={{ width: 14, height: 10, borderRadius: 2, backgroundColor: shell.muted }} />
+      <View style={{ width: 14, height: 10, borderRadius: 3, backgroundColor: shell.muted }} />
     </View>
   );
 }

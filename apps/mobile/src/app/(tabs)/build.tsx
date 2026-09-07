@@ -10,7 +10,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useRouter } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, haptic, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, art, haptic, radius, scheme, shell, useLayout, wash, type Mood } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
@@ -88,8 +88,10 @@ export default function Build() {
           </View>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
-        <Plate tone="panel" radius={radius.xl} padding={16}>
-          <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
+        <Plate tone="panel" radius={radius.xxl} padding={12}>
+          <View style={{ borderRadius: 20, overflow: "hidden", backgroundColor: wash(art.floors["main-hall"].a, scheme() === "dark" ? 0.12 : 0.3), paddingVertical: 8 }}>
+            <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
+          </View>
           {!opened ? (
             <Spec tone="faint" style={{ marginTop: 4 }}>
               {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
