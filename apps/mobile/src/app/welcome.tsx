@@ -12,7 +12,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import Animated, { FadeInDown, FadeInRight, FadeOutLeft, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
 import { LIKES, GOALS, PLAN_PROMPT, localPlan, asPlan, doorFor, type Profile, type FounderPlan, type Standing, type Goal, type Horizon, type Pace, type Tone } from "@founderfloor/shared";
-import { Body, Button, ButtonRow, Display, Glyph, Input, Keeper, Plate, Spec, Stage, Tap, Thinking, radius, shell, useLayout, wash, type GlyphId, type Mood } from "@founderfloor/ui";
+import { Body, Button, Display, Glyph, Input, Keeper, Plate, Spec, Tap, Thinking, art, onDark, radius, scheme, shell, useLayout, wash, type GlyphId, type Mood } from "@founderfloor/ui";
 import { RECEPTIONIST } from "../lib/mock";
 import { useFounder } from "../lib/store";
 import { askModel, parseJson, aiMode } from "../lib/ai";
@@ -30,6 +30,18 @@ const ASK: Record<Step, string> = {
   pace: "How much time can you give it each week?",
   tone: "How should the coaches speak to you?",
   plan: "Give me a moment. I am putting your plan together.",
+};
+/** The keeper's short line beside each question. */
+const SAY: Record<Step, string> = {
+  name: "Hi. I am the desk. Two minutes and you will have a plan.",
+  standing: "No wrong answer. It only decides where we start.",
+  likes: "Pick as many as are true.",
+  audiences: "Ideas come from people you can reach.",
+  goal: "Say the honest one.",
+  horizon: "A deadline you would actually keep.",
+  pace: "Be realistic; the plan bends to fit.",
+  tone: "You can change this later.",
+  plan: "Reading your answers.",
 };
 /** One colour per step, so the screen changes as the conversation moves. */
 const COLOR: Record<Step, string> = { name: "#BE241B", standing: "#3B5B92", likes: "#4E6E4E", audiences: "#B4762E", goal: "#6B4E71", horizon: "#2F6F6A", pace: "#8C3B2E", tone: "#5E7C93", plan: "#4F6E6B" };
@@ -129,50 +141,96 @@ export default function Welcome() {
     setI(i + 1);
   };
 
-  /** An answer as a card: a glyph tile, a label, a line; the picked one wears the step's colour. */
-  const Card = <T extends string>({ o, on, onPress, k }: { o: Opt<T>; on: boolean; onPress: () => void; k: number }) => (
-    <Animated.View entering={FadeInDown.delay(80 + k * 60).springify().damping(16)} style={{ flex: 1, minWidth: L.compact ? "46%" : 180 }}>
-      <Tap onPress={onPress} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.96}>
-        <View style={{ backgroundColor: on ? color : shell.panel, borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: on ? color : shell.line, gap: 10, minHeight: 112 }}>
-          <View style={{ width: 40, height: 40, borderRadius: 11, backgroundColor: on ? "rgba(255,255,255,0.18)" : wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
+  /** An answer as a row: a glyph tile, a label and a line, a tick on the right that fills with the step's colour. */
+  const Row = <T extends string>({ o, on, onPress, k }: { o: Opt<T>; on: boolean; onPress: () => void; k: number }) => (
+    <Animated.View entering={FadeInDown.delay(60 + k * 50).duration(260)}>
+      <Tap onPress={onPress} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.985}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: on ? wash(color, 0.1) : shell.panel, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14, borderWidth: 1.5, borderColor: on ? color : shell.line }}>
+          <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: on ? color : wash(color, 0.12), alignItems: "center", justifyContent: "center" }}>
             <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
           </View>
-          <View style={{ gap: 2 }}>
-            <Body medium tone={on ? "paper" : "ink"}>
-              {o.label}
-            </Body>
-            {o.line ? <Spec tone={on ? "paperQuiet" : "muted"}>{o.line}</Spec> : null}
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Body medium>{o.label}</Body>
+            {o.line ? (
+              <Body size="sm" tone="muted">
+                {o.line}
+              </Body>
+            ) : null}
+          </View>
+          <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+            {on ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: onDark.text }} /> : null}
           </View>
         </View>
       </Tap>
+    </Animated.View>
+  );
+  /** Three-way choices as one segmented control. */
+  const Segments = <T extends string>({ opts, value, onPick }: { opts: Opt<T>[]; value: T | null; onPick: (v: T) => void }) => (
+    <Animated.View entering={FadeInDown.delay(60).duration(260)} style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", backgroundColor: shell.panel, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: shell.line }}>
+        {opts.map((o) => {
+          const on = value === o.v;
+          return (
+            <View key={o.v} style={{ flex: 1 }}>
+              <Tap onPress={() => onPick(o.v)} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.97}>
+                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 12, backgroundColor: on ? color : "transparent" }}>
+                  <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
+                  <Body size="sm" medium tone={on ? "paper" : "ink"}>
+                    {o.label}
+                  </Body>
+                </View>
+              </Tap>
+            </View>
+          );
+        })}
+      </View>
+      <Body size="sm" tone="muted" style={{ textAlign: "center" }}>
+        {opts.find((o) => o.v === value)?.line ?? " "}
+      </Body>
     </Animated.View>
   );
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       {/* a wash in the step's colour behind the top of the screen */}
-      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height: 320, backgroundColor: wash(color, 0.1) }} />
+      {/* a wash in the step's colour that fades out behind the header, in bands */}
+      <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0 }}>
+        {[0.12, 0.1, 0.08, 0.06, 0.04, 0.02].map((a, k) => (
+          <View key={k} style={{ height: 56, backgroundColor: wash(color, a) }} />
+        ))}
+      </View>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 14, paddingBottom: L.insets.bottom + 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 560, alignSelf: "center", gap: 16, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 14, paddingBottom: 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 560, alignSelf: "center", gap: 18 }} keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: wash(color, 0.18), overflow: "hidden" }}>
               <Animated.View style={[{ height: 6, borderRadius: 3, backgroundColor: color }, bar]} />
             </View>
             <Spec tone="muted">{`${Math.min(i + 1, ORDER.length)} of ${ORDER.length}`}</Spec>
           </View>
-          <Stage look={RECEPTIONIST.look} color={color} who="The desk" say={step === "plan" && plan ? plan.headline : ASK[step]} mood={step === "plan" ? (plan ? "cheer" : "talk") : mood} height={L.compact ? 186 : 220} scale={2} set="doors" />
+          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
+            <Keeper look={RECEPTIONIST.look} scale={2} color={wash(color, 0.35)} speaking={mood !== "idle"} />
+            <View style={{ flex: 1, backgroundColor: scheme() === "dark" ? shell.panel : art.bubblePaper, borderWidth: 1.5, borderColor: shell.ink, borderRadius: 16, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10 }}>
+              <Spec tone="muted">The desk</Spec>
+              <Body size="sm">{step === "plan" && plan ? plan.headline : SAY[step]}</Body>
+            </View>
+          </View>
+          <Animated.View key={`q-${step}`} entering={FadeInRight.duration(260)}>
+            <Display size={L.compact ? "xl" : "3xl"}>{step === "plan" ? (plan ? "Your first four weeks" : "One moment") : ASK[step]}</Display>
+          </Animated.View>
 
           <Animated.View key={step} entering={FadeInRight.duration(260)} exiting={FadeOutLeft.duration(160)} style={{ gap: 12 }}>
             {step === "name" ? (
               <View style={{ gap: 10 }}>
-                <Input label="Your first name" value={name} onChangeText={setName} placeholder="Alex" autoFocus onSubmitEditing={() => can && next()} />
-                <Spec tone="faint">Eight quick questions. About two minutes. You can change any answer later.</Spec>
+                <Input value={name} onChangeText={setName} placeholder="Your first name" autoFocus onSubmitEditing={() => can && next()} />
+                <Body size="sm" tone="muted">
+                  Eight quick questions, about two minutes. Every answer can change later.
+                </Body>
               </View>
             ) : null}
             {step === "standing" ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              <View style={{ gap: 10 }}>
                 {STANDING.map((o, k) => (
-                  <Card key={o.v} o={o} k={k} on={standing === o.v} onPress={() => { setStanding(o.v); nod(); }} />
+                  <Row key={o.v} o={o} k={k} on={standing === o.v} onPress={() => { setStanding(o.v); nod(); }} />
                 ))}
               </View>
             ) : null}
@@ -199,7 +257,7 @@ export default function Welcome() {
             ) : null}
             {step === "audiences" ? (
               <View style={{ gap: 10 }}>
-                <Input label="People you know" value={audiences} onChangeText={setAudiences} placeholder="café owners, teachers, my old team, landlords…" autoFocus onSubmitEditing={() => can && next()} />
+                <Input value={audiences} onChangeText={setAudiences} placeholder="café owners, teachers, my old team…" autoFocus onSubmitEditing={() => can && next()} />
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                   {["café owners", "small shops", "teachers", "developers", "parents", "my old colleagues", "landlords", "gym owners"].map((s) => (
                     <Tap key={s} onPress={() => { setAudiences((a) => (a.includes(s) ? a : a ? `${a}, ${s}` : s)); nod(); }} accessibilityLabel={`Add ${s}`} scale={0.95}>
@@ -209,36 +267,26 @@ export default function Welcome() {
                     </Tap>
                   ))}
                 </View>
-                <Spec tone="faint">Good ideas come from people you can reach with a problem you can see.</Spec>
+                <Body size="sm" tone="muted">
+                  Tap to add, or type your own.
+                </Body>
               </View>
             ) : null}
             {step === "goal" ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              <View style={{ gap: 10 }}>
                 {GOALS.map((g, k) => (
-                  <Card key={g.id} o={{ v: g.id, label: g.label, line: g.line, glyph: GOAL_GLYPH[g.id] }} k={k} on={goal === g.id} onPress={() => { setGoal(g.id); nod(); }} />
+                  <Row key={g.id} o={{ v: g.id, label: g.label, line: g.line, glyph: GOAL_GLYPH[g.id] }} k={k} on={goal === g.id} onPress={() => { setGoal(g.id); nod(); }} />
                 ))}
               </View>
             ) : null}
             {step === "horizon" ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                {HORIZON.map((o, k) => (
-                  <Card key={o.v} o={o} k={k} on={horizon === o.v} onPress={() => { setHorizon(o.v); nod(); }} />
-                ))}
-              </View>
+              <Segments opts={HORIZON} value={horizon} onPick={(v) => { setHorizon(v); nod(); }} />
             ) : null}
             {step === "pace" ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                {PACE.map((o, k) => (
-                  <Card key={o.v} o={o} k={k} on={pace === o.v} onPress={() => { setPace(o.v); nod(); }} />
-                ))}
-              </View>
+              <Segments opts={PACE} value={pace} onPick={(v) => { setPace(v); nod(); }} />
             ) : null}
             {step === "tone" ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                {TONE.map((o, k) => (
-                  <Card key={o.v} o={o} k={k} on={tone === o.v} onPress={() => { setTone(o.v); nod(); }} />
-                ))}
-              </View>
+              <Segments opts={TONE} value={tone} onPick={(v) => { setTone(v); nod(); }} />
             ) : null}
             {step === "plan" ? (
               busy || !plan ? (
@@ -261,7 +309,7 @@ export default function Welcome() {
                           <Body medium tone={w.n === 1 ? "paper" : "ink"} style={{ flex: 1 }}>
                             {w.focus}
                           </Body>
-                          {w.n === 1 ? <Spec tone="paperQuiet">this week</Spec> : null}
+                          {w.n === 1 ? <Body size="sm" tone="paperQuiet">this week</Body> : null}
                         </View>
                         {w.do.map((d, m) => (
                           <Body key={m} size="sm" tone={w.n === 1 ? "paper" : "muted"} style={{ marginTop: 6, marginLeft: 40 }}>
@@ -284,22 +332,23 @@ export default function Welcome() {
             ) : null}
           </Animated.View>
 
-          <View style={{ flex: 1 }} />
-          <ButtonRow>
+        </ScrollView>
+        <View style={{ paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: L.insets.bottom + 12, paddingTop: 10, width: "100%", maxWidth: 560, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: shell.paper, borderTopWidth: 1, borderTopColor: shell.line }}>
+          {i > 0 && step !== "plan" ? (
+            <Button variant="ghost" onPress={() => setI(i - 1)}>
+              Back
+            </Button>
+          ) : step === "name" ? (
+            <Button variant="ghost" onPress={() => router.replace("/start" as Href)}>
+              Skip
+            </Button>
+          ) : null}
+          <View style={{ flex: 1 }}>
             <Button arrow onPress={next} disabled={!can || busy}>
               {step === "plan" ? "Show me around" : step === "tone" ? "Make my plan" : "Next"}
             </Button>
-            {i > 0 && step !== "plan" ? (
-              <Button variant="ghost" onPress={() => setI(i - 1)}>
-                Back
-              </Button>
-            ) : step === "name" ? (
-              <Button variant="ghost" onPress={() => router.replace("/start" as Href)}>
-                Skip
-              </Button>
-            ) : null}
-          </ButtonRow>
-        </ScrollView>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
