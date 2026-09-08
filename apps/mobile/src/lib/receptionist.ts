@@ -141,7 +141,7 @@ export function useReceptionist(coachId?: string) {
       void askModel({
         fn: "coach-chat",
         body: { coach: coach.id, message: t, stand: s.record, turns: history },
-        direct: { system, cached: standBlock(s.record) + memory(), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
+        direct: { system, cached: standBlock(s.record, { sample: s.source === "rehearsal" }) + memory(), turns: [...history, { role: "user", content: t }], maxTokens: 400 },
       })
         .then((full) => {
           setSource("live");
