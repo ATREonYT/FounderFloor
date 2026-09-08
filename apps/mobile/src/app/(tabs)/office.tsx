@@ -19,6 +19,7 @@ import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
 import { COACHES } from "../../lib/mock";
 import { Hint } from "../../components/Hint";
+import { TourTarget } from "../../components/TourTarget";
 
 export default function Office() {
   const L = useLayout();
@@ -184,9 +185,9 @@ export default function Office() {
             </Body>
           )}
           <ButtonRow>
-            <View style={{ marginTop: 12 }}>
+            <TourTarget id="office-log" style={{ marginTop: 12 }}>
               <Button onPress={() => setLog(true)}>{last?.week === wk ? "Edit this week" : "Log this week"}</Button>
-            </View>
+            </TourTarget>
             {kpi.length ? (
               <View style={{ marginTop: 12 }}>
                 <Button variant="secondary" onPress={() => makeUpdate("investors")}>

@@ -16,6 +16,7 @@ import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder, useSession } from "../../lib/store";
 import { Hint } from "../../components/Hint";
+import { TourTarget } from "../../components/TourTarget";
 import { useStand, hallName } from "../../lib/stand";
 
 const ENTITIES: { v: EntityType; label: string }[] = [
@@ -169,7 +170,9 @@ export default function Stand() {
               {stand.oneLiner}
             </Body>
             <ButtonRow>
-              <Button onPress={() => { setDraft({ ...stand.record }); setNumbers(true); }}>The numbers</Button>
+              <TourTarget id="stand-numbers">
+                <Button onPress={() => { setDraft({ ...stand.record }); setNumbers(true); }}>The numbers</Button>
+              </TourTarget>
               <Button variant="secondary" onPress={() => setPaint(true)}>
                 Repaint
               </Button>

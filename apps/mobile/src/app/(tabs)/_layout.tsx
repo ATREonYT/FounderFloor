@@ -8,6 +8,7 @@ import { Tabs, usePathname, useRouter, type Href } from "expo-router";
 import { View } from "react-native";
 import { Menu, TabBar, shell, useLayout } from "@founderfloor/ui";
 import { BAR } from "../../lib/chrome";
+import { TourTarget } from "../../components/TourTarget";
 
 export default function TabsLayout() {
   const L = useLayout();
@@ -33,7 +34,9 @@ export default function TabsLayout() {
         </Tabs>
         {!rail ? (
           <View pointerEvents="box-none" style={{ position: "absolute", left: BAR.inset + 4, right: BAR.inset + 4, bottom: L.insets.bottom + BAR.inset }}>
-            <TabBar active={active} onSelect={go} />
+            <TourTarget id="tabs">
+              <TabBar active={active} onSelect={go} />
+            </TourTarget>
           </View>
         ) : null}
       </View>

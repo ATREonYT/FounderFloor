@@ -6,12 +6,14 @@
 import { View } from "react-native";
 import { Body, Button, Keeper, Plate, radius } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
+import { useTour } from "../lib/tour";
 import { RECEPTIONIST } from "../lib/mock";
 
 export function Hint({ id, text, color }: { id: string; text: string; color?: string }) {
   const seen = useFounder((s) => s.hints.includes(id));
   const dismiss = useFounder((s) => s.dismissHint);
-  if (seen) return null;
+  const touring = useTour((s) => s.active);
+  if (seen || touring) return null;
   return (
     <Plate tone="paper" radius={radius.lg} padding={12} lineColor={color ?? RECEPTIONIST.color}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>

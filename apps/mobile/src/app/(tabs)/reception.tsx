@@ -24,6 +24,7 @@ import { useFounder, isoWeek } from "../../lib/store";
 import { remembers, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { Hint } from "../../components/Hint";
+import { TourTarget } from "../../components/TourTarget";
 
 export default function Reception() {
   const L = useLayout();
@@ -135,6 +136,7 @@ export default function Reception() {
               ) : null}
               {atDesk ? <Hint id="home" text="This is Home. The card below says what to do next; the box at the bottom asks the desk anything. The tabs underneath are the whole building." /> : null}
               {atDesk ? (
+                <TourTarget id="home-next">
                 <Pressable onPress={() => router.navigate("/build")} accessibilityRole="button" accessibilityLabel="Next on the map">
                   <Plate tone="panel" radius={radius.xl} padding={14}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
@@ -159,6 +161,7 @@ export default function Reception() {
                     </View>
                   </Plate>
                 </Pressable>
+                </TourTarget>
               ) : null}
               <View style={{ gap: 6 }}>
                 <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "What do you need?" : coach.title}</Display>

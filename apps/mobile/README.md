@@ -149,6 +149,10 @@ otherwise), write the weekly goal and the 90-day target onto the stand,
 and set the coaches' tone. Then the six-card guide, then straight into
 the first idea: the finder prefilled and run for an itch, the second
 opinion for an idea, the map for everyone else. The plan lives at Home
-("My plan") and can be remade any time. Every tab shows a one-line hint
-from the desk the first time it is opened.
+("My plan") and can be remade any time. After the plan, an interactive tour: the
+screen dims around one real control at a time, the desk says what to
+tap, and the tour only moves on when the person taps it (or switches to
+the named tab). It walks the map, a room, Home, the Stand, the Office
+and the Floor, then ends at the first idea. Every tab also shows a
+one-line hint from the desk the first time it is opened.
 

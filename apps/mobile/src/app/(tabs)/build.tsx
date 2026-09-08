@@ -15,7 +15,8 @@ import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { Hint } from "../../components/Hint";
-import { TourCard } from "../../components/TourCard";
+import { TourTarget } from "../../components/TourTarget";
+import { useTour } from "../../lib/tour";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
@@ -32,7 +33,15 @@ export default function Build() {
   const bottom = useBottomChrome();
   const { ticks, toggleTick, saveDoc, kpi, interviews, visits, streak, guided } = useFounder();
   const { tour, then } = useLocalSearchParams<{ tour?: string; then?: string }>();
-  const [touring, setTouring] = useState(tour === "1" || !guided);
+  const startTour = useTour((s) => s.start);
+  const closedStep = useTour((s) => s.closed);
+  useEffect(() => {
+    if (tour === "1") {
+      const t = setTimeout(() => startTour(then || undefined), 600);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tour]);
   const opened = effectivePlan() !== "free" || !!trialLeft();
   const stand = useStand();
   const [open, setOpen] = useState<BuildStage | null>(null);
@@ -92,11 +101,11 @@ export default function Build() {
           </View>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
-        {touring ? <TourCard then={then || undefined} onDone={() => setTouring(false)} /> : <Hint id="map" text="Six rooms, one road. Tap the room you are in to see what to do there and tick what is done. Your keeper walks as you go." />}
+        {guided ? <Hint id="map" text="Six rooms, one road. Tap the room you are in to see what to do there and tick what is done. Your keeper walks as you go." /> : null}
         <Plate tone="panel" radius={radius.xxl} padding={12}>
-          <View style={{ borderRadius: 20, overflow: "hidden", backgroundColor: wash(art.floors["main-hall"].a, scheme() === "dark" ? 0.12 : 0.3), paddingVertical: 8 }}>
+          <TourTarget id="map" style={{ borderRadius: 20, overflow: "hidden", backgroundColor: wash(art.floors["main-hall"].a, scheme() === "dark" ? 0.12 : 0.3), paddingVertical: 8 }}>
             <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
-          </View>
+          </TourTarget>
           {!opened ? (
             <Spec tone="faint" style={{ marginTop: 4 }}>
               {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
@@ -125,7 +134,7 @@ export default function Build() {
         </Plate>
       </ScrollView>
 
-      <Dialogue open={!!open} onClose={() => setOpen(null)} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tick what is true, not what you intend.">
+      <Dialogue open={!!open} onClose={() => { setOpen(null); closedStep("room"); }} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tick what is true, not what you intend.">
         {open ? (
           <View style={{ gap: 12 }}>
             <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} set="workshop" ambient={false} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
