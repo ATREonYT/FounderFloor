@@ -14,5 +14,5 @@ export default function Index() {
     return off;
   }, [ready]);
   if (!ready) return <View style={{ flex: 1, backgroundColor: shell.paper }} />;
-  return <Redirect href={door ? "/reception" : "/start"} />;
+  return <Redirect href={door ? "/reception" : "/welcome"} />;
 }

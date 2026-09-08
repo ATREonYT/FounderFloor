@@ -13,3 +13,4 @@ export * from "./documents.ts";
 export * from "./plans.ts";
 export * from "./guide.ts";
 export * from "./brief.ts";
+export * from "./profile.ts";

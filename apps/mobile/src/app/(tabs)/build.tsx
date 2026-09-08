@@ -14,6 +14,7 @@ import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journe
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
+import { Hint } from "../../components/Hint";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
@@ -88,6 +89,7 @@ export default function Build() {
           </View>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
+        <Hint id="map" text="Six rooms, one road. Tap the room you are in to see what to do there and tick what is done. Your keeper walks as you go." />
         <Plate tone="panel" radius={radius.xxl} padding={12}>
           <View style={{ borderRadius: 20, overflow: "hidden", backgroundColor: wash(art.floors["main-hall"].a, scheme() === "dark" ? 0.12 : 0.3), paddingVertical: 8 }}>
             <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />

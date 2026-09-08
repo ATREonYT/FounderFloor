@@ -5,10 +5,10 @@
  * must be true. Taking an idea writes it on the stand's sign and opens the
  * second opinion. Live through the Edge Function; scripted otherwise.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { useRouter, type Href } from "expo-router";
-import { findIdeas, IDEA_FIND_PROMPT, type Idea, type IdeaBrief } from "@founderfloor/shared";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { LIKES, findIdeas, IDEA_FIND_PROMPT, type Idea, type IdeaBrief } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Choices, Display, Input, Plate, Spec, Thinking, Keeper, radius, shell, useLayout, GlyphTile } from "@founderfloor/ui";
 import { SEGMENT_GLYPH } from "../../lib/glyphs";
 import { useFounder } from "../../lib/store";
@@ -20,16 +20,27 @@ export default function Find() {
   const L = useLayout();
   const router = useRouter();
   const gate = useGate();
-  const { ideas: saved, setIdeas, setRecord, setDoor } = useFounder();
-  const [skills, setSkills] = useState(saved?.brief.skills.join(", ") ?? "");
-  const [audiences, setAudiences] = useState(saved?.brief.audiences.join(", ") ?? "");
-  const [hours, setHours] = useState<"5" | "15" | "40">(saved ? (saved.brief.hoursPerWeek < 10 ? "5" : saved.brief.hoursPerWeek < 30 ? "15" : "40") : "15");
+  const { ideas: saved, setIdeas, setRecord, setDoor, profile } = useFounder();
+  const { auto } = useLocalSearchParams<{ auto?: string }>();
+  const fromLikes = profile ? profile.likes.map((l) => LIKES.find((x) => x.id === l)?.label.toLowerCase() ?? l).join(", ") : "";
+  const [skills, setSkills] = useState(saved?.brief.skills.join(", ") ?? fromLikes);
+  const [audiences, setAudiences] = useState(saved?.brief.audiences.join(", ") ?? profile?.audiences ?? "");
+  const [hours, setHours] = useState<"5" | "15" | "40">(saved ? (saved.brief.hoursPerWeek < 10 ? "5" : saved.brief.hoursPerWeek < 30 ? "15" : "40") : profile?.pace === "evenings" ? "5" : profile?.pace === "all-in" ? "40" : "15");
   const [budget, setBudget] = useState<"0" | "500" | "5000">("500");
   const [likes, setLikes] = useState(saved?.brief.likes ?? "");
   const [busy, setBusy] = useState(false);
   const [ideas, setList] = useState<Idea[]>(saved?.ideas ?? []);
   const [source, setSource] = useState<"live" | "rehearsal">("rehearsal");
   const ines = COACHES[0];
+  const ran = useRef(false);
+  useEffect(() => {
+    // straight from the welcome: the answers are in, so the five ideas come without another tap
+    if (auto === "1" && !ran.current && !saved && (skills || audiences)) {
+      ran.current = true;
+      void run();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto]);
 
   const run = async () => {
     if (!gate("ideaRun")) return;

@@ -21,7 +21,7 @@ const TONE = (t: Tone): string =>
   ({
     ink: shell.ink,
     muted: shell.muted,
-    paper: shell.paper,
+    paper: onDark.text, // text on the black plate, which is black in both schemes
     paperQuiet: onDark.quiet,
     accent: shell.accent,
     accentLift: shell.accentLift,

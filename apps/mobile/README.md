@@ -138,3 +138,17 @@ Settings holds the two local reminders (a daily nudge at 9:00, 13:00 or
 19:00, and the Friday review at 16:00), the Friday email switch, the email
 confirmation, and the operator's console.
 
+## The welcome, and the plan
+
+First launch opens on the desk asking eight questions, one at a time:
+your name, where you are (an itch, an idea, building, running), what you
+like doing, who you know, what counts as a win, by when, how much time a
+week, and how the coaches should speak to you. The answers make a
+four-week plan (the model when a key is present, the house rules
+otherwise), write the weekly goal and the 90-day target onto the stand,
+and set the coaches' tone. Then the six-card guide, then straight into
+the first idea: the finder prefilled and run for an itch, the second
+opinion for an idea, the map for everyone else. The plan lives at Home
+("My plan") and can be remade any time. Every tab shows a one-line hint
+from the desk the first time it is opened.
+

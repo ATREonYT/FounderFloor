@@ -19,7 +19,7 @@ import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote } from "@founderfloor/shared";
+import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -260,7 +260,8 @@ export const EMPTY_RECORD: StandRecord = {
   residence: "other",
 };
 
-export type Door = "find" | "have" | "running";
+export type { Door } from "@founderfloor/shared";
+type DoorT = "find" | "have" | "running";
 export interface SavedDoc extends Draft {
   id: string;
   at: string;
@@ -287,7 +288,7 @@ interface FounderState {
   quota: { week: string; target: number; sent: number };
   streak: { days: number; last: string | null };
   /** First-run: which door was taken, or null before the start screen. */
-  door: Door | null;
+  door: DoorT | null;
   ideas: { brief: IdeaBrief; ideas: Idea[]; at: string } | null;
   reads: { text: string; read: IdeaRead; at: string }[];
   docs: SavedDoc[];
@@ -295,6 +296,13 @@ interface FounderState {
   interviews: Interview[];
   usage: Usage & { day: string; month: string };
   plan: PlanState;
+  /** The welcome conversation's answers, and the plan made from them. */
+  profile: Profile | null;
+  roadmap: FounderPlan | null;
+  /** First-visit hints already dismissed, by id. */
+  hints: string[];
+  setProfile(p: Profile, roadmap: FounderPlan): void;
+  dismissHint(id: string): void;
   /** Every day the building was opened, ISO dates, for the calendar. */
   visits: string[];
   /** Local reminders, as chosen in Settings. */
@@ -315,7 +323,7 @@ interface FounderState {
   setQuota(target: number): void;
   countSent(n?: number): void;
   touchStreak(): void;
-  setDoor(d: Door): void;
+  setDoor(d: DoorT): void;
   setIdeas(brief: IdeaBrief, ideas: Idea[]): void;
   addRead(text: string, read: IdeaRead): void;
   saveDoc(d: Draft, source: SavedDoc["source"]): SavedDoc;
@@ -357,6 +365,11 @@ export const useFounder = create<FounderState>()(
       plan: { plan: "free" },
       notes: [],
       offered: null,
+      profile: null,
+      roadmap: null,
+      hints: [],
+      setProfile: (profile, roadmap) => set({ profile, roadmap }),
+      dismissHint: (id) => set({ hints: get().hints.includes(id) ? get().hints : [...get().hints, id] }),
       visits: [],
       reminders: DEFAULT_REMINDERS,
       guided: false,
@@ -404,8 +417,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 4,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, ...(persisted as object) }) as unknown as FounderState,
+      version: 5,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

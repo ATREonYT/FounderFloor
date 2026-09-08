@@ -18,6 +18,7 @@ import { valueMoment } from "../../lib/trial";
 import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
 import { COACHES } from "../../lib/mock";
+import { Hint } from "../../components/Hint";
 
 export default function Office() {
   const L = useLayout();
@@ -93,6 +94,7 @@ export default function Office() {
             </View>
           </View>
         </Scene>
+        <Hint id="office" text="Fridays: log five numbers here. Two minutes. The update, the runway and the coaches all read from them." />
         <View style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The Office</Display>
           <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>

@@ -15,6 +15,7 @@ import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, In
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder, useSession } from "../../lib/store";
+import { Hint } from "../../components/Hint";
 import { useStand, hallName } from "../../lib/stand";
 
 const ENTITIES: { v: EntityType; label: string }[] = [
@@ -110,6 +111,7 @@ export default function Stand() {
         right={<TierTag tier={stand.tier} />}
       />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
+        <Hint id="stand" text="Your stand is your company on one card. Tap The numbers to fill it in; the coaches read from here. Share the card when it is worth showing." />
         {sessionError ? (
           <Plate tone="paper" radius={radius.md} padding={12}>
             <Body size="sm" tone="accent">

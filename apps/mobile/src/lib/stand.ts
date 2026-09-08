@@ -55,6 +55,7 @@ export function useStand(): StandView {
   const entry = useSession((s) => s.stand);
   const auth = useSession((s) => s.auth);
   const record = useFounder((s) => s.record);
+  const profileName = useFounder((s) => s.profile?.name ?? "");
   const streakLocal = useFounder((s) => s.streak.days);
   return useMemo(() => {
     const st = floor?.state ?? null;
@@ -97,7 +98,7 @@ export function useStand(): StandView {
         carpetSwatch: 8,
         pattern: "solid",
         look: st?.profile?.look ?? YOU.look,
-        founder: auth?.name ?? "",
+        founder: auth?.name || profileName || "",
         record,
         rank: rankFor(record.mrr),
         streak: streakLocal,
@@ -119,7 +120,7 @@ export function useStand(): StandView {
       carpetSwatch: REHEARSAL.carpetSwatch,
       pattern: REHEARSAL.pattern,
       look: YOU.look,
-      founder: YOU.name,
+      founder: profileName || YOU.name,
       record: r,
       rank: rankFor(r.mrr),
       streak: streakLocal || 4,

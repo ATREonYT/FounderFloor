@@ -23,6 +23,7 @@ import { trialLeft } from "../../lib/trial";
 import { useFounder, isoWeek } from "../../lib/store";
 import { remembers, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
 import { ROOM_GLYPH } from "../../lib/glyphs";
+import { Hint } from "../../components/Hint";
 
 export default function Reception() {
   const L = useLayout();
@@ -45,6 +46,10 @@ export default function Reception() {
   const streak = stand.streak;
   const notes = useFounder((s) => s.notes);
   const ticks = useFounder((s) => s.ticks);
+  const roadmap = useFounder((s) => s.roadmap);
+  const profile = useFounder((s) => s.profile);
+  const weekNow = profile ? Math.min(4, Math.max(1, Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1)) : 1;
+  const focus = roadmap?.weeks.find((w) => w.n === weekNow)?.focus;
   const kpi = useFounder((s) => s.kpi);
   const cur = currentStage(ticks);
   const curDone = cur.items.filter((x) => ticks.includes(x.id)).length;
@@ -128,6 +133,7 @@ export default function Reception() {
                   </Plate>
                 </Pressable>
               ) : null}
+              {atDesk ? <Hint id="home" text="This is Home. The card below says what to do next; the box at the bottom asks the desk anything. The tabs underneath are the whole building." /> : null}
               {atDesk ? (
                 <Pressable onPress={() => router.navigate("/build")} accessibilityRole="button" accessibilityLabel="Next on the map">
                   <Plate tone="panel" radius={radius.xl} padding={14}>
@@ -141,8 +147,14 @@ export default function Reception() {
                       </View>
                       <Body tone="accent">→</Body>
                     </View>
+                    {focus ? (
+                      <Pressable onPress={() => router.push("/plan")} accessibilityRole="button" accessibilityLabel="Your plan" style={{ marginTop: 8 }}>
+                        <Spec tone="accent">{`Week ${weekNow} of your plan: ${focus} →`}</Spec>
+                      </Pressable>
+                    ) : null}
                     <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                       <Chip grow={false} onPress={() => router.navigate("/office")}>{weekLogged ? "Week logged ✓" : "Log the week"}</Chip>
+                      <Chip grow={false} onPress={() => router.push(roadmap ? "/plan" : "/welcome")}>{roadmap ? "My plan" : "Make my plan"}</Chip>
                       <Chip grow={false} onPress={() => router.push("/guide")}>How it works</Chip>
                     </View>
                   </Plate>
