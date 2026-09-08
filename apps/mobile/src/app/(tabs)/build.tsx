@@ -37,7 +37,7 @@ export default function Build() {
   const closedStep = useTour((s) => s.closed);
   useEffect(() => {
     if (tour === "1") {
-      const t = setTimeout(() => startTour(then || undefined), 600);
+      const t = setTimeout(() => startTour(then || undefined), 120);
       return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

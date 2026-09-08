@@ -16,7 +16,7 @@ export function TourTarget({ id, children, style }: { id: string; children: Reac
     if (!active) return;
     const measure = () => ref.current?.measureInWindow((x, y, w, h) => (w > 0 && h > 0 ? register(id, { x, y, w, h }) : undefined));
     measure();
-    const t = setInterval(measure, 250);
+    const t = setInterval(measure, 400);
     return () => clearInterval(t);
   }, [active, id, register]);
   // touches on the phone; a mouse on the web sends pointer events instead

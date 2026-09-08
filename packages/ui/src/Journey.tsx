@@ -10,7 +10,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View, type LayoutChangeEvent } from "react-native";
-import Animated, { Easing, cancelAnimation, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+import Animated, { Easing, cancelAnimation, runOnJS, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { Sprite, type SpriteId } from "./Sprite";
 import { Body, Spec } from "./Text";
 import { Glyph } from "./Scene";
@@ -161,10 +161,22 @@ function Walker({ links, xs, ys, here, look }: { links: { x: number; y: number }
     const k = n ? f - i : 0;
     const x = n ? px[i] + (px[i + 1] - px[i]) * k : px[0];
     const y = n ? py[i] + (py[i + 1] - py[i]) * k : py[0];
-    const dx = n ? px[i + 1] - px[i] : 0;
-    runOnJS(setFacing)(Math.abs(dx) < 0.6 ? "down" : dx > 0 ? "right" : "left");
     return { transform: [{ translateX: x }, { translateY: y + bob.value }] };
   }, [px, py]);
+  // which way the road goes, sent to React only when it changes, never per frame
+  useAnimatedReaction(
+    () => {
+      const n = px.length - 1;
+      if (!n) return "down";
+      const i = Math.min(n - 1, Math.max(0, Math.floor(t.value * n)));
+      const dx = px[i + 1] - px[i];
+      return Math.abs(dx) < 0.6 ? "down" : dx > 0 ? "right" : "left";
+    },
+    (dir, prev) => {
+      if (dir !== prev) runOnJS(setFacing)(dir as "left" | "right" | "down");
+    },
+    [px, py],
+  );
   const dir = walking ? facing : "down";
   const id = `avatar-outfit${look.outfit % 8}-${dir}-${walking ? frame : 0}` as SpriteId;
   return (
