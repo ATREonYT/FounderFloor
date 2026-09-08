@@ -110,8 +110,11 @@ test("the stand block carries the numbers the coaches reason over", () => {
   assert.match(b, /rank Ramen Profitable, 8800 to the next/);
   assert.match(b, /Runway: €40,000 ÷ \(€6,000 − €1,200\) = 8.3 months/);
   assert.match(b, /Weekly goal: none set/);
+  assert.doesNotMatch(b, /SAMPLE/);
+  assert.match(standBlock({ name: "Lantern", oneLiner: "", pitch: "", currency: "EUR", mrr: 0, burn: 0, cash: 0, founderSalary: 0, entity: "none", residence: "CY" }, { sample: true }), /this stand is a SAMPLE called Lantern/);
   for (const c of Object.values(COACH_PROMPTS)) {
-    assert.match(c.system, /under 130 words/);
+    assert.match(c.system, /under 110 words/);
+    assert.match(c.system, /Answer the question that was asked, directly/);
     assert.ok(c.starters.length >= 3);
   }
 });
