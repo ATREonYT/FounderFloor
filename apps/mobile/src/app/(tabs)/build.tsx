@@ -8,13 +8,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useGate } from "../../lib/gate";
 import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, art, haptic, radius, scheme, shell, useLayout, wash, type Mood } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { Hint } from "../../components/Hint";
+import { TourCard } from "../../components/TourCard";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
@@ -29,7 +30,9 @@ export default function Build() {
   const router = useRouter();
   const gate = useGate();
   const bottom = useBottomChrome();
-  const { ticks, toggleTick, saveDoc, kpi, interviews, visits, streak } = useFounder();
+  const { ticks, toggleTick, saveDoc, kpi, interviews, visits, streak, guided } = useFounder();
+  const { tour, then } = useLocalSearchParams<{ tour?: string; then?: string }>();
+  const [touring, setTouring] = useState(tour === "1" || !guided);
   const opened = effectivePlan() !== "free" || !!trialLeft();
   const stand = useStand();
   const [open, setOpen] = useState<BuildStage | null>(null);
@@ -89,7 +92,7 @@ export default function Build() {
           </View>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
-        <Hint id="map" text="Six rooms, one road. Tap the room you are in to see what to do there and tick what is done. Your keeper walks as you go." />
+        {touring ? <TourCard then={then || undefined} onDone={() => setTouring(false)} /> : <Hint id="map" text="Six rooms, one road. Tap the room you are in to see what to do there and tick what is done. Your keeper walks as you go." />}
         <Plate tone="panel" radius={radius.xxl} padding={12}>
           <View style={{ borderRadius: 20, overflow: "hidden", backgroundColor: wash(art.floors["main-hall"].a, scheme() === "dark" ? 0.12 : 0.3), paddingVertical: 8 }}>
             <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />

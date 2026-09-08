@@ -48,7 +48,7 @@ const COLOR: Record<Step, string> = { name: "#BE241B", standing: "#3B5B92", like
 
 type Opt<T extends string> = { v: T; label: string; line?: string; glyph: GlyphId };
 const STANDING: Opt<Standing>[] = [
-  { v: "itch", label: "An itch, no idea yet", line: "You want to build something; you do not know what.", glyph: "bolt" },
+  { v: "itch", label: "An itch, no idea yet", line: "You want to build; you do not know what yet.", glyph: "bolt" },
   { v: "idea", label: "I have an idea", line: "Written down or in your head.", glyph: "star" },
   { v: "building", label: "I am building", line: "Something exists; nobody pays yet.", glyph: "cube" },
   { v: "running", label: "I already run something", line: "Customers, numbers, a company.", glyph: "coin" },
@@ -70,6 +70,62 @@ const TONE: Opt<Tone>[] = [
   { v: "direct", label: "Directly", line: "Plain and honest.", glyph: "bolt" },
   { v: "blunt", label: "Bluntly", line: "The hard thing first.", glyph: "cube" },
 ];
+
+/** An answer as a row: a glyph tile, a label and a line, a tick on the right that fills with the step's colour. Same height for every row. */
+function Row<T extends string>({ o, on, color, onPress, k }: { o: Opt<T>; on: boolean; color: string; onPress: () => void; k: number }) {
+  return (
+    <Animated.View entering={FadeInDown.delay(40 + k * 40).duration(200)}>
+      <Tap onPress={onPress} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.985}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: on ? wash(color, 0.1) : shell.panel, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, borderWidth: 1.5, borderColor: on ? color : shell.line, height: 92 }}>
+          <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: on ? color : wash(color, 0.12), alignItems: "center", justifyContent: "center" }}>
+            <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Body medium numberOfLines={1}>
+              {o.label}
+            </Body>
+            {o.line ? (
+              <Body size="sm" tone="muted" numberOfLines={2}>
+                {o.line}
+              </Body>
+            ) : null}
+          </View>
+          <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+            {on ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: onDark.text }} /> : null}
+          </View>
+        </View>
+      </Tap>
+    </Animated.View>
+  );
+}
+
+/** Three-way choices as one segmented control, equal widths. */
+function Segments<T extends string>({ opts, value, color, onPick }: { opts: Opt<T>[]; value: T | null; color: string; onPick: (v: T) => void }) {
+  return (
+    <Animated.View entering={FadeInDown.delay(40).duration(200)} style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", backgroundColor: shell.panel, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: shell.line }}>
+        {opts.map((o) => {
+          const on = value === o.v;
+          return (
+            <View key={o.v} style={{ flex: 1 }}>
+              <Tap onPress={() => onPick(o.v)} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.97}>
+                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 12, backgroundColor: on ? color : "transparent" }}>
+                  <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
+                  <Body size="sm" medium tone={on ? "paper" : "ink"}>
+                    {o.label}
+                  </Body>
+                </View>
+              </Tap>
+            </View>
+          );
+        })}
+      </View>
+      <Body size="sm" tone="muted" style={{ textAlign: "center" }}>
+        {opts.find((o) => o.v === value)?.line ?? " "}
+      </Body>
+    </Animated.View>
+  );
+}
 
 export default function Welcome() {
   const L = useLayout();
@@ -134,61 +190,13 @@ export default function Welcome() {
       return;
     }
     if (step === "plan") {
-      const then = standing === "itch" ? "/idea/find?auto=1" : standing === "idea" ? "/idea/check" : "/build";
-      router.replace({ pathname: "/guide", params: { then } } as Href);
+      // the map, with the tour on it; the tour ends at the first idea
+      const then = standing === "itch" ? "/idea/find?auto=1" : standing === "idea" ? "/idea/check" : "";
+      router.replace({ pathname: "/build", params: { tour: "1", then } } as Href);
       return;
     }
     setI(i + 1);
   };
-
-  /** An answer as a row: a glyph tile, a label and a line, a tick on the right that fills with the step's colour. */
-  const Row = <T extends string>({ o, on, onPress, k }: { o: Opt<T>; on: boolean; onPress: () => void; k: number }) => (
-    <Animated.View entering={FadeInDown.delay(60 + k * 50).duration(260)}>
-      <Tap onPress={onPress} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.985}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: on ? wash(color, 0.1) : shell.panel, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 14, borderWidth: 1.5, borderColor: on ? color : shell.line }}>
-          <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: on ? color : wash(color, 0.12), alignItems: "center", justifyContent: "center" }}>
-            <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
-          </View>
-          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <Body medium>{o.label}</Body>
-            {o.line ? (
-              <Body size="sm" tone="muted">
-                {o.line}
-              </Body>
-            ) : null}
-          </View>
-          <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
-            {on ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: onDark.text }} /> : null}
-          </View>
-        </View>
-      </Tap>
-    </Animated.View>
-  );
-  /** Three-way choices as one segmented control. */
-  const Segments = <T extends string>({ opts, value, onPick }: { opts: Opt<T>[]; value: T | null; onPick: (v: T) => void }) => (
-    <Animated.View entering={FadeInDown.delay(60).duration(260)} style={{ gap: 10 }}>
-      <View style={{ flexDirection: "row", backgroundColor: shell.panel, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: shell.line }}>
-        {opts.map((o) => {
-          const on = value === o.v;
-          return (
-            <View key={o.v} style={{ flex: 1 }}>
-              <Tap onPress={() => onPick(o.v)} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.97}>
-                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 12, backgroundColor: on ? color : "transparent" }}>
-                  <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
-                  <Body size="sm" medium tone={on ? "paper" : "ink"}>
-                    {o.label}
-                  </Body>
-                </View>
-              </Tap>
-            </View>
-          );
-        })}
-      </View>
-      <Body size="sm" tone="muted" style={{ textAlign: "center" }}>
-        {opts.find((o) => o.v === value)?.line ?? " "}
-      </Body>
-    </Animated.View>
-  );
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
@@ -230,7 +238,7 @@ export default function Welcome() {
             {step === "standing" ? (
               <View style={{ gap: 10 }}>
                 {STANDING.map((o, k) => (
-                  <Row key={o.v} o={o} k={k} on={standing === o.v} onPress={() => { setStanding(o.v); nod(); }} />
+                  <Row key={o.v} o={o} k={k} color={color} on={standing === o.v} onPress={() => { setStanding(o.v); nod(); }} />
                 ))}
               </View>
             ) : null}
@@ -239,7 +247,7 @@ export default function Welcome() {
                 {LIKES.map((l, k) => {
                   const on = likes.includes(l.id);
                   return (
-                    <Animated.View key={l.id} entering={FadeInDown.delay(60 + k * 45).springify().damping(16)}>
+                    <Animated.View key={l.id} entering={FadeInDown.delay(40 + k * 35).duration(200)}>
                       <Tap onPress={() => { setLikes((cur) => (on ? cur.filter((x) => x !== l.id) : [...cur, l.id])); nod(); }} accessibilityLabel={l.label} accessibilityRole="checkbox" scale={0.95}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: on ? color : shell.panel, borderRadius: radius.full, paddingLeft: 8, paddingRight: 14, paddingVertical: 8, borderWidth: 1.5, borderColor: on ? color : shell.line }}>
                           <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: on ? "rgba(255,255,255,0.18)" : wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
@@ -275,18 +283,18 @@ export default function Welcome() {
             {step === "goal" ? (
               <View style={{ gap: 10 }}>
                 {GOALS.map((g, k) => (
-                  <Row key={g.id} o={{ v: g.id, label: g.label, line: g.line, glyph: GOAL_GLYPH[g.id] }} k={k} on={goal === g.id} onPress={() => { setGoal(g.id); nod(); }} />
+                  <Row key={g.id} o={{ v: g.id, label: g.label, line: g.line, glyph: GOAL_GLYPH[g.id] }} k={k} color={color} on={goal === g.id} onPress={() => { setGoal(g.id); nod(); }} />
                 ))}
               </View>
             ) : null}
             {step === "horizon" ? (
-              <Segments opts={HORIZON} value={horizon} onPick={(v) => { setHorizon(v); nod(); }} />
+              <Segments opts={HORIZON} value={horizon} color={color} onPick={(v) => { setHorizon(v); nod(); }} />
             ) : null}
             {step === "pace" ? (
-              <Segments opts={PACE} value={pace} onPick={(v) => { setPace(v); nod(); }} />
+              <Segments opts={PACE} value={pace} color={color} onPick={(v) => { setPace(v); nod(); }} />
             ) : null}
             {step === "tone" ? (
-              <Segments opts={TONE} value={tone} onPick={(v) => { setTone(v); nod(); }} />
+              <Segments opts={TONE} value={tone} color={color} onPick={(v) => { setTone(v); nod(); }} />
             ) : null}
             {step === "plan" ? (
               busy || !plan ? (
@@ -300,7 +308,7 @@ export default function Welcome() {
                     </Body>
                   </Animated.View>
                   {plan.weeks.map((w, k) => (
-                    <Animated.View key={w.n} entering={FadeInDown.delay(120 + k * 90).springify().damping(16)}>
+                    <Animated.View key={w.n} entering={FadeInDown.delay(100 + k * 80).duration(240)}>
                       <View style={{ backgroundColor: w.n === 1 ? color : shell.panel, borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: w.n === 1 ? color : shell.line }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                           <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: w.n === 1 ? "rgba(255,255,255,0.18)" : wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
