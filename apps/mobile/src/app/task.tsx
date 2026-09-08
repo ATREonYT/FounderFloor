@@ -5,15 +5,18 @@
  * room is drawn for the kind of work: conversations in the café, building
  * in the workshop, writing in the mailroom, numbers in the office, selling
  * on the market. Tick the steps; when they are all ticked the task marks
- * itself done on the plan and the next one is a tap away.
+ * itself done on the plan, asks how it went, and the next one is a tap
+ * away. Ticks, outcomes, notes and what the desk said go into the
+ * notebook, once the founder has said the desk may keep one.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { TASK_KINDS, type TaskKind } from "@founderfloor/shared";
-import { Body, Button, ButtonRow, Chip, Composer, Display, Glyph, GlyphTile, Input, Message, Plate, Ring, Scene, Spec, Sparks, Tap, Thinking, haptic, radius, shell, useLayout, wash, type GlyphId, type SceneSet } from "@founderfloor/ui";
-import { useFounder } from "../lib/store";
+import { Body, Button, ButtonRow, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Input, Message, Plate, Ring, Scene, Spec, Sparks, Tap, Thinking, haptic, radius, shell, useLayout, wash, type GlyphId, type SceneSet } from "@founderfloor/ui";
+import { useFounder, type TaskOutcome } from "../lib/store";
+import { MemoryAsk } from "../components/MemoryAsk";
 import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
 import { taskKey, useTask, weekNow } from "../lib/taskDesk";
@@ -43,7 +46,13 @@ export default function Task() {
   const gate = useGate();
   const [draft, setDraft] = useState("");
   const [burst, setBurst] = useState(0);
+  const [ask, setAsk] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
+  const [how, setHow] = useState<TaskOutcome["how"]>("did");
+  const [said, setSaid] = useState("");
   const scroll = useRef<ScrollView>(null);
+  const work = useFounder((s) => s.tasks[key]);
+  const outcome = work?.outcome;
   const kind: TaskKind = t.guide?.kind ?? "plan";
   const room = KIND_ROOM[kind];
   const done = planDone.includes(key);
@@ -52,14 +61,38 @@ export default function Task() {
   const allTicked = total > 0 && ticked === total;
   const now = weekNow(profile, plan);
 
-  // every step ticked: the task marks itself done on the plan, once, with a small celebration
+  // every step ticked: the task marks itself done on the plan, once, with a small celebration, and asks how it went
   useEffect(() => {
     if (allTicked && !done) {
       togglePlanStep(key);
       setBurst((b) => b + 1);
       void haptic("success");
+      if (!outcome) setTimeout(() => setHowOpen(true), 700);
     }
-  }, [allTicked, done, key, togglePlanStep]);
+  }, [allTicked, done, key, togglePlanStep, outcome]);
+
+  // the notebook question, once, after the page has been read for a moment
+  useEffect(() => {
+    if (t.guide && t.memoryOn === null) {
+      const id = setTimeout(() => setAsk(true), 1400);
+      return () => clearTimeout(id);
+    }
+  }, [t.guide, t.memoryOn]);
+
+  const markDone = () => {
+    togglePlanStep(key);
+    void haptic(done ? "light" : "success");
+    if (!done) {
+      setBurst((b) => b + 1);
+      if (!outcome) setTimeout(() => setHowOpen(true), 500);
+    }
+  };
+  const saveHow = () => {
+    t.outcome(how, said);
+    setHowOpen(false);
+    setSaid("");
+    void haptic("success");
+  };
 
   /** The next task not yet done: the rest of this week, then the weeks after, then back to the plan. */
   const next = useMemo((): Href | null => {
@@ -149,14 +182,32 @@ export default function Task() {
                         {done ? "Done. It is ticked on your plan." : ticked === 0 ? "Tick each step as you do it." : allTicked ? "Every step ticked." : `${total - ticked} step${total - ticked === 1 ? "" : "s"} to go.`}
                       </Body>
                       <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-                        <Button size="sm" variant={done ? "ghost" : allTicked ? "primary" : "secondary"} onPress={() => { togglePlanStep(key); void haptic(done ? "light" : "success"); if (!done) setBurst((b) => b + 1); }}>
+                        <Button size="sm" variant={done ? "ghost" : allTicked ? "primary" : "secondary"} onPress={markDone}>
                           {done ? "Mark not done" : "Mark the task done"}
                         </Button>
+                        {done ? (
+                          <Button size="sm" variant="secondary" onPress={() => { setHow(outcome?.how ?? "did"); setSaid(outcome?.text ?? ""); setHowOpen(true); }}>
+                            {outcome ? "Change how it went" : "Say how it went"}
+                          </Button>
+                        ) : null}
                       </View>
                     </View>
                   </View>
                 </Plate>
               </Animated.View>
+
+              {/* how it went, once said */}
+              {outcome ? (
+                <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 16, padding: 12 }}>
+                  <GlyphTile id={outcome.how === "did" ? "star" : outcome.how === "partly" ? "wave" : "flask"} color={room.color} size={36} scale={1} />
+                  <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                    <Spec tone="muted">{outcome.how === "did" ? "YOU DID IT" : outcome.how === "partly" ? "PARTLY DONE" : "YOU GOT STUCK"}</Spec>
+                    <Body size="sm" medium>
+                      {outcome.text || (outcome.how === "stuck" ? "Ask the desk below where to go from here." : "In the notebook.")}
+                    </Body>
+                  </View>
+                </View>
+              ) : null}
 
               {/* the steps */}
               <View style={{ gap: 8 }}>
@@ -202,7 +253,7 @@ export default function Task() {
 
               {/* the founder's own notes */}
               <Animated.View entering={enter(t.guide.steps.length + 2)}>
-                <Input label="YOUR NOTES" value={t.notes} onChangeText={t.setNotes} multiline placeholder="Names, quotes, what happened, what you would change…" style={{ minHeight: 88, textAlignVertical: "top" }} />
+                <Input label="YOUR NOTES" value={t.notes} onChangeText={t.setNotes} onBlur={t.noteDown} multiline placeholder="Names, quotes, what happened, what you would change…" style={{ minHeight: 88, textAlignVertical: "top" }} />
               </Animated.View>
 
               {/* the desk, on this task */}
@@ -265,6 +316,39 @@ export default function Task() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* how did it go: three words and a line, into the notebook */}
+      <Dialogue open={howOpen} onClose={() => setHowOpen(false)} sign="HOW DID IT GO?" keeper="The desk" color={room.color} footer="A line here is what the desk builds on next time">
+        <View style={{ gap: 12 }}>
+          <Body size="sm" tone="muted">
+            {t.guide?.title ?? text}
+          </Body>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {(
+              [
+                ["did", "Did it", "star"],
+                ["partly", "Partly", "wave"],
+                ["stuck", "Stuck", "flask"],
+              ] as [TaskOutcome["how"], string, GlyphId][]
+            ).map(([v, l, g]) => (
+              <Tap key={v} onPress={() => { setHow(v); void haptic("light"); }} accessibilityRole="radio" accessibilityLabel={`${l}${how === v ? ", selected" : ""}`} style={{ flex: 1 }}>
+                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: how === v ? room.color : shell.line, backgroundColor: how === v ? wash(room.color, 0.12) : shell.paper }}>
+                  <Glyph id={g} tone="auto" scale={2} />
+                  <Spec tone="ink">{l}</Spec>
+                </View>
+              </Tap>
+            ))}
+          </View>
+          <Input value={said} onChangeText={setSaid} multiline placeholder={how === "stuck" ? "Where did it stop? One line is enough." : "What happened, in a line? Names and numbers help."} style={{ minHeight: 72, textAlignVertical: "top" }} />
+          <ButtonRow>
+            <Button onPress={saveHow}>Write it down</Button>
+            <Button variant="ghost" onPress={() => setHowOpen(false)}>
+              Not now
+            </Button>
+          </ButtonRow>
+        </View>
+      </Dialogue>
+      <MemoryAsk open={ask} onClose={() => setAsk(false)} />
     </View>
   );
 }

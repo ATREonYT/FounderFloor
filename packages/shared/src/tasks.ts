@@ -180,7 +180,7 @@ export function asTaskGuide(v: unknown): Omit<TaskGuide, "source"> | null {
 }
 
 /** What the model is told about the founder and the plan when it writes or discusses a task. */
-export function taskContext(text: string, opts: { profile?: Profile | null; week?: PlanWeek | null; plan?: FounderPlan | null; guide?: TaskGuide | null; notes?: string; ticked?: number[] }): string {
+export function taskContext(text: string, opts: { profile?: Profile | null; week?: PlanWeek | null; plan?: FounderPlan | null; guide?: TaskGuide | null; notes?: string; ticked?: number[]; /** The founder's notebook, already rendered by founderLog (empty without consent). */ log?: string }): string {
   const p = opts.profile;
   const lines = [
     p ? `Founder: ${p.name || "unnamed"}. Standing: ${p.standing}. Goal: ${p.goal}. Horizon: ${p.horizon}. Pace: ${p.pace}. Audience: ${p.audiences || "not given"}. Likes: ${p.likes.join(", ") || "not given"}. ${toneLine(p.tone)}` : "Founder: no profile yet.",
@@ -189,6 +189,7 @@ export function taskContext(text: string, opts: { profile?: Profile | null; week
     `The task open now: ${text}`,
     opts.guide ? `Steps on the page: ${opts.guide.steps.map((st, i) => `${i + 1}. ${st.do}${opts.ticked?.includes(i) ? " (done)" : ""}`).join(" ")} Finished when: ${opts.guide.done}` : "",
     opts.notes?.trim() ? `The founder's notes on this task: ${opts.notes.trim().slice(0, 1200)}` : "",
+    opts.log ?? "",
   ];
   return lines.filter(Boolean).join("\n");
 }

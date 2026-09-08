@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import Animated, { FadeInDown, FadeInRight, FadeOutLeft, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
-import { LIKES, GOALS, PLAN_PROMPT, localPlan, asPlan, doorFor, type Profile, type FounderPlan, type Standing, type Goal, type Horizon, type Pace, type Tone } from "@founderfloor/shared";
+import { LIKES, GOALS, PLAN_PROMPT, localPlan, asPlan, doorFor, founderLog, type Profile, type FounderPlan, type Standing, type Goal, type Horizon, type Pace, type Tone } from "@founderfloor/shared";
 import { Body, Button, Display, Glyph, Input, Keeper, Plate, Spec, Tap, Thinking, art, onDark, radius, scheme, shell, useLayout, wash, type GlyphId, type Mood } from "@founderfloor/ui";
 import { RECEPTIONIST } from "../lib/mock";
 import { useFounder } from "../lib/store";
@@ -165,7 +165,7 @@ export default function Welcome() {
     let out: FounderPlan | null = null;
     if (aiMode() !== "rehearsal") {
       try {
-        const text = await askModel({ fn: "guide", body: { question: "plan", profile: p, stand: useFounder.getState().record, ticks: [] }, direct: { system: PLAN_PROMPT, turns: [{ role: "user", content: `Profile: ${JSON.stringify({ ...p, likes: p.likes.map((l) => LIKES.find((x) => x.id === l)?.label ?? l) })}` }], maxTokens: 900 } });
+        const text = await askModel({ fn: "guide", body: { question: "plan", profile: p, stand: useFounder.getState().record, ticks: [] }, direct: { system: PLAN_PROMPT, turns: [{ role: "user", content: `Profile: ${JSON.stringify({ ...p, likes: p.likes.map((l) => LIKES.find((x) => x.id === l)?.label ?? l) })}${founderLog(useFounder.getState().memory, useFounder.getState().memoryOn === true)}` }], maxTokens: 900 } });
         const parsed = asPlan(parseJson<unknown>(text));
         if (parsed) out = { ...parsed, source: "live" };
       } catch {

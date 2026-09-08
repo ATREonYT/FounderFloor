@@ -8,9 +8,9 @@
  * page, and the status line says so.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { asTaskGuide, localTaskGuide, taskContext, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
+import { asTaskGuide, founderLog, localTaskGuide, taskContext, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
-import { EMPTY_TASK, useFounder, type TaskTurn } from "./store";
+import { EMPTY_TASK, useFounder, type TaskOutcome, type TaskTurn } from "./store";
 
 let seq = 0;
 const nid = () => `t${Date.now().toString(36)}${(seq++).toString(36)}`;
@@ -22,7 +22,13 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
   const setGuide = useFounder((s) => s.setTaskGuide);
   const toggleStep = useFounder((s) => s.toggleTaskStep);
   const setNotes = useFounder((s) => s.setTaskNotes);
+  const setOutcome = useFounder((s) => s.setTaskOutcome);
   const setChat = useFounder((s) => s.setTaskChat);
+  const addMemory = useFounder((s) => s.addMemory);
+  const memory = useFounder((s) => s.memory);
+  const memoryOn = useFounder((s) => s.memoryOn);
+  /** The notebook as the model reads it: nothing until the founder said yes. */
+  const log = () => founderLog(memory, memoryOn === true);
   const [writing, setWriting] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [source, setSource] = useState<"live" | "rehearsal">(work.guide?.source ?? "rehearsal");
@@ -52,7 +58,7 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
         const reply = await askModel({
           fn: "guide",
           body: { question: "task", task: text, profile, week, plan: plan ? { headline: plan.headline, weeklyGoal: plan.weeklyGoal, target90: plan.target90 } : null, fresh },
-          direct: { system: TASK_PROMPT, turns: [{ role: "user", content: taskContext(text, { profile, week, plan }) + (fresh ? "\nWrite it differently from the last time: other steps, other angle." : "") }], maxTokens: 900 },
+          direct: { system: TASK_PROMPT, turns: [{ role: "user", content: taskContext(text, { profile, week, plan, log: log() }) + (fresh ? "\nWrite it differently from the last time: other steps, other angle." : "") }], maxTokens: 900 },
         });
         const g = asTaskGuide(parseJson(reply));
         if (!alive.current) return;
@@ -113,12 +119,13 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
       void askModel({
         fn: "coach-chat",
         body: { coach: "desk", message: t, turns: turns.slice(0, -1), task: { text, guide, notes: work.notes, ticks: work.ticks } },
-        direct: { system: TASK_DESK_PROMPT, cached: taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks }), turns, maxTokens: 450 },
+        direct: { system: TASK_DESK_PROMPT, cached: taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, log: log() }), turns, maxTokens: 450 },
       })
         .then((full) => {
           if (!alive.current) return;
           setChat(key, [...history, { id: nid(), role: "desk", text: full.trim() }]);
           setSource("live");
+          addMemory("desk", `on "${(guide?.title ?? text).slice(0, 60)}", asked "${t.slice(0, 80)}": ${firstLines(full)}`, key);
         })
         .catch((e: unknown) => {
           if (!alive.current) return;
@@ -148,11 +155,33 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
     lastError,
     quota,
     rewrite: () => void write(true),
-    tick: (i: number) => toggleStep(key, i),
+    tick: (i: number) => {
+      const was = work.ticks.includes(i);
+      toggleStep(key, i);
+      const step = work.guide?.steps[i];
+      if (!was && step) addMemory("did", `${step.do.replace(/\.$/, "")} (task: ${(work.guide?.title ?? text).slice(0, 60)})`, key);
+    },
+    outcome: (how: TaskOutcome["how"], said: string) => {
+      const o: TaskOutcome = { how, text: said.trim(), at: new Date().toISOString() };
+      setOutcome(key, o);
+      const word = how === "did" ? "Did it" : how === "partly" ? "Partly done" : "Got stuck";
+      addMemory("outcome", `${word} on "${(work.guide?.title ?? text).slice(0, 60)}"${o.text ? `: ${o.text}` : ""}`, key);
+    },
+    noteDown: () => {
+      if (work.notes.trim()) addMemory("note", `on "${(work.guide?.title ?? text).slice(0, 60)}": ${work.notes.trim()}`, key);
+    },
+    memoryOn,
     setNotes: (n: string) => setNotes(key, n),
     send,
     clearChat: () => setChat(key, []),
   };
+}
+
+/** The first sentence or two of a reply, for the notebook. */
+function firstLines(s: string): string {
+  const flat = s.replace(/\s+/g, " ").trim();
+  const m = flat.match(/^(.{40,220}?[.!?])(\s|$)/);
+  return (m ? m[1] : flat.slice(0, 220)).trim();
 }
 
 /** The key PlanView and planDone use for a step. */

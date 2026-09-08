@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
-import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, DESK_PROMPT, standBlock, memoryBlock, remembers, toneLine, type CoachId } from "@founderfloor/shared";
+import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, DESK_PROMPT, standBlock, memoryBlock, founderLog, remembers, toneLine, type CoachId } from "@founderfloor/shared";
 import { effectivePlan } from "./billing";
 import { valueMoment } from "./trial";
 import { askModel, aiMode, AiError } from "./ai";
@@ -74,11 +74,15 @@ export function useReceptionist(coachId?: string) {
   const memory = () => {
     const { founder: f } = ctx.current;
     const who = f.profile ? `\nFounder: ${f.profile.name}. ${toneLine(f.profile.tone)}${f.roadmap ? ` Their plan this month: ${f.roadmap.weeks.map((w) => `week ${w.n} ${w.focus}`).join("; ")}.` : ""}` : "";
-    return who + memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
+    // the notebook is the founder's and goes with every question they said yes to; the staff's own notes between visits stay Pro
+    return who + founderLog(f.memory, f.memoryOn === true) + memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
   };
   /** A note for next time, and the value moment on a coach's first real reply. */
   const remember = (asked: string, said: string) => {
-    if (coach.id === "desk") return; // the desk keeps no notes; it points
+    const flat = said.replace(/\s+/g, " ").trim();
+    const first = (flat.match(/^(.{40,220}?[.!?])(\s|$)/)?.[1] ?? flat.slice(0, 220)).trim();
+    ctx.current.founder.addMemory("desk", `${coach.id === "desk" ? "the desk" : coach.name}, asked "${asked.slice(0, 80)}": ${first}`);
+    if (coach.id === "desk") return; // the desk keeps no coach notes; it points
     ctx.current.founder.addNote({ coach: coach.name, asked, said });
     void valueMoment("coach");
   };

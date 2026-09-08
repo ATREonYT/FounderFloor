@@ -16,7 +16,7 @@ export default function Settings() {
   const L = useLayout();
   const router = useRouter();
   const { auth, account: me, verify, resendCode, setWeeklyMail, signOut, error } = useSession();
-  const { reminders, setReminders } = useFounder();
+  const { reminders, setReminders, memory, memoryOn, setMemoryOn } = useFounder();
   const [code, setCode] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const say = (t: string) => {
@@ -84,6 +84,20 @@ export default function Settings() {
               {me ? <Choices label="Friday review by email" value={me.weeklyMail ? "on" : "off"} options={[{ v: "on", label: "Every Friday" }, { v: "off", label: "Off" }]} onChange={async (v) => say((await setWeeklyMail(v === "on")) ? (v === "on" ? "Fridays, then. One email, no others." : "Off.") : "Could not save that.")} /> : null}
             </View>
           )}
+        </Plate>
+
+        <Plate tone="panel" radius={radius.xl} padding={20}>
+          <Body medium>The desk's notebook</Body>
+          <View style={{ marginTop: 10, gap: 10 }}>
+            <Body size="sm" tone="muted">
+              {memoryOn === true ? `${memory.length} ${memory.length === 1 ? "line" : "lines"} about your work, on this phone. The desk reads them with your questions.` : memoryOn === false ? `The desk writes nothing new. ${memory.length ? `${memory.length} old lines are still on this phone.` : ""}` : "Not decided yet. Open the notebook to read the question."}
+            </Body>
+            {memoryOn !== null ? <Choices value={memoryOn ? "on" : "off"} options={[{ v: "on", label: "Keeps notes" }, { v: "off", label: "Off" }]} onChange={(v) => { setMemoryOn(v === "on"); say(v === "on" ? "The desk keeps notes." : "The desk writes nothing new."); }} /> : null}
+            <Pressable onPress={() => router.push("/memory" as Href)} accessibilityRole="button" accessibilityLabel="Open the notebook" style={{ flexDirection: "row", alignItems: "center" }}>
+              <Body style={{ flex: 1 }}>Read, copy or burn the notebook</Body>
+              <Body tone="accent">→</Body>
+            </Pressable>
+          </View>
         </Plate>
 
         <Plate tone="panel" radius={radius.xl} padding={20}>
