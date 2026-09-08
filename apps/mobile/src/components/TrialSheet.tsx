@@ -52,9 +52,11 @@ export function TrialSheet() {
             </View>
           ))}
         </Plate>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+        <View style={{ gap: 2 }}>
           <Display size="lg">{`$${APP_PLANS.pro.monthly}/month`}</Display>
-          <Spec tone="muted">after the week, only if you keep it · cancel any time</Spec>
+          <Body size="sm" tone="muted">
+            After the week, only if you keep it. Cancel any time.
+          </Body>
         </View>
         <ButtonRow>
           {open.needsSignIn ? (

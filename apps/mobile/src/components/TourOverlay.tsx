@@ -15,6 +15,11 @@ import { TOUR, useTour } from "../lib/tour";
 import { useFounder } from "../lib/store";
 
 const SCRIM = "rgba(8,10,14,0.62)";
+/** The hole view's border: wide enough to cover any screen from any target. */
+const BIG = 4000;
+/** The corner radius of each target's own shape, so the hole hugs it. */
+const RADIUS: Record<string, number> = { map: 20, tabs: 999, "home-next": 16, "stand-numbers": 12, "office-log": 12 };
+const radiusOf = (id: string | null) => (id ? RADIUS[id] ?? 16 : 16);
 
 export function TourOverlay() {
   const { width: W, height: H } = useWindowDimensions();
@@ -41,21 +46,23 @@ export function TourOverlay() {
     stop();
     if (then) router.push(then as Href);
   };
-  const pad = 6;
+  const pad = 8;
   const r = rect ? { x: Math.max(0, rect.x - pad), y: Math.max(0, rect.y - pad), w: rect.w + pad * 2, h: rect.h + pad * 2 } : null;
   const below = r ? r.y + r.h + calloutH + 24 < H : false;
   const calloutTop = r ? (below ? r.y + r.h + 14 : Math.max(60, r.y - 12 - calloutH)) : H * 0.34;
   const waitingOnModal = cur.id === "room";
   return (
     <View pointerEvents="box-none" style={{ position: "absolute", left: 0, top: 0, width: W, height: H }}>
-      {/* the scrim, in four pieces around the target (or whole, when there is none) */}
+      {/* the scrim: four invisible blockers around the target keep taps off the rest of the screen,
+          and one view with an enormous border paints the dark with a rounded hole exactly the target's shape */}
       {r ? (
         <>
-          <View style={{ position: "absolute", left: 0, top: 0, width: W, height: r.y, backgroundColor: SCRIM }} />
-          <View style={{ position: "absolute", left: 0, top: r.y + r.h, width: W, height: Math.max(0, H - r.y - r.h), backgroundColor: SCRIM }} />
-          <View style={{ position: "absolute", left: 0, top: r.y, width: r.x, height: r.h, backgroundColor: SCRIM }} />
-          <View style={{ position: "absolute", left: r.x + r.w, top: r.y, width: Math.max(0, W - r.x - r.w), height: r.h, backgroundColor: SCRIM }} />
-          <Animated.View key={cur.id} entering={FadeIn.duration(220)} pointerEvents="none" style={{ position: "absolute", left: r.x - 3, top: r.y - 3, width: r.w + 6, height: r.h + 6, borderRadius: 18, borderWidth: 3, borderColor: shell.accentLift }} />
+          <View style={{ position: "absolute", left: 0, top: 0, width: W, height: r.y }} />
+          <View style={{ position: "absolute", left: 0, top: r.y + r.h, width: W, height: Math.max(0, H - r.y - r.h) }} />
+          <View style={{ position: "absolute", left: 0, top: r.y, width: r.x, height: r.h }} />
+          <View style={{ position: "absolute", left: r.x + r.w, top: r.y, width: Math.max(0, W - r.x - r.w), height: r.h }} />
+          <Animated.View key={`hole-${cur.id}`} entering={FadeIn.duration(200)} pointerEvents="none" style={{ position: "absolute", left: r.x - BIG, top: r.y - BIG, width: r.w + BIG * 2, height: r.h + BIG * 2, borderWidth: BIG, borderColor: SCRIM, borderRadius: BIG + radiusOf(cur.target) }} />
+          <Animated.View key={`ring-${cur.id}`} entering={FadeIn.duration(220)} pointerEvents="none" style={{ position: "absolute", left: r.x - 3, top: r.y - 3, width: r.w + 6, height: r.h + 6, borderRadius: radiusOf(cur.target) + 3, borderWidth: 3, borderColor: shell.accentLift }} />
         </>
       ) : !waitingOnModal ? (
         <View style={{ position: "absolute", left: 0, top: 0, width: W, height: H, backgroundColor: SCRIM }} />
@@ -69,6 +76,9 @@ export function TourOverlay() {
                 <Spec tone="muted">{`The tour · ${step + 1} of ${TOUR.length}`}</Spec>
                 <Body>{cur.say}</Body>
               </View>
+              <Pressable onPress={finish} accessibilityRole="button" accessibilityLabel="Leave the tour" hitSlop={8} style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: pressed ? shell.line : shell.well, alignItems: "center", justifyContent: "center" })}>
+                <Body medium>×</Body>
+              </Pressable>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               {last || !cur.target ? (
@@ -76,12 +86,11 @@ export function TourOverlay() {
                   {last ? (then ? "Start with the first idea" : "Done") : "Next"}
                 </Button>
               ) : (
-                <Spec tone="accent">{cur.route ? `Tap ${cur.tab} below` : "Tap the highlighted part"}</Spec>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shell.accent }} />
+                  <Spec tone="accent">{cur.route ? `Tap ${cur.tab} in the bar below` : "Tap the lit part to continue"}</Spec>
+                </View>
               )}
-              <View style={{ flex: 1 }} />
-              <Pressable onPress={finish} accessibilityRole="button" accessibilityLabel="Skip the tour">
-                <Spec tone="muted">Skip the tour</Spec>
-              </Pressable>
             </View>
           </View>
         </Animated.View>

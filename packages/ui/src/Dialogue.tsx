@@ -24,6 +24,9 @@ import { Body, Display, Spec } from "./Text";
 import { ease, ms, radius, shell } from "./tokens";
 import { alpha } from "./theme";
 
+/** The sheet's corner radius; the lower corners hang below the screen edge by the same amount. */
+const R_SHEET = 24;
+
 export function Dialogue({
   open,
   onClose,
@@ -33,7 +36,7 @@ export function Dialogue({
   color = shell.accent,
   wide = false,
   children,
-  footer = "Esc or tap outside to go back — you keep your spot",
+  footer = "Tap outside or × to go back; nothing is lost",
 }: {
   open: boolean;
   onClose: () => void;
@@ -83,43 +86,40 @@ export function Dialogue({
         <Animated.View
           accessibilityViewIsModal
           style={[
-            { width: "100%", maxWidth: maxW, maxHeight: L.panel.maxHeight },
-            sheet && { paddingBottom: L.insets.bottom },
+            { width: "100%", maxWidth: maxW, maxHeight: L.panel.maxHeight + (sheet ? R_SHEET : 0) },
+            // a sheet sits flush on the bottom edge: its lower corners are tucked under the screen
+            sheet && { marginBottom: -R_SHEET },
             card,
           ]}
         >
-          <Plate tone="panel" radius={radius.lg} contentStyle={{ maxHeight: L.panel.maxHeight, flexDirection: "column" }}>
+          <Plate tone="panel" radius={sheet ? R_SHEET : radius.xl} contentStyle={{ maxHeight: L.panel.maxHeight + (sheet ? R_SHEET : 0), flexDirection: "column" }}>
             {/* the awning stripe, so the panel is visibly the stall you opened */}
-            <View style={{ flexDirection: "row", height: 8 }}>
+            <View style={{ flexDirection: "row", height: 8, borderTopLeftRadius: sheet ? R_SHEET : radius.xl, borderTopRightRadius: sheet ? R_SHEET : radius.xl, overflow: "hidden" }}>
               {Array.from({ length: 14 }).map((_, i) => (
                 <View key={i} style={{ flex: 1, backgroundColor: i % 2 ? shell.paper : color }} />
               ))}
             </View>
+            {sheet ? <View style={{ alignSelf: "center", width: 36, height: 4, borderRadius: 2, backgroundColor: shell.line, marginTop: 8 }} /> : null}
 
-            <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: shell.line }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: shell.line }}>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Display size="lg" style={{ letterSpacing: -0.4 }}>
-                  {sign}
-                </Display>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <Display size="lg" style={{ letterSpacing: -0.4 }}>
+                    {sign}
+                  </Display>
+                  <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Spec tone="paper">{keeper}</Spec>
+                  </View>
+                </View>
                 {blurb ? (
                   <Body size="sm" tone="muted" style={{ marginTop: 4 }}>
                     {blurb}
                   </Body>
                 ) : null}
               </View>
-              <View style={{ alignItems: "flex-end", gap: 8 }}>
-                <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 4 }}>
-                  <Spec tone="paper">{keeper}</Spec>
-                </View>
-                <Pressable
-                  onPress={onClose}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, paddingVertical: 4 }}
-                >
-                  <Spec tone="muted">Close</Spec>
-                </Pressable>
-              </View>
+              <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, backgroundColor: pressed ? shell.line : shell.well, alignItems: "center", justifyContent: "center" })}>
+                <Body medium>×</Body>
+              </Pressable>
             </View>
 
             <ScrollView style={{ flexShrink: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 16 }} keyboardShouldPersistTaps="handled">
@@ -131,6 +131,7 @@ export function Dialogue({
                 <Spec tone="muted">{footer}</Spec>
               </View>
             ) : null}
+            {sheet ? <View style={{ height: L.insets.bottom + R_SHEET }} /> : null}
           </Plate>
         </Animated.View>
       </View>

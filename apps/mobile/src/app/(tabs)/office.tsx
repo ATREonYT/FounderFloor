@@ -271,25 +271,30 @@ export default function Office() {
         </Pressable>
       </ScrollView>
 
-      <Dialogue open={log} onClose={() => setLog(false)} sign="THE WEEKLY LOG" keeper="Theo" blurb={`Week ${wk}. Five numbers; the rest follows.`} color="#5E7C93" footer="Same numbers each week, however you define them, so the deltas mean something.">
+      <Dialogue open={log} onClose={() => setLog(false)} sign="THIS WEEK'S NUMBERS" keeper="Theo" blurb={`Week ${wk.slice(-2)}. Five numbers, two minutes. Everything else reads from them.`} color="#5E7C93" footer="Same numbers each week, however you define them, so the deltas mean something.">
         <View style={{ gap: 12 }}>
           <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
             <View style={{ flex: 1 }}>
               <Input label={`Revenue this month (${cur})`} value={String(entry.revenue || "")} onChangeText={(v) => setEntry((e) => ({ ...e, revenue: num(v) }))} keyboardType="numeric" mono placeholder="0" />
+              <Spec tone="faint">What customers paid you this month.</Spec>
             </View>
             <View style={{ flex: 1 }}>
               <Input label="Paying customers" value={String(entry.customers || "")} onChangeText={(v) => setEntry((e) => ({ ...e, customers: num(v) }))} keyboardType="numeric" mono placeholder="0" />
+              <Spec tone="faint">People or companies who pay, not sign-ups.</Spec>
             </View>
           </View>
           <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
             <View style={{ flex: 1 }}>
               <Input label={`Cash in the bank (${cur})`} value={String(entry.cash || "")} onChangeText={(v) => setEntry((e) => ({ ...e, cash: num(v) }))} keyboardType="numeric" mono placeholder="0" />
+              <Spec tone="faint">The company's balance today.</Spec>
             </View>
             <View style={{ flex: 1 }}>
               <Input label="Hours with customers" value={String(entry.hoursOnCustomers || "")} onChangeText={(v) => setEntry((e) => ({ ...e, hoursOnCustomers: num(v) }))} keyboardType="numeric" mono placeholder="0" />
+              <Spec tone="faint">Talking to or selling to them this week.</Spec>
             </View>
           </View>
           <Input label="What shipped" value={entry.shipped ?? ""} onChangeText={(shipped) => setEntry((e) => ({ ...e, shipped }))} placeholder="the pass QR; two new shops" />
+          <Spec tone="faint">Anything that reached a customer this week, in a few words.</Spec>
           <Input label="Note (optional)" value={entry.note ?? ""} onChangeText={(note) => setEntry((e) => ({ ...e, note }))} multiline placeholder="What you would tell a friend about the week." />
           {r.burn ? <Mono size="xs" tone="muted">{`${runwayLine({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }, cur)} · ${fmtMonths(runwayMonths({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }))}`}</Mono> : null}
           <ButtonRow>

@@ -302,6 +302,9 @@ interface FounderState {
   /** First-visit hints already dismissed, by id. */
   hints: string[];
   setProfile(p: Profile, roadmap: FounderPlan): void;
+  /** Plan steps done, as "week-index" keys. */
+  planDone: string[];
+  togglePlanStep(key: string): void;
   dismissHint(id: string): void;
   /** Every day the building was opened, ISO dates, for the calendar. */
   visits: string[];
@@ -368,7 +371,9 @@ export const useFounder = create<FounderState>()(
       profile: null,
       roadmap: null,
       hints: [],
-      setProfile: (profile, roadmap) => set({ profile, roadmap }),
+      setProfile: (profile, roadmap) => set({ profile, roadmap, planDone: [] }),
+      planDone: [],
+      togglePlanStep: (key) => set({ planDone: get().planDone.includes(key) ? get().planDone.filter((k) => k !== key) : [...get().planDone, key] }),
       dismissHint: (id) => set({ hints: get().hints.includes(id) ? get().hints : [...get().hints, id] }),
       visits: [],
       reminders: DEFAULT_REMINDERS,
@@ -418,7 +423,7 @@ export const useFounder = create<FounderState>()(
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
       version: 5,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], ...(persisted as object) }) as unknown as FounderState,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

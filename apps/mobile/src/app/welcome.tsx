@@ -16,6 +16,7 @@ import { Body, Button, Display, Glyph, Input, Keeper, Plate, Spec, Tap, Thinking
 import { RECEPTIONIST } from "../lib/mock";
 import { useFounder } from "../lib/store";
 import { askModel, parseJson, aiMode } from "../lib/ai";
+import { PlanView } from "../components/PlanView";
 
 type Step = "name" | "standing" | "likes" | "audiences" | "goal" | "horizon" | "pace" | "tone" | "plan";
 const ORDER: Step[] = ["name", "standing", "likes", "audiences", "goal", "horizon", "pace", "tone", "plan"];
@@ -301,39 +302,7 @@ export default function Welcome() {
                 <Thinking label="Reading your answers…" avatar={<Keeper look={RECEPTIONIST.look} scale={1} color={RECEPTIONIST.color} speaking />} />
               ) : (
                 <View style={{ gap: 12 }}>
-                  <Animated.View entering={FadeInDown.duration(300)}>
-                    <Display size="xl">Your first four weeks</Display>
-                    <Body tone="muted" style={{ marginTop: 4 }}>
-                      {plan.why}
-                    </Body>
-                  </Animated.View>
-                  {plan.weeks.map((w, k) => (
-                    <Animated.View key={w.n} entering={FadeInDown.delay(100 + k * 80).duration(240)}>
-                      <View style={{ backgroundColor: w.n === 1 ? color : shell.panel, borderRadius: 18, padding: 14, borderWidth: 1.5, borderColor: w.n === 1 ? color : shell.line }}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                          <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: w.n === 1 ? "rgba(255,255,255,0.18)" : wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
-                            <Spec tone={w.n === 1 ? "paper" : "ink"}>{String(w.n)}</Spec>
-                          </View>
-                          <Body medium tone={w.n === 1 ? "paper" : "ink"} style={{ flex: 1 }}>
-                            {w.focus}
-                          </Body>
-                          {w.n === 1 ? <Body size="sm" tone="paperQuiet">this week</Body> : null}
-                        </View>
-                        {w.do.map((d, m) => (
-                          <Body key={m} size="sm" tone={w.n === 1 ? "paper" : "muted"} style={{ marginTop: 6, marginLeft: 40 }}>
-                            {`· ${d}`}
-                          </Body>
-                        ))}
-                      </View>
-                    </Animated.View>
-                  ))}
-                  <Animated.View entering={FadeInDown.delay(520).duration(300)}>
-                    <Plate tone="paper" radius={radius.md} padding={12}>
-                      <Spec tone="muted">ON YOUR STAND NOW</Spec>
-                      <Body size="sm" style={{ marginTop: 4 }}>{`This week: ${plan.weeklyGoal}`}</Body>
-                      <Body size="sm">{`In 90 days: ${plan.target90}`}</Body>
-                    </Plate>
-                  </Animated.View>
+                  <PlanView plan={plan} profile={{ name: name.trim(), standing: standing!, likes, audiences, goal: goal!, horizon: horizon!, pace: pace!, tone: tone!, budget: 500, at: new Date().toISOString() }} color={color} />
                   <Spec tone="faint">{plan.source === "live" ? "Made from your answers. Remake it any time from Home." : "Made from your answers with the house rules. With the coaches live it gets more specific."}</Spec>
                 </View>
               )
