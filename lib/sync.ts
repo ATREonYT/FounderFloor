@@ -168,16 +168,28 @@ export async function pullState(
   }
 }
 
+/**
+ * Whether the last push was REFUSED by the server (it answered, but did not
+ * know this account's session — a reset elsewhere, a sign-out on another
+ * device, a token past its month), as opposed to the server being
+ * unreachable. The account card reads it to say the right thing.
+ */
+let refused = false;
+export const sessionRefused = (): boolean => refused;
+
 /** Returns the server's savedAt on success, null on failure/offline. */
 export async function pushState(me: string, state: Record<string, unknown>): Promise<number | null> {
   const base = httpBase();
   if (!base || !me) return null;
   try {
+    const token = tokenFor(me);
     const res = await fetch(`${base}/state/save`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ me, state, token: tokenFor(me), gs: guestSecret() }),
+      body: JSON.stringify({ me, state, token, gs: guestSecret() }),
     });
+    // the server answers 404, not 401, to a dead session on purpose
+    refused = res.status === 404 && !!token && me.startsWith("acct_");
     if (!res.ok) return null;
     const data = (await res.json()) as { ok?: boolean; savedAt?: number };
     return data.ok && typeof data.savedAt === "number" ? data.savedAt : null;

@@ -20,6 +20,7 @@ import {
   setAccountEmail,
 } from "@/lib/auth";
 import { flushSyncPush, makeGuestId } from "@/lib/store";
+import { sessionRefused } from "@/lib/sync";
 import { migrateStands } from "@/lib/social";
 
 function Field({
@@ -161,18 +162,26 @@ export default function AccountCard({
     setTick((t) => t + 1);
   };
 
-  const signOut = async () => {
+  /** The server no longer knows this device's session: edits since the last save cannot land until a fresh sign-in. */
+  const [expired, setExpired] = useState(false);
+  const [expiredBusy, setExpiredBusy] = useState(false);
+
+  const signOut = async (force = false) => {
     // push any unsynced edits while the session token still works — the
     // sign-out reset blanks this device, so the account MUST hold them
-    // first. If the push didn't land (server unreachable, token expired),
-    // refuse to sign out rather than destroy the only copy.
-    const flushed = await flushSyncPush().catch(() => false);
+    // first. If the push didn't land, refuse to sign out rather than destroy
+    // the only copy — unless the person has been told and chose to anyway.
+    const flushed = force ? true : await flushSyncPush().catch(() => false);
     if (!flushed) {
-      setError(
-        "can't reach the floor server, so your latest changes aren't saved to the account yet — try again in a moment",
-      );
+      if (sessionRefused()) {
+        setExpired(true);
+        setError(null);
+      } else {
+        setError("can't reach the floor server, so your latest changes aren't saved to the account yet — try again in a moment");
+      }
       return;
     }
+    setExpired(false);
     await logout();
     // fresh anonymous guest — the blank slate is deliberate (the account's
     // data and social graph stay on the server, keyed by the account id)
@@ -262,13 +271,62 @@ export default function AccountCard({
             {error}
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="btn-press w-fit rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-ink hover:text-ink"
-        >
-          Sign out
-        </button>
+        {expired && (
+          <form
+            className="rounded-md border border-accent/40 bg-accent/5 p-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (expiredBusy) return;
+              setExpiredBusy(true);
+              setError(null);
+              void login(auth.email || auth.name, password).then(async (result) => {
+                setExpiredBusy(false);
+                if (typeof result === "string") {
+                  setError(result);
+                  return;
+                }
+                setPassword("");
+                setExpired(false);
+                onIdentity(result.id, result.name);
+                await flushSyncPush().catch(() => false);
+                setTick((t) => t + 1);
+              });
+            }}
+          >
+            <p className="text-sm text-ink">
+              Your sign-in on this device has ended — a password reset, a sign-out elsewhere, or a month without use does that. Changes
+              made here since the last save are only on this device. Sign in again to save them to the account.
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <div className="w-56">
+                <PasswordInput id="expired-password" value={password} onChange={setPassword} autoComplete="current-password" />
+              </div>
+              <button
+                type="submit"
+                disabled={expiredBusy || password.length < 6}
+                className="btn-press rounded-md bg-ink px-3 py-2 text-sm text-paper hover:bg-ink/85 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {expiredBusy ? "…" : "Sign in again"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void signOut(true)}
+                className="btn-press rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-accent hover:text-accent"
+              >
+                Sign out anyway
+              </button>
+            </div>
+          </form>
+        )}
+        {!expired && (
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="btn-press w-fit rounded-md border border-line px-3 py-2 text-sm text-muted hover:border-ink hover:text-ink"
+          >
+            Sign out
+          </button>
+        )}
       </div>
     );
   }
