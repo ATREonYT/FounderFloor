@@ -51,6 +51,14 @@ export default function Reception() {
   const profile = useFounder((s) => s.profile);
   const weekNow = profile ? Math.min(4, Math.max(1, Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1)) : 1;
   const focus = roadmap?.weeks.find((w) => w.n === weekNow)?.focus;
+  const planDone = useFounder((s) => s.planDone);
+  // the first task of this week not yet done, so Home can open it in one tap
+  const weekTask = (() => {
+    const w = roadmap?.weeks.find((x) => x.n === weekNow);
+    if (!w) return null;
+    const i = w.do.findIndex((_, k) => !planDone.includes(`${w.n}-${k}`));
+    return i < 0 ? null : { week: w.n, i, text: w.do[i] };
+  })();
   const kpi = useFounder((s) => s.kpi);
   const cur = currentStage(ticks);
   const curDone = cur.items.filter((x) => ticks.includes(x.id)).length;
@@ -150,8 +158,15 @@ export default function Reception() {
                       <Body tone="accent">→</Body>
                     </View>
                     {focus ? (
-                      <Pressable onPress={() => router.push("/plan")} accessibilityRole="button" accessibilityLabel="Your plan" style={{ marginTop: 8 }}>
-                        <Spec tone="accent">{`Week ${weekNow} of your plan: ${focus} →`}</Spec>
+                      <Pressable onPress={() => (weekTask ? router.push({ pathname: "/task", params: { week: String(weekTask.week), i: String(weekTask.i) } }) : router.push("/plan"))} accessibilityRole="button" accessibilityLabel={weekTask ? "Open this week's task" : "Your plan"} style={{ marginTop: 10, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, padding: 10 }}>
+                        <GlyphTile id="bolt" color="#4F6E6B" size={30} scale={1} />
+                        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                          <Spec tone="muted">{`WEEK ${weekNow} · ${focus.replace(/\.$/, "").toUpperCase()}`}</Spec>
+                          <Body size="sm" medium numberOfLines={2}>
+                            {weekTask ? weekTask.text : "Every task this week is done."}
+                          </Body>
+                        </View>
+                        <Body tone="accent">›</Body>
                       </Pressable>
                     ) : null}
                     <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>

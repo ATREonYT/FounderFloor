@@ -50,6 +50,7 @@ export default function RootLayout() {
           <Stack.Screen name="guide" options={{ presentation: "modal" }} />
           <Stack.Screen name="welcome" />
           <Stack.Screen name="plan" options={{ presentation: "card" }} />
+          <Stack.Screen name="task" options={{ presentation: "card" }} />
           <Stack.Screen name="settings" options={{ presentation: "card" }} />
         </Stack>
         <TrialSheet />

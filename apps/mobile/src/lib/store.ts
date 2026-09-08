@@ -19,7 +19,7 @@ import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan } from "@founderfloor/shared";
+import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -305,6 +305,12 @@ interface FounderState {
   /** Plan steps done, as "week-index" keys. */
   planDone: string[];
   togglePlanStep(key: string): void;
+  /** Each plan step opened up: the page the desk wrote for it, the steps ticked, the founder's notes, the conversation. Keyed like planDone. */
+  tasks: Record<string, TaskWork>;
+  setTaskGuide(key: string, guide: TaskGuide | null): void;
+  toggleTaskStep(key: string, i: number): void;
+  setTaskNotes(key: string, notes: string): void;
+  setTaskChat(key: string, chat: TaskTurn[]): void;
   dismissHint(id: string): void;
   /** Every day the building was opened, ISO dates, for the calendar. */
   visits: string[];
@@ -337,6 +343,15 @@ interface FounderState {
   count(kind: "ideaRuns" | "ideaChecks" | "coachTurnsToday" | "draftsThisMonth" | "handoffsThisMonth"): void;
   setPlan(p: PlanState): void;
 }
+
+export type TaskTurn = { id: string; role: "you" | "desk"; text: string };
+export interface TaskWork {
+  guide: TaskGuide | null;
+  ticks: number[];
+  notes: string;
+  chat: TaskTurn[];
+}
+export const EMPTY_TASK: TaskWork = { guide: null, ticks: [], notes: "", chat: [] };
 
 const today = () => new Date().toISOString().slice(0, 10);
 const month = () => new Date().toISOString().slice(0, 7);
@@ -371,9 +386,17 @@ export const useFounder = create<FounderState>()(
       profile: null,
       roadmap: null,
       hints: [],
-      setProfile: (profile, roadmap) => set({ profile, roadmap, planDone: [] }),
+      setProfile: (profile, roadmap) => set({ profile, roadmap, planDone: [], tasks: {} }),
       planDone: [],
       togglePlanStep: (key) => set({ planDone: get().planDone.includes(key) ? get().planDone.filter((k) => k !== key) : [...get().planDone, key] }),
+      tasks: {},
+      setTaskGuide: (key, guide) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), guide } } }),
+      toggleTaskStep: (key, i) => {
+        const t = get().tasks[key] ?? EMPTY_TASK;
+        set({ tasks: { ...get().tasks, [key]: { ...t, ticks: t.ticks.includes(i) ? t.ticks.filter((k) => k !== i) : [...t.ticks, i] } } });
+      },
+      setTaskNotes: (key, notes) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), notes } } }),
+      setTaskChat: (key, chat) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), chat: chat.slice(-24) } } }),
       dismissHint: (id) => set({ hints: get().hints.includes(id) ? get().hints : [...get().hints, id] }),
       visits: [],
       reminders: DEFAULT_REMINDERS,
@@ -422,8 +445,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 5,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], ...(persisted as object) }) as unknown as FounderState,
+      version: 6,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

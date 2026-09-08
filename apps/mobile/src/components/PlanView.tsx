@@ -3,9 +3,10 @@
  * current week open in the step's colour with a progress ring, each
  * action a tickable row, the goal and the pace as glyph chips, and the
  * two numbers on the stand as a card. The same view serves the welcome's
- * last step and the plan page.
+ * last step and the plan page. On the plan page each action is a door:
+ * the row opens the task's own page, the box on its left ticks it.
  */
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { GOALS, LIKES, type FounderPlan, type Profile } from "@founderfloor/shared";
 import { Body, Display, Glyph, GlyphTile, Plate, Ring, Spec, Tap, haptic, radius, shell, wash, type GlyphId } from "@founderfloor/ui";
@@ -14,9 +15,10 @@ import { useFounder } from "../lib/store";
 const GOAL_GLYPH: Record<string, GlyphId> = { "first-customer": "heart", "side-income": "coin", "quit-job": "rocket", raise: "flask", learn: "leaf" };
 const WEEK_GLYPH: GlyphId[] = ["bolt", "wave", "coin", "star"];
 
-export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animate = true }: { plan: FounderPlan; profile: Profile | null; color?: string; weekNow?: number; animate?: boolean }) {
+export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animate = true, onOpen }: { plan: FounderPlan; profile: Profile | null; color?: string; weekNow?: number; animate?: boolean; /** Tapping a step opens its page; without this the row only ticks. */ onOpen?: (week: number, i: number) => void }) {
   const done = useFounder((s) => s.planDone);
   const toggle = useFounder((s) => s.togglePlanStep);
+  const tasks = useFounder((s) => s.tasks);
   const total = plan.weeks.reduce((n, w) => n + w.do.length, 0);
   const doneCount = plan.weeks.reduce((n, w) => n + w.do.filter((_, i) => done.includes(`${w.n}-${i}`)).length, 0);
   const horizon = profile?.horizon === "3m" ? "3 months" : profile?.horizon === "6m" ? "6 months" : "a year";
@@ -72,15 +74,22 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                     {w.do.map((d, i) => {
                       const key = `${w.n}-${i}`;
                       const on = done.includes(key);
+                      const tick = () => { toggle(key); void haptic(on ? "light" : "success"); };
+                      const steps = tasks[key]?.guide?.steps.length ?? 0;
+                      const ticked = steps ? Math.min(steps, tasks[key]?.ticks.filter((x) => x < steps).length ?? 0) : 0;
                       return (
-                        <Tap key={key} onPress={() => { toggle(key); void haptic(on ? "light" : "success"); }} accessibilityLabel={d} accessibilityRole="checkbox" scale={0.985}>
+                        <Tap key={key} onPress={onOpen ? () => onOpen(w.n, i) : tick} accessibilityLabel={d} accessibilityRole={onOpen ? "button" : "checkbox"} scale={0.985}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 10 }}>
-                            <View style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+                            <Pressable onPress={onOpen ? tick : undefined} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
                               {on ? <Glyph id="star" tone="paper" scale={1} /> : null}
+                            </Pressable>
+                            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                              <Body size="sm" tone={on ? "muted" : "ink"} style={{ textDecorationLine: on ? "line-through" : "none" }}>
+                                {d}
+                              </Body>
+                              {onOpen && !on && ticked > 0 ? <Spec tone="faint">{`${ticked} of ${steps} steps`}</Spec> : null}
                             </View>
-                            <Body size="sm" tone={on ? "muted" : "ink"} style={{ flex: 1, textDecorationLine: on ? "line-through" : "none" }}>
-                              {d}
-                            </Body>
+                            {onOpen ? <Body tone={on ? "muted" : "accent"}>›</Body> : null}
                           </View>
                         </Tap>
                       );
