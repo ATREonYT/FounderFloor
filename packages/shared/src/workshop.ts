@@ -3,7 +3,7 @@
  * knows (the sign, who it is for, what people said, the price said out
  * loud, the decisions in the notebook) the desk writes the first three
  * screens of the thing, a build brief, and a prompt ready to paste into
- * whatever builds it: Lovable, Bolt or v0 for a founder who does not
+ * whatever builds it: Lovable, Base44, Bolt or v0 for a founder who does not
  * code, Claude Code for one who does. The model writes it when there is
  * a key; these rules write it when there is not, so the page is never
  * empty, and a founder with nothing on the sign yet sees a sample.

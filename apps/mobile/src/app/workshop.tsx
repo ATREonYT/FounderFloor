@@ -7,7 +7,7 @@
  * audience), then designs the whole app to it. Every word came from the
  * founder's own sign, audience and notebook, and every word can be
  * changed by tapping Edit. Under the phone: the brief, and two ways to
- * hand it over: to Lovable, Bolt or v0 for a founder who does not code,
+ * hand it over: to Lovable, Base44, Bolt or v0 for a founder who does not code,
  * or to Claude Code for one who does. With nothing on the sign yet, the
  * page shows a sample and says so.
  */
@@ -268,13 +268,13 @@ export default function Workshop() {
         <View style={{ gap: 8 }}>
           <Body medium>Now build it</Body>
           <Body size="sm" tone="muted">The brief is the prompt. Both hand-offs carry it whole, with your exact words, the design system, and what to leave out.</Body>
-          <Pressable onPress={() => void send("lovable")} accessibilityRole="button" accessibilityLabel="Send to Lovable, Bolt or v0">
+          <Pressable onPress={() => void send("lovable")} accessibilityRole="button" accessibilityLabel="Send to Lovable, Base44, Bolt or v0">
             <Plate tone="panel" radius={radius.xl} padding={14}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <GlyphTile id="rocket" color="#3B5B92" size={40} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Body medium>I do not code</Body>
-                  <Spec tone="faint">The brief as one prompt for Lovable, Bolt or v0: paste it, get a live app</Spec>
+                  <Spec tone="faint">The brief as one prompt for Lovable, Base44, Bolt or v0: paste it, get a live app</Spec>
                 </View>
                 <Body tone="accent">Send ›</Body>
               </View>

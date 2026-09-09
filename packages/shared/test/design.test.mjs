@@ -12,7 +12,7 @@ test("directions differ by company and by seed, and read as one line", () => {
   assert.ok(set.size >= 50);
 });
 
-test("the model is briefed with the founder's words and forbidden the clichés", () => {
+test("the model is briefed with the founder's words and forbidden the clichés", async () => {
   const m = localMockup({ name: "Tally", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", said: ["Maria: I do the till by hand"] });
   const ctx = designContext(m, buildBrief(m), designDirection("Tally", 3));
   assert.match(ctx, /THE DESIGN SYSTEM/);
@@ -24,6 +24,11 @@ test("the model is briefed with the founder's words and forbidden the clichés",
   assert.match(DESIGN_PROMPT, /purple-to-blue/);
   assert.match(DESIGN_PROMPT, /data-title/);
   assert.match(DESIGN_PROMPT, /Lovable, Base44/);
+  assert.match(DESIGN_PROMPT, /THE CRAFT/);
+  assert.match(DESIGN_PROMPT, /remove one accessory/);
+  const { BRIEF_PROMPT } = await import("../src/workshop-brief.ts");
+  assert.match(BRIEF_PROMPT, /THE CRAFT/);
+  assert.match(BRIEF_PROMPT, /calibration list/);
 });
 
 test("a reply is checked, stripped and wired before it runs", () => {

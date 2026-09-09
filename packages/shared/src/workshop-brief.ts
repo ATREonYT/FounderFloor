@@ -14,6 +14,7 @@ import type { Mockup } from "./workshop.ts";
 import { buildBrief, asMockup } from "./workshop.ts";
 import type { StandRecord } from "./types.ts";
 import { lookOf } from "./mockup-html.ts";
+import { DESIGN_CRAFT } from "./design-craft.ts";
 
 /** The sections, in order. The check reads them back. */
 export const BRIEF_SECTIONS = ["The product", "Who it is for", "The one path", "The screens", "What it keeps", "The design system", "The words", "The build", "Not in this version"] as const;
@@ -40,7 +41,7 @@ Three to five screens, in order: the front door (landing); the first-run or sign
 The nouns the product stores, each with its fields.
 
 ## The design system
-Decide the look from the audience and the job, not from taste, and be specific enough to build from. Give: three adjectives the design must feel like and one it must never feel like, each tied to who uses it; light or dark by default and why; the type (families with system fallbacks, and a scale with size and weight for display, title, body and label); the palette as named roles with hex values (background, surface, ink, muted, brand, on-brand, positive, warning, line); spacing (the base unit and the side margin); corner radius; the components and how each looks (primary and secondary button, input, list row, card, stat, the navigation pattern, badge, sheet); iconography (stroke, size); what stands in for photographs in the first version; motion (what moves and for how long); and three things it must not look like, naming the clichés of this market.
+This section is the design plan a studio would write before building, and it is reviewed before it is kept (see THE CRAFT below): decide the look from the audience and the job, not from taste, and be specific enough to build from. Give: three adjectives the design must feel like and one it must never feel like, each tied to who uses it; light or dark by default and why; the type (families with system fallbacks, and a scale with size and weight for display, title, body and label); the palette as named roles with hex values (background, surface, ink, muted, brand, on-brand, positive, warning, line); spacing (the base unit and the side margin); corner radius; the components and how each looks (primary and secondary button, input, list row, card, stat, the navigation pattern, badge, sheet); iconography (stroke, size); what stands in for photographs in the first version; motion (what moves and for how long); and three things it must not look like, naming the clichés of this market and any of the generated-design defaults from the calibration list that this product is at risk of. If any part of the plan reads like the default for any similar product, revise it and say in one line what changed and why.
 
 ## The words
 The tone in one line; the founder's exact phrases to keep verbatim, quoted; words never to use.
@@ -50,6 +51,8 @@ Stack (Next.js app router, TypeScript, Tailwind, Postgres through Supabase, magi
 
 ## Not in this version
 The things a builder would be tempted to add and must not.
+
+${DESIGN_CRAFT}
 
 Then the fenced json block, on its own, with: name; oneLiner; audience; kind (one of saas, consumer, marketplace, services, hardware); path (one sentence); keeps (3 to 6 short nouns); screens (the same screens as the section, same order, each with kind (landing, signup, app, checkout or pricing), title (under 5 words), headline, sub, cta (the primary action), fields (input labels), bullets (three short lines a user sees on it), and price or stat {label, value} where the screen has one); quotes (who and said, only from the notebook); hue (0 to 360, the brand colour's hue).`;
 

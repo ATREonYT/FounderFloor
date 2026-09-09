@@ -21,4 +21,5 @@ export * from "./workshop.ts";
 export * from "./mockup-html.ts";
 export * from "./design.ts";
 export * from "./workshop-brief.ts";
+export * from "./design-craft.ts";
 export * from "./sample-design.ts";

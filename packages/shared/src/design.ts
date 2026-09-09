@@ -13,6 +13,7 @@
  * template is the fallback when there is no key.
  */
 import type { Mockup } from "./workshop.ts";
+import { DESIGN_CRAFT } from "./design-craft.ts";
 
 const TYPE = [
   "a high-contrast serif for headlines with a plain sans for everything else, editorial and calm",
@@ -111,7 +112,9 @@ THE STANDARD
 - The founder's exact words are used exactly. Never invent customers, numbers or testimonials the brief does not contain. Never lorem ipsum. Never "Get started", "Unlock", "Empower", "Seamless", "Supercharge".
 - Not a template: no purple-to-blue gradient hero, not everything centred, not a rounded card around every element, no identical three-card grid, no generic SaaS dashboard. The look must be traceable to this brief's audience and market, never to a UI kit.
 
-Before you write, decide: light or dark; the one accent and the one or two places it appears on each screen; the header pattern; the navigation pattern; the picture that stands in for photography. Then write the whole document in one pass, and check every data-go before you finish.`;
+Before you write, decide: light or dark; the one accent and the one or two places it appears on each screen; the header pattern; the navigation pattern; the picture that stands in for photography. Then write the whole document in one pass, and check every data-go before you finish.
+
+${DESIGN_CRAFT}`;
 
 /** What the model is given: the brief (the law), the exact words, and either the brief's own design system or a different direction. */
 export function designContext(m: Mockup, brief: string, d: DesignDirection, mode: "brief" | "direction" = "brief"): string {
