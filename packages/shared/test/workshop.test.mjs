@@ -90,3 +90,15 @@ test("singulars", async () => {
   assert.equal(singular("business"), "business");
   assert.equal(singular("boxes"), "box");
 });
+
+test("the kind of product follows the segment, then the sign", async () => {
+  const { kindOf } = await import("../src/workshop.ts");
+  assert.equal(kindOf("marketplace", "anything"), "marketplace");
+  assert.equal(kindOf(undefined, "Book a cleaner in ten seconds"), "services");
+  assert.equal(kindOf(undefined, "A sensor for greenhouses"), "hardware");
+  assert.equal(kindOf(undefined, "Weekly numbers for one-person shops"), "saas");
+  const m = localMockup({ name: "Tally", oneLiner: "Book a cleaner in ten seconds.", audience: "busy parents", said: ["Maria: I never know who to trust with the keys"] });
+  assert.equal(m.kind, "services");
+  assert.deepEqual(m.keeps, ["accounts", "bookings", "availability", "payments"]);
+  assert.deepEqual(m.quotes, [{ who: "Maria", said: "I never know who to trust with the keys" }]);
+});

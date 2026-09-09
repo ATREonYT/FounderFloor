@@ -12,7 +12,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { mockupHtml, mockupPoster, type MockScreen } from "@founderfloor/shared";
+import { mockupHtml, mockupPoster, mockupTheme, POSTER_H, POSTER_W, type MockScreen, type ProductKind } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
 import { useWorkshop } from "../lib/workshop";
 import { LiveMock } from "../components/LiveMock";
@@ -62,7 +62,10 @@ export default function Workshop() {
   const phoneW = Math.min(300, L.width - 2 * L.shell.paddingHorizontal - 40);
   const phoneH = Math.round(phoneW * (844 / 390));
   const posterW = Math.min(640, L.width - 2 * L.shell.paddingHorizontal);
-  const posterH = Math.round(posterW * (640 / 800));
+  const posterH = Math.round(posterW * (POSTER_H / POSTER_W));
+  const theme = mockupTheme(m);
+  const HUES: { hue: number; name: string }[] = [{ hue: 222, name: "Blue" }, { hue: 262, name: "Violet" }, { hue: 334, name: "Rose" }, { hue: 12, name: "Coral" }, { hue: 160, name: "Green" }, { hue: 200, name: "Teal" }];
+  const KINDS: { k: ProductKind; label: string }[] = [{ k: "saas", label: "Software" }, { k: "consumer", label: "Consumer app" }, { k: "marketplace", label: "Marketplace" }, { k: "services", label: "Service" }, { k: "hardware", label: "Product" }];
   /** The app, built once per mock-up; the chips drive its screen without reloading it. */
   const html = useMemo(() => mockupHtml(m), [m]);
   const posterHtml = useMemo(() => mockupPoster(m), [m]);
@@ -128,6 +131,33 @@ export default function Workshop() {
             </Button>
           </ButtonRow>
         </View>
+
+        {/* the look and the kind: the founder's call */}
+        <Plate tone="panel" radius={radius.xl} padding={14}>
+          <Spec tone="muted">THE LOOK</Spec>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+            {(["clean", "bold", "soft"] as const).map((st) => (
+              <Pressable key={st} onPress={() => w.setTheme({ hue: theme.hue, style: st })} accessibilityRole="button" accessibilityLabel={`${st} style`} style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, borderColor: theme.style === st ? shell.ink : shell.line, backgroundColor: theme.style === st ? shell.ink : shell.panel }}>
+                <Spec tone={theme.style === st ? "paper" : "ink"}>{st === "clean" ? "Clean" : st === "bold" ? "Bold" : "Soft"}</Spec>
+              </Pressable>
+            ))}
+          </View>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12, alignItems: "center" }}>
+            {HUES.map((h) => (
+              <Pressable key={h.hue} onPress={() => w.setTheme({ hue: h.hue, style: theme.style })} accessibilityRole="button" accessibilityLabel={h.name} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: `hsl(${h.hue} 72% 46%)`, borderWidth: 3, borderColor: theme.hue === h.hue ? shell.ink : "transparent" }} />
+            ))}
+            <Spec tone="faint" style={{ marginLeft: "auto" }}>{HUES.find((h) => h.hue === theme.hue)?.name ?? "Its own colour"}</Spec>
+          </View>
+          <Spec tone="muted" style={{ marginTop: 14 }}>WHAT KIND OF THING IT IS</Spec>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+            {KINDS.map((x) => (
+              <Pressable key={x.k} onPress={() => w.setKind(x.k)} accessibilityRole="button" accessibilityLabel={x.label} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: (m.kind ?? "saas") === x.k ? shell.ink : shell.line, backgroundColor: (m.kind ?? "saas") === x.k ? shell.ink : shell.panel }}>
+                <Spec tone={(m.kind ?? "saas") === x.k ? "paper" : "ink"}>{x.label}</Spec>
+              </Pressable>
+            ))}
+          </View>
+          <Spec tone="faint" style={{ marginTop: 8 }}>The layout follows: a dashboard, a feed, listings, bookings or a product page.</Spec>
+        </Plate>
 
         {/* the picture: the three screens on one card, to show people */}
         <View style={{ gap: 8 }}>

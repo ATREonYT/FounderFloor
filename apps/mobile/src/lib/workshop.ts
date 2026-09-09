@@ -31,14 +31,14 @@ export function useWorkshop() {
   const mine = stand.source !== "rehearsal" && !!r.oneLiner;
   /** What customers said, for the mock-up and the brief: interviews first, then notebook lines in their words. */
   const said = [...interviews.slice(0, 6).map((i) => `${i.who}: ${i.said}`), ...memory.filter((e) => e.kind === "work" || e.kind === "note" || e.kind === "outcome").slice(-6).map((e) => e.text)];
-  const input = mine ? { name: r.name, oneLiner: r.oneLiner, audience: profile?.audiences, price: r.publicPricing, said } : {};
+  const input = mine ? { name: r.name, oneLiner: r.oneLiner, audience: profile?.audiences, price: r.publicPricing, said, segment: r.segment } : {};
   const seedNow = localMockup(input, profile).seed;
 
   const write = useCallback(
     async (fresh = false) => {
       const local = localMockup(input, profile);
       if (!mine || aiMode() === "rehearsal") {
-        setMockup(local);
+        setMockup({ ...local, theme: mockup?.theme ?? local.theme });
         return;
       }
       setWriting(true);
@@ -48,7 +48,7 @@ export function useWorkshop() {
         const reply = await askModel({ fn: "guide", body: { question: "mockup", stand: r, fresh }, direct: { system: MOCKUP_PROMPT, turns: [{ role: "user", content: ctx }], maxTokens: 1100 } });
         const m = asMockup(parseJson(reply));
         if (!alive.current) return;
-        if (m) setMockup({ ...m, source: "live", at: new Date().toISOString(), seed: seedNow });
+        if (m) setMockup({ ...m, source: "live", at: new Date().toISOString(), seed: seedNow, theme: mockup?.theme ?? m.theme });
         else {
           setMockup(local);
           setLastError("The model's mock-up did not parse; this one is the desk's own.");
@@ -82,6 +82,9 @@ export function useWorkshop() {
     prompt: (kind: Builder) => builderPrompt(kind, m, brief),
     rewrite: () => void write(true),
     editScreen: (i: number, patch: Partial<MockScreen>) => setMockup({ ...m, edited: true, screens: m.screens.map((sc, k) => (k === i ? { ...sc, ...patch } : sc)) }),
+    /** The look is the founder's choice and survives a redraw of the words. */
+    setTheme: (theme: Mockup["theme"]) => setMockup({ ...m, theme }),
+    setKind: (kind: Mockup["kind"]) => setMockup({ ...m, kind }),
     said,
   };
 }

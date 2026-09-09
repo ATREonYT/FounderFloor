@@ -13,6 +13,23 @@ import type { StandRecord } from "./types.ts";
 import type { Profile } from "./profile.ts";
 
 export type ScreenKind = "landing" | "signup" | "pricing" | "app" | "checkout";
+/** What kind of thing it is; the layouts follow (a dashboard, a feed, listings, bookings, a product page). */
+export type ProductKind = "saas" | "consumer" | "marketplace" | "services" | "hardware";
+
+/** From the stand's segment first, then the words on the sign. */
+export function kindOf(segment: string | undefined, oneLiner: string): ProductKind {
+  if (segment === "b2b-saas") return "saas";
+  if (segment === "consumer") return "consumer";
+  if (segment === "marketplace") return "marketplace";
+  if (segment === "services") return "services";
+  if (segment === "hardware") return "hardware";
+  const t = oneLiner.toLowerCase();
+  if (/\b(book|booking|appointment|appointments|session|sessions|clinic|salon|coach|coaching|tutor|cleaning|repair)\b/.test(t)) return "services";
+  if (/\b(marketplace|buy and sell|sellers|buyers|listings|rent|renting|hire)\b/.test(t)) return "marketplace";
+  if (/\b(device|sensor|hardware|kit|machine|wearable|printer|camera|robot)\b/.test(t)) return "hardware";
+  if (/\b(friends|family|game|habit|journal|fitness|recipes|music|photos|dating|kids|parents)\b/.test(t)) return "consumer";
+  return "saas";
+}
 
 export interface MockScreen {
   kind: ScreenKind;
@@ -49,6 +66,9 @@ export interface Mockup {
   edited?: boolean;
   /** The look: a brand hue and a style. Set by the model or the founder; otherwise steady from the name. */
   theme?: { hue: number; style: "clean" | "bold" | "soft" };
+  kind?: ProductKind;
+  /** What customers said, with who said it, for the front door's testimonial. */
+  quotes?: { who: string; said: string }[];
 }
 
 export const SAMPLE_MOCKUP_INPUT = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", audience: "independent café owners", price: "€40 a month" };
@@ -90,7 +110,7 @@ export function singular(phrase: string): string {
 }
 
 /** The mock-up without a model: three screens from the sign, the audience, the price said out loud and what customers said. */
-export function localMockup(input: { name?: string; oneLiner?: string; audience?: string; price?: string; said?: string[] }, profile?: Profile | null): Mockup {
+export function localMockup(input: { name?: string; oneLiner?: string; audience?: string; price?: string; said?: string[]; segment?: string }, profile?: Profile | null): Mockup {
   const sample = !input.oneLiner?.trim();
   const name = (input.name || SAMPLE_MOCKUP_INPUT.name).trim();
   const oneLiner = (input.oneLiner || SAMPLE_MOCKUP_INPUT.oneLiner).trim().replace(/[.!]$/, "");
@@ -98,6 +118,8 @@ export function localMockup(input: { name?: string; oneLiner?: string; audience?
   const said = sample ? [] : (input.said ?? []);
   const price = (input.price || priceIn(said) || (sample ? SAMPLE_MOCKUP_INPUT.price : "")).trim();
   const quotes = [...said.filter((l) => l.includes(":")), ...said.filter((l) => !l.includes(":"))].map(quoteOf).filter((q): q is string => !!q).slice(0, 2);
+  const quoted = said.filter((l) => l.includes(":")).map((l) => ({ who: l.slice(0, l.indexOf(":")).trim(), said: l.slice(l.indexOf(":") + 1).trim().replace(/^["“]|["”]$/g, "") })).filter((q) => q.who.length <= 30 && q.said.length >= 12).slice(0, 2);
+  const kind = kindOf(input.segment, oneLiner);
   // what it does, from the sign: the noun phrase before "for", if there is one
   const thing = oneLiner.split(/\s+for\s+/i)[0].trim();
   const unit = singular(thing.toLowerCase().replace(/^(a|an|the)\s+/, "").split(/\s+/).slice(-2).join(" "));
@@ -109,10 +131,11 @@ export function localMockup(input: { name?: string; oneLiner?: string; audience?
     { kind: "app", title: "The one screen", headline: `${name}, this week`, sub: "One path. No settings, no menus.", cta: "Add one", fields: [], bullets: activity, stat: { label: sample ? "Passes used this week" : `${thing.split(" ").slice(-2).join(" ")} this week`, value: "12" } },
     { kind: "pricing", title: "The price", headline: price ? `${price}, cancel any time` : "One plan, cancel any time", sub: "The first week is free. No tiers.", cta: "Start the free week", fields: ["Card"], bullets: ["Everything, no tiers", "Stop whenever", "A person answers email"], price: price || "€ ?" },
   ];
-  return { name, oneLiner, audience, screens, path: `Someone from ${audience} lands on the front door, leaves an email, uses the one screen once, and pays${price ? ` ${price}` : ""}.`, keeps: ["accounts", "the one thing they do", "payments"], source: sample ? "sample" : "rehearsal", at: new Date().toISOString(), seed: `${name}|${oneLiner}|${audience}|${price}` };
+  const keeps: Record<ProductKind, string[]> = { saas: ["accounts", "the one thing they do", "payments"], consumer: ["accounts", "posts", "follows", "payments"], marketplace: ["accounts", "listings", "orders", "payments"], services: ["accounts", "bookings", "availability", "payments"], hardware: ["orders", "devices", "payments"] };
+  return { name, oneLiner, audience, screens, path: `Someone from ${audience} lands on the front door, leaves an email, uses the one screen once, and pays${price ? ` ${price}` : ""}.`, keeps: keeps[kind], source: sample ? "sample" : "rehearsal", at: new Date().toISOString(), seed: `${name}|${oneLiner}|${audience}|${price}|${kind}`, kind, quotes: quoted };
 }
 
-export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), for the app screen a stat (object with label, the one number that matters, and value, a plausible small number as a string), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Also theme: an object with hue (0 to 360, a brand colour that suits the product; avoid 40 to 75) and style (one of clean, bold, soft). For the app screen's bullets write three activity lines a real user would see, with the customers' first names where the notebook has them. Use their customers' exact words from the notebook where you can, quoted. Never invent customers or numbers. No prose outside the JSON.`;
+export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), for the app screen a stat (object with label, the one number that matters, and value, a plausible small number as a string), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Also kind: one of saas, consumer, marketplace, services, hardware (what the product is; the layout follows). Also quotes: up to 2 objects with who (a customer's first name from the notebook) and said (their exact words), only if the notebook has them. Also theme: an object with hue (0 to 360, a brand colour that suits the product; avoid 40 to 75) and style (one of clean, bold, soft). For the app screen's bullets write three activity lines a real user would see, with the customers' first names where the notebook has them. Use their customers' exact words from the notebook where you can, quoted. Never invent customers or numbers. No prose outside the JSON.`;
 
 /** One mock-up from the model's reply, or null. */
 export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
@@ -140,7 +163,10 @@ export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
   const th = (o.theme ?? null) as Record<string, unknown> | null;
   const hue = th && typeof th.hue === "number" && th.hue >= 0 && th.hue < 360 ? Math.round(th.hue) : null;
   const style = th && ["clean", "bold", "soft"].includes(String(th.style)) ? (th.style as "clean" | "bold" | "soft") : "clean";
-  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 4, 30), ...(hue !== null ? { theme: { hue, style } } : {}) };
+  const kinds2: ProductKind[] = ["saas", "consumer", "marketplace", "services", "hardware"];
+  const kind = kinds2.includes(o.kind as ProductKind) ? (o.kind as ProductKind) : undefined;
+  const quotes = Array.isArray(o.quotes) ? o.quotes.map((q) => { const y = (q ?? {}) as Record<string, unknown>; const who = s(y.who, 30), said = s(y.said, 160); return who && said ? { who, said } : null; }).filter((q): q is { who: string; said: string } => !!q).slice(0, 2) : [];
+  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 4, 30), ...(hue !== null ? { theme: { hue, style } } : {}), ...(kind ? { kind } : {}), quotes };
 }
 
 /** The build brief: one document a builder can work from, in plain words. */
