@@ -9,6 +9,7 @@
  * empty, and a founder with nothing on the sign yet sees a sample.
  */
 import { HOUSE_RULES } from "./prompts/index.ts";
+import { singular, unitOf } from "./studio/nouns.ts";
 import type { StandRecord } from "./types.ts";
 import type { Profile } from "./profile.ts";
 
@@ -71,6 +72,9 @@ export interface Mockup {
   kind?: ProductKind;
   /** What customers said, with who said it, for the front door's testimonial. */
   quotes?: { who: string; said: string }[];
+  /** The studio's take (0 is the best fit; each further one turns palette, treatment and type) and the product type the founder chose over the reading. */
+  studioSeed?: number;
+  studioType?: string;
   /** The brief the model wrote from everything in the building: the big prompt. Absent in practice mode. */
   brief?: string;
   /** The design the model wrote (a whole HTML document, prepared), its screens, and what it was designed to. Absent in practice mode. */
@@ -107,12 +111,18 @@ export function namesIn(lines: string[]): string[] {
   return out;
 }
 
-/** "prepaid passes" to "prepaid pass", "weekly numbers" to "weekly number", "entries" to "entry". */
-export function singular(phrase: string): string {
-  const w = phrase.trim().split(/\s+/);
-  const last = w.pop() ?? "";
-  const one = /(ss|us|is)$/.test(last) ? last : /sses$|shes$|ches$|xes$/.test(last) ? last.slice(0, -2) : /ies$/.test(last) ? `${last.slice(0, -3)}y` : /s$/.test(last) ? last.slice(0, -1) : last;
-  return [...w, one].join(" ");
+export { singular } from "./studio/nouns.ts";
+
+/** What the sign is about: the noun phrase before "for", without the verb and the unit. "Rent a quiet room by the hour" is about a quiet room; "Prepaid passes for the cafés people come back to" about prepaid passes. The unit is its last two words, singular. */
+export function signNouns(oneLiner: string): { thing: string; unit: string } {
+  const thing = oneLiner
+    .replace(/[.!]$/, "")
+    .split(/\s+for\s+/i)[0]
+    .replace(/\s+(by|per|a|an|every)\s+(the\s+)?(hour|day|week|month|year|night|visit|seat)s?\.?$/i, "")
+    .replace(/^(rent|book|buy|get|find|order|hire|sell|share|allows?|lets?|helps?)\s+(a|an|the|your)?\s*/i, "")
+    .trim();
+  const unit = singular(thing.toLowerCase().replace(/^(a|an|the)\s+/, "").split(/\s+/).slice(-2).join(" "));
+  return { thing, unit };
 }
 
 /** The mock-up without a model: three screens from the sign, the audience, the price said out loud and what customers said. */
@@ -126,16 +136,14 @@ export function localMockup(input: { name?: string; oneLiner?: string; audience?
   const quotes = [...said.filter((l) => l.includes(":")), ...said.filter((l) => !l.includes(":"))].map(quoteOf).filter((q): q is string => !!q).slice(0, 2);
   const quoted = said.filter((l) => l.includes(":")).map((l) => ({ who: l.slice(0, l.indexOf(":")).trim(), said: l.slice(l.indexOf(":") + 1).trim().replace(/^["“]|["”]$/g, "") })).filter((q) => q.who.length <= 30 && q.said.length >= 12).slice(0, 2);
   const kind = kindOf(input.segment, oneLiner);
-  // what it does, from the sign: the noun phrase before "for", if there is one
-  // "Rent a quiet room by the hour" is about a quiet room; "Prepaid passes for the cafés..." about prepaid passes
-  const thing = oneLiner.split(/\s+for\s+/i)[0].replace(/\s+(by|per|a|an|every)\s+(the\s+)?(hour|day|week|month|year|night|visit|seat)s?\.?$/i, "").replace(/^(rent|book|buy|get|find|order|hire|sell|share)\s+(a|an|the|your)?\s*/i, "").trim();
-  const unit = singular(thing.toLowerCase().replace(/^(a|an|the)\s+/, "").split(/\s+/).slice(-2).join(" "));
+  const { thing } = signNouns(oneLiner);
+  const unit = unitOf(oneLiner, "dashboard");
   const who = [...namesIn(said), "Maria", "Kostas", "Eleni"].slice(0, 3);
   const activity = [`${who[0]} signed up`, `${who[1]} paid for a ${unit || "month"}`, `${who[2]} came back`];
   const landingBullets = [...quotes, `What you get: ${thing.charAt(0).toLowerCase()}${thing.slice(1)}`, price ? `${price}, cancel any time` : "One price, said plainly", "Try it this week, no card"].slice(0, 3);
   const screens: MockScreen[] = [
     { kind: "landing", title: "The front door", headline: oneLiner, sub: `For ${audience}.`, cta: "Start free", fields: ["Your email"], bullets: landingBullets },
-    { kind: "app", title: "The one screen", headline: `${name}, this week`, sub: "One path. No settings, no menus.", cta: "Add one", fields: [], bullets: activity, stat: { label: sample ? "Passes used this week" : `${thing.split(" ").slice(-2).join(" ")} this week`, value: "12" } },
+    { kind: "app", title: "The one screen", headline: `${name}, this week`, sub: "One path. No settings, no menus.", cta: "Add one", fields: [], bullets: activity, stat: { label: sample ? "Passes used this week" : /week/i.test(thing) ? `${thing.charAt(0).toUpperCase()}${thing.slice(1)}` : `${thing.split(" ").slice(-2).join(" ").replace(/^./, (ch) => ch.toUpperCase())} this week`, value: "12" } },
     { kind: "pricing", title: "The price", headline: price ? `${price}, cancel any time` : "One plan, cancel any time", sub: "The first week is free. No tiers.", cta: "Start the free week", fields: ["Card"], bullets: ["Everything, no tiers", "Stop whenever", "A person answers email"], price: price || "€ ?" },
   ];
   const keeps: Record<ProductKind, string[]> = { saas: ["accounts", "the one thing they do", "payments"], consumer: ["accounts", "posts", "follows", "payments"], marketplace: ["accounts", "listings", "orders", "payments"], services: ["accounts", "bookings", "availability", "payments"], hardware: ["orders", "devices", "payments"] };

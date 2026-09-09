@@ -25,7 +25,7 @@ export default function Coaches() {
   const cols = L.compact ? 1 : 2;
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar left={<Pressable onPress={() => router.back()} accessibilityRole="button" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}><Spec tone="ink">← Back</Spec></Pressable>} center={<Spec tone="muted">{`${stand.name} · four at the counter`}</Spec>} />
+      <TopBar left={<Pressable onPress={() => router.back()} accessibilityRole="button" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}><Spec tone="ink">← Back</Spec></Pressable>} center={<Spec tone="muted">{`${stand.name} · four at the counter`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 240, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
         <View style={{ gap: 8, paddingBottom: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>Coaches</Display>

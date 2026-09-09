@@ -30,7 +30,7 @@ export default function Inbox() {
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <View style={{ paddingTop: L.insets.top + 8, paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
-        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" })}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
         <View style={{ flex: 1, alignItems: "center" }}>

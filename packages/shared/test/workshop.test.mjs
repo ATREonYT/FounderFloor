@@ -116,7 +116,7 @@ test("the kind of product follows the segment, then the sign", async () => {
 test("the thing on the sign is found under its verb and its unit", () => {
   const m = localMockup({ name: "Roomly", oneLiner: "Rent a quiet room by the hour.", audience: "freelancers", said: ["Petros said he would pay €8 an hour"], segment: "marketplace" });
   assert.match(m.screens[1].bullets[1], /paid for a quiet room/);
-  assert.equal(m.screens[1].stat.label, "quiet room this week");
+  assert.equal(m.screens[1].stat.label, "Quiet room this week");
 });
 
 test("the brief is the big prompt: every section, the founder's words, a spec in the fence, and the hand-off carries it whole", async () => {

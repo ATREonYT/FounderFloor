@@ -1,8 +1,8 @@
 /**
- * The text field. `min-h-[44px] rounded-md border border-line bg-paper px-3
- * py-2 text-sm placeholder:text-muted/60`. Focus is WAYFINDING — "you are
- * here" — so it speaks fountain as a solid 2px outline, never a halo. On a
- * dark ground: paper/25 hairline, paper/10 fill, paper text.
+ * The text field: a well (laminate fill, no hairline at rest), 46 high,
+ * soft corners. Focus is WAYFINDING — "you are here" — so it speaks
+ * fountain as a solid 2px outline, never a halo. On a dark ground:
+ * paper/10 fill, paper text, paper/25 hairline.
  */
 import { useState } from "react";
 import { TextInput, View, type TextInputProps } from "react-native";
@@ -34,13 +34,13 @@ export function Input({
         placeholderTextColor={onDark ? "rgba(237,240,244,0.6)" : alpha.placeholder()}
         style={[
           {
-            minHeight: 44,
-            borderRadius: radius.md,
-            borderWidth: focused ? 2 : 1,
-            borderColor: focused ? shell.fountain : onDark ? "rgba(237,240,244,0.25)" : shell.line,
-            backgroundColor: onDark ? "rgba(237,240,244,0.10)" : shell.paper,
-            paddingHorizontal: focused ? 11 : 12,
-            paddingVertical: focused ? 7 : 8,
+            minHeight: 46,
+            borderRadius: radius.lg,
+            borderWidth: 2,
+            borderColor: focused ? shell.fountain : onDark ? "rgba(237,240,244,0.18)" : "transparent",
+            backgroundColor: onDark ? "rgba(237,240,244,0.10)" : shell.well,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
             fontFamily: mono ? fontFamily.mono : fontFamily.body,
             fontSize: T.sm.size,
             lineHeight: T.sm.line,

@@ -26,7 +26,7 @@ export function TopBar({ left, center, right }: { left?: ReactNode; center?: Rea
 export function Back({ label = "Back" }: { label?: string }) {
   const router = useRouter();
   return (
-    <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" })}>
+    <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
       <Spec tone="ink">{`← ${label}`}</Spec>
     </Pressable>
   );
@@ -39,7 +39,7 @@ export function You() {
   const stand = useStand();
   if (!auth) {
     return (
-      <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="button" accessibilityLabel="Sign in" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 8, height: 36, justifyContent: "center" })}>
+      <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="button" accessibilityLabel="Sign in" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
         <Spec tone="ink">Sign in</Spec>
       </Pressable>
     );

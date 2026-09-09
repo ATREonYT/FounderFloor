@@ -8,7 +8,7 @@
 import { forwardRef, useEffect, useRef, createElement } from "react";
 import { Platform, View } from "react-native";
 
-export const LiveMock = forwardRef<View, { html: string; width: number; height: number; screen?: number; onScreen?: (i: number) => void; radius?: number }>(function LiveMock({ html, width, height, screen = 0, onScreen, radius = 0 }, ref) {
+export const LiveMock = forwardRef<View, { html: string; width: number; height: number; screen?: number; onScreen?: (i: number) => void; radius?: number; /** The page's own width in CSS pixels (a phone is 390); on the web the frame is scaled to fit, the way the phone's viewport meta does natively. */ pageWidth?: number }>(function LiveMock({ html, width, height, screen = 0, onScreen, radius = 0, pageWidth = 390 }, ref) {
   const web = Platform.OS === "web";
   const frame = useRef<{ contentWindow?: { postMessage: (m: unknown, o: string) => void } } | null>(null);
   const native = useRef<{ injectJavaScript: (js: string) => void } | null>(null);
@@ -33,7 +33,7 @@ export const LiveMock = forwardRef<View, { html: string; width: number; height: 
   return (
     <View ref={ref} collapsable={false} style={{ width, height, borderRadius: radius, overflow: "hidden", backgroundColor: "#fff" }}>
       {web ? (
-        createElement("iframe", { ref: frame, srcDoc: html, sandbox: "allow-scripts", scrolling: "no", style: { width, height, border: 0, display: "block", background: "#fff" } })
+        createElement("iframe", { ref: frame, srcDoc: html, sandbox: "allow-scripts", scrolling: "no", style: { width: pageWidth, height: height / (width / pageWidth), flexShrink: 0, flexGrow: 0, border: 0, display: "block", background: "#fff", transform: `scale(${width / pageWidth})`, transformOrigin: "0 0" } })
       ) : (
         <NativeWeb html={html} width={width} height={height} onScreen={onScreen} handle={native} />
       )}

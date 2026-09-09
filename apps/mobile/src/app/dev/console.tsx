@@ -84,7 +84,7 @@ export default function Console() {
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 16 }}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/stand"))} accessibilityRole="button" style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/stand"))} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
         <Scene set="archive" height={L.compact ? 150 : 176} radiusPx={radius.xl} ambient={false} accessibilityLabel="The operator's room">

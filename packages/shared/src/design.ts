@@ -96,7 +96,7 @@ export function directionLine(d: DesignDirection): string {
 export const DESIGN_PROMPT = `You are the design lead and front-end engineer of a small studio that ships polished first versions. The standard is what a founder gets from Lovable, Base44 or a good agency: a product that looks shipped, not a wireframe. You are handed the build brief for one product, with its design system, its screens and its exact words, and you return ONE complete HTML document that is that product's first version, running: every screen in the brief, laid out and styled to the brief's design system, with the real words on it. No prose, no markdown fences, only the document.
 
 THE DOCUMENT
-- Self-contained: one <style> block, no external fonts, images, scripts or stylesheets, no @import, no <script> at all (the host injects navigation). System font stacks only: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; ui-serif, Georgia; ui-rounded; ui-monospace, "SF Mono".
+- Self-contained but for type: one <style> block; no images, scripts or stylesheets from anywhere, no @import, no <script> at all (the host injects navigation). The one reach allowed is one <link rel="stylesheet"> to https://fonts.googleapis.com for the two families the brief's design system names, each with a system fallback in the stack (-apple-system, "Helvetica Neue", sans-serif; ui-serif, Georgia; ui-monospace, "SF Mono"). Ask the service for weights 400 and 700 only.
 - A 390 by 844 phone with no page scroll: html and body 100% height, overflow hidden. Each screen is a flex column: a fixed top (status bar, header), a scrolling middle (overflow-y auto, and enough content to scroll on the main screen), and a fixed bottom (tab bar, primary action or home indicator).
 - One <section class="screen" id="sK" data-title="Its name"> per screen in the brief, in the brief's order, K counting from 0, the first also carrying class "on". Anything tappable that moves between screens carries data-go="K". Every screen reaches at least one other, and each primary action leads where the brief says.
 - A drawn status bar on every screen (9:41, signal, wifi, battery) and a home indicator at the bottom, in that screen's ink.
@@ -157,13 +157,27 @@ export function designScreens(html: string): DesignScreen[] {
 export function prepareDesign(html: string): { html: string; screens: DesignScreen[] } | { error: string } {
   if (html.length > 120000) return { error: "too long" };
   let h = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/\son\w+="[^"]*"/gi, "").replace(/\son\w+='[^']*'/gi, "");
-  if (/<link\b/i.test(h) || /@import/i.test(h) || /\b(src|href)\s*=\s*["']?\s*(https?:)?\/\//i.test(h) || /url\(\s*["']?\s*(https?:)?\/\//i.test(h)) return { error: "reaches outside the page" };
+  // the one reach allowed: the fonts service, for real typefaces. Its stylesheets are taken out of the head and added by the host's script once the page has painted, so a slow font never blanks the phone; everything else stays inside the page
+  const fonts: string[] = [];
+  h = h
+    .replace(/<link\b[^>]*href="(https:\/\/fonts\.googleapis\.com\/css2?\?[^"]*)"[^>]*>/gi, (_, u: string) => {
+      fonts.push(u.replace(/&amp;/g, "&"));
+      return "";
+    })
+    .replace(/<link\b[^>]*href="https:\/\/fonts\.(googleapis|gstatic)\.com[^"]*"[^>]*>/gi, "")
+    .replace(/@import\s+url\(\s*["']?(https:\/\/fonts\.googleapis\.com\/css2?\?[^)"']*)["']?\s*\)\s*;?/gi, (_, u: string) => {
+      fonts.push(u.replace(/&amp;/g, "&"));
+      return "";
+    });
+  const stripped = h.replace(/url\(\s*["']?https:\/\/fonts\.gstatic\.com[^)]*\)/gi, "url(x)");
+  if (/<link\b/i.test(stripped) || /@import/i.test(stripped) || /\b(src|href)\s*=\s*["']?\s*(https?:)?\/\//i.test(stripped) || /url\(\s*["']?\s*(https?:)?\/\//i.test(stripped)) return { error: "reaches outside the page" };
   const screens = designScreens(h);
   if (screens.length < 3 || screens.length > 6) return { error: `expected 3 to 6 screens, found ${screens.length}` };
   if (screens.some((s, i) => s.id !== `s${i}`)) return { error: "screens are out of order" };
   if (!/data-go=["']?[1-9]/.test(h)) return { error: "screens are not wired" };
   const guard = `<style>.screen{display:none}.screen.on{display:flex;flex-direction:column}</style>`;
-  const nav = `<script>(function(){var s=document.querySelectorAll('.screen');function go(i){if(i<0||i>=s.length)return;s.forEach(function(el,k){el.classList.toggle('on',k===i)});try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(String(i))}catch(e){}try{window.parent&&window.parent!==window&&window.parent.postMessage({mock:i},'*')}catch(e){}}document.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t){e.preventDefault();go(Number(t.getAttribute('data-go')))}});window.addEventListener('message',function(e){var d=e.data;if(d&&typeof d.go==='number')go(d.go)});window.__go=go;})();</script>`;
+  const load = fonts.length ? `${JSON.stringify(fonts.slice(0, 3))}.forEach(function(u){var l=document.createElement('link');l.rel='stylesheet';l.href=u;document.head.appendChild(l)});` : "";
+  const nav = `<script>(function(){${load}var s=document.querySelectorAll('.screen');function go(i){if(i<0||i>=s.length)return;s.forEach(function(el,k){el.classList.toggle('on',k===i)});try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(String(i))}catch(e){}try{window.parent&&window.parent!==window&&window.parent.postMessage({mock:i},'*')}catch(e){}}document.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t){e.preventDefault();go(Number(t.getAttribute('data-go')))}});window.addEventListener('message',function(e){var d=e.data;if(d&&typeof d.go==='number')go(d.go)});window.__go=go;})();</script>`;
   h = /<\/head>/i.test(h) ? h.replace(/<\/head>/i, `${guard}</head>`) : h.replace(/<body/i, `${guard}<body`);
   h = /<\/body>/i.test(h) ? h.replace(/<\/body>/i, `${nav}</body>`) : h + nav;
   if (!/class="[^"]*\bon\b[^"]*"/.test(h.match(/<section\b[^>]*>/i)?.[0] ?? "")) h = h.replace(/(<section\b[^>]*class=")([^"]*\bscreen\b)/i, "$1on $2");

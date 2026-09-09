@@ -143,7 +143,7 @@ export default function Task() {
         <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
           {/* the way back, and where this sits in the plan */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back to the plan" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
+            <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back to the plan" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
               <Spec tone="ink">← Plan</Spec>
             </Pressable>
             <Spec tone="muted">{`WEEK ${wN}${wN === now ? " · THIS WEEK" : ""} · TASK ${idx + 1} OF ${week.do.length}`}</Spec>

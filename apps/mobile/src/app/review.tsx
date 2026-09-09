@@ -45,7 +45,7 @@ export default function Review() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
+          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
             <Spec tone="ink">← Back</Spec>
           </Pressable>
           <Spec tone="muted">{facts.over ? "THE WEEK IS OVER" : wN === now ? "STILL RUNNING" : "NOT YET"}</Spec>

@@ -13,7 +13,6 @@
 import type { Mockup } from "./workshop.ts";
 import { buildBrief, asMockup } from "./workshop.ts";
 import type { StandRecord } from "./types.ts";
-import { lookOf } from "./mockup-html.ts";
 import { DESIGN_CRAFT } from "./design-craft.ts";
 
 /** The sections, in order. The check reads them back. */
@@ -66,6 +65,8 @@ export interface WorkshopBriefInput {
   /** The plan's week and the work written into tasks. */
   work?: string[];
   fresh?: boolean;
+  /** The studio's plan: the design system the tables propose for this kind of product. */
+  plan?: string;
 }
 
 /** Everything the founder wrote, for the brief writer. */
@@ -79,6 +80,7 @@ export function briefContext(i: WorkshopBriefInput): string {
     i.said.length ? `\nWHAT CUSTOMERS SAID, WORD FOR WORD\n${i.said.map((s) => `- ${s}`).join("\n")}` : "\nWHAT CUSTOMERS SAID\nNothing written down yet. Say so where a customer's words would go.",
     i.work?.length ? `\nWORK WRITTEN INTO TASKS\n${i.work.map((w) => `- ${w}`).join("\n")}` : "",
     i.log ? `\n${i.log}` : "",
+    i.plan ? `\nTHE STUDIO'S PLAN\nThe design system the studio's tables propose for this kind of product. Build on it in "The design system": keep its palette, type and treatment unless the audience or the founder's words argue against them, and say in one line what you changed and why.\n${i.plan}` : "",
     i.fresh ? "\nThe founder asked for a different brief from the last one: change the screens' shape and the design system, keep the facts." : "",
   ]
     .filter(Boolean)
@@ -114,23 +116,10 @@ export function briefComplete(brief: string): boolean {
   return BRIEF_SECTIONS.every((s) => new RegExp(`^## ${s}`, "m").test(brief));
 }
 
-/** The desk's own brief, without a model: the plain one with a design system from the chosen look. */
-export function localBrief(m: Mockup, opts?: { record?: Partial<StandRecord> | null; notes?: string[] }): string {
-  const L = lookOf(m);
-  const font = { sans: "a plain sans (-apple-system, Helvetica Neue)", serif: "a serif for headlines (ui-serif, Georgia) and a sans for everything else", rounded: "a rounded sans (ui-rounded, then -apple-system)", grotesk: "a condensed grotesk feel: tight tracking, all-caps labels" }[L.font];
-  const palette = { brand: `the brand colour hsl(${L.hue} 72% 46%) on white, ink #0F172A, muted #64748B, line #E2E8F0`, tinted: `a pale tint of hsl(${L.hue} 60% 96%) as the background, surfaces white, ink #0F172A, brand hsl(${L.hue} 72% 46%)`, ink: "black on off-white #FAFAF9, one accent used once per screen", duo: `two flat colours side by side: hsl(${L.hue} 72% 46%) and hsl(${(L.hue + 40) % 360} 60% 90%), no gradients` }[L.palette];
-  const nav = { tabs: "a bottom tab bar with 4 items", pillbar: "a floating pill bar at the bottom", top: "tabs under the header, no bottom bar" }[L.nav];
-  const design = [
-    "",
-    "## The design system",
-    `- Feels: plain, quick, trustworthy. Never: corporate.`,
-    `- Type: ${font}. Display 30/700, title 20/600, body 16/400, label 12/600 uppercase with letter-spacing.`,
-    `- Colour: ${palette}.`,
-    `- Spacing: 4 pt grid, 20 px side margins. Radius: ${L.radius} px.`,
-    `- Navigation: ${nav}. Buttons ${L.pill ? "pill-shaped" : "rounded"}, 50 px high, one primary per screen.`,
-    "- Icons: inline SVG, 1.5 px stroke, 22 px. No emoji. Pictures drawn with shapes and gradients, no stock photos.",
-    "- Never: a purple-to-blue gradient hero, everything centred, a card around every element.",
-  ];
+/** The studio's own brief, without a model: the plain one with the studio's plan as the design system. */
+export function localBrief(m: Mockup, opts?: { record?: Partial<StandRecord> | null; notes?: string[]; system?: string }): string {
+  const system = opts?.system ?? ["- Feels: plain, quick, trustworthy. Never: corporate.", "- Type: a plain sans (-apple-system, Helvetica Neue). Display 30/700, title 20/600, body 16/400, label 12/600.", "- Colour: ink #0F172A on white, muted #64748B, line #E2E8F0, one brand colour used once or twice a screen.", "- Spacing: 4 pt grid, 20 px side margins. Radius 12 px.", "- Navigation: a bottom tab bar with 4 items. Buttons 50 px high, one primary per screen.", "- Icons: inline SVG, 1.8 px stroke, 22 px. No emoji. Pictures drawn with shapes and gradients, no stock photos.", "- Never: a purple-to-blue gradient hero, everything centred, a card around every element."].join("\n");
+  const design = ["", "## The design system", system];
   const base = buildBrief(m, opts);
   const at = base.indexOf("\n## Rules");
   return at >= 0 ? `${base.slice(0, at)}${design.join("\n")}\n${base.slice(at)}` : `${base}\n${design.join("\n")}`;

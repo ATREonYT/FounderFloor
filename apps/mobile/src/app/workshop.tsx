@@ -14,7 +14,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { lookOf, mockupPoster, mockupTheme, POSTER_H, POSTER_W, type LookPreset, type MockScreen, type ProductKind } from "@founderfloor/shared";
+import { mockupPoster, POSTER_H, POSTER_W, PRODUCTS, type MockScreen } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Thinking, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
 import { useWorkshop } from "../lib/workshop";
 import { LiveMock } from "../components/LiveMock";
@@ -66,17 +66,9 @@ export default function Workshop() {
   const phoneH = Math.round(phoneW * (844 / 390));
   const posterW = Math.min(640, L.width - 2 * L.shell.paddingHorizontal);
   const posterH = Math.round(posterW * (POSTER_H / POSTER_W));
-  const theme = mockupTheme(m);
-  const look = lookOf(m);
-  const PRESETS: { p: LookPreset; label: string; line: string }[] = [
-    { p: "startup", label: "Startup", line: "Cards, colour, bottom tabs" },
-    { p: "editorial", label: "Editorial", line: "Serif, centred, numbered" },
-    { p: "studio", label: "Studio", line: "Dark hero, black buttons" },
-    { p: "playful", label: "Playful", line: "Round, gradient, floating bar" },
-    { p: "minimal", label: "Minimal", line: "Black on white, nothing extra" },
-  ];
-  const HUES: { hue: number; name: string }[] = [{ hue: 222, name: "Blue" }, { hue: 262, name: "Violet" }, { hue: 334, name: "Rose" }, { hue: 12, name: "Coral" }, { hue: 160, name: "Green" }, { hue: 200, name: "Teal" }];
-  const KINDS: { k: ProductKind; label: string }[] = [{ k: "saas", label: "Software" }, { k: "consumer", label: "Consumer app" }, { k: "marketplace", label: "Marketplace" }, { k: "services", label: "Service" }, { k: "hardware", label: "Product" }];
+  const [pick, setPick] = useState(false);
+  const [query, setQuery] = useState("");
+  const found = query.trim().length >= 2 ? PRODUCTS.filter((x) => x.t.toLowerCase().includes(query.trim().toLowerCase()) || x.k.some((k) => k.includes(query.trim().toLowerCase()))).slice(0, 12) : [];
   /** The app, built once per mock-up; the chips drive its screen without reloading it. */
   const html = useMemo(() => w.html, [w.html]);
   const posterHtml = useMemo(() => mockupPoster(m, w.designHtml), [m, w.designHtml]);
@@ -85,7 +77,7 @@ export default function Workshop() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
+          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
             <Spec tone="ink">← Back</Spec>
           </Pressable>
           <Spec tone="muted">THE WORKSHOP</Spec>
@@ -93,7 +85,7 @@ export default function Workshop() {
         <Scene set="workshop" height={L.compact ? 130 : 160} radiusPx={radius.xl} color="#A28457" accessibilityLabel="The workshop">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <GlyphTile id="cube" color="#A28457" size={28} scale={1} />
-            <Spec tone="ink">{m.source === "sample" ? "A SAMPLE" : w.designed ? "DESIGNED FOR YOU" : m.source === "live" ? "FROM YOUR NOTEBOOK" : "FROM YOUR SIGN"}</Spec>
+            <Spec tone="ink">{m.source === "sample" ? "A SAMPLE" : w.designed ? "DESIGNED FOR YOU" : "DRAWN BY THE STUDIO"}</Spec>
           </View>
         </Scene>
         <View style={{ gap: 6 }}>
@@ -168,49 +160,42 @@ export default function Workshop() {
             </Body>
           ) : (
             <Body size="sm" tone="muted" style={{ marginTop: 6 }}>
-              {m.source === "sample" ? "This sample was drawn the way the desk draws yours with a key in the app: from a brief, screen by screen. Below are the desk's own five looks for practice mode." : "Practice mode: the desk's own five looks. With a key it writes the brief and designs the whole app itself."}
+              {m.source === "sample" ? "This sample was drawn by hand to the same bar the studio and the desk work to. Write your sign and the studio draws yours." : "Practice mode: the studio drew this from the tables and your words. With a key, the desk also writes the brief and designs the whole app itself, to the studio's plan."}
             </Body>
           )}
           {w.designError ? <Spec tone="faint" style={{ marginTop: 6 }}>{w.designError}</Spec> : null}
           {w.designed && m.edited ? <Spec tone="faint" style={{ marginTop: 6 }}>You changed some words since. Design it again to see them.</Spec> : null}
         </Plate>
 
-        {/* the look and the kind: the desk's own five looks, when the model has not designed it */}
-        <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed || m.source === "sample" ? { opacity: 0.6 } : undefined}>
-          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-            <Spec tone="muted">{w.designed || m.source === "sample" ? "THE FALLBACK LOOK" : "THE LOOK"}</Spec>
-            <Pressable onPress={() => w.setTheme({ hue: theme.hue, style: "clean", seed: Math.floor(Math.random() * 100000) })} accessibilityRole="button" accessibilityLabel="Surprise me">
-              <Spec tone="accent">{look.preset === "shuffle" ? "Shuffle again ↻" : "Surprise me ↻"}</Spec>
-            </Pressable>
-          </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-            {PRESETS.map((x) => {
-              const on = look.preset === x.p;
-              return (
-                <Pressable key={x.p} onPress={() => w.setTheme({ hue: theme.hue, style: "clean", preset: x.p })} accessibilityRole="button" accessibilityLabel={`${x.label} look`} style={{ flexBasis: "47%", flexGrow: 1, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1.5, borderColor: on ? shell.blackout : shell.line, backgroundColor: on ? shell.blackout : shell.panel }}>
-                  <Spec tone={on ? "paper" : "ink"}>{x.label}</Spec>
-                  <Spec tone={on ? "paperQuiet" : "faint"}>{x.line}</Spec>
-                </Pressable>
-              );
-            })}
-          </View>
-          {look.preset === "shuffle" ? <Spec tone="faint" style={{ marginTop: 8 }}>{`A shuffle: ${look.font} type, ${look.hero} hero, ${look.palette} palette, ${look.nav === "top" ? "tabs on top" : look.nav === "pillbar" ? "a floating bar" : "bottom tabs"}.`}</Spec> : null}
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 12, alignItems: "center" }}>
-            {HUES.map((h) => (
-              <Pressable key={h.hue} onPress={() => w.setTheme({ ...theme, hue: h.hue })} accessibilityRole="button" accessibilityLabel={h.name} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: `hsl(${h.hue} 72% 46%)`, borderWidth: 3, borderColor: theme.hue === h.hue ? shell.ink : "transparent" }} />
-            ))}
-            <Spec tone="faint" style={{ marginLeft: "auto" }}>{HUES.find((h) => h.hue === theme.hue)?.name ?? "Its own colour"}</Spec>
-          </View>
-          <Spec tone="muted" style={{ marginTop: 14 }}>WHAT KIND OF THING IT IS</Spec>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-            {KINDS.map((x) => (
-              <Pressable key={x.k} onPress={() => w.setKind(x.k)} accessibilityRole="button" accessibilityLabel={x.label} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: (m.kind ?? "saas") === x.k ? shell.blackout : shell.line, backgroundColor: (m.kind ?? "saas") === x.k ? shell.blackout : shell.panel }}>
-                <Spec tone={(m.kind ?? "saas") === x.k ? "paper" : "ink"}>{x.label}</Spec>
+        {/* the studio: what it read the product as, its plan, another take, and the founder's say */}
+        {w.studio ? (
+          <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { opacity: 0.6 } : undefined}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+              <Spec tone="muted">{w.designed ? "THE STUDIO'S OWN TAKE" : "THE STUDIO"}</Spec>
+              <Pressable onPress={w.anotherTake} accessibilityRole="button" accessibilityLabel="Another take">
+                <Spec tone="accent">Another take ↻</Spec>
               </Pressable>
-            ))}
-          </View>
-          <Spec tone="faint" style={{ marginTop: 8 }}>The layout follows: a dashboard, a feed, listings, bookings or a product page.</Spec>
-        </Plate>
+            </View>
+            <Body size="sm" style={{ marginTop: 6 }}>
+              {w.studio.line}
+            </Body>
+            <Spec tone="faint" style={{ marginTop: 4 }}>{`Take ${w.studio.seed + 1}. The palette, the type and the shapes come from the tables for this kind of product; every take fits it and looks different.`}</Spec>
+            <Spec tone="muted" style={{ marginTop: 14 }}>READ AS</Spec>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+              {[...new Set([w.studio.product, ...w.studio.readings])].slice(0, 6).map((t) => {
+                const on = t === w.studio?.product;
+                return (
+                  <Pressable key={t} onPress={() => w.setType(t === w.studio?.readings[0] ? undefined : t)} accessibilityRole="button" accessibilityLabel={t} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: on ? shell.blackout : shell.line, backgroundColor: on ? shell.blackout : shell.panel }}>
+                    <Spec tone={on ? "paper" : "ink"}>{t}</Spec>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable onPress={() => setPick(true)} accessibilityRole="button" style={{ marginTop: 10 }}>
+              <Spec tone="accent">Not quite? Say what it is…</Spec>
+            </Pressable>
+          </Plate>
+        ) : null}
 
         {/* the picture: the three screens on one card, to show people */}
         <View style={{ gap: 8 }}>
@@ -219,7 +204,7 @@ export default function Workshop() {
             <Spec tone="faint">Show it before you build</Spec>
           </View>
           <View style={{ alignItems: "center" }}>
-            <LiveMock ref={poster} html={posterHtml} width={posterW} height={posterH} radius={20} />
+            <LiveMock ref={poster} html={posterHtml} width={posterW} height={posterH} radius={20} pageWidth={POSTER_W} />
           </View>
           {canCapture ? (
             <Button variant="secondary" onPress={() => void sharePicture()}>
@@ -255,7 +240,7 @@ export default function Workshop() {
             </Pressable>
           </View>
           <Body size="sm" tone="muted" style={{ marginTop: 4 }}>
-            {m.brief ? "Written from everything you put into the building: the product, the person it is for, the path, every screen with its exact words, what it keeps, a design system with real colours and type, the words, the build, and what to leave out. This is what you paste into Lovable." : "The screens with their exact words, the path, what it keeps, a design system from the chosen look, and the rules. With a key, the desk writes the full brief from everything you wrote."}
+            {m.brief ? "Written from everything you put into the building: the product, the person it is for, the path, every screen with its exact words, what it keeps, a design system with real colours and type, the words, the build, and what to leave out. This is what you paste into Lovable." : "The screens with their exact words, the path, what it keeps, the studio's design system with its real colours and type, and the rules. With a key, the desk writes the full brief from everything you wrote."}
           </Body>
           {showBrief ? (
             <Text selectable style={{ marginTop: 10, fontFamily: "monospace", fontSize: 12, lineHeight: 17, color: shell.ink }}>
@@ -310,6 +295,25 @@ export default function Workshop() {
           {w.lastError ? <Spec tone="faint">{w.lastError}</Spec> : null}
         </View>
       </ScrollView>
+
+      {/* say what it is: a search over the studio's tables */}
+      <Dialogue open={pick} onClose={() => setPick(false)} sign="WHAT IT IS" keeper="The studio" color="#A28457" footer="The studio's tables know 192 kinds of product. Pick the closest; the palette, type and screens follow.">
+        <View style={{ gap: 10 }}>
+          <Input label="SEARCH" value={query} onChangeText={setQuery} placeholder="café, invoices, tutoring, marketplace…" autoFocus />
+          {found.map((x) => (
+            <Pressable key={x.t} onPress={() => { w.setType(x.t); setPick(false); setQuery(""); say(`Read as ${x.t.toLowerCase()}.`); }} accessibilityRole="button" style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: shell.line }}>
+              <Body medium>{x.t}</Body>
+              <Spec tone="faint">{x.f}</Spec>
+            </Pressable>
+          ))}
+          {query.trim().length >= 2 && !found.length ? <Spec tone="faint">Nothing by that name. Try the kind of thing it is: bookings, shop, tracker, community.</Spec> : null}
+          {w.mockup.studioType ? (
+            <Button size="sm" variant="ghost" onPress={() => { w.setType(undefined); setPick(false); }}>
+              Back to the studio's own reading
+            </Button>
+          ) : null}
+        </View>
+      </Dialogue>
 
       {/* edit one screen's words */}
       <Dialogue open={!!edit} onClose={() => setEdit(null)} sign="EDIT THE SCREEN" keeper="The desk" color={k.color} footer="Your words. The brief and the prompts follow.">

@@ -54,7 +54,7 @@ export default function Step() {
     return (
       <View style={{ flex: 1, backgroundColor: shell.paper, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
         <Body tone="muted">Open the task first; its page writes the steps.</Body>
-        <Pressable onPress={back} accessibilityRole="button" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 12, height: 36, justifyContent: "center" }}>
+        <Pressable onPress={back} accessibilityRole="button" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
       </View>

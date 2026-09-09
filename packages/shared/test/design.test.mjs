@@ -70,3 +70,17 @@ test("a designed page with five named screens is kept, and the sample passes the
   assert.equal((poster.match(/__go\((\d)\)/g) ?? []).join(","), "__go(0),__go(1),__go(3)");
   assert.match(poster, /The front door · Today · The price/);
 });
+
+test("the fonts service is the one reach allowed, and it is loaded after the page paints", () => {
+  const page = (head) => `<!doctype html><html><head>${head}<style>body{margin:0}</style></head><body><section class="screen on" id="s0"><div data-go="1">go</div></section><section class="screen" id="s1"><div data-go="2">go</div></section><section class="screen" id="s2"><div data-go="0">go</div></section></body></html>`;
+  const r = prepareDesign(page('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&amp;display=swap">'));
+  assert.ok("html" in r);
+  assert.doesNotMatch(r.html, /<link/);
+  assert.match(r.html, /fonts\.googleapis\.com\/css2\?family=Inter:wght@400;700&display=swap/);
+  assert.match(r.html, /createElement\('link'\)/);
+  const i = prepareDesign(page("<style>@import url('https://fonts.googleapis.com/css2?family=Lora');</style>"));
+  assert.ok("html" in i);
+  assert.doesNotMatch(i.html, /@import/);
+  assert.match(i.html, /family=Lora/);
+  assert.deepEqual(prepareDesign(page('<link rel="stylesheet" href="https://evil.example/x.css">')), { error: "reaches outside the page" });
+});

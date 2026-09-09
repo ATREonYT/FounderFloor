@@ -7,11 +7,13 @@
  * the RELEASE settles back on the site's one overshoot curve (220ms,
  * --ease-release). That spring is the only overshoot in the whole app.
  *
- * Variants (app/page.tsx, EmailCapture, StallPanel):
- *   primary    accent-strong fill, paper text
- *   secondary  1px ink hairline, ink text (on dark: paper/40 hairline, paper text)
- *   ghost      1px line hairline, muted text → ink on hover
- * Disabled is opacity .5 with no colour change; min touch height 44.
+ * Shape: a pill, every size. The app's controls are soft fills, not
+ * hairline boxes: the box was the site's marketing idiom and read as
+ * blocky next to the pixel keepers.
+ *   primary    accent fill, paper text
+ *   secondary  well fill (laminate), ink text (on dark: paper/12 fill, paper text)
+ *   ghost      no fill, muted text; on dark, paper/70
+ * Disabled is opacity .5 with no colour change; heights 36 / 44 / 52.
  */
 import type { ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
@@ -64,14 +66,14 @@ export function Button({
     dx.value = withTiming(3, { duration: ms.release, easing: Easing.bezier(...curve.out) });
   };
 
-  const pad = size === "sm" ? { paddingVertical: 6, paddingHorizontal: 12 } : size === "lg" ? { paddingVertical: 14, paddingHorizontal: 28 } : { paddingVertical: 12, paddingHorizontal: 24 };
+  const pad = size === "sm" ? { minHeight: 36, paddingHorizontal: 14 } : size === "lg" ? { minHeight: 52, paddingHorizontal: 28 } : { minHeight: 44, paddingHorizontal: 20 };
   const look: ViewStyle =
     variant === "primary"
       ? { backgroundColor: shell.accent }
       : variant === "secondary"
-        ? { borderWidth: 1, borderColor: onDark ? "rgba(237,240,244,0.4)" : shell.ink }
-        : { borderWidth: 1, borderColor: onDark ? "rgba(237,240,244,0.25)" : shell.line };
-  const textTone = variant === "primary" ? "paper" : onDark ? "paper" : variant === "ghost" ? "muted" : "ink";
+        ? { backgroundColor: onDark ? "rgba(237,240,244,0.12)" : shell.well }
+        : { backgroundColor: "transparent", paddingHorizontal: size === "sm" ? 8 : 12 };
+  const textTone = variant === "primary" ? "paper" : onDark ? (variant === "ghost" ? "paperQuiet" : "paper") : variant === "ghost" ? "muted" : "ink";
 
   return (
     <Pressable
@@ -89,13 +91,13 @@ export function Button({
     >
       <Animated.View
         style={[
-          { borderRadius: radius.md, minHeight: 44, justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 6 },
+          { borderRadius: radius.full, justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 6 },
           pad,
           look,
           variant === "primary" && {
-            shadowColor: "rgba(18,23,27,0.08)",
+            shadowColor: "rgba(190,36,27,0.35)",
             shadowOffset: { width: 0, height: 6 },
-            shadowRadius: 16,
+            shadowRadius: 14,
             shadowOpacity: 1,
             elevation: 3,
           },
@@ -103,12 +105,12 @@ export function Button({
           style,
         ]}
       >
-        <Body size="sm" medium tone={textTone as "paper" | "ink" | "muted"}>
+        <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
           {children}
         </Body>
         {arrow && (
           <Animated.View style={lean}>
-            <Body size="sm" medium tone={textTone as "paper" | "ink" | "muted"}>
+            <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
               →
             </Body>
           </Animated.View>
