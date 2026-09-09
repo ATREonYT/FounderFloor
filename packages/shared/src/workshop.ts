@@ -121,7 +121,8 @@ export function localMockup(input: { name?: string; oneLiner?: string; audience?
   const quoted = said.filter((l) => l.includes(":")).map((l) => ({ who: l.slice(0, l.indexOf(":")).trim(), said: l.slice(l.indexOf(":") + 1).trim().replace(/^["“]|["”]$/g, "") })).filter((q) => q.who.length <= 30 && q.said.length >= 12).slice(0, 2);
   const kind = kindOf(input.segment, oneLiner);
   // what it does, from the sign: the noun phrase before "for", if there is one
-  const thing = oneLiner.split(/\s+for\s+/i)[0].trim();
+  // "Rent a quiet room by the hour" is about a quiet room; "Prepaid passes for the cafés..." about prepaid passes
+  const thing = oneLiner.split(/\s+for\s+/i)[0].replace(/\s+(by|per|a|an|every)\s+(the\s+)?(hour|day|week|month|year|night|visit|seat)s?\.?$/i, "").replace(/^(rent|book|buy|get|find|order|hire|sell|share)\s+(a|an|the|your)?\s*/i, "").trim();
   const unit = singular(thing.toLowerCase().replace(/^(a|an|the)\s+/, "").split(/\s+/).slice(-2).join(" "));
   const who = [...namesIn(said), "Maria", "Kostas", "Eleni"].slice(0, 3);
   const activity = [`${who[0]} signed up`, `${who[1]} paid for a ${unit || "month"}`, `${who[2]} came back`];

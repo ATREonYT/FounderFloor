@@ -233,7 +233,7 @@ function appScreen(m: Mockup, sc: MockScreen, kind: ProductKind, price?: string)
     const cats = ["All", "Near me", "Top rated", "New"];
     body = `<div class="searchbar">${I.search}<div><b>${esc(sc.headline)}</b><small>Anywhere · Any time</small></div></div>
 <div class="cats">${cats.map((c, i) => `<span class="${i === 0 ? "on" : ""}">${c}</span>`).join("")}</div>
-<div class="grid">${rows.concat([{ t: `${people[0]}'s place`, m: "", a: "" }]).slice(0, 4).map((r, i) => `<div class="item"><div class="pic" style="background:linear-gradient(135deg,hsl(calc(var(--h) + ${i * 35}) 70% 85%),hsl(calc(var(--h) + ${i * 35 + 50}) 70% 70%))"><i>${I.heart}</i></div><div class="body"><b>${esc(r.t)}</b><small>${I.star} 4.${8 - i} · 2 km</small><div class="pr">${esc(amt === "+1" ? "€ ?" : amt)}${per ? ` · ${esc(per)}` : ""}</div></div></div>`).join("")}</div>`;
+<div class="grid">${["near the marina", "in the old town", "with a view", "by the station"].map((where, i) => { const unit = (stat.label.replace(/\s+this week$/i, "") || "place").trim(); const t = `${unit.charAt(0).toUpperCase()}${unit.slice(1)} ${where}`; return `<div class="item"><div class="pic" style="background:linear-gradient(135deg,hsl(calc(var(--h) + ${i * 35}) 70% 85%),hsl(calc(var(--h) + ${i * 35 + 50}) 70% 70%))"><i>${I.heart}</i></div><div class="body"><b>${esc(t)}</b><small>${I.star} 4.${8 - i} · ${1 + i} km · ${esc(people[i % people.length])}</small><div class="pr">${esc(amt === "+1" ? "€ ?" : amt)}${per ? ` · ${esc(per)}` : ""}</div></div></div>`; }).join("")}</div>`;
   } else if (kind === "services") {
     const d = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     body = `<div class="greet"><small>Next up</small><h2>${esc(sc.headline)}</h2></div>
