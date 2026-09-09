@@ -47,6 +47,8 @@ export interface Mockup {
   seed?: string;
   /** The founder changed words by hand; a redraw must be asked for. */
   edited?: boolean;
+  /** The look: a brand hue and a style. Set by the model or the founder; otherwise steady from the name. */
+  theme?: { hue: number; style: "clean" | "bold" | "soft" };
 }
 
 export const SAMPLE_MOCKUP_INPUT = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", audience: "independent café owners", price: "€40 a month" };
@@ -69,6 +71,24 @@ function quoteOf(line: string): string | null {
   return clause && clause.length >= 8 && clause.length <= 70 ? `"${clause.charAt(0).toUpperCase()}${clause.slice(1)}"` : null;
 }
 
+/** First names from lines like "Maria: ..." or "Kostas said ...", for the one screen's activity. */
+export function namesIn(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const l of lines) {
+    const m = l.match(/^\s*([A-Z][a-zà-ÿ]+)(?:\s*[:(]|\s+(?:said|told|wants|would|pays|paid|asked))/);
+    if (m && !out.includes(m[1])) out.push(m[1]);
+  }
+  return out;
+}
+
+/** "prepaid passes" to "prepaid pass", "weekly numbers" to "weekly number", "entries" to "entry". */
+export function singular(phrase: string): string {
+  const w = phrase.trim().split(/\s+/);
+  const last = w.pop() ?? "";
+  const one = /(ss|us|is)$/.test(last) ? last : /sses$|shes$|ches$|xes$/.test(last) ? last.slice(0, -2) : /ies$/.test(last) ? `${last.slice(0, -3)}y` : /s$/.test(last) ? last.slice(0, -1) : last;
+  return [...w, one].join(" ");
+}
+
 /** The mock-up without a model: three screens from the sign, the audience, the price said out loud and what customers said. */
 export function localMockup(input: { name?: string; oneLiner?: string; audience?: string; price?: string; said?: string[] }, profile?: Profile | null): Mockup {
   const sample = !input.oneLiner?.trim();
@@ -80,16 +100,19 @@ export function localMockup(input: { name?: string; oneLiner?: string; audience?
   const quotes = [...said.filter((l) => l.includes(":")), ...said.filter((l) => !l.includes(":"))].map(quoteOf).filter((q): q is string => !!q).slice(0, 2);
   // what it does, from the sign: the noun phrase before "for", if there is one
   const thing = oneLiner.split(/\s+for\s+/i)[0].trim();
+  const unit = singular(thing.toLowerCase().replace(/^(a|an|the)\s+/, "").split(/\s+/).slice(-2).join(" "));
+  const who = [...namesIn(said), "Maria", "Kostas", "Eleni"].slice(0, 3);
+  const activity = [`${who[0]} signed up`, `${who[1]} paid for a ${unit || "month"}`, `${who[2]} came back`];
   const landingBullets = [...quotes, `What you get: ${thing.charAt(0).toLowerCase()}${thing.slice(1)}`, price ? `${price}, cancel any time` : "One price, said plainly", "Try it this week, no card"].slice(0, 3);
   const screens: MockScreen[] = [
     { kind: "landing", title: "The front door", headline: oneLiner, sub: `For ${audience}.`, cta: "Start free", fields: ["Your email"], bullets: landingBullets },
-    { kind: "app", title: "The one screen", headline: `${name}, this week`, sub: "One path. No settings, no menus.", cta: "Do the thing", fields: [], bullets: ["The last three things that happened", "The one button"], stat: { label: sample ? "Passes used this week" : `${thing.split(" ").slice(-2).join(" ")} this week`, value: "12" } },
+    { kind: "app", title: "The one screen", headline: `${name}, this week`, sub: "One path. No settings, no menus.", cta: "Add one", fields: [], bullets: activity, stat: { label: sample ? "Passes used this week" : `${thing.split(" ").slice(-2).join(" ")} this week`, value: "12" } },
     { kind: "pricing", title: "The price", headline: price ? `${price}, cancel any time` : "One plan, cancel any time", sub: "The first week is free. No tiers.", cta: "Start the free week", fields: ["Card"], bullets: ["Everything, no tiers", "Stop whenever", "A person answers email"], price: price || "€ ?" },
   ];
   return { name, oneLiner, audience, screens, path: `Someone from ${audience} lands on the front door, leaves an email, uses the one screen once, and pays${price ? ` ${price}` : ""}.`, keeps: ["accounts", "the one thing they do", "payments"], source: sample ? "sample" : "rehearsal", at: new Date().toISOString(), seed: `${name}|${oneLiner}|${audience}|${price}` };
 }
 
-export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), for the app screen a stat (object with label, the one number that matters, and value, a plausible small number as a string), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Use their customers' exact words from the notebook where you can, quoted. Never invent customers or numbers. No prose outside the JSON.`;
+export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), for the app screen a stat (object with label, the one number that matters, and value, a plausible small number as a string), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Also theme: an object with hue (0 to 360, a brand colour that suits the product; avoid 40 to 75) and style (one of clean, bold, soft). For the app screen's bullets write three activity lines a real user would see, with the customers' first names where the notebook has them. Use their customers' exact words from the notebook where you can, quoted. Never invent customers or numbers. No prose outside the JSON.`;
 
 /** One mock-up from the model's reply, or null. */
 export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
@@ -114,7 +137,10 @@ export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
     screens.push(sc);
   }
   if (screens.length < 2) return null;
-  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 4, 30) };
+  const th = (o.theme ?? null) as Record<string, unknown> | null;
+  const hue = th && typeof th.hue === "number" && th.hue >= 0 && th.hue < 360 ? Math.round(th.hue) : null;
+  const style = th && ["clean", "bold", "soft"].includes(String(th.style)) ? (th.style as "clean" | "bold" | "soft") : "clean";
+  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 4, 30), ...(hue !== null ? { theme: { hue, style } } : {}) };
 }
 
 /** The build brief: one document a builder can work from, in plain words. */

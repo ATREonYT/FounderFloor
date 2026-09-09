@@ -18,3 +18,4 @@ export * from "./tasks.ts";
 export * from "./memory.ts";
 export * from "./review.ts";
 export * from "./workshop.ts";
+export * from "./mockup-html.ts";

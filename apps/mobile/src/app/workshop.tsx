@@ -9,108 +9,18 @@
  * for one who does. With nothing on the sign yet, the page shows a
  * sample and says so.
  */
-import { forwardRef, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import type { MockScreen, Mockup } from "@founderfloor/shared";
+import { mockupHtml, mockupPoster, type MockScreen } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
 import { useWorkshop } from "../lib/workshop";
+import { LiveMock } from "../components/LiveMock";
 import { Hint } from "../components/Hint";
 
-const INK = "#12171B";
-const PAPER = "#F6F4EE";
+const INK = "#0B0F19";
 const KIND: Record<MockScreen["kind"], { glyph: GlyphId; color: string }> = { landing: { glyph: "wave", color: "#3B5B92" }, signup: { glyph: "heart", color: "#2F6F6A" }, app: { glyph: "bolt", color: "#4F6E6B" }, pricing: { glyph: "coin", color: "#B4762E" }, checkout: { glyph: "coin", color: "#8C3B2E" } };
 
-
-/** One screen of the mock-up, drawn in a phone; `width` scales everything so the same drawing serves the page and the picture. */
-function MockPhone({ sc, name, width }: { sc: MockScreen; name: string; width: number }) {
-  const u = width / 300;
-  const k = KIND[sc.kind];
-  const px = (n: number) => Math.round(n * u * 10) / 10;
-  return (
-    <View style={{ width, borderRadius: px(34), backgroundColor: INK, padding: px(8), shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: px(18), shadowOffset: { width: 0, height: px(10) }, elevation: 8 }}>
-      <View style={{ borderRadius: px(27), backgroundColor: PAPER, overflow: "hidden", minHeight: width * 1.9 }}>
-        <View style={{ height: px(34), alignItems: "center", justifyContent: "flex-end", paddingBottom: px(4) }}>
-          <View style={{ position: "absolute", top: px(8), width: px(84), height: px(20), borderRadius: px(10), backgroundColor: INK }} />
-        </View>
-        <View style={{ paddingHorizontal: px(18), paddingTop: px(12), paddingBottom: px(18), gap: px(12), flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: px(6) }}>
-            <View style={{ width: px(8), height: px(8), borderRadius: px(2), backgroundColor: k.color }} />
-            <Text style={{ fontSize: px(11), letterSpacing: 1, color: "#6F6A5E" }}>{name.toUpperCase()}</Text>
-          </View>
-          {sc.kind === "app" ? (
-            <>
-              <Text style={{ fontSize: px(22), lineHeight: px(26), fontWeight: "600", color: INK }}>{sc.headline}</Text>
-              <View style={{ backgroundColor: wash(k.color, 0.12), borderRadius: px(14), padding: px(14), gap: px(4) }}>
-                <Text style={{ fontSize: px(11), letterSpacing: 1, color: "#6F6A5E" }}>{(sc.stat?.label ?? "THE NUMBER").toUpperCase()}</Text>
-                <Text style={{ fontSize: px(34), fontWeight: "700", color: INK }}>{sc.stat?.value ?? "12"}</Text>
-              </View>
-              {sc.bullets.map((b, n) => (
-                <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: px(8), paddingVertical: px(8), borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.08)" }}>
-                  <View style={{ width: px(6), height: px(6), borderRadius: px(3), backgroundColor: k.color }} />
-                  <Text style={{ fontSize: px(13), color: INK, flex: 1 }}>{b}</Text>
-                </View>
-              ))}
-              {sc.sub ? <Text style={{ fontSize: px(12), color: "#6F6A5E" }}>{sc.sub}</Text> : null}
-            </>
-          ) : (
-            <>
-              <Text style={{ fontSize: px(sc.kind === "pricing" ? 24 : 26), lineHeight: px(sc.kind === "pricing" ? 28 : 30), fontWeight: "700", color: INK, letterSpacing: -0.4 }}>{sc.headline}</Text>
-              {sc.sub ? <Text style={{ fontSize: px(14), lineHeight: px(19), color: "#4D535A" }}>{sc.sub}</Text> : null}
-              {sc.kind === "pricing" && sc.price ? (
-                <View style={{ borderWidth: 2, borderColor: k.color, borderRadius: px(14), padding: px(14), gap: px(2) }}>
-                  <Text style={{ fontSize: px(11), letterSpacing: 1, color: "#6F6A5E" }}>ONE PLAN</Text>
-                  <Text style={{ fontSize: px(26), fontWeight: "700", color: INK }}>{sc.price}</Text>
-                </View>
-              ) : null}
-              {sc.bullets.map((b, n) => (
-                <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: px(8) }}>
-                  <View style={{ width: px(16), height: px(16), borderRadius: px(8), backgroundColor: wash(k.color, 0.18), alignItems: "center", justifyContent: "center" }}>
-                    <View style={{ width: px(6), height: px(6), borderRadius: px(3), backgroundColor: k.color }} />
-                  </View>
-                  <Text style={{ fontSize: px(13), color: INK, flex: 1 }}>{b}</Text>
-                </View>
-              ))}
-            </>
-          )}
-          <View style={{ flex: 1 }} />
-          {sc.fields.map((f) => (
-            <View key={f} style={{ borderWidth: 1.5, borderColor: "rgba(0,0,0,0.18)", borderRadius: px(10), paddingHorizontal: px(12), paddingVertical: px(10) }}>
-              <Text style={{ fontSize: px(13), color: "#8A8272" }}>{f}</Text>
-            </View>
-          ))}
-          <View style={{ backgroundColor: k.color, borderRadius: px(12), paddingVertical: px(13), alignItems: "center" }}>
-            <Text style={{ fontSize: px(15), fontWeight: "600", color: "#FFFFFF" }}>{sc.cta}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** The picture: the three screens side by side on paper, with the sign over them. This view is what gets captured and shared. */
-const Poster = forwardRef<View, { m: Mockup; width: number }>(function Poster({ m, width }, ref) {
-  const gap = 10;
-  const phoneW = Math.floor((width - 2 * 16 - gap * (m.screens.length - 1)) / m.screens.length);
-  return (
-    <View ref={ref} collapsable={false} accessibilityLabel="The picture" style={{ width, backgroundColor: PAPER, borderRadius: 20, padding: 16, gap: 12, borderWidth: 1, borderColor: "rgba(0,0,0,0.08)" }}>
-      <View style={{ gap: 2 }}>
-        <Text style={{ fontSize: 11, letterSpacing: 1.2, color: "#6F6A5E" }}>{m.name.toUpperCase()}</Text>
-        <Text style={{ fontSize: 18, lineHeight: 22, fontWeight: "700", color: INK, letterSpacing: -0.3 }}>{m.oneLiner}</Text>
-        <Text style={{ fontSize: 12, color: "#4D535A" }}>{`For ${m.audience}.`}</Text>
-      </View>
-      <View style={{ flexDirection: "row", gap, alignItems: "flex-start" }}>
-        {m.screens.map((sc, n) => (
-          <MockPhone key={n} sc={sc} name={m.name} width={phoneW} />
-        ))}
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ fontSize: 10, color: "#8A8272" }}>{m.screens.map((sc) => sc.title).join(" · ")}</Text>
-        <Text style={{ fontSize: 10, color: "#8A8272" }}>mocked up on FounderFloor</Text>
-      </View>
-    </View>
-  );
-});
 
 export default function Workshop() {
   const L = useLayout();
@@ -150,6 +60,12 @@ export default function Workshop() {
     }
   };
   const phoneW = Math.min(300, L.width - 2 * L.shell.paddingHorizontal - 40);
+  const phoneH = Math.round(phoneW * (844 / 390));
+  const posterW = Math.min(640, L.width - 2 * L.shell.paddingHorizontal);
+  const posterH = Math.round(posterW * (640 / 800));
+  /** The app, built once per mock-up; the chips drive its screen without reloading it. */
+  const html = useMemo(() => mockupHtml(m), [m]);
+  const posterHtml = useMemo(() => mockupPoster(m), [m]);
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
@@ -168,9 +84,9 @@ export default function Workshop() {
         </Scene>
         <View style={{ gap: 6 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>{m.source === "sample" ? "Your start-up, mocked up" : `${m.name}, mocked up`}</Display>
-          <Body tone="muted">Three screens, one path, and a brief a builder can start from. Every word can be changed.</Body>
+          <Body tone="muted">A working first version, built from your words: three screens you can tap through. Every word can be changed.</Body>
         </View>
-        <Hint id="workshop" text="Page through the three screens, tap Edit to change any word, then share the picture with the people you talked to. The brief and the prompts under it are for whoever builds it." color="#A28457" />
+        <Hint id="workshop" text="Tap around inside the phone: the buttons and the tab bar work. Tap Edit to change any word, then share the picture with the people you talked to. The brief and the prompts under it are for whoever builds it." color="#A28457" />
         {m.source === "sample" ? (
           <Plate tone="paper" radius={radius.lg} padding={12} lineColor="#A28457">
             <Body size="sm">
@@ -186,7 +102,9 @@ export default function Workshop() {
 
         {/* the phone */}
         <View style={{ alignItems: "center", gap: 12 }}>
-          <MockPhone sc={sc} name={m.name} width={phoneW} />
+          <View style={{ borderRadius: 40, backgroundColor: INK, padding: 8, shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 12 }, elevation: 10 }}>
+            <LiveMock html={html} width={phoneW} height={phoneH} screen={i} onScreen={setI} radius={32} />
+          </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Pressable onPress={() => setI((x) => Math.max(0, x - 1))} disabled={i === 0} accessibilityRole="button" accessibilityLabel="Previous screen" style={{ opacity: i === 0 ? 0.3 : 1, padding: 6 }}>
               <Body>←</Body>
@@ -218,7 +136,7 @@ export default function Workshop() {
             <Spec tone="faint">Show it before you build</Spec>
           </View>
           <View style={{ alignItems: "center" }}>
-            <Poster ref={poster} m={m} width={Math.min(600, L.width - 2 * L.shell.paddingHorizontal)} />
+            <LiveMock ref={poster} html={posterHtml} width={posterW} height={posterH} radius={20} />
           </View>
           {canCapture ? (
             <Button variant="secondary" onPress={() => void sharePicture()}>

@@ -53,3 +53,40 @@ test("the price and the quotes come out of what customers said", () => {
   const brief = buildBrief(m);
   assert.match(brief, /The one number, big/);
 });
+
+test("the mock-up renders as a whole app page, escaped, with three tappable screens", async () => {
+  const { mockupHtml, mockupPoster, mockupTheme } = await import("../src/mockup-html.ts");
+  const m = localMockup({ name: "Tally <script>", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", said: ["Maria: I do the till by hand", "Kostas said he would pay €12 a month"] });
+  const html = mockupHtml(m, { screen: 1 });
+  assert.match(html, /<!doctype html>/);
+  assert.match(html, /Tally &lt;script&gt;/);
+  assert.doesNotMatch(html, /Tally <script>/);
+  assert.equal((html.match(/class="screen/g) ?? []).length, 3);
+  assert.match(html, /window\.__go\(1\)/);
+  assert.match(html, /€12/);
+  assert.match(html, /class="tabs"/);
+  const t = mockupTheme(m);
+  assert.ok(t.hue >= 0 && t.hue < 360);
+  assert.equal(mockupTheme({ ...m, theme: { hue: 200, style: "bold" } }).hue, 200);
+  const poster = mockupPoster(m);
+  assert.equal((poster.match(/<iframe/g) ?? []).length, 3);
+});
+
+test("names come out of what customers said and the one screen shows activity", async () => {
+  const { namesIn } = await import("../src/workshop.ts");
+  assert.deepEqual(namesIn(["Maria: I do the till by hand", "Kostas said he would pay €12", "nothing", "Eleni (Coffee Lab) wants Mondays"]), ["Maria", "Kostas", "Eleni"]);
+  const m = localMockup({ name: "Tally", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", said: ["Maria: I do the till by hand"] });
+  assert.match(m.screens[1].bullets[0], /^Maria signed up/);
+  assert.match(m.screens[1].bullets[1], /paid for a/);
+  const ok = asMockup({ name: "T", oneLiner: "x", audience: "y", path: "z", theme: { hue: 210, style: "bold" }, screens: [{ kind: "landing", headline: "h", cta: "c" }, { kind: "app", headline: "h", cta: "c" }] });
+  assert.deepEqual(ok.theme, { hue: 210, style: "bold" });
+});
+
+test("singulars", async () => {
+  const { singular } = await import("../src/workshop.ts");
+  assert.equal(singular("prepaid passes"), "prepaid pass");
+  assert.equal(singular("weekly numbers"), "weekly number");
+  assert.equal(singular("entries"), "entry");
+  assert.equal(singular("business"), "business");
+  assert.equal(singular("boxes"), "box");
+});
