@@ -29,9 +29,10 @@ export function useWorkshop() {
   }, []);
   const r = stand.record;
   const mine = stand.source !== "rehearsal" && !!r.oneLiner;
-  const input = mine ? { name: r.name, oneLiner: r.oneLiner, audience: profile?.audiences, price: r.publicPricing } : {};
-  /** What customers said, for the brief: interviews first, then notebook lines of their words. */
+  /** What customers said, for the mock-up and the brief: interviews first, then notebook lines in their words. */
   const said = [...interviews.slice(0, 6).map((i) => `${i.who}: ${i.said}`), ...memory.filter((e) => e.kind === "work" || e.kind === "note" || e.kind === "outcome").slice(-6).map((e) => e.text)];
+  const input = mine ? { name: r.name, oneLiner: r.oneLiner, audience: profile?.audiences, price: r.publicPricing, said } : {};
+  const seedNow = localMockup(input, profile).seed;
 
   const write = useCallback(
     async (fresh = false) => {
@@ -47,7 +48,7 @@ export function useWorkshop() {
         const reply = await askModel({ fn: "guide", body: { question: "mockup", stand: r, fresh }, direct: { system: MOCKUP_PROMPT, turns: [{ role: "user", content: ctx }], maxTokens: 1100 } });
         const m = asMockup(parseJson(reply));
         if (!alive.current) return;
-        if (m) setMockup({ ...m, source: "live", at: new Date().toISOString() });
+        if (m) setMockup({ ...m, source: "live", at: new Date().toISOString(), seed: seedNow });
         else {
           setMockup(local);
           setLastError("The model's mock-up did not parse; this one is the desk's own.");
@@ -64,11 +65,11 @@ export function useWorkshop() {
     [mine, r.name, r.oneLiner, r.publicPricing, profile, memory, memoryOn, setMockup],
   );
 
-  // nothing yet, or a sample while the sign has since been written: draw it
+  // nothing yet, a sample while the sign has since been written, or a sign that changed under an unedited mock-up: draw it
   useEffect(() => {
-    if (!mockup || (mockup.source === "sample" && mine)) void write();
+    if (!mockup || (mockup.source === "sample" && mine) || (mine && !mockup.edited && mockup.seed && mockup.seed !== seedNow)) void write();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mockup?.source, mine]);
+  }, [mockup?.source, mine, seedNow]);
 
   const m = mockup ?? localMockup(input, profile);
   const brief = buildBrief(m, { record: r, notes: said });
@@ -80,6 +81,7 @@ export function useWorkshop() {
     brief,
     prompt: (kind: Builder) => builderPrompt(kind, m, brief),
     rewrite: () => void write(true),
-    editScreen: (i: number, patch: Partial<MockScreen>) => setMockup({ ...m, screens: m.screens.map((sc, k) => (k === i ? { ...sc, ...patch } : sc)) }),
+    editScreen: (i: number, patch: Partial<MockScreen>) => setMockup({ ...m, edited: true, screens: m.screens.map((sc, k) => (k === i ? { ...sc, ...patch } : sc)) }),
+    said,
   };
 }

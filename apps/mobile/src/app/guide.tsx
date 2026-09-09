@@ -34,7 +34,7 @@ export default function Guide() {
             <Spec tone="accent">Skip</Spec>
           </Pressable>
         </View>
-        <Scene key={p.set} set={p.set} height={L.compact ? 210 : 260} radiusPx={radius.xl} color={p.color} accessibilityLabel={p.title}>
+        <Scene key={`${p.set}-${i}`} set={p.set} height={L.compact ? 170 : 220} radiusPx={radius.xl} color={p.color} accessibilityLabel={p.title}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <GlyphTile id={p.glyph} color={p.color} size={28} scale={1} />
             <Spec tone="ink">{p.tab.toUpperCase()}</Spec>
@@ -44,6 +44,19 @@ export default function Guide() {
         <Body tone="muted" size="lg">
           {p.line}
         </Body>
+        {p.tips?.length ? (
+          <View style={{ gap: 8, backgroundColor: shell.panel, borderRadius: radius.xl, padding: 14, borderWidth: 1, borderColor: shell.line }}>
+            <Spec tone="muted">TO GET THE MOST OUT OF IT</Spec>
+            {p.tips.map((t) => (
+              <View key={t} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+                <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: p.color, marginTop: 8 }} />
+                <Body size="sm" style={{ flex: 1 }}>
+                  {t}
+                </Body>
+              </View>
+            ))}
+          </View>
+        ) : null}
         <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
           {PAGES.map((_, k) => (
             <Pressable key={k} onPress={() => setI(k)} accessibilityRole="button" accessibilityLabel={`Page ${k + 1}`} style={{ width: k === i ? 22 : 8, height: 8, borderRadius: 4, backgroundColor: k === i ? shell.ink : shell.line }} />

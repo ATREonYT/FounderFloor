@@ -28,6 +28,8 @@ export interface MockScreen {
   bullets: string[];
   /** For a pricing or checkout screen. */
   price?: string;
+  /** For the app screen: the one number that matters, and a plausible value. */
+  stat?: { label: string; value: string };
 }
 
 export interface Mockup {
@@ -41,26 +43,53 @@ export interface Mockup {
   keeps: string[];
   source: "live" | "rehearsal" | "sample";
   at: string;
+  /** The sign it was drawn from, so a changed sign can be noticed. */
+  seed?: string;
+  /** The founder changed words by hand; a redraw must be asked for. */
+  edited?: boolean;
 }
 
 export const SAMPLE_MOCKUP_INPUT = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", audience: "independent café owners", price: "€40 a month" };
 
-/** The mock-up without a model: three screens from the sign, the audience and the price. */
-export function localMockup(input: { name?: string; oneLiner?: string; audience?: string; price?: string }, profile?: Profile | null): Mockup {
-  const sample = !input.oneLiner?.trim();
-  const name = (input.name || SAMPLE_MOCKUP_INPUT.name).trim();
-  const oneLiner = (input.oneLiner || SAMPLE_MOCKUP_INPUT.oneLiner).trim().replace(/\.$/, "");
-  const audience = (input.audience || profile?.audiences || SAMPLE_MOCKUP_INPUT.audience).trim();
-  const price = (input.price || (sample ? SAMPLE_MOCKUP_INPUT.price : "a price you said out loud")).trim();
-  const screens: MockScreen[] = [
-    { kind: "landing", title: "The front door", headline: oneLiner, sub: `For ${audience}. Try it this week, no card.`, cta: "Start", fields: ["Your email"], bullets: ["What you get, in one line each", "What it costs, said plainly", "Who else uses it, by name"] },
-    { kind: "app", title: "The one screen", headline: `${name}, today`, sub: "Only the one path. No settings, no menus.", cta: "Do the thing", fields: [], bullets: ["The single number that matters, big", "The last three things that happened", "The one button"] },
-    { kind: "pricing", title: "The price", headline: `${price}, cancel any time`, sub: "One plan. The first week free.", cta: "Start the free week", fields: ["Card"], bullets: ["Everything, no tiers", "Stop whenever", "A person answers email"], price },
-  ];
-  return { name, oneLiner, audience, screens, path: `Someone from ${audience} lands on the front door, leaves an email, uses the one screen once, and pays ${price}.`, keeps: ["accounts", "the one thing they do", "payments"], source: sample ? "sample" : "rehearsal", at: new Date().toISOString() };
+/** The first money amount in a line: "€40 a month" from "Maria said she would pay €40 a month". */
+export function priceIn(lines: string[]): string | null {
+  for (const l of lines) {
+    const m = l.match(/([€$£]\s?\d[\d,.]*\s?(?:k|K)?(?:\s?(?:a|per|\/)\s?(?:month|mo|week|year|yr|day|seat|user))?)/);
+    if (m) return m[1].replace(/\s+/g, " ").trim();
+    const n = l.match(/(\d[\d,.]*\s?(?:€|euros|euro|eur|dollars|usd|pounds|gbp)(?:\s?(?:a|per|\/)\s?(?:month|mo|week|year|yr))?)/i);
+    if (n) return n[1].trim();
+  }
+  return null;
 }
 
-export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Use their customers' exact words from the notebook where you can. Never invent customers or numbers. No prose outside the JSON.`;
+/** A short quote from a customer line, for a bullet: the part after the colon, trimmed to a clause. */
+function quoteOf(line: string): string | null {
+  const after = line.includes(":") ? line.slice(line.indexOf(":") + 1) : line;
+  const clause = after.replace(/^[\s"“]+|[\s"”.]+$/g, "").split(/[.;]|, and | but /)[0]?.trim();
+  return clause && clause.length >= 8 && clause.length <= 70 ? `"${clause.charAt(0).toUpperCase()}${clause.slice(1)}"` : null;
+}
+
+/** The mock-up without a model: three screens from the sign, the audience, the price said out loud and what customers said. */
+export function localMockup(input: { name?: string; oneLiner?: string; audience?: string; price?: string; said?: string[] }, profile?: Profile | null): Mockup {
+  const sample = !input.oneLiner?.trim();
+  const name = (input.name || SAMPLE_MOCKUP_INPUT.name).trim();
+  const oneLiner = (input.oneLiner || SAMPLE_MOCKUP_INPUT.oneLiner).trim().replace(/[.!]$/, "");
+  const audience = (input.audience || profile?.audiences || SAMPLE_MOCKUP_INPUT.audience).trim().replace(/[.!]$/, "");
+  const said = sample ? [] : (input.said ?? []);
+  const price = (input.price || priceIn(said) || (sample ? SAMPLE_MOCKUP_INPUT.price : "")).trim();
+  const quotes = [...said.filter((l) => l.includes(":")), ...said.filter((l) => !l.includes(":"))].map(quoteOf).filter((q): q is string => !!q).slice(0, 2);
+  // what it does, from the sign: the noun phrase before "for", if there is one
+  const thing = oneLiner.split(/\s+for\s+/i)[0].trim();
+  const landingBullets = [...quotes, `What you get: ${thing.charAt(0).toLowerCase()}${thing.slice(1)}`, price ? `${price}, cancel any time` : "One price, said plainly", "Try it this week, no card"].slice(0, 3);
+  const screens: MockScreen[] = [
+    { kind: "landing", title: "The front door", headline: oneLiner, sub: `For ${audience}.`, cta: "Start free", fields: ["Your email"], bullets: landingBullets },
+    { kind: "app", title: "The one screen", headline: `${name}, this week`, sub: "One path. No settings, no menus.", cta: "Do the thing", fields: [], bullets: ["The last three things that happened", "The one button"], stat: { label: sample ? "Passes used this week" : `${thing.split(" ").slice(-2).join(" ")} this week`, value: "12" } },
+    { kind: "pricing", title: "The price", headline: price ? `${price}, cancel any time` : "One plan, cancel any time", sub: "The first week is free. No tiers.", cta: "Start the free week", fields: ["Card"], bullets: ["Everything, no tiers", "Stop whenever", "A person answers email"], price: price || "€ ?" },
+  ];
+  return { name, oneLiner, audience, screens, path: `Someone from ${audience} lands on the front door, leaves an email, uses the one screen once, and pays${price ? ` ${price}` : ""}.`, keeps: ["accounts", "the one thing they do", "payments"], source: sample ? "sample" : "rehearsal", at: new Date().toISOString(), seed: `${name}|${oneLiner}|${audience}|${price}` };
+}
+
+export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), for the app screen a stat (object with label, the one number that matters, and value, a plausible small number as a string), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Use their customers' exact words from the notebook where you can, quoted. Never invent customers or numbers. No prose outside the JSON.`;
 
 /** One mock-up from the model's reply, or null. */
 export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
@@ -79,6 +108,9 @@ export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
     const sc: MockScreen = { kind: kinds.includes(y.kind as ScreenKind) ? (y.kind as ScreenKind) : "app", title: s(y.title, 40) ?? "Screen", headline, sub: s(y.sub, 140) ?? "", cta, fields: list(y.fields, 2, 30), bullets: list(y.bullets, 3, 70) };
     const price = s(y.price, 40);
     if (price) sc.price = price;
+    const st = (y.stat ?? null) as Record<string, unknown> | null;
+    const label = st ? s(st.label, 40) : null, value = st ? s(st.value, 12) : null;
+    if (label && value) sc.stat = { label, value };
     screens.push(sc);
   }
   if (screens.length < 2) return null;
@@ -103,6 +135,7 @@ export function buildBrief(m: Mockup, opts?: { record?: Partial<StandRecord> | n
       sc.fields.length ? `- Inputs: ${sc.fields.join(", ")}` : "- Inputs: none",
       sc.bullets.length ? `- Shows: ${sc.bullets.join("; ")}` : "",
       sc.price ? `- Price: ${sc.price}` : "",
+      sc.stat ? `- The one number, big: ${sc.stat.label} (e.g. ${sc.stat.value})` : "",
       "",
     ]),
     "## What it keeps",

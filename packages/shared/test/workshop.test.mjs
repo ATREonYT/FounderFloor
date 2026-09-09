@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { localMockup, asMockup, buildBrief, builderPrompt, MOCKUP_PROMPT } from "../src/workshop.ts";
+import { localMockup, asMockup, buildBrief, builderPrompt, priceIn, MOCKUP_PROMPT } from "../src/workshop.ts";
 
 test("with nothing on the sign the mock-up is a labelled sample; with a sign it is theirs", () => {
   const s = localMockup({});
@@ -39,4 +39,17 @@ test("the brief and the prompts carry the exact words", () => {
   const cc = builderPrompt("claude", m, b);
   assert.match(cc, /Read BRIEF\.md first/);
   assert.match(cc, /# Tally/);
+});
+
+test("the price and the quotes come out of what customers said", () => {
+  assert.equal(priceIn(["Maria said she would pay €40 a month if it did the till"]), "€40 a month");
+  assert.equal(priceIn(["Kostas: maybe 25 euros per month"]), "25 euros per month");
+  assert.equal(priceIn(["nothing here"]), null);
+  const m = localMockup({ name: "Tally", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", said: ["Maria: I do the till by hand and it takes my Sunday", "Kostas said he would pay €12 a month"] });
+  assert.equal(m.screens[2].price, "€12 a month");
+  assert.match(m.screens[0].bullets[0], /^"I do the till by hand/);
+  assert.ok(m.screens[1].stat);
+  assert.ok(m.seed?.includes("Tally"));
+  const brief = buildBrief(m);
+  assert.match(brief, /The one number, big/);
 });

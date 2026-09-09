@@ -26,7 +26,7 @@ export const TOUR: TourStep[] = [
   { id: "to-coach", target: "tabs", say: "Now tap Coach.", route: "/reception", tab: "Coach" },
   { id: "coach", target: null, say: "The coach: ask the desk anything about your company. The name at the top picks one of the four coaches." },
   { id: "to-you", target: "tabs", say: "Last one: tap You.", route: "/you", tab: "You" },
-  { id: "you", target: null, say: "You: your company, the Friday log, your plan, the notebook, and the floor for when you have something to show. That is the building." },
+  { id: "you", target: null, say: "You: your company, the Workshop that mocks up your product, the Friday log, your plan, the notebook. The full guide is here too, any time. That is the building." },
 ];
 
 export interface Rect {
