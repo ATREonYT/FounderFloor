@@ -19,7 +19,8 @@ import { useFounder, type TaskOutcome } from "../lib/store";
 import { MemoryAsk } from "../components/MemoryAsk";
 import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
-import { taskKey, useTask, weekNow } from "../lib/taskDesk";
+import { ROOM_ORDER, roomOfWeek, taskKey, useTask, weekNow } from "../lib/taskDesk";
+import { STAGES } from "@founderfloor/shared";
 
 /** The room each kind of work is drawn in. */
 export const KIND_ROOM: Record<TaskKind, { set: SceneSet; glyph: GlyphId; color: string }> = {
@@ -164,6 +165,9 @@ export default function Task() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
               {t.guide ? <Tag glyph="bolt" color={room.color} label={t.guide.time} /> : null}
               <Tag glyph="leaf" color={room.color} label={week.focus.replace(/\.$/, "")} />
+              <Pressable onPress={() => router.navigate({ pathname: "/build", params: { room: ROOM_ORDER[roomOfWeek(plan, wN)] } } as Href)} accessibilityRole="button" accessibilityLabel="Open this room on the map">
+                <Tag glyph="cube" color={room.color} label={`${STAGES[roomOfWeek(plan, wN)].name} room →`} />
+              </Pressable>
             </View>
           </View>
 

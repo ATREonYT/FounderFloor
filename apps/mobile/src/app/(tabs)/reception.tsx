@@ -8,8 +8,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Body, Button, Chip, Composer, Dialogue, Display, GlyphTile, Keeper, Message, Pill, Plate, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
+import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
+import { Body, Button, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Keeper, Message, Pill, Plate, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
 import { COACH_SET } from "../../lib/glyphs";
@@ -23,8 +23,10 @@ import { trialLeft } from "../../lib/trial";
 import { useFounder, isoWeek } from "../../lib/store";
 import { remembers, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
 import { ROOM_GLYPH } from "../../lib/glyphs";
+import { roomOfWeek } from "../../lib/taskDesk";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
+import { useTour } from "../../lib/tour";
 
 export default function Reception() {
   const L = useLayout();
@@ -32,6 +34,7 @@ export default function Reception() {
   const bottom = useBottomChrome();
   const { coach: coachParam } = useLocalSearchParams<{ coach?: string }>();
   const gate = useGate();
+  const focused = useIsFocused();
   const { coach, messages, busy, thinking, send, reset, starters, source, quota, lastError } = useReceptionist(coachParam);
   const stand = useStand();
   const [draft, setDraft] = useState("");
@@ -59,6 +62,10 @@ export default function Reception() {
     const i = w.do.findIndex((_, k) => !planDone.includes(`${w.n}-${k}`));
     return i < 0 ? null : { week: w.n, i, text: w.do[i] };
   })();
+  const weekTotal = roadmap?.weeks.find((x) => x.n === weekNow)?.do.length ?? 0;
+  const weekDoneCount = roadmap ? (roadmap.weeks.find((x) => x.n === weekNow)?.do.filter((_, k) => planDone.includes(`${weekNow}-${k}`)).length ?? 0) : 0;
+  /** The room this week is spent in on the map. */
+  const weekRoom = roadmap ? STAGES[roomOfWeek(roadmap, weekNow)] : currentStage(ticks);
   const kpi = useFounder((s) => s.kpi);
   const cur = currentStage(ticks);
   const curDone = cur.items.filter((x) => ticks.includes(x.id)).length;
@@ -120,7 +127,7 @@ export default function Reception() {
         >
           {empty ? (
             <View style={{ gap: 20, paddingBottom: 8 }}>
-              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
+              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240} ambient={focused} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
                 <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
               </Stage>
               {week ? (
@@ -145,26 +152,24 @@ export default function Reception() {
               {atDesk ? <Hint id="home" text="This is Home. The card below says what to do next; the box at the bottom asks the desk anything. The tabs underneath are the whole building." /> : null}
               {atDesk ? (
                 <TourTarget id="home-next">
-                <Pressable onPress={() => router.navigate("/build")} accessibilityRole="button" accessibilityLabel="Next on the map">
+                <Pressable onPress={() => { if (useTour.getState().active) return; /* on the tour the tap only moves the tour on; the tabs must stay in view */ if (weekTask) router.push({ pathname: "/task", params: { week: String(weekTask.week), i: String(weekTask.i) } }); else router.navigate("/build"); }} accessibilityRole="button" accessibilityLabel={weekTask ? "Next on your plan" : "Next on the map"}>
                   <Plate tone="panel" radius={radius.xl} padding={14}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <GlyphTile id={ROOM_GLYPH[cur.id] ?? "bolt"} color={DOOR[cur.n - 1]} size={44} />
+                      <GlyphTile id={ROOM_GLYPH[weekRoom.id] ?? "bolt"} color={DOOR[weekRoom.n - 1]} size={44} />
                       <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                        <Spec tone="muted">{`Up next · Room ${cur.n}, ${cur.name} · ${curDone} of ${cur.items.length}`}</Spec>
+                        <Spec tone="muted">{roadmap ? `Up next · Week ${weekNow} · ${weekRoom.name} room` : `Up next · Room ${cur.n}, ${cur.name} · ${curDone} of ${cur.items.length}`}</Spec>
                         <Body size="sm" medium numberOfLines={2}>
-                          {nextItem ? nextItem.text : "Every room walked. Time for the floor."}
+                          {roadmap ? (weekTask ? weekTask.text : `Every task of week ${weekNow} is done. Read the week back.`) : nextItem ? nextItem.text : "Every room walked. Time for the floor."}
                         </Body>
                       </View>
-                      <Body tone="accent">→</Body>
+                      <Body tone="accent">›</Body>
                     </View>
                     {focus ? (
-                      <Pressable onPress={() => (weekTask ? router.push({ pathname: "/task", params: { week: String(weekTask.week), i: String(weekTask.i) } }) : router.push("/plan"))} accessibilityRole="button" accessibilityLabel={weekTask ? "Open this week's task" : "Your plan"} style={{ marginTop: 10, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, padding: 10 }}>
-                        <GlyphTile id="bolt" color="#4F6E6B" size={30} scale={1} />
-                        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                          <Spec tone="muted">{`WEEK ${weekNow} · ${focus.replace(/\.$/, "").toUpperCase()}`}</Spec>
-                          <Body size="sm" medium numberOfLines={2}>
-                            {weekTask ? weekTask.text : "Every task this week is done."}
-                          </Body>
+                      <Pressable onPress={() => router.navigate("/build")} accessibilityRole="button" accessibilityLabel="Open the map" style={{ marginTop: 10, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, padding: 10 }}>
+                        <Glyph id="cube" tone="auto" scale={1} />
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Spec tone="muted">{`THIS WEEK · ${focus.replace(/\.$/, "").toUpperCase()}`}</Spec>
+                          <Spec tone="ink">{`${weekDoneCount} of ${weekTotal} tasks done · in the ${weekRoom.name} room on the map`}</Spec>
                         </View>
                         <Body tone="accent">›</Body>
                       </Pressable>

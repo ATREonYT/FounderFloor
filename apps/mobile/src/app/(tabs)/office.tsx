@@ -7,7 +7,7 @@
  */
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
-import { useRouter, type Href } from "expo-router";
+import { useIsFocused, useRouter, type Href } from "expo-router";
 import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, remembers, readingPreview, MINES, type KpiEntry } from "@founderfloor/shared";
 import { effectivePlan } from "../../lib/billing";
 import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Glyph, GlyphTile, Input, Keeper, Mono, Plate, Scene, Spec, Tap, Toast, haptic, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
@@ -24,6 +24,7 @@ import { TourTarget } from "../../components/TourTarget";
 export default function Office() {
   const L = useLayout();
   const router = useRouter();
+  const focused = useIsFocused();
   const bottom = useBottomChrome();
   const stand = useStand();
   const gate = useGate();
@@ -86,7 +87,7 @@ export default function Office() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The Office">
+        <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The Office">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <GlyphTile id="coin" color="#5E7C93" size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>

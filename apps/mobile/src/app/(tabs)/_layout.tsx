@@ -25,7 +25,7 @@ export default function TabsLayout() {
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
-        <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: shell.paper }, animation: "shift" }}>
+        <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: shell.paper }, animation: "none", freezeOnBlur: true, lazy: true }}>
           <Tabs.Screen name="reception" />
           <Tabs.Screen name="stand" />
           <Tabs.Screen name="build" />

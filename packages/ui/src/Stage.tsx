@@ -138,7 +138,7 @@ export function Stage({
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={who ? `${who}: ${say ?? ""}` : say}>
       <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))} style={{ height, borderRadius: radiusPx, overflow: "hidden", backgroundColor: wash(color, scheme() === "dark" ? 0.22 : 0.16), position: "relative" }}>
         {/* the wall, the floor, and the hall behind the counter */}
-        <Backdrop hall={SCENE_SETS[set].hall} floorH={floorH} scale={scale} />
+        <Backdrop hall={SCENE_SETS[set].hall} floorH={floorH} scale={scale} width={width} />
         <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={ambient} edges />
         {/* the counter, and the keeper behind it */}
         <View style={{ position: "absolute", left: "50%", bottom: withCounter ? floorH - 10 * scale : floorH - 6, marginLeft: -counterW / 2, width: counterW, height: counterH + keeperH, alignItems: "center" }}>

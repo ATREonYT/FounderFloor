@@ -294,3 +294,10 @@ export function useStepRoom(key: string, text: string, week: PlanWeek | null, st
     },
   };
 }
+
+/** The six rooms, in order; the plan names the first, and each week moves one room on, stopping at the last. */
+export const ROOM_ORDER = ["idea", "validate", "setup", "customers", "money", "raise"] as const;
+export function roomOfWeek(plan: FounderPlan | null, week: number): number {
+  const first = plan ? Math.max(0, ROOM_ORDER.indexOf(plan.firstRoom)) : 0;
+  return Math.min(ROOM_ORDER.length - 1, first + Math.max(0, week - 1));
+}

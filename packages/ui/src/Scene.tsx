@@ -126,14 +126,15 @@ export const SCENE_SETS: Record<SceneSet, { hall: Hall; props: SceneProp[]; walk
 };
 
 /** The wall and floor of a hall, sized to fill its parent. */
-export function Backdrop({ hall = "main-hall", floorH, scale = 2, wall = true, children }: { hall?: Hall; floorH: number; scale?: 1 | 2 | 3; wall?: boolean; children?: ReactNode }) {
+export function Backdrop({ hall = "main-hall", floorH, scale = 2, wall = true, width, children }: { hall?: Hall; floorH: number; scale?: 1 | 2 | 3; wall?: boolean; /** Known width, so only the tiles that show are drawn. */ width?: number; children?: ReactNode }) {
   const f = art.floors[hall];
   const tile = 16 * scale;
+  const tiles = width ? Math.ceil(width / tile) + 1 : 48;
   return (
     <>
       {wall ? <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: floorH, height: 3 * scale, backgroundColor: f.wall }} /> : null}
       <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: floorH, backgroundColor: f.a, flexDirection: "row", overflow: "hidden" }}>
-        {Array.from({ length: 48 }).map((_, i) => (
+        {Array.from({ length: tiles }).map((_, i) => (
           <View key={i} style={{ width: tile, height: floorH, backgroundColor: i % 2 ? f.b : f.a, borderRightWidth: 1, borderRightColor: "rgba(0,0,0,0.04)" }} />
         ))}
       </View>
@@ -233,7 +234,7 @@ export function Scene({
       accessibilityLabel={accessibilityLabel}
       style={{ height, borderRadius: radiusPx, overflow: "hidden", backgroundColor: ground, position: "relative" }}
     >
-      <Backdrop hall={s.hall} floorH={floorH} scale={scale} />
+      <Backdrop hall={s.hall} floorH={floorH} scale={scale} width={width} />
       <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={ambient} />
       {children ? (
         <View style={{ position: "absolute", left: 12, right: 12, bottom: 10, flexDirection: "row" }}>

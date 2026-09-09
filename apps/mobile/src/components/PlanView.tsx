@@ -8,7 +8,8 @@
  */
 import { Pressable, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { GOALS, LIKES, type FounderPlan, type Profile } from "@founderfloor/shared";
+import { GOALS, LIKES, STAGES, type FounderPlan, type Profile } from "@founderfloor/shared";
+import { roomOfWeek } from "../lib/taskDesk";
 import { Body, Display, Glyph, GlyphTile, Plate, Ring, Spec, Tap, haptic, radius, shell, wash, type GlyphId } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 
@@ -62,7 +63,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
               <View style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
                 <View style={{ backgroundColor: open ? wash(color, 0.1) : shell.panel, borderRadius: 16, borderWidth: 1.5, borderColor: open ? color : shell.line, padding: 12, gap: 8 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Spec tone="muted">{`WEEK ${w.n}`}</Spec>
+                    <Spec tone="muted">{`WEEK ${w.n} · ${STAGES[roomOfWeek(plan, w.n)].name.toUpperCase()} ROOM`}</Spec>
                     {open ? (
                       <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 2 }}>
                         <Spec tone="paper">this week</Spec>

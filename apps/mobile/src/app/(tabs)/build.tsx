@@ -1,16 +1,20 @@
 /**
- * BUILD — the workshop. Six rooms, each a door on the wall with its sign
- * over it and a stepped meter under it. A room opens as the Dialogue: the
- * site's quest list with ticks, and two things to ask the guide, whose
- * answer types itself out character by character the way the floor's
- * dialogue does. A room at 100% puts a badge on the stand.
+ * BUILD — the map, drawn as the building itself: six rooms stacked as
+ * floors, the founder standing in the one their plan has them in this
+ * week. The plan's four weeks are spent in the rooms from the one it
+ * named first, so week one's tasks hang as windows on that room's sign,
+ * week two's on the next, and the keeper walks down a floor when the
+ * week moves on. A room opens as the Dialogue: this month's tasks in it
+ * (each a door to its page), the room's own list with ticks, the week
+ * read back, and two things to ask the guide. A room at 100% puts a
+ * badge on the stand.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useIsFocused, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Button, ButtonRow, Calendar, Dialogue, Display, GlyphTile, Journey, Keeper, Plate, Progress, Scene, Spec, Stage, Tick, Toast, art, haptic, radius, scheme, shell, useLayout, wash, type Mood } from "@founderfloor/ui";
+import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_GLYPH } from "../../lib/glyphs";
@@ -20,6 +24,7 @@ import { useTour } from "../../lib/tour";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
+import { roomOfWeek, taskKey, weekNow } from "../../lib/taskDesk";
 import { useStand } from "../../lib/stand";
 import { askGuide, whereAmI } from "@founderfloor/shared";
 import { COACHES } from "../../lib/mock";
@@ -31,8 +36,20 @@ export default function Build() {
   const router = useRouter();
   const gate = useGate();
   const bottom = useBottomChrome();
-  const { ticks, toggleTick, saveDoc, kpi, interviews, visits, streak, guided } = useFounder();
-  const { tour, then } = useLocalSearchParams<{ tour?: string; then?: string }>();
+  const ticks = useFounder((s) => s.ticks);
+  const toggleTick = useFounder((s) => s.toggleTick);
+  const saveDoc = useFounder((s) => s.saveDoc);
+  const kpi = useFounder((s) => s.kpi);
+  const interviews = useFounder((s) => s.interviews);
+  const visits = useFounder((s) => s.visits);
+  const streak = useFounder((s) => s.streak);
+  const guided = useFounder((s) => s.guided);
+  const plan = useFounder((s) => s.roadmap);
+  const profile = useFounder((s) => s.profile);
+  const planDone = useFounder((s) => s.planDone);
+  const reviews = useFounder((s) => s.reviews);
+  const focused = useIsFocused();
+  const { tour, then, room } = useLocalSearchParams<{ tour?: string; then?: string; room?: string }>();
   const startTour = useTour((s) => s.start);
   const closedStep = useTour((s) => s.closed);
   useEffect(() => {
@@ -43,6 +60,14 @@ export default function Build() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tour]);
   const opened = effectivePlan() !== "free" || !!trialLeft();
+  useEffect(() => {
+    const st = room ? STAGES.find((x) => x.id === room) : null;
+    if (st) {
+      const t = setTimeout(() => void openRoom(st), 200);
+      return () => clearTimeout(t);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room]);
   const stand = useStand();
   const [open, setOpen] = useState<BuildStage | null>(null);
   const [guide, setGuide] = useState<{ q: string; text: string } | null>(null);
@@ -50,6 +75,12 @@ export default function Build() {
   const [mood, setMood] = useState<Mood>("idle");
   const [opening, setOpening] = useState<string | null>(null);
   const cur = currentStage(ticks);
+  const wk = weekNow(profile, plan);
+  /** Which room each week of the plan is spent in, and the plan's tasks by room. */
+  const roomWeeks = useMemo(() => (plan ? plan.weeks.map((w) => ({ w, room: roomOfWeek(plan, w.n) })) : []), [plan]);
+  const tasksIn = (i: number) => roomWeeks.filter((x) => x.room === i).flatMap((x) => x.w.do.map((text, k) => ({ text, week: x.w.n, i: k, done: planDone.includes(taskKey(x.w.n, k)) })));
+  const hereIndex = plan ? roomOfWeek(plan, wk) : STAGES.findIndex((s) => s.id === cur.id);
+  const here = STAGES[hereIndex];
   const react = (m: Mood) => {
     setMood(m);
     setTimeout(() => setMood("idle"), 900);
@@ -81,30 +112,37 @@ export default function Build() {
       setOpening(null);
     }, 260);
   };
-  const stops = STAGES.map((s, i) => {
-    const p = stageProgress(s, ticks);
-    return { id: s.id, name: s.name, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length}`, color: DOOR[i], progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
-  });
-  const hereIndex = STAGES.findIndex((s) => s.id === cur.id);
+  const rooms = useMemo(
+    () =>
+      STAGES.map((s, i) => {
+        const p = stageProgress(s, ticks);
+        const weeks = roomWeeks.filter((x) => x.room === i).map((x) => x.w.n);
+        return { id: s.id, name: s.name, color: DOOR[i], glyph: ROOM_GLYPH[s.id] ?? "bolt", tasks: tasksIn(i).map((t) => ({ text: t.text, done: t.done })), week: weeks.length ? `WEEK ${weeks.join(" & ")}` : undefined, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length} on the list`, progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ticks, roomWeeks, planDone, opened],
+  );
+  const walked = plan ? planDone.length / Math.max(1, plan.weeks.reduce((n, w) => n + w.do.length, 0)) : pathProgress(ticks);
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Spec tone="muted">{`The map · ${Math.round(pathProgress(ticks) * 100)}% walked`}</Spec>} />
+      <TopBar center={<Spec tone="muted">{`The map · ${Math.round(walked * 100)}% walked`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
-        <Scene set="workshop" height={L.compact ? 150 : 180} radiusPx={radius.xl} accessibilityLabel="The map">
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <GlyphTile id={ROOM_GLYPH[cur.id] ?? "bolt"} color={DOOR[cur.n - 1]} size={36} />
+        <Scene set="workshop" height={L.compact ? 150 : 180} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The map">
+          <Pressable onPress={() => void openRoom(here)} accessibilityRole="button" accessibilityLabel="Open the room you are in" style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <GlyphTile id={ROOM_GLYPH[here.id] ?? "bolt"} color={DOOR[hereIndex]} size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Spec tone="muted">YOU ARE IN</Spec>
-              <Body medium numberOfLines={1}>{`${cur.name} · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
+              <Spec tone="muted">{plan ? `YOU ARE IN · WEEK ${wk}` : "YOU ARE IN"}</Spec>
+              <Body medium numberOfLines={1}>{plan ? `${here.name} · ${tasksIn(hereIndex).filter((t) => t.done).length} of ${tasksIn(hereIndex).length} tasks done` : `${cur.name} · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
             </View>
-          </View>
+            <Body tone="accent">›</Body>
+          </Pressable>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
-        {guided ? <Hint id="map" text="Six rooms, one road. Tap the room you are in to see what to do there and tick what is done. Your keeper walks as you go." /> : null}
+        {guided ? <Hint id="map" text={plan ? "The building, floor by floor. Your plan's weeks are spent in these rooms; the windows on a sign are that week's tasks. Tap a room to open it." : "Six rooms, floor by floor. Tap the room you are in to see what to do there and tick what is done."} /> : null}
         <Plate tone="panel" radius={radius.xxl} padding={12}>
-          <TourTarget id="map" style={{ borderRadius: 20, overflow: "hidden", backgroundColor: wash(art.floors["main-hall"].a, scheme() === "dark" ? 0.12 : 0.3), paddingVertical: 8 }}>
-            <Journey stops={stops} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
+          <TourTarget id="map" style={{ borderRadius: 20, overflow: "hidden" }}>
+            <Building rooms={rooms} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
           </TourTarget>
           {!opened ? (
             <Spec tone="faint" style={{ marginTop: 4 }}>
@@ -138,6 +176,31 @@ export default function Build() {
         {open ? (
           <View style={{ gap: 12 }}>
             <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} set="workshop" ambient={false} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
+            {tasksIn(open.n - 1).length ? (
+              <View style={{ gap: 8 }}>
+                <Spec tone="muted">{`YOUR PLAN, IN THIS ROOM · ${roomWeeks.filter((x) => x.room === open.n - 1).map((x) => `WEEK ${x.w.n}`).join(" & ")}`}</Spec>
+                {tasksIn(open.n - 1).map((t) => (
+                  <Tap key={`${t.week}-${t.i}`} onPress={() => { setOpen(null); router.push({ pathname: "/task", params: { week: String(t.week), i: String(t.i) } } as Href); }} accessibilityRole="button" accessibilityLabel={`Open task: ${t.text}`} scale={0.985}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: t.done ? wash(DOOR[open.n - 1], 0.1) : shell.paper, borderRadius: 12, borderWidth: 1, borderColor: t.done ? DOOR[open.n - 1] : shell.line, paddingVertical: 9, paddingHorizontal: 10 }}>
+                      <View style={{ width: 22, height: 22, borderRadius: 7, backgroundColor: t.done ? DOOR[open.n - 1] : wash(DOOR[open.n - 1], 0.14), alignItems: "center", justifyContent: "center" }}>
+                        {t.done ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(t.i + 1)}</Spec>}
+                      </View>
+                      <Body size="sm" tone={t.done ? "muted" : "ink"} style={{ flex: 1, textDecorationLine: t.done ? "line-through" : "none" }}>
+                        {t.text}
+                      </Body>
+                      <Body tone="accent">›</Body>
+                    </View>
+                  </Tap>
+                ))}
+                {roomWeeks.some((x) => x.room === open.n - 1 && x.w.n <= wk) ? (
+                  <Pressable onPress={() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; setOpen(null); router.push({ pathname: "/review", params: { week: String(w) } } as Href); }} accessibilityRole="button" accessibilityLabel="Read the week back" style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6 }}>
+                    <Glyph id="coin" tone="auto" scale={1} />
+                    <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}, ${reviews[w].score} of 100 →` : `Read week ${w} back →`; })()}</Spec>
+                  </Pressable>
+                ) : null}
+                <Spec tone="muted" style={{ marginTop: 4 }}>THE ROOM'S OWN LIST</Spec>
+              </View>
+            ) : null}
             <Progress value={stageProgress(open, ticks)} label={open.name} right={`${Math.round(stageProgress(open, ticks) * 100)}%`} color={stageProgress(open, ticks) >= 1 ? shell.verify : shell.accent} />
             <View>
               {open.items.map((it, i) => (
