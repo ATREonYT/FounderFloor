@@ -12,8 +12,8 @@
 import { useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Share, Text, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { lookOf, mockupHtml, mockupPoster, mockupTheme, POSTER_H, POSTER_W, type LookPreset, type MockScreen, type ProductKind } from "@founderfloor/shared";
-import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
+import { lookOf, mockupPoster, mockupTheme, POSTER_H, POSTER_W, type LookPreset, type MockScreen, type ProductKind } from "@founderfloor/shared";
+import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Thinking, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
 import { useWorkshop } from "../lib/workshop";
 import { LiveMock } from "../components/LiveMock";
 import { Hint } from "../components/Hint";
@@ -75,8 +75,8 @@ export default function Workshop() {
   const HUES: { hue: number; name: string }[] = [{ hue: 222, name: "Blue" }, { hue: 262, name: "Violet" }, { hue: 334, name: "Rose" }, { hue: 12, name: "Coral" }, { hue: 160, name: "Green" }, { hue: 200, name: "Teal" }];
   const KINDS: { k: ProductKind; label: string }[] = [{ k: "saas", label: "Software" }, { k: "consumer", label: "Consumer app" }, { k: "marketplace", label: "Marketplace" }, { k: "services", label: "Service" }, { k: "hardware", label: "Product" }];
   /** The app, built once per mock-up; the chips drive its screen without reloading it. */
-  const html = useMemo(() => mockupHtml(m), [m]);
-  const posterHtml = useMemo(() => mockupPoster(m), [m]);
+  const html = useMemo(() => w.html, [w.html]);
+  const posterHtml = useMemo(() => mockupPoster(m, m.design?.html), [m]);
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
@@ -90,7 +90,7 @@ export default function Workshop() {
         <Scene set="workshop" height={L.compact ? 130 : 160} radiusPx={radius.xl} color="#A28457" accessibilityLabel="The workshop">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <GlyphTile id="cube" color="#A28457" size={28} scale={1} />
-            <Spec tone="ink">{m.source === "sample" ? "A SAMPLE" : m.source === "live" ? "FROM YOUR NOTEBOOK" : "FROM YOUR SIGN"}</Spec>
+            <Spec tone="ink">{m.source === "sample" ? "A SAMPLE" : w.designed ? "DESIGNED FOR YOU" : m.source === "live" ? "FROM YOUR NOTEBOOK" : "FROM YOUR SIGN"}</Spec>
           </View>
         </Scene>
         <View style={{ gap: 6 }}>
@@ -140,10 +140,41 @@ export default function Workshop() {
           </ButtonRow>
         </View>
 
-        {/* the look and the kind: the founder's call */}
-        <Plate tone="panel" radius={radius.xl} padding={14}>
+        {/* the design: the model's own, from a direction; a new direction each time */}
+        <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { borderWidth: 1.5, borderColor: "#A28457" } : undefined}>
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-            <Spec tone="muted">THE LOOK</Spec>
+            <Spec tone="muted">THE DESIGN</Spec>
+            {w.canDesign ? (
+              <Pressable onPress={w.redesign} disabled={w.designing} accessibilityRole="button" accessibilityLabel="Design it again">
+                <Spec tone="accent">{w.designing ? "Designing…" : w.designed ? "Design it again ↻" : "Design it ↻"}</Spec>
+              </Pressable>
+            ) : null}
+          </View>
+          {w.designing ? (
+            <View style={{ marginTop: 8 }}>
+              <Thinking label="The desk is designing your app from scratch…" />
+            </View>
+          ) : w.designed ? (
+            <Body size="sm" style={{ marginTop: 6 }}>
+              {m.design?.direction}
+            </Body>
+          ) : w.canDesign ? (
+            <Body size="sm" tone="muted" style={{ marginTop: 6 }}>
+              The desk designs each app from scratch, from a direction drawn for your company, so no two founders get the same page.
+            </Body>
+          ) : (
+            <Body size="sm" tone="muted" style={{ marginTop: 6 }}>
+              {m.source === "sample" ? "With your sign written and a key in the app, the desk designs the whole page itself, differently every time. Below are the desk's own five looks." : "Practice mode: the desk's own five looks. With a key it designs the page itself, differently every time."}
+            </Body>
+          )}
+          {w.designError ? <Spec tone="faint" style={{ marginTop: 6 }}>{w.designError}</Spec> : null}
+          {w.designed && m.edited ? <Spec tone="faint" style={{ marginTop: 6 }}>You changed some words since. Design it again to see them.</Spec> : null}
+        </Plate>
+
+        {/* the look and the kind: the desk's own five looks, when the model has not designed it */}
+        <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { opacity: 0.6 } : undefined}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+            <Spec tone="muted">{w.designed ? "THE FALLBACK LOOK" : "THE LOOK"}</Spec>
             <Pressable onPress={() => w.setTheme({ hue: theme.hue, style: "clean", seed: Math.floor(Math.random() * 100000) })} accessibilityRole="button" accessibilityLabel="Surprise me">
               <Spec tone="accent">{look.preset === "shuffle" ? "Shuffle again ↻" : "Surprise me ↻"}</Spec>
             </Pressable>

@@ -382,10 +382,10 @@ export const POSTER_W = 800;
 export const POSTER_H = 690;
 
 /** The three screens side by side in device frames on one page, for the picture. */
-export function mockupPoster(m: Mockup): string {
+export function mockupPoster(m: Mockup, design?: string): string {
   const L = lookOf(m);
   const F = FONTS[L.font];
-  const one = (i: number) => `<div class="dev"><iframe srcdoc="${esc(mockupHtml(m, { screen: i }))}" scrolling="no"></iframe></div>`;
+  const one = (i: number) => `<div class="dev"><iframe srcdoc="${esc(design ? design.replace(/<\/body>/i, `<script>window.__go&&window.__go(${i})</script></body>`) : mockupHtml(m, { screen: i }))}" scrolling="no"></iframe></div>`;
   const bg = L.palette === "ink" ? "linear-gradient(160deg,#f5f5f4,#e7e5e4)" : `linear-gradient(160deg,hsl(var(--h) 60% 97%),hsl(calc(var(--h) + 30) 50% 94%))`;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
 :root{--h:${L.hue}}*{box-sizing:border-box;margin:0;padding:0}

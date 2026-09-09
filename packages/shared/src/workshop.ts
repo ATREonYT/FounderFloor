@@ -71,6 +71,8 @@ export interface Mockup {
   kind?: ProductKind;
   /** What customers said, with who said it, for the front door's testimonial. */
   quotes?: { who: string; said: string }[];
+  /** The design the model wrote (a whole HTML document, prepared), and the direction it was given. Absent in practice mode. */
+  design?: { html: string; direction: string; seed: number; at: string };
 }
 
 export const SAMPLE_MOCKUP_INPUT = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", audience: "independent café owners", price: "€40 a month" };
