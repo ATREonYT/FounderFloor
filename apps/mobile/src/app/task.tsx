@@ -53,6 +53,8 @@ export default function Task() {
   const scroll = useRef<ScrollView>(null);
   const work = useFounder((s) => s.tasks[key]);
   const outcome = work?.outcome;
+  /** Lines the founder wrote at each step, for the step cards. */
+  const written = (t.guide?.steps ?? []).map((_, i) => (work?.work?.[i] ?? []).filter((m) => m.role === "you").length);
   const kind: TaskKind = t.guide?.kind ?? "plan";
   const room = KIND_ROOM[kind];
   const done = planDone.includes(key);
@@ -211,16 +213,19 @@ export default function Task() {
 
               {/* the steps */}
               <View style={{ gap: 8 }}>
-                <Spec tone="muted">THE STEPS</Spec>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Spec tone="muted">THE STEPS</Spec>
+                  <Spec tone="faint">Tap a step to write in it</Spec>
+                </View>
                 {t.guide.steps.map((s, i) => {
                   const on = t.ticks.includes(i);
                   return (
                     <Animated.View key={i} entering={enter(i + 1)}>
-                      <Tap onPress={() => { t.tick(i); void haptic(on ? "light" : "medium"); }} accessibilityRole="checkbox" accessibilityLabel={s.do} scale={0.985}>
+                      <Tap onPress={() => router.push({ pathname: "/step", params: { week: String(wN), i: String(idx), s: String(i) } } as Href)} accessibilityRole="button" accessibilityLabel={`Open step ${i + 1}: ${s.do}`} scale={0.985}>
                         <View style={{ flexDirection: "row", gap: 12, backgroundColor: on ? wash(room.color, 0.1) : shell.panel, borderRadius: 16, borderWidth: 1.5, borderColor: on ? room.color : shell.line, padding: 12 }}>
-                          <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
+                          <Pressable onPress={() => { t.tick(i); void haptic(on ? "light" : "medium"); }} accessibilityRole="checkbox" accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
                             {on ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(i + 1)}</Spec>}
-                          </View>
+                          </Pressable>
                           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                             <Body medium tone={on ? "muted" : "ink"} style={{ textDecorationLine: on ? "line-through" : "none" }}>
                               {s.do}
@@ -230,6 +235,10 @@ export default function Task() {
                                 {s.tip}
                               </Body>
                             ) : null}
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                              <Glyph id="chip" tone="auto" scale={1} />
+                              <Spec tone={written[i] ? "ink" : "faint"}>{written[i] ? `${written[i]} ${written[i] === 1 ? "line" : "lines"} written` : "Write what you did →"}</Spec>
+                            </View>
                           </View>
                         </View>
                       </Tap>
@@ -303,6 +312,13 @@ export default function Task() {
                   {t.writing ? "Writing…" : "Rewrite the page"}
                 </Button>
               </ButtonRow>
+              <Pressable onPress={() => router.push({ pathname: "/review", params: { week: String(wN) } } as Href)} accessibilityRole="button" accessibilityLabel="Read the week back" style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.panel, borderRadius: 14, borderWidth: 1, borderColor: shell.line, padding: 12 }}>
+                <GlyphTile id="coin" color="#4F6E6B" size={30} scale={1} />
+                <Body size="sm" medium style={{ flex: 1 }}>
+                  {`How is week ${wN} going? The desk reads it back.`}
+                </Body>
+                <Body tone="accent">›</Body>
+              </Pressable>
               {t.lastError && t.source !== "live" ? <Spec tone="faint">{t.lastError}</Spec> : null}
             </>
           ) : (

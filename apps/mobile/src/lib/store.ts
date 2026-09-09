@@ -19,7 +19,7 @@ import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, withEntry } from "@founderfloor/shared";
+import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, withEntry } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -312,6 +312,11 @@ interface FounderState {
   setTaskNotes(key: string, notes: string): void;
   setTaskChat(key: string, chat: TaskTurn[]): void;
   setTaskOutcome(key: string, outcome: TaskOutcome): void;
+  /** What was written at one step of a task: the founder's work and the desk's answers. */
+  addStepTurn(key: string, step: number, turn: TaskTurn): void;
+  /** Each week read back, by week number. */
+  reviews: Record<number, WeekReview>;
+  setReview(r: WeekReview): void;
   /** The desk's notebook: what the founder did, in dated lines. On the device; read by the prompts only when memoryOn is true. */
   memory: MemoryEntry[];
   /** null until the founder has answered the notebook question. */
@@ -364,6 +369,8 @@ export interface TaskWork {
   notes: string;
   chat: TaskTurn[];
   outcome?: TaskOutcome;
+  /** The room at each step: what the founder wrote there and what the desk said, by step index. */
+  work?: Record<number, TaskTurn[]>;
 }
 export const EMPTY_TASK: TaskWork = { guide: null, ticks: [], notes: "", chat: [] };
 let memSeq = 0;
@@ -401,7 +408,7 @@ export const useFounder = create<FounderState>()(
       profile: null,
       roadmap: null,
       hints: [],
-      setProfile: (profile, roadmap) => set({ profile, roadmap, planDone: [], tasks: {} }),
+      setProfile: (profile, roadmap) => set({ profile, roadmap, planDone: [], tasks: {}, reviews: {} }),
       planDone: [],
       togglePlanStep: (key) => set({ planDone: get().planDone.includes(key) ? get().planDone.filter((k) => k !== key) : [...get().planDone, key] }),
       tasks: {},
@@ -413,6 +420,13 @@ export const useFounder = create<FounderState>()(
       setTaskNotes: (key, notes) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), notes } } }),
       setTaskChat: (key, chat) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), chat: chat.slice(-24) } } }),
       setTaskOutcome: (key, outcome) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), outcome } } }),
+      addStepTurn: (key, step, turn) => {
+        const t = get().tasks[key] ?? EMPTY_TASK;
+        const work = { ...(t.work ?? {}), [step]: [...(t.work?.[step] ?? []), turn].slice(-40) };
+        set({ tasks: { ...get().tasks, [key]: { ...t, work } } });
+      },
+      reviews: {},
+      setReview: (r) => set({ reviews: { ...get().reviews, [r.week]: r } }),
       memory: [],
       memoryOn: null,
       setMemoryOn: (on) => set({ memoryOn: on }),
@@ -473,8 +487,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 7,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, ...(persisted as object) }) as unknown as FounderState,
+      version: 8,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

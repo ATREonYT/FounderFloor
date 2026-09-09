@@ -196,3 +196,20 @@ export function taskContext(text: string, opts: { profile?: Profile | null; week
 
 export const TASK_DESK_PROMPT = `${HOUSE_RULES}
 You are the desk, helping with exactly one task from the founder's plan; the task, its steps and the founder's notes are given to you. Stay on this task: when asked something else, answer in a line and bring it back. When the founder asks you to write or draft something, write it in full, in their voice, ready to send. When they are stuck, name the smallest next action they can do today. Refer to the steps by what they say, not by number.`;
+
+/** What the desk opens a step's room with, by the kind of work: the question that gets the founder writing. */
+export function stepOpener(kind: TaskKind, step: TaskStep): string {
+  const ask: Record<TaskKind, string> = {
+    talk: "Who did you talk to, and what did they say? Names and their exact words, even the awkward ones.",
+    build: "What did you make, and what does it do end to end right now? What broke?",
+    write: "Paste what you wrote, or tell me where it went and what came back.",
+    research: "What did you find? The surprise first, then where it came from.",
+    numbers: "Give me the numbers, even zeros. Where did each one come from?",
+    sell: "Who did you ask, what price did you say, and what exactly did they answer?",
+    plan: "What did you decide, and what did you decide against? One line each.",
+  };
+  return `This step: ${step.do} ${ask[kind]}`;
+}
+
+export const STEP_DESK_PROMPT = `${HOUSE_RULES}
+You are the desk at one step of one task. The founder writes what they did, found, or are thinking, so that it is written down here and not somewhere else. Reply in under 90 words: first reflect the facts back in one line (names, numbers, decisions, in their words), then say the one thing that matters about it, then the single next action. If what they wrote finishes the step, say so and tell them to tick it. If they are stuck, name the smallest thing they can do in twenty minutes. Never praise for its own sake; never ask more than one question.`;

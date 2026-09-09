@@ -23,9 +23,9 @@ export default function Plan() {
         <Scene set="lobby" height={L.compact ? 140 : 170} radiusPx={radius.xl} accessibilityLabel="Your plan">
           <Spec tone="muted">{profile ? `${GOALS.find((g) => g.id === profile.goal)?.label ?? ""} · ${profile.horizon === "3m" ? "3 months" : profile.horizon === "6m" ? "6 months" : "a year"}`.toUpperCase() : "NO PLAN YET"}</Spec>
         </Scene>
-        {plan ? <Body size="sm" tone="muted">Tap a task to open its page: the steps, a tip for each, and the desk to help. Tick the box when it is done.</Body> : null}
+        {plan ? <Body size="sm" tone="muted">Tap a task to open its page and write your work in its steps. Each week gets read back with a score.</Body> : null}
         {plan ? (
-          <PlanView plan={plan} profile={profile} weekNow={weekNow} color="#4F6E6B" animate={false} onOpen={(week, i) => router.push({ pathname: "/task", params: { week: String(week), i: String(i) } } as Href)} />
+          <PlanView plan={plan} profile={profile} weekNow={weekNow} color="#4F6E6B" animate={false} onOpen={(week, i) => router.push({ pathname: "/task", params: { week: String(week), i: String(i) } } as Href)} onReview={(week) => router.push({ pathname: "/review", params: { week: String(week) } } as Href)} />
         ) : (
           <Body tone="muted">Answer the desk's eight questions and a plan appears here.</Body>
         )}

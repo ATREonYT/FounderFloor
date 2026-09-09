@@ -52,6 +52,8 @@ export default function RootLayout() {
           <Stack.Screen name="plan" options={{ presentation: "card" }} />
           <Stack.Screen name="task" options={{ presentation: "card" }} />
           <Stack.Screen name="memory" options={{ presentation: "card" }} />
+          <Stack.Screen name="step" options={{ presentation: "card" }} />
+          <Stack.Screen name="review" options={{ presentation: "card" }} />
           <Stack.Screen name="settings" options={{ presentation: "card" }} />
         </Stack>
         <TrialSheet />

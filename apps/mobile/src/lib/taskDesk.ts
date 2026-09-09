@@ -8,7 +8,7 @@
  * page, and the status line says so.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { asTaskGuide, founderLog, localTaskGuide, taskContext, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
+import { asTaskGuide, founderLog, localTaskGuide, stepOpener, taskContext, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
 import { EMPTY_TASK, useFounder, type TaskOutcome, type TaskTurn } from "./store";
 
@@ -191,4 +191,106 @@ export const taskKey = (week: number, i: number) => `${week}-${i}`;
 export function weekNow(profile: { at: string } | null, plan: FounderPlan | null): number {
   const n = profile ? Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1 : 1;
   return Math.min(plan?.weeks.length ?? 4, Math.max(1, n));
+}
+
+/**
+ * The room at one step: the founder writes what they did there, it goes
+ * in the notebook, and the desk answers over the whole task. The first
+ * line in the room is the desk's question for this kind of work.
+ */
+export function useStepRoom(key: string, text: string, week: PlanWeek | null, step: number) {
+  const profile = useFounder((s) => s.profile);
+  const plan = useFounder((s) => s.roadmap);
+  const work = useFounder((s) => s.tasks[key]) ?? EMPTY_TASK;
+  const addTurn = useFounder((s) => s.addStepTurn);
+  const toggleStep = useFounder((s) => s.toggleTaskStep);
+  const addMemory = useFounder((s) => s.addMemory);
+  const memory = useFounder((s) => s.memory);
+  const memoryOn = useFounder((s) => s.memoryOn);
+  const [thinking, setThinking] = useState(false);
+  const [source, setSource] = useState<"live" | "rehearsal">("rehearsal");
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [quota, setQuota] = useState<string | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+  const guide = work.guide;
+  const st = guide?.steps[step] ?? null;
+  const turns = work.work?.[step] ?? [];
+  const ticked = work.ticks.includes(step);
+  const opener = guide && st ? stepOpener(guide.kind, st) : "";
+
+  const send = useCallback(
+    (raw: string) => {
+      const t = raw.trim();
+      if (!t || thinking || !st) return;
+      addTurn(key, step, { id: nid(), role: "you", text: t });
+      addMemory("work", `at "${st.do.replace(/\.$/, "").slice(0, 70)}": ${t}`, key);
+      setThinking(true);
+      setQuota(null);
+      setLastError(null);
+      const scripted = (): string => {
+        if (/stuck|can't|cannot|don't know|no idea/i.test(t)) return `Written down. Stuck is a place, not a verdict. The smallest move here: ${st.tip || st.do} Do that for twenty minutes and write what happened.`;
+        if (/done|finished|did it|sent|posted|shipped|talked|called/i.test(t)) return `Written down. That reads like the step is done; tick it above. Next on the page: ${guide?.steps[step + 1]?.do ?? "the task is finished, say how it went."}`;
+        return `Written down, word for word. ${st.tip ? st.tip + " " : ""}When this step is done, tick it and the desk moves on.`;
+      };
+      if (aiMode() === "rehearsal") {
+        setTimeout(() => {
+          if (!alive.current) return;
+          addTurn(key, step, { id: nid(), role: "desk", text: scripted() });
+          setSource("rehearsal");
+          setThinking(false);
+        }, 500);
+        return;
+      }
+      const history = [...turns, { id: "x", role: "you" as const, text: t }].slice(-10).map((m) => ({ role: (m.role === "you" ? "user" : "assistant") as "user" | "assistant", content: m.text }));
+      const ctx = taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, log: founderLog(memory, memoryOn === true) }) + `\nThe step open now: ${step + 1}. ${st.do} Tip on the page: ${st.tip}`;
+      void askModel({
+        fn: "coach-chat",
+        body: { coach: "desk", message: t, turns: history.slice(0, -1), task: { text, guide, step, notes: work.notes, ticks: work.ticks } },
+        direct: { system: STEP_DESK_PROMPT, cached: ctx, turns: history, maxTokens: 320 },
+      })
+        .then((full) => {
+          if (!alive.current) return;
+          addTurn(key, step, { id: nid(), role: "desk", text: full.trim() });
+          addMemory("desk", `at "${st.do.slice(0, 60)}": ${firstLines(full)}`, key);
+          setSource("live");
+        })
+        .catch((e: unknown) => {
+          if (!alive.current) return;
+          if (e instanceof AiError && e.status === 402) {
+            setQuota(e.message);
+            return;
+          }
+          setLastError(e instanceof Error ? e.message : "The model did not answer.");
+          addTurn(key, step, { id: nid(), role: "desk", text: scripted() });
+          setSource("rehearsal");
+        })
+        .finally(() => {
+          if (alive.current) setThinking(false);
+        });
+    },
+    [key, step, st, guide, turns, thinking, text, profile, week, plan, work, memory, memoryOn, addTurn, addMemory],
+  );
+
+  return {
+    guide,
+    step: st,
+    turns,
+    ticked,
+    opener,
+    thinking,
+    source,
+    lastError,
+    quota,
+    send,
+    tick: () => {
+      toggleStep(key, step);
+      if (!ticked && st) addMemory("did", `${st.do.replace(/\.$/, "")} (task: ${(guide?.title ?? text).slice(0, 60)})`, key);
+    },
+  };
 }

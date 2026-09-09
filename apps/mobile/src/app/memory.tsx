@@ -12,7 +12,7 @@ import { Body, Button, ButtonRow, Choices, Display, GlyphTile, Plate, Scene, Spe
 import { useFounder } from "../lib/store";
 import { MemoryAsk, NOTEBOOK_COLOR } from "../components/MemoryAsk";
 
-const KIND_GLYPH: Record<MemoryKind, GlyphId> = { did: "star", outcome: "bolt", note: "wave", desk: "heart", decision: "cube", logged: "coin" };
+const KIND_GLYPH: Record<MemoryKind, GlyphId> = { did: "star", outcome: "bolt", note: "wave", desk: "heart", decision: "cube", logged: "coin", work: "chip" };
 
 export default function Memory() {
   const L = useLayout();

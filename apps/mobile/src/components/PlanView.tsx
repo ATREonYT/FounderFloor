@@ -15,10 +15,11 @@ import { useFounder } from "../lib/store";
 const GOAL_GLYPH: Record<string, GlyphId> = { "first-customer": "heart", "side-income": "coin", "quit-job": "rocket", raise: "flask", learn: "leaf" };
 const WEEK_GLYPH: GlyphId[] = ["bolt", "wave", "coin", "star"];
 
-export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animate = true, onOpen }: { plan: FounderPlan; profile: Profile | null; color?: string; weekNow?: number; animate?: boolean; /** Tapping a step opens its page; without this the row only ticks. */ onOpen?: (week: number, i: number) => void }) {
+export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animate = true, onOpen, onReview }: { plan: FounderPlan; profile: Profile | null; color?: string; weekNow?: number; animate?: boolean; /** Tapping a step opens its page; without this the row only ticks. */ onOpen?: (week: number, i: number) => void; /** The week read back: score and words. */ onReview?: (week: number) => void }) {
   const done = useFounder((s) => s.planDone);
   const toggle = useFounder((s) => s.togglePlanStep);
   const tasks = useFounder((s) => s.tasks);
+  const reviews = useFounder((s) => s.reviews);
   const total = plan.weeks.reduce((n, w) => n + w.do.length, 0);
   const doneCount = plan.weeks.reduce((n, w) => n + w.do.filter((_, i) => done.includes(`${w.n}-${i}`)).length, 0);
   const horizon = profile?.horizon === "3m" ? "3 months" : profile?.horizon === "6m" ? "6 months" : "a year";
@@ -70,6 +71,13 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                     <Spec tone="faint" style={{ marginLeft: "auto" }}>{`${wDone} of ${w.do.length}`}</Spec>
                   </View>
                   <Body medium>{w.focus}</Body>
+                  {onReview && w.n <= weekNow ? (
+                    <Pressable onPress={() => onReview(w.n)} accessibilityRole="button" accessibilityLabel={`Read week ${w.n} back`} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: wash(color, open ? 0.16 : 0.08), borderRadius: 10, paddingVertical: 7, paddingHorizontal: 10 }}>
+                      <Glyph id="coin" tone="auto" scale={1} />
+                      <Spec tone="ink" style={{ flex: 1 }}>{reviews[w.n] ? `${reviews[w.n].verdict} · ${reviews[w.n].score} of 100` : w.n === weekNow ? "How is the week going?" : "Read the week back"}</Spec>
+                      <Spec tone="accent">→</Spec>
+                    </Pressable>
+                  ) : null}
                   <View style={{ gap: 6 }}>
                     {w.do.map((d, i) => {
                       const key = `${w.n}-${i}`;

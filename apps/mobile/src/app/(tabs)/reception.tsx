@@ -172,6 +172,7 @@ export default function Reception() {
                     <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                       <Chip grow={false} onPress={() => router.navigate("/office")}>{weekLogged ? "Week logged ✓" : "Log the week"}</Chip>
                       <Chip grow={false} onPress={() => router.push(roadmap ? "/plan" : "/welcome")}>{roadmap ? "My plan" : "Make my plan"}</Chip>
+                      {roadmap ? <Chip grow={false} onPress={() => router.push({ pathname: "/review", params: { week: String(weekNow) } })}>{`Week ${weekNow}, read back`}</Chip> : null}
                       <Chip grow={false} onPress={() => router.push("/guide")}>How it works</Chip>
                     </View>
                   </Plate>

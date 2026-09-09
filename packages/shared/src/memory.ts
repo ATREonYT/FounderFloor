@@ -9,7 +9,7 @@
  * the third one say about price?" instead of starting from nothing.
  */
 
-export type MemoryKind = "did" | "outcome" | "note" | "desk" | "decision" | "logged";
+export type MemoryKind = "did" | "outcome" | "note" | "desk" | "decision" | "logged" | "work";
 
 export interface MemoryEntry {
   id: string;
@@ -28,6 +28,7 @@ export const MEMORY_KINDS: Record<MemoryKind, { label: string; line: string }> =
   desk: { label: "The desk said", line: "A line the desk gave you." },
   decision: { label: "Decision", line: "Something you decided." },
   logged: { label: "Logged", line: "A week's numbers." },
+  work: { label: "Your work", line: "What you wrote at a step." },
 };
 
 /** How much of the notebook a prompt may carry. */
@@ -68,7 +69,7 @@ export function founderLog(entries: MemoryEntry[], allowed: boolean, now = new D
 }
 
 function prefix(k: MemoryKind): string {
-  return k === "did" ? "did: " : k === "outcome" ? "how it went: " : k === "note" ? "note: " : k === "desk" ? "the desk said: " : k === "decision" ? "decided: " : "logged: ";
+  return k === "did" ? "did: " : k === "outcome" ? "how it went: " : k === "note" ? "note: " : k === "desk" ? "the desk said: " : k === "decision" ? "decided: " : k === "work" ? "wrote: " : "logged: ";
 }
 
 function ageLabel(iso: string, now: Date): string {
