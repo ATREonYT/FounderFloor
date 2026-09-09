@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { TASK_KINDS } from "@founderfloor/shared";
+import { TASK_KINDS, parseDoor } from "@founderfloor/shared";
 import { Body, Chip, Composer, Glyph, GlyphTile, Keeper, Message, Spec, Tap, Thinking, haptic, radius, shell, useLayout, wash } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 import { useGate } from "../lib/gate";
@@ -108,9 +108,21 @@ export default function Step() {
         {/* the room */}
         <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 14 }}>
           <Message role="desk" text={r.opener} avatar={avatar} />
-          {r.turns.map((m) => (
-            <Message key={m.id} role={m.role} text={m.text} avatar={m.role === "desk" ? avatar : undefined} />
-          ))}
+          {r.turns.map((m) => {
+            const { text, door } = m.role === "desk" ? parseDoor(m.text) : { text: m.text, door: null };
+            return (
+              <View key={m.id} style={{ gap: 8 }}>
+                <Message role={m.role} text={text} avatar={m.role === "desk" ? avatar : undefined} />
+                {door ? (
+                  <View style={{ paddingLeft: 44 }}>
+                    <Pressable onPress={() => router.push(door.route as Href)} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: room.color, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 8 }}>
+                      <Spec tone="paper">{`${door.label} →`}</Spec>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
           {r.thinking ? <Thinking label="Reading it…" avatar={avatar} /> : null}
           {r.turns.length === 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>

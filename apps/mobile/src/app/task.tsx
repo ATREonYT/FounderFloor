@@ -23,7 +23,7 @@ import { MemoryAsk } from "../components/MemoryAsk";
 import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
 import { ROOM_ORDER, roomOfWeek, taskKey, useTask, weekNow } from "../lib/taskDesk";
-import { STAGES } from "@founderfloor/shared";
+import { STAGES, parseDoor } from "@founderfloor/shared";
 
 /** The room each kind of work is drawn in. */
 export const KIND_ROOM: Record<TaskKind, { set: SceneSet; glyph: GlyphId; color: string }> = {
@@ -288,9 +288,19 @@ export default function Task() {
                 ) : null}
                 {t.chat.length ? (
                   <View style={{ gap: 12 }}>
-                    {t.chat.map((m) => (
-                      <Message key={m.id} role={m.role} text={m.text} />
-                    ))}
+                    {t.chat.map((m) => {
+                      const { text, door } = m.role === "desk" ? parseDoor(m.text) : { text: m.text, door: null };
+                      return (
+                        <View key={m.id} style={{ gap: 8 }}>
+                          <Message role={m.role} text={text} />
+                          {door ? (
+                            <Button size="sm" arrow onPress={() => router.push(door.route as Href)}>
+                              {door.label}
+                            </Button>
+                          ) : null}
+                        </View>
+                      );
+                    })}
                   </View>
                 ) : null}
                 {t.thinking ? <Thinking label="At the desk…" /> : null}

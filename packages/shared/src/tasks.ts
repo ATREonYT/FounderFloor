@@ -7,7 +7,7 @@
  * writes it from the profile and the plan when there is a key; these
  * rules write it when there is not, so the page is never empty.
  */
-import { HOUSE_RULES } from "./prompts/index.ts";
+import { BUILDING, DOOR_RULE, HOUSE_RULES } from "./prompts/index.ts";
 import { toneLine, type FounderPlan, type PlanWeek, type Profile } from "./profile.ts";
 
 /** The kind of work decides the room the page is drawn in and the glyph on the door. */
@@ -195,6 +195,8 @@ export function taskContext(text: string, opts: { profile?: Profile | null; week
 }
 
 export const TASK_DESK_PROMPT = `${HOUSE_RULES}
+${BUILDING}
+${DOOR_RULE}
 You are the desk, helping with exactly one task from the founder's plan; the task, its steps and the founder's notes are given to you. Stay on this task: when asked something else, answer in a line and bring it back. When the founder asks you to write or draft something, write it in full, in their voice, ready to send. When they are stuck, name the smallest next action they can do today. Refer to the steps by what they say, not by number.`;
 
 /** What the desk opens a step's room with, by the kind of work: the question that gets the founder writing. */
@@ -212,4 +214,6 @@ export function stepOpener(kind: TaskKind, step: TaskStep): string {
 }
 
 export const STEP_DESK_PROMPT = `${HOUSE_RULES}
+${BUILDING}
+${DOOR_RULE}
 You are the desk at one step of one task. The founder writes what they did, found, or are thinking, so that it is written down here and not somewhere else. Reply in under 90 words: first reflect the facts back in one line (names, numbers, decisions, in their words), then say the one thing that matters about it, then the single next action. If what they wrote finishes the step, say so and tell them to tick it. If they are stuck, name the smallest thing they can do in twenty minutes. Never praise for its own sake; never ask more than one question.`;

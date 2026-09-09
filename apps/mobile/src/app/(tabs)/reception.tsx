@@ -8,7 +8,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
-import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
+import { useIsFocused, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Body, Button, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Keeper, Message, Pill, Plate, Spec, Stage, Streak, Thinking, radius, shell, useLayout, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
@@ -21,7 +21,7 @@ import { useReceptionist } from "../../lib/receptionist";
 import { effectivePlan } from "../../lib/billing";
 import { trialLeft } from "../../lib/trial";
 import { useFounder, isoWeek } from "../../lib/store";
-import { remembers, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
+import { remembers, parseDoor, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { roomOfWeek } from "../../lib/taskDesk";
 import { Hint } from "../../components/Hint";
@@ -182,9 +182,21 @@ export default function Reception() {
           ) : (
             <>
               <Stage look={coach.look} color={coach.color} mood={mood} scale={2} height={112} radiusPx={20} ambient={false} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"} who={atDesk ? "The desk" : coach.name} say={lastDesk && !lastDesk.streaming ? undefined : undefined} />
-              {messages.map((m) => (
-                <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} avatar={m.role === "desk" ? <Keeper look={coach.look} scale={1} speaking={!!m.streaming} color={coach.color} /> : undefined} />
-              ))}
+              {messages.map((m) => {
+                const { text, door } = m.role === "desk" && !m.streaming ? parseDoor(m.text) : { text: m.text, door: null };
+                return (
+                  <View key={m.id} style={{ gap: 8 }}>
+                    <Message role={m.role} text={text} streaming={m.streaming} avatar={m.role === "desk" ? <Keeper look={coach.look} scale={1} speaking={!!m.streaming} color={coach.color} /> : undefined} />
+                    {door ? (
+                      <View style={{ paddingLeft: 44 }}>
+                        <Button size="sm" arrow onPress={() => router.push(door.route as Href)}>
+                          {door.label}
+                        </Button>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
               {quota ? (
                 <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: quota } })} accessibilityRole="button">
                   <Chip grow={false} hint="See the plans →">{quota}</Chip>

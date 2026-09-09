@@ -55,6 +55,7 @@ export function useReceptionist(coachId?: string) {
     const { stand: s, founder: f } = ctx.current;
     const r = s.record;
     const p = prompt.toLowerCase();
+    if (/mock.?up|prototype|wireframe|design (my|the|an) app|build (it|my app|the app)|screens|landing page/.test(p)) return `The Workshop does that: three screens of your product, tappable, designed from your sign and what customers told you, with a picture to show people and a brief to build it from. It is behind You.\n\n[[go:/workshop|Open the Workshop]]`;
     if (/one.?liner|draft|redraft|copy|pitch|sign|tagline|write/.test(p)) return `That is the Sign Painter's counter on the floor, and Jonah's here. For the sign: three tries, plain words, no adjective that needs defending. 1. ${r.oneLiner || "Say what changes hands."} 2. ${r.name || "Your company"}: who pays, and what they get. 3. The same, for the person who has never heard of you.\n\nWant Jonah to draft the message that goes with it?`;
     if (/stand|booth|visitors|week|changed/.test(p)) return `${s.name}${s.hall ? `, ${s.spot} in the ${s.hall.replace(/-/g, " ")}` : ", no spot on a floor yet"}. Rank ${s.rank.name}${r.mrr ? ` at ${fmtMoney(r.mrr, r.currency)} a month` : ""}. ${s.online ? "Your stand is showing you online." : "Your stand shows you away; the receptionist is answering."} ${f.ticks.length ? `${f.ticks.length} workshop items ticked.` : "Nothing ticked in the workshop yet."}\n\nWant the honest version from Ines: where are you really?`;
     if (/who|row|floor|here|tonight|people|online|hall/.test(p)) {

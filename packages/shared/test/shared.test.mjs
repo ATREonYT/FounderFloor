@@ -153,3 +153,17 @@ test("the floor client asks the bridge for a Supabase JWT", async () => {
   assert.ok(!isErr(r) && r.jwt === "a.b.c" && r.expiresIn === 3600);
   assert.equal(JSON.parse(calls[0].init.body).token, "floor-token");
 });
+
+test("every desk knows the Workshop, and a reply can hand out a door", async () => {
+  const { DESK_PROMPT, COACH_PROMPTS, BUILDING, parseDoor } = await import("../src/prompts/index.ts");
+  const { TASK_DESK_PROMPT, STEP_DESK_PROMPT } = await import("../src/tasks.ts");
+  for (const p of [DESK_PROMPT, TASK_DESK_PROMPT, STEP_DESK_PROMPT, ...Object.values(COACH_PROMPTS).map((c) => c.system)]) {
+    assert.match(p, /Workshop \(\/workshop\)/);
+    assert.match(p, /\[\[go:\/route\|Label\]\]/);
+    assert.match(p, /Never claim something is not done here/);
+  }
+  assert.match(BUILDING, /Today \(\/today\)/);
+  assert.deepEqual(parseDoor("The Workshop does that.\n\n[[go:/workshop|Open the Workshop]]"), { text: "The Workshop does that.", door: { route: "/workshop", label: "Open the Workshop" } });
+  assert.deepEqual(parseDoor("No door here."), { text: "No door here.", door: null });
+  assert.equal(parseDoor("Mid [[go:/x|y]] text").door, null);
+});
