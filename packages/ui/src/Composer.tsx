@@ -13,7 +13,7 @@ import { Platform, Pressable, TextInput, View, type NativeSyntheticEvent, type T
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Plate } from "./Plate";
 import { Body, Spec } from "./Text";
-import { ease, fontFamily, ms, radius, shell, type as T } from "./tokens";
+import { curve, fontFamily, radius, shell, type as T } from "./tokens";
 import { alpha } from "./theme";
 
 export function Composer({
@@ -45,7 +45,7 @@ export function Composer({
   const canSend = value.trim().length > 0 && !busy;
   const s = useSharedValue(0);
   useEffect(() => {
-    s.value = withTiming(canSend ? 1 : 0, { duration: ms.release, easing: Easing.bezier(...ease.release) });
+    s.value = withTiming(canSend ? 1 : 0, { duration: 150, easing: Easing.bezier(...curve.out) });
   }, [canSend, s]);
   const arrow = useAnimatedStyle(() => ({ transform: [{ scale: 0.86 + 0.14 * s.value }] }));
 

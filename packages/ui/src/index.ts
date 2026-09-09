@@ -8,6 +8,7 @@
 export * from "./tokens";
 export { FONT_MAP } from "./fonts";
 export { Sprite, spriteMeta, PIXELATED_CSS, type SpriteId } from "./Sprite";
+export { SpriteCycle } from "./SpriteCycle";
 export { Plate, type PlateTone } from "./Plate";
 export { Display, Body, Mono, Spec, Signage, Kbd } from "./Text";
 export { Button, ButtonRow } from "./Button";
@@ -37,7 +38,6 @@ export { Streak } from "./Streak";
 export { Door } from "./Door";
 export { Stage, wash, type Mood } from "./Stage";
 export { Sparks } from "./Sparks";
-export { Journey, type JourneyStop } from "./Journey";
 export { Building, type BuildingRoom } from "./Building";
 export { Calendar } from "./Calendar";
 export { Scene, Backdrop, Furniture, Glyph, GlyphTile, SCENE_SETS, type SceneSet, type SceneProp, type Hall } from "./Scene";

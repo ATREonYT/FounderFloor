@@ -17,7 +17,7 @@ import type { ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
 import { Body } from "./Text";
-import { ease, ms, radius, shell } from "./tokens";
+import { curve, ms, radius, shell } from "./tokens";
 
 type Variant = "primary" | "secondary" | "ghost";
 
@@ -51,17 +51,17 @@ export function Button({
   const press = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
   const lean = useAnimatedStyle(() => ({ transform: [{ translateX: dx.value }] }));
 
+  // the key goes down the instant the finger lands and comes back up on release, no bounce: a button is pressed all day
   const down = () => {
-    y.value = withTiming(2, { duration: ms.press, easing: Easing.bezier(...ease.out) });
-    dx.value = withTiming(3, { duration: ms.release, easing: Easing.bezier(...ease.release) });
+    y.value = withTiming(2, { duration: ms.press, easing: Easing.bezier(...curve.out) });
   };
   const up = () => {
-    y.value = withTiming(0, { duration: ms.release, easing: Easing.bezier(...ease.release) });
-    dx.value = withTiming(0, { duration: ms.release, easing: Easing.bezier(...ease.release) });
+    y.value = withTiming(0, { duration: ms.release, easing: Easing.bezier(...curve.out) });
+    dx.value = withTiming(0, { duration: ms.release, easing: Easing.bezier(...curve.out) });
   };
   const hoverIn = () => {
-    y.value = withTiming(-1, { duration: ms.release, easing: Easing.bezier(...ease.release) });
-    dx.value = withTiming(3, { duration: ms.release, easing: Easing.bezier(...ease.release) });
+    y.value = withTiming(-1, { duration: ms.release, easing: Easing.bezier(...curve.out) });
+    dx.value = withTiming(3, { duration: ms.release, easing: Easing.bezier(...curve.out) });
   };
 
   const pad = size === "sm" ? { paddingVertical: 6, paddingHorizontal: 12 } : size === "lg" ? { paddingVertical: 14, paddingHorizontal: 28 } : { paddingVertical: 12, paddingHorizontal: 24 };

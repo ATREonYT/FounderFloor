@@ -27,7 +27,7 @@ export default function Review() {
   const week = plan?.weeks.find((w) => w.n === wN) ?? null;
   const { review, facts, reading, lastError, reread } = useWeekReview(week);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/plan" as Href));
-  const enter = (k: number) => FadeInDown.delay(60 + k * 70).duration(240);
+  const enter = (k: number) => FadeInDown.delay(30 + k * 40).duration(200);
 
   if (!plan || !week || !facts) {
     return (

@@ -25,7 +25,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
   const doneCount = plan.weeks.reduce((n, w) => n + w.do.filter((_, i) => done.includes(`${w.n}-${i}`)).length, 0);
   const horizon = profile?.horizon === "3m" ? "3 months" : profile?.horizon === "6m" ? "6 months" : "a year";
   const pace = profile?.pace === "evenings" ? "Evenings" : profile?.pace === "all-in" ? "All in" : "Part-time";
-  const enter = (k: number) => (animate ? FadeInDown.delay(80 + k * 70).duration(240) : undefined);
+  const enter = (k: number) => (animate ? FadeInDown.delay(40 + k * 40).duration(200) : undefined);
   return (
     <View style={{ gap: 14 }}>
       {/* the goal strip: what the plan is for, and how much of it is done */}
@@ -89,8 +89,10 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                       return (
                         <Tap key={key} onPress={onOpen ? () => onOpen(w.n, i) : tick} accessibilityLabel={d} accessibilityRole={onOpen ? "button" : "checkbox"} scale={0.985}>
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 10 }}>
-                            <Pressable onPress={onOpen ? tick : undefined} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8} style={{ width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
-                              {on ? <Glyph id="star" tone="paper" scale={1} /> : null}
+                            <Pressable onPress={onOpen ? tick : undefined} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8}>
+                              <Animated.View style={{ transitionProperty: ["backgroundColor", "borderColor"], transitionDuration: 150, transitionTimingFunction: "ease-out", width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+                                {on ? <Glyph id="star" tone="paper" scale={1} /> : null}
+                              </Animated.View>
                             </Pressable>
                             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                               <Body size="sm" tone={on ? "muted" : "ink"} style={{ textDecorationLine: on ? "line-through" : "none" }}>

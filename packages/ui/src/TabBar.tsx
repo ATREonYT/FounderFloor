@@ -16,13 +16,13 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View, type LayoutChangeEvent } from "react-native";
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 import { MENU, type MenuEntry } from "./Menu";
 import { Sprite, type SpriteId } from "./Sprite";
 import { Spec } from "./Text";
 import { alpha, scheme } from "./theme";
 import { haptic } from "./Tap";
-import { radius, shadow, shell } from "./tokens";
+import { curve, radius, shadow, shell } from "./tokens";
 
 const HEIGHT = 64;
 const PAD = 6;
@@ -62,7 +62,8 @@ export function TabBar({
       placed.current = true;
       return;
     }
-    x.value = withSpring(centre, { damping: 26, stiffness: 420, overshootClamping: true });
+    // moving across the bar, not entering it: a strong ease-in-out over 220ms, well under the 300ms a switch made dozens of times a day can carry
+    x.value = withTiming(centre, { duration: 220, easing: Easing.bezier(...curve.inOut) });
   }, [centre, width, reduced, x]);
 
   const disc = useAnimatedStyle(() => ({ transform: [{ translateX: x.value - DISC / 2 }] }));

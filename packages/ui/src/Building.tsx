@@ -14,9 +14,10 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, View, type LayoutChangeEvent } from "react-native";
 import Animated, { Easing, cancelAnimation, runOnJS, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { Sprite, spriteMeta, type SpriteId } from "./Sprite";
+import { SpriteCycle } from "./SpriteCycle";
 import { Backdrop } from "./Scene";
 import { Signage, Spec } from "./Text";
-import { art, shell } from "./tokens";
+import { art, curve, shell } from "./tokens";
 import { scheme } from "./theme";
 import type { Look } from "./Keeper";
 import type { GlyphId } from "./Sign";
@@ -157,7 +158,6 @@ function Keeper({ look, here, width }: { look: Look; here: number; width: number
   const y = useSharedValue(0);
   const bob = useSharedValue(0);
   const [walking, setWalking] = useState(false);
-  const [frame, setFrame] = useState<0 | 1 | 2>(0);
   const prev = useRef(here);
   const id0 = `avatar-outfit${look.outfit % 8}-down-0` as SpriteId;
   const m = spriteMeta(id0);
@@ -171,29 +171,26 @@ function Keeper({ look, here, width }: { look: Look; here: number; width: number
       return;
     }
     setWalking(true);
-    y.value = withTiming(topFor(here), { duration: 500 + Math.abs(here - from) * 350, easing: Easing.inOut(Easing.quad) }, (done) => {
+    y.value = withTiming(topFor(here), { duration: 500 + Math.abs(here - from) * 350, easing: Easing.bezier(...curve.inOut) }, (done) => {
       if (done) runOnJS(setWalking)(false);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [here, reduced]);
   useEffect(() => {
     if (!walking) {
-      setFrame(0);
       bob.value = reduced ? 0 : withRepeat(withSequence(withTiming(-2, { duration: 800, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: 800, easing: Easing.inOut(Easing.quad) })), -1, false);
       return () => cancelAnimation(bob);
     }
     cancelAnimation(bob);
     bob.value = 0;
-    const h = setInterval(() => setFrame((f) => ((f + 1) % 3) as 0 | 1 | 2), 150);
-    return () => clearInterval(h);
   }, [walking, reduced, bob]);
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: y.value + bob.value }] }));
   const x = Math.round(width * 0.5 - (m.w * SCALE) / 2);
-  const id = `avatar-outfit${look.outfit % 8}-down-${walking ? frame : 0}` as SpriteId;
+  const ids = [0, 1, 2].map((k) => `avatar-outfit${look.outfit % 8}-down-${k}` as SpriteId);
   return (
     <Animated.View pointerEvents="none" style={[{ position: "absolute", left: x, top: 0 }, style]}>
       <View style={{ position: "absolute", left: -6, right: -6, bottom: -3, height: 8, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.18)" }} />
-      <Sprite id={id} scale={SCALE} />
+      <SpriteCycle ids={ids} playing={walking} period={150} scale={SCALE} />
     </Animated.View>
   );
 }

@@ -18,6 +18,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring, useReducedMotion } from "react-native-reanimated";
 import { Sprite, type SpriteId } from "./Sprite";
+import { SpriteCycle } from "./SpriteCycle";
 import { Sparks } from "./Sparks";
 import { Backdrop, Furniture, SCENE_SETS, type SceneSet } from "./Scene";
 import { Body, Spec } from "./Text";
@@ -67,7 +68,6 @@ export function Stage({
   const reduced = useReducedMotion();
   const y = useSharedValue(0);
   const jump = useSharedValue(0);
-  const [frame, setFrame] = useState<0 | 1>(0);
   const [burst, setBurst] = useState(0);
   const [heart, setHeart] = useState(0);
   const [typed, setTyped] = useState("");
@@ -82,14 +82,6 @@ export function Stage({
     }
     y.value = withRepeat(withSequence(withTiming(-2, { duration: mood === "talk" ? 200 : 800, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: mood === "talk" ? 200 : 800, easing: Easing.inOut(Easing.quad) })), -1, false);
   }, [mood, reduced, y]);
-  useEffect(() => {
-    if (mood !== "talk" || reduced) {
-      setFrame(0);
-      return;
-    }
-    const t = setInterval(() => setFrame((f) => (f ? 0 : 1)), 260);
-    return () => clearInterval(t);
-  }, [mood, reduced]);
   // reactions
   useEffect(() => {
     if (reduced) return;
@@ -124,7 +116,7 @@ export function Stage({
   }, [say, reduced]);
 
   const body = useAnimatedStyle(() => ({ transform: [{ translateY: y.value + jump.value }] }));
-  const id = `avatar-outfit${look.outfit % 8}-down-${frame}` as SpriteId;
+  const ids = [0, 1].map((k) => `avatar-outfit${look.outfit % 8}-down-${k}` as SpriteId);
   // a short stage has no counter: the keeper stands on the floor, so the head is never clipped
   const withCounter = height >= 170;
   const counterW = 128 * scale, counterH = withCounter ? 34 * scale : 0;
@@ -143,7 +135,7 @@ export function Stage({
         {/* the counter, and the keeper behind it */}
         <View style={{ position: "absolute", left: "50%", bottom: withCounter ? floorH - 10 * scale : floorH - 6, marginLeft: -counterW / 2, width: counterW, height: counterH + keeperH, alignItems: "center" }}>
           <Animated.View style={[{ position: "absolute", bottom: withCounter ? counterH - 2 : 0, left: keeperX }, body]}>
-            <Sprite id={id} scale={scale} />
+            <SpriteCycle ids={ids} playing={mood === "talk" && !reduced} period={260} scale={scale} />
             <View style={{ position: "absolute", left: keeperW / 2, top: keeperH / 2 }}>
               <Sparks burst={burst} reach={26 + 4 * scale} />
             </View>

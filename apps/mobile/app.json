@@ -10,7 +10,10 @@
     "backgroundColor": "#EDF0F4",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "net.founderfloor.app"
+      "bundleIdentifier": "net.founderfloor.app",
+      "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true
+      }
     },
     "android": {
       "package": "net.founderfloor.app",

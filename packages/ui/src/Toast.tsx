@@ -10,16 +10,15 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "
 import { Plate } from "./Plate";
 import { Body } from "./Text";
 import { useLayout } from "./Responsive";
-import { ease, ms, radius } from "./tokens";
+import { curve, ms, radius } from "./tokens";
 
 export function Toast({ text, visible }: { text: string; visible: boolean }) {
   const L = useLayout();
   const t = useSharedValue(0);
   useEffect(() => {
-    const bz = visible ? ease.spring : ease.out;
-    t.value = withTiming(visible ? 1 : 0, { duration: visible ? ms.toast : 200, easing: Easing.bezier(bz[0], bz[1], bz[2], bz[3]) });
+    t.value = withTiming(visible ? 1 : 0, { duration: visible ? ms.toast : 160, easing: Easing.bezier(...curve.out) });
   }, [visible, t]);
-  const style = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ scale: 0.92 + 0.08 * t.value }] }));
+  const style = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ scale: 0.95 + 0.05 * t.value }] }));
   return (
     <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: L.insets.top + (L.compact ? 96 : 72), alignItems: "center" }}>
       <Animated.View style={style} accessibilityLiveRegion="polite" accessibilityRole="alert">

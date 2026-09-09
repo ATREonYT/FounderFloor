@@ -12,6 +12,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+
+/** The 150ms colour transition a tick makes: state indication, never a jump. */
+const TICK_T = { transitionProperty: ["backgroundColor", "borderColor"], transitionDuration: 150, transitionTimingFunction: "ease-out" } as const;
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { TASK_KINDS, type TaskKind } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Input, Message, Plate, Ring, Scene, Spec, Sparks, Tap, Thinking, haptic, radius, shell, useLayout, wash, type GlyphId, type SceneSet } from "@founderfloor/ui";
@@ -131,7 +134,7 @@ export default function Task() {
     );
   }
 
-  const enter = (k: number) => FadeInDown.delay(60 + k * 60).duration(240);
+  const enter = (k: number) => FadeInDown.delay(30 + k * 40).duration(200);
   const status = t.quota ? t.quota : t.source === "live" ? "Live · the desk knows this task, your plan and your notes" : aiMode() === "rehearsal" ? "Practice mode · the desk answers from the page" : t.lastError ? `Practice mode · ${t.lastError}` : "The desk is open";
 
   return (
@@ -226,9 +229,11 @@ export default function Task() {
                   return (
                     <Animated.View key={i} entering={enter(i + 1)}>
                       <Tap onPress={() => router.push({ pathname: "/step", params: { week: String(wN), i: String(idx), s: String(i) } } as Href)} accessibilityRole="button" accessibilityLabel={`Open step ${i + 1}: ${s.do}`} scale={0.985}>
-                        <View style={{ flexDirection: "row", gap: 12, backgroundColor: on ? wash(room.color, 0.1) : shell.panel, borderRadius: 16, borderWidth: 1.5, borderColor: on ? room.color : shell.line, padding: 12 }}>
-                          <Pressable onPress={() => { t.tick(i); void haptic(on ? "light" : "medium"); }} accessibilityRole="checkbox" accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8} style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
-                            {on ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(i + 1)}</Spec>}
+                        <Animated.View style={{ ...TICK_T, flexDirection: "row", gap: 12, backgroundColor: on ? wash(room.color, 0.1) : shell.panel, borderRadius: 16, borderWidth: 1.5, borderColor: on ? room.color : shell.line, padding: 12 }}>
+                          <Pressable onPress={() => { t.tick(i); void haptic(on ? "light" : "medium"); }} accessibilityRole="checkbox" accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8}>
+                            <Animated.View style={{ ...TICK_T, width: 32, height: 32, borderRadius: 16, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
+                              {on ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(i + 1)}</Spec>}
+                            </Animated.View>
                           </Pressable>
                           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
                             <Body medium tone={on ? "muted" : "ink"} style={{ textDecorationLine: on ? "line-through" : "none" }}>
@@ -244,7 +249,7 @@ export default function Task() {
                               <Spec tone={written[i] ? "ink" : "faint"}>{written[i] ? `${written[i]} ${written[i] === 1 ? "line" : "lines"} written` : "Write what you did →"}</Spec>
                             </View>
                           </View>
-                        </View>
+                        </Animated.View>
                       </Tap>
                     </Animated.View>
                   );

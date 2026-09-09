@@ -18,6 +18,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, useReducedMotion, cancelAnimation } from "react-native-reanimated";
 import { Sprite, spriteMeta, type SpriteId } from "./Sprite";
+import { SpriteCycle } from "./SpriteCycle";
 import { art, shell } from "./tokens";
 import { scheme } from "./theme";
 
@@ -174,7 +175,6 @@ function Prop({ p, width, floorH, scale }: { p: SceneProp; width: number; floorH
 function Walker({ w, width, floorH, scale }: { w: SceneWalker; width: number; floorH: number; scale: number }) {
   const reduced = useReducedMotion();
   const t = useSharedValue(0);
-  const [frame, setFrame] = useState<0 | 1 | 2>(0);
   const dir = w.to > w.from ? "right" : "left";
   useEffect(() => {
     if (reduced) {
@@ -186,17 +186,12 @@ function Walker({ w, width, floorH, scale }: { w: SceneWalker; width: number; fl
     t.value = withDelay((w.delay ?? 0) * 1000, withRepeat(withSequence(withTiming(1, { duration: w.seconds * 1000, easing: Easing.linear }), withTiming(0, { duration: 0 })), -1, false));
     return () => cancelAnimation(t);
   }, [reduced, t, w.seconds, w.delay]);
-  useEffect(() => {
-    if (reduced) return;
-    const h = setInterval(() => setFrame((f) => ((f + 1) % 3) as 0 | 1 | 2), 180);
-    return () => clearInterval(h);
-  }, [reduced]);
   const style = useAnimatedStyle(() => ({ transform: [{ translateX: (w.from + (w.to - w.from) * t.value) * width }] }));
-  const id = `avatar-outfit${w.outfit % 8}-${dir}-${frame}` as SpriteId;
+  const ids = [0, 1, 2].map((k) => `avatar-outfit${w.outfit % 8}-${dir}-${k}` as SpriteId);
   const bottom = Math.round(floorH - 12 * scale + (w.y ?? 0) * scale);
   return (
     <Animated.View pointerEvents="none" style={[{ position: "absolute", left: -10 * scale, bottom, opacity: 0.92 }, style]}>
-      <Sprite id={id} scale={scale as 1 | 2 | 3} />
+      <SpriteCycle ids={ids} playing={!reduced} period={180} scale={scale as 1 | 2 | 3} />
     </Animated.View>
   );
 }

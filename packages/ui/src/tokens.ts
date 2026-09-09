@@ -145,15 +145,32 @@ export const ease = {
   spring: [0.34, 1.4, 0.64, 1],
   release: [0.32, 1.72, 0.42, 0.9],
 } as const;
+/**
+ * The curves for motion without a finger on it (Apple's, via Emil
+ * Kowalski's tables): a strong ease-out for anything entering or leaving,
+ * a strong ease-in-out for anything moving across the screen, the iOS
+ * sheet curve for a sheet that opens on its own. Never ease-in on UI.
+ */
+export const curve = {
+  out: [0.23, 1, 0.32, 1],
+  inOut: [0.77, 0, 0.175, 1],
+  sheet: [0.32, 0.72, 0, 1],
+} as const;
+/** The springs for motion a finger started: settle (no overshoot) unless the gesture carried momentum. */
+export const spring = {
+  settle: { duration: 400, dampingRatio: 1 },
+  snap: { duration: 400, dampingRatio: 0.8 },
+  sheet: { duration: 300, dampingRatio: 0.8 },
+} as const;
 export const ms = {
-  press: 60,
-  release: 220,
+  press: 100,
+  release: 140,
   colour: 150,
   panelIn: 200,
   panelOut: 190,
   reveal: 420,
   revealStagger: 60,
-  toast: 300,
+  toast: 220,
   bubbleRise: 220,
   bubbleFade: 300,
   bubbleLife: 5000,

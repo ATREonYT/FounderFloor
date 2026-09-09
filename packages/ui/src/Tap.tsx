@@ -2,21 +2,22 @@
  * THE TAP — the press feel, for anything that is not a button.
  *
  * `.btn-press` is the button's; a card, a chip, a booth tile has no key
- * to put down, so it breathes instead: the whole thing shrinks to `scale`
- * over the press tick (60ms) and springs back on release. That spring is
- * loose on purpose — a card should feel picked up, not clicked. A haptic
- * fires on the press itself so the finger hears it before the eye does.
+ * to put down, so it shrinks to `scale` the instant the finger lands
+ * (100ms, strong ease-out) and settles back on release (140ms, the same
+ * curve, no bounce). No overshoot: a card is tapped dozens of times a
+ * day, and bounce belongs to things that were thrown. No haptic by
+ * default either; a haptic on every card trains the hand to ignore the
+ * ones that matter, so screens fire `haptic()` themselves at the moment
+ * that earns it (a step ticked, a task finished, a sheet snapping home).
  *
- * `haptic()` is exported on its own so a screen can tick on a state change
- * (a toast landing, a sale ringing) without wrapping anything in a Tap.
  * Web has no motor; every haptic is a no-op there and never throws.
- * Reduced motion keeps the haptic and drops the scale.
+ * Reduced motion drops the scale.
  */
 import type { ReactNode } from "react";
 import { Platform, Pressable, type AccessibilityRole, type StyleProp, type ViewStyle } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from "react-native-reanimated";
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { ease, ms } from "./tokens";
+import { curve, ms } from "./tokens";
 
 export type HapticKind = "light" | "medium" | "success" | "warning" | "error";
 
@@ -49,7 +50,7 @@ export async function haptic(kind: HapticKind): Promise<void> {
 export function Tap({
   children,
   onPress,
-  haptic: kind = "light",
+  haptic: kind = "none",
   scale = 0.97,
   disabled,
   style,
@@ -72,11 +73,11 @@ export function Tap({
 
   const down = () => {
     if (reduced) return;
-    s.value = withTiming(scale, { duration: ms.press, easing: Easing.bezier(...ease.out) });
+    s.value = withTiming(scale, { duration: ms.press, easing: Easing.bezier(...curve.out) });
   };
   const up = () => {
     if (reduced) return;
-    s.value = withSpring(1, { damping: 12, stiffness: 260 });
+    s.value = withTiming(1, { duration: ms.release, easing: Easing.bezier(...curve.out) });
   };
   const press = () => {
     if (kind !== "none") void haptic(kind);
@@ -88,6 +89,7 @@ export function Tap({
       onPress={press}
       onPressIn={down}
       onPressOut={up}
+      pressRetentionOffset={16}
       disabled={disabled}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
