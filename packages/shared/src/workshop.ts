@@ -13,6 +13,8 @@ import type { StandRecord } from "./types.ts";
 import type { Profile } from "./profile.ts";
 
 export type ScreenKind = "landing" | "signup" | "pricing" | "app" | "checkout";
+/** The named looks: each is a different typeface, hero, palette, navigation and section shape, not a recolour. */
+export type LookPreset = "startup" | "editorial" | "studio" | "playful" | "minimal";
 /** What kind of thing it is; the layouts follow (a dashboard, a feed, listings, bookings, a product page). */
 export type ProductKind = "saas" | "consumer" | "marketplace" | "services" | "hardware";
 
@@ -64,8 +66,8 @@ export interface Mockup {
   seed?: string;
   /** The founder changed words by hand; a redraw must be asked for. */
   edited?: boolean;
-  /** The look: a brand hue and a style. Set by the model or the founder; otherwise steady from the name. */
-  theme?: { hue: number; style: "clean" | "bold" | "soft" };
+  /** The look: a brand hue, a preset (or a shuffle seed that mixes the parts). Set by the model or the founder; otherwise steady from the name. */
+  theme?: { hue: number; style: "clean" | "bold" | "soft"; preset?: LookPreset; seed?: number };
   kind?: ProductKind;
   /** What customers said, with who said it, for the front door's testimonial. */
   quotes?: { who: string; said: string }[];

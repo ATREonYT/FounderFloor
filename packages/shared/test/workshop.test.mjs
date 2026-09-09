@@ -64,10 +64,20 @@ test("the mock-up renders as a whole app page, escaped, with three tappable scre
   assert.equal((html.match(/class="screen/g) ?? []).length, 3);
   assert.match(html, /window\.__go\(1\)/);
   assert.match(html, /€12/);
-  assert.match(html, /class="tabs"/);
+  assert.match(html, /class="(tabs|pillbar|seg)"/);
   const t = mockupTheme(m);
   assert.ok(t.hue >= 0 && t.hue < 360);
   assert.equal(mockupTheme({ ...m, theme: { hue: 200, style: "bold" } }).hue, 200);
+  const { lookOf } = await import("../src/mockup-html.ts");
+  assert.equal(lookOf({ ...m, theme: { hue: 200, style: "bold" } }).preset, "studio");
+  assert.equal(lookOf({ ...m, theme: { hue: 200, style: "clean", preset: "editorial" } }).font, "serif");
+  const a = lookOf({ ...m, theme: { hue: 200, style: "clean", seed: 1 } }), b2 = lookOf({ ...m, theme: { hue: 200, style: "clean", seed: 2 } });
+  assert.equal(a.preset, "shuffle");
+  for (let seed = 0; seed < 200; seed++) { const l = lookOf({ ...m, theme: { hue: 200, style: "clean", seed } }); assert.ok(l.hero && l.palette && l.nav && l.features && l.pricing && l.font, `seed ${seed}`); }
+  assert.ok(JSON.stringify(a) !== JSON.stringify(b2));
+  // five companies, five different presets by name
+  const presets = new Set(["Tally", "Plates", "Roomly", "Sparkle", "Leaf", "Orbit", "Mint"].map((n) => lookOf({ ...m, name: n, theme: undefined }).preset));
+  assert.ok(presets.size >= 3);
   const poster = mockupPoster(m);
   assert.equal((poster.match(/<iframe/g) ?? []).length, 3);
 });
