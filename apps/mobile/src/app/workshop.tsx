@@ -1,0 +1,269 @@
+/**
+ * THE WORKSHOP — the start-up, mocked up. A phone drawn on the page with
+ * the first three screens of the thing in it, page by page: the front
+ * door, the one screen, the price. Every word on them came from the
+ * founder's own sign, audience and notebook, and every word can be
+ * changed by tapping Edit. Under the phone: the build brief, one
+ * document a builder works from, and two ways to hand it over: to
+ * Lovable, Bolt or v0 for a founder who does not code, or to Claude Code
+ * for one who does. With nothing on the sign yet, the page shows a
+ * sample and says so.
+ */
+import { useState } from "react";
+import { Pressable, ScrollView, Share, Text, View } from "react-native";
+import { useRouter, type Href } from "expo-router";
+import type { MockScreen } from "@founderfloor/shared";
+import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
+import { useWorkshop } from "../lib/workshop";
+
+const INK = "#12171B";
+const PAPER = "#F6F4EE";
+const KIND: Record<MockScreen["kind"], { glyph: GlyphId; color: string }> = { landing: { glyph: "wave", color: "#3B5B92" }, signup: { glyph: "heart", color: "#2F6F6A" }, app: { glyph: "bolt", color: "#4F6E6B" }, pricing: { glyph: "coin", color: "#B4762E" }, checkout: { glyph: "coin", color: "#8C3B2E" } };
+
+export default function Workshop() {
+  const L = useLayout();
+  const router = useRouter();
+  const w = useWorkshop();
+  const [i, setI] = useState(0);
+  const [edit, setEdit] = useState<MockScreen | null>(null);
+  const [showBrief, setShowBrief] = useState(false);
+  const [showPrompt, setShowPrompt] = useState<"lovable" | "claude" | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const m = w.mockup;
+  const sc = m.screens[Math.min(i, m.screens.length - 1)];
+  const k = KIND[sc.kind];
+  const say = (t: string) => {
+    setToast(t);
+    setTimeout(() => setToast(null), 2600);
+  };
+  const send = async (kind: "lovable" | "claude") => {
+    try {
+      await Share.share({ message: w.prompt(kind), title: kind === "lovable" ? `${m.name}: build prompt` : `${m.name}: CLAUDE.md and brief` });
+    } catch {
+      say("Could not open the share sheet.");
+    }
+  };
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/you" as Href));
+  const phoneW = Math.min(300, L.width - 2 * L.shell.paddingHorizontal - 40);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+      <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
+            <Spec tone="ink">← Back</Spec>
+          </Pressable>
+          <Spec tone="muted">THE WORKSHOP</Spec>
+        </View>
+        <Scene set="workshop" height={L.compact ? 130 : 160} radiusPx={radius.xl} color="#A28457" accessibilityLabel="The workshop">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <GlyphTile id="cube" color="#A28457" size={28} scale={1} />
+            <Spec tone="ink">{m.source === "sample" ? "A SAMPLE" : m.source === "live" ? "FROM YOUR NOTEBOOK" : "FROM YOUR SIGN"}</Spec>
+          </View>
+        </Scene>
+        <View style={{ gap: 6 }}>
+          <Display size={L.compact ? "3xl" : "4xl"}>{m.source === "sample" ? "Your start-up, mocked up" : `${m.name}, mocked up`}</Display>
+          <Body tone="muted">Three screens, one path, and a brief a builder can start from. Every word can be changed.</Body>
+        </View>
+        {m.source === "sample" ? (
+          <Plate tone="paper" radius={radius.lg} padding={12} lineColor="#A28457">
+            <Body size="sm">
+              {`This is a sample, ${m.name}. Write the sign on your stand and the desk mocks up yours from it, your audience and what people told you.`}
+            </Body>
+            <View style={{ marginTop: 8 }}>
+              <Button size="sm" variant="secondary" onPress={() => router.push("/stand" as Href)}>
+                Write the sign
+              </Button>
+            </View>
+          </Plate>
+        ) : null}
+
+        {/* the phone */}
+        <View style={{ alignItems: "center", gap: 12 }}>
+          <View style={{ width: phoneW, borderRadius: 34, backgroundColor: INK, padding: 8, shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 18, shadowOffset: { width: 0, height: 10 }, elevation: 8 }}>
+            <View style={{ borderRadius: 27, backgroundColor: PAPER, overflow: "hidden", minHeight: phoneW * 1.9 }}>
+              {/* the status strip, and the notch */}
+              <View style={{ height: 34, alignItems: "center", justifyContent: "flex-end", paddingBottom: 4 }}>
+                <View style={{ position: "absolute", top: 8, width: 84, height: 20, borderRadius: 10, backgroundColor: INK }} />
+              </View>
+              <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, gap: 12, flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: k.color }} />
+                  <Text style={{ fontSize: 11, letterSpacing: 1, color: "#6F6A5E" }}>{m.name.toUpperCase()}</Text>
+                </View>
+                {sc.kind === "app" ? (
+                  <>
+                    <Text style={{ fontSize: 22, lineHeight: 26, fontWeight: "600", color: INK }}>{sc.headline}</Text>
+                    <View style={{ backgroundColor: wash(k.color, 0.12), borderRadius: 14, padding: 14, gap: 4 }}>
+                      <Text style={{ fontSize: 11, letterSpacing: 1, color: "#6F6A5E" }}>{(sc.bullets[0] ?? "THE NUMBER").toUpperCase()}</Text>
+                      <Text style={{ fontSize: 34, fontWeight: "700", color: INK }}>12</Text>
+                    </View>
+                    {sc.bullets.slice(1).map((b, n) => (
+                      <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.08)" }}>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: k.color }} />
+                        <Text style={{ fontSize: 13, color: INK, flex: 1 }}>{b}</Text>
+                      </View>
+                    ))}
+                    {sc.sub ? <Text style={{ fontSize: 12, color: "#6F6A5E" }}>{sc.sub}</Text> : null}
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ fontSize: sc.kind === "pricing" ? 24 : 26, lineHeight: sc.kind === "pricing" ? 28 : 30, fontWeight: "700", color: INK, letterSpacing: -0.4 }}>{sc.headline}</Text>
+                    {sc.sub ? <Text style={{ fontSize: 14, lineHeight: 19, color: "#4D535A" }}>{sc.sub}</Text> : null}
+                    {sc.kind === "pricing" && sc.price ? (
+                      <View style={{ borderWidth: 2, borderColor: k.color, borderRadius: 14, padding: 14, gap: 2 }}>
+                        <Text style={{ fontSize: 11, letterSpacing: 1, color: "#6F6A5E" }}>ONE PLAN</Text>
+                        <Text style={{ fontSize: 26, fontWeight: "700", color: INK }}>{sc.price}</Text>
+                      </View>
+                    ) : null}
+                    {sc.bullets.map((b, n) => (
+                      <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: wash(k.color, 0.18), alignItems: "center", justifyContent: "center" }}>
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: k.color }} />
+                        </View>
+                        <Text style={{ fontSize: 13, color: INK, flex: 1 }}>{b}</Text>
+                      </View>
+                    ))}
+                  </>
+                )}
+                <View style={{ flex: 1 }} />
+                {sc.fields.map((f) => (
+                  <View key={f} style={{ borderWidth: 1.5, borderColor: "rgba(0,0,0,0.18)", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 }}>
+                    <Text style={{ fontSize: 13, color: "#8A8272" }}>{f}</Text>
+                  </View>
+                ))}
+                <View style={{ backgroundColor: k.color, borderRadius: 12, paddingVertical: 13, alignItems: "center" }}>
+                  <Text style={{ fontSize: 15, fontWeight: "600", color: "#FFFFFF" }}>{sc.cta}</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Pressable onPress={() => setI((x) => Math.max(0, x - 1))} disabled={i === 0} accessibilityRole="button" accessibilityLabel="Previous screen" style={{ opacity: i === 0 ? 0.3 : 1, padding: 6 }}>
+              <Body>←</Body>
+            </Pressable>
+            {m.screens.map((s, n) => (
+              <Pressable key={n} onPress={() => setI(n)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: n === i ? KIND[s.kind].color : shell.panel, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: n === i ? KIND[s.kind].color : shell.line }}>
+                <Glyph id={KIND[s.kind].glyph} tone={n === i ? "paper" : "auto"} scale={1} />
+                <Spec tone={n === i ? "paper" : "ink"}>{s.title}</Spec>
+              </Pressable>
+            ))}
+            <Pressable onPress={() => setI((x) => Math.min(m.screens.length - 1, x + 1))} disabled={i === m.screens.length - 1} accessibilityRole="button" accessibilityLabel="Next screen" style={{ opacity: i === m.screens.length - 1 ? 0.3 : 1, padding: 6 }}>
+              <Body>→</Body>
+            </Pressable>
+          </View>
+          <ButtonRow>
+            <Button size="sm" variant="secondary" onPress={() => setEdit({ ...sc })}>
+              Edit this screen
+            </Button>
+            <Button size="sm" variant="ghost" onPress={w.rewrite} disabled={w.writing || !w.mine}>
+              {w.writing ? "Drawing…" : "Draw it again"}
+            </Button>
+          </ButtonRow>
+        </View>
+
+        {/* the path and what it keeps */}
+        <Plate tone="panel" radius={radius.xl} padding={14}>
+          <Spec tone="muted">THE ONE PATH</Spec>
+          <Body size="sm" style={{ marginTop: 4 }}>
+            {m.path}
+          </Body>
+          <Spec tone="muted" style={{ marginTop: 10 }}>WHAT IT KEEPS</Spec>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            {m.keeps.map((kp) => (
+              <View key={kp} style={{ backgroundColor: shell.well, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Spec tone="ink">{kp}</Spec>
+              </View>
+            ))}
+          </View>
+        </Plate>
+
+        {/* the brief */}
+        <Plate tone="panel" radius={radius.xl} padding={14}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Spec tone="muted" style={{ flex: 1 }}>THE BUILD BRIEF</Spec>
+            <Pressable onPress={() => setShowBrief((v) => !v)} accessibilityRole="button">
+              <Spec tone="accent">{showBrief ? "Hide" : "Read it"}</Spec>
+            </Pressable>
+          </View>
+          <Body size="sm" tone="muted" style={{ marginTop: 4 }}>
+            One document a builder works from: the screens with their exact words, the path, what it keeps, and the rules.
+          </Body>
+          {showBrief ? (
+            <Text selectable style={{ marginTop: 10, fontFamily: "monospace", fontSize: 12, lineHeight: 17, color: shell.ink }}>
+              {w.brief}
+            </Text>
+          ) : null}
+        </Plate>
+
+        {/* the hand-off */}
+        <View style={{ gap: 8 }}>
+          <Body medium>Now build it</Body>
+          <Body size="sm" tone="muted">The brief goes to whatever builds it. Both prompts use your exact words and forbid extra screens.</Body>
+          <Pressable onPress={() => void send("lovable")} accessibilityRole="button" accessibilityLabel="Send to Lovable, Bolt or v0">
+            <Plate tone="panel" radius={radius.xl} padding={14}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <GlyphTile id="rocket" color="#3B5B92" size={40} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Body medium>I do not code</Body>
+                  <Spec tone="faint">A prompt for Lovable, Bolt or v0: paste it, get a live site</Spec>
+                </View>
+                <Body tone="accent">Send ›</Body>
+              </View>
+            </Plate>
+          </Pressable>
+          <Pressable onPress={() => void send("claude")} accessibilityRole="button" accessibilityLabel="Send to Claude Code">
+            <Plate tone="panel" radius={radius.xl} padding={14}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <GlyphTile id="chip" color="#4F6E6B" size={40} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Body medium>I code, or I have Claude Code</Body>
+                  <Spec tone="faint">The brief as CLAUDE.md, with a first prompt and a stack</Spec>
+                </View>
+                <Body tone="accent">Send ›</Body>
+              </View>
+            </Plate>
+          </Pressable>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <Pressable onPress={() => setShowPrompt(showPrompt === "lovable" ? null : "lovable")} accessibilityRole="button">
+              <Spec tone="accent">{showPrompt === "lovable" ? "Hide the prompt" : "Show the Lovable prompt"}</Spec>
+            </Pressable>
+            <Pressable onPress={() => setShowPrompt(showPrompt === "claude" ? null : "claude")} accessibilityRole="button">
+              <Spec tone="accent">{showPrompt === "claude" ? "Hide the prompt" : "Show the Claude Code prompt"}</Spec>
+            </Pressable>
+          </View>
+          {showPrompt ? (
+            <Plate tone="paper" radius={radius.lg} padding={12}>
+              <Text selectable style={{ fontFamily: "monospace", fontSize: 12, lineHeight: 17, color: shell.ink }}>
+                {w.prompt(showPrompt)}
+              </Text>
+            </Plate>
+          ) : null}
+          {w.lastError ? <Spec tone="faint">{w.lastError}</Spec> : null}
+        </View>
+      </ScrollView>
+
+      {/* edit one screen's words */}
+      <Dialogue open={!!edit} onClose={() => setEdit(null)} sign="EDIT THE SCREEN" keeper="The desk" color={k.color} footer="Your words. The brief and the prompts follow.">
+        {edit ? (
+          <View style={{ gap: 12 }}>
+            <Input label="HEADLINE" value={edit.headline} onChangeText={(v) => setEdit({ ...edit, headline: v })} />
+            <Input label="UNDER IT" value={edit.sub} onChangeText={(v) => setEdit({ ...edit, sub: v })} multiline />
+            <Input label="THE ONE BUTTON" value={edit.cta} onChangeText={(v) => setEdit({ ...edit, cta: v })} />
+            {edit.kind === "pricing" ? <Input label="PRICE" value={edit.price ?? ""} onChangeText={(v) => setEdit({ ...edit, price: v })} /> : null}
+            {edit.bullets.map((b, n) => (
+              <Input key={n} label={`LINE ${n + 1}`} value={b} onChangeText={(v) => setEdit({ ...edit, bullets: edit.bullets.map((x, q) => (q === n ? v : x)) })} />
+            ))}
+            <ButtonRow>
+              <Button onPress={() => { w.editScreen(i, edit); setEdit(null); say("Changed."); }}>Keep</Button>
+              <Button variant="ghost" onPress={() => setEdit(null)}>
+                Cancel
+              </Button>
+            </ButtonRow>
+          </View>
+        ) : null}
+      </Dialogue>
+      <Toast text={toast ?? ""} visible={!!toast} />
+    </View>
+  );
+}

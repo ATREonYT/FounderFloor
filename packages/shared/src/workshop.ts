@@ -1,0 +1,132 @@
+/**
+ * The Workshop: the start-up, mocked up. From what the building already
+ * knows (the sign, who it is for, what people said, the price said out
+ * loud, the decisions in the notebook) the desk writes the first three
+ * screens of the thing, a build brief, and a prompt ready to paste into
+ * whatever builds it: Lovable, Bolt or v0 for a founder who does not
+ * code, Claude Code for one who does. The model writes it when there is
+ * a key; these rules write it when there is not, so the page is never
+ * empty, and a founder with nothing on the sign yet sees a sample.
+ */
+import { HOUSE_RULES } from "./prompts/index.ts";
+import type { StandRecord } from "./types.ts";
+import type { Profile } from "./profile.ts";
+
+export type ScreenKind = "landing" | "signup" | "pricing" | "app" | "checkout";
+
+export interface MockScreen {
+  kind: ScreenKind;
+  /** The screen's name in the flow: "The front door". */
+  title: string;
+  headline: string;
+  sub: string;
+  /** The one button. */
+  cta: string;
+  /** Inputs on the screen, by label. */
+  fields: string[];
+  /** Three short lines: what you get, or what the app shows. */
+  bullets: string[];
+  /** For a pricing or checkout screen. */
+  price?: string;
+}
+
+export interface Mockup {
+  name: string;
+  oneLiner: string;
+  audience: string;
+  screens: MockScreen[];
+  /** The one path through it, in a sentence. */
+  path: string;
+  /** What the thing keeps: three or four nouns. */
+  keeps: string[];
+  source: "live" | "rehearsal" | "sample";
+  at: string;
+}
+
+export const SAMPLE_MOCKUP_INPUT = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", audience: "independent café owners", price: "€40 a month" };
+
+/** The mock-up without a model: three screens from the sign, the audience and the price. */
+export function localMockup(input: { name?: string; oneLiner?: string; audience?: string; price?: string }, profile?: Profile | null): Mockup {
+  const sample = !input.oneLiner?.trim();
+  const name = (input.name || SAMPLE_MOCKUP_INPUT.name).trim();
+  const oneLiner = (input.oneLiner || SAMPLE_MOCKUP_INPUT.oneLiner).trim().replace(/\.$/, "");
+  const audience = (input.audience || profile?.audiences || SAMPLE_MOCKUP_INPUT.audience).trim();
+  const price = (input.price || (sample ? SAMPLE_MOCKUP_INPUT.price : "a price you said out loud")).trim();
+  const screens: MockScreen[] = [
+    { kind: "landing", title: "The front door", headline: oneLiner, sub: `For ${audience}. Try it this week, no card.`, cta: "Start", fields: ["Your email"], bullets: ["What you get, in one line each", "What it costs, said plainly", "Who else uses it, by name"] },
+    { kind: "app", title: "The one screen", headline: `${name}, today`, sub: "Only the one path. No settings, no menus.", cta: "Do the thing", fields: [], bullets: ["The single number that matters, big", "The last three things that happened", "The one button"] },
+    { kind: "pricing", title: "The price", headline: `${price}, cancel any time`, sub: "One plan. The first week free.", cta: "Start the free week", fields: ["Card"], bullets: ["Everything, no tiers", "Stop whenever", "A person answers email"], price },
+  ];
+  return { name, oneLiner, audience, screens, path: `Someone from ${audience} lands on the front door, leaves an email, uses the one screen once, and pays ${price}.`, keeps: ["accounts", "the one thing they do", "payments"], source: sample ? "sample" : "rehearsal", at: new Date().toISOString() };
+}
+
+export const MOCKUP_PROMPT = `You mock up the first version of one founder's product from what they have written down. Return JSON only, with keys: name, oneLiner (under 12 words, no adjective that needs defending), audience (who pays, in their words), path (one sentence: how one person goes from landing to paying), keeps (3 or 4 nouns the product must store), screens (array of exactly 3 objects, in order: kind "landing", then "app", then "pricing"; each with title (under 5 words), headline (under 10 words), sub (under 16 words), cta (the one button, under 4 words), fields (0 to 2 input labels), bullets (exactly 3 lines, under 9 words each), and for pricing a price (a real number the founder said, or the nearest honest guess marked with a question mark)). Use their customers' exact words from the notebook where you can. Never invent customers or numbers. No prose outside the JSON.`;
+
+/** One mock-up from the model's reply, or null. */
+export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const s = (x: unknown, max: number) => (typeof x === "string" && x.trim() ? x.trim().slice(0, max) : null);
+  const list = (x: unknown, max: number, each: number) => (Array.isArray(x) ? x.map((y) => s(y, each)).filter((y): y is string => !!y).slice(0, max) : []);
+  const name = s(o.name, 40), oneLiner = s(o.oneLiner, 120), audience = s(o.audience, 80), path = s(o.path, 240);
+  if (!name || !oneLiner || !audience || !path || !Array.isArray(o.screens)) return null;
+  const kinds: ScreenKind[] = ["landing", "signup", "pricing", "app", "checkout"];
+  const screens: MockScreen[] = [];
+  for (const x of o.screens.slice(0, 4)) {
+    const y = (x ?? {}) as Record<string, unknown>;
+    const headline = s(y.headline, 90), cta = s(y.cta, 30);
+    if (!headline || !cta) continue;
+    const sc: MockScreen = { kind: kinds.includes(y.kind as ScreenKind) ? (y.kind as ScreenKind) : "app", title: s(y.title, 40) ?? "Screen", headline, sub: s(y.sub, 140) ?? "", cta, fields: list(y.fields, 2, 30), bullets: list(y.bullets, 3, 70) };
+    const price = s(y.price, 40);
+    if (price) sc.price = price;
+    screens.push(sc);
+  }
+  if (screens.length < 2) return null;
+  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 4, 30) };
+}
+
+/** The build brief: one document a builder can work from, in plain words. */
+export function buildBrief(m: Mockup, opts?: { record?: Partial<StandRecord> | null; notes?: string[] }): string {
+  const lines = [
+    `# ${m.name}`,
+    "",
+    `**What it is.** ${m.oneLiner}.`,
+    `**Who pays.** ${m.audience}.`,
+    `**The one path.** ${m.path}`,
+    "",
+    "## Screens",
+    ...m.screens.flatMap((sc, i) => [
+      `### ${i + 1}. ${sc.title} (${sc.kind})`,
+      `- Headline: "${sc.headline}"`,
+      sc.sub ? `- Under it: "${sc.sub}"` : "",
+      `- The one button: "${sc.cta}"`,
+      sc.fields.length ? `- Inputs: ${sc.fields.join(", ")}` : "- Inputs: none",
+      sc.bullets.length ? `- Shows: ${sc.bullets.join("; ")}` : "",
+      sc.price ? `- Price: ${sc.price}` : "",
+      "",
+    ]),
+    "## What it keeps",
+    ...m.keeps.map((k) => `- ${k}`),
+    "",
+    "## Rules",
+    "- One path, no settings, no dashboard. If a screen is not in the list above, it does not exist yet.",
+    "- Plain words on every screen. No adjective that needs defending.",
+    "- Mobile first; it must work on a phone in a café.",
+    "- Email sign-up with a magic link; no passwords.",
+    "- Payments through Stripe Checkout; one plan.",
+    "- Ship the ugly version first. Polish is a later task.",
+  ];
+  if (opts?.record?.publicPricing) lines.push("", `Public pricing as written on the stand: ${opts.record.publicPricing}`);
+  if (opts?.notes?.length) lines.push("", "## What customers actually said", ...opts.notes.slice(0, 8).map((n) => `- ${n}`));
+  return lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n");
+}
+
+export type Builder = "lovable" | "claude";
+
+/** The prompt to paste: for a builder that makes a site from words, or for Claude Code in a repo. */
+export function builderPrompt(kind: Builder, m: Mockup, brief: string): string {
+  if (kind === "lovable") {
+    return `Build me the first version of ${m.name}: ${m.oneLiner}. It is for ${m.audience}.\n\nMake exactly these screens and nothing else:\n${m.screens.map((s, i) => `${i + 1}. ${s.title}: headline "${s.headline}", ${s.sub ? `sub "${s.sub}", ` : ""}one button "${s.cta}"${s.fields.length ? `, inputs: ${s.fields.join(", ")}` : ""}${s.bullets.length ? `, showing: ${s.bullets.join("; ")}` : ""}${s.price ? `, price ${s.price}` : ""}.`).join("\n")}\n\nThe one path: ${m.path}\n\nKeep it plain: one column, big type, one button per screen, works on a phone. Email sign-up by magic link. Stripe Checkout with one plan. No dashboard, no settings, no extra pages. Use the exact words above; do not improve them.`;
+  }
+  return `You are building the first version of ${m.name} in this repo. Read BRIEF.md first; it is the whole spec.\n\nStack: Next.js (app router), TypeScript, Tailwind, one Postgres table per noun in "What it keeps", magic-link email sign-in, Stripe Checkout with one plan. Deploy target: Vercel.\n\nBuild only the screens in the brief, in order, with the exact words. One path through the product; no settings, no dashboard, no admin. Mobile first. When a screen is done, run it and tell me what to look at. Do not add features the brief does not name; if something is missing from the brief, ask one question and stop.\n\n---\n\n${brief}`;
+}

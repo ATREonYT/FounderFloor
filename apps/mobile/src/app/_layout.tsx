@@ -58,6 +58,7 @@ export default function RootLayout() {
           <Stack.Screen name="stand" options={{ presentation: "card" }} />
           <Stack.Screen name="office" options={{ presentation: "card" }} />
           <Stack.Screen name="floor" options={{ presentation: "card" }} />
+          <Stack.Screen name="workshop" options={{ presentation: "card" }} />
         </Stack>
         <TrialSheet />
         <TourOverlay />

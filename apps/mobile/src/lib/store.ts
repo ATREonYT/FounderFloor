@@ -19,7 +19,7 @@ import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, withEntry } from "@founderfloor/shared";
+import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, type Mockup, withEntry } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -317,6 +317,9 @@ interface FounderState {
   /** Each week read back, by week number. */
   reviews: Record<number, WeekReview>;
   setReview(r: WeekReview): void;
+  /** The start-up, mocked up: three screens, the path, what it keeps. */
+  mockup: Mockup | null;
+  setMockup(m: Mockup | null): void;
   /** The desk's notebook: what the founder did, in dated lines. On the device; read by the prompts only when memoryOn is true. */
   memory: MemoryEntry[];
   /** null until the founder has answered the notebook question. */
@@ -427,6 +430,8 @@ export const useFounder = create<FounderState>()(
       },
       reviews: {},
       setReview: (r) => set({ reviews: { ...get().reviews, [r.week]: r } }),
+      mockup: null,
+      setMockup: (mockup) => set({ mockup }),
       memory: [],
       memoryOn: null,
       setMemoryOn: (on) => set({ memoryOn: on }),
@@ -487,8 +492,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 8,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, ...(persisted as object) }) as unknown as FounderState,
+      version: 9,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

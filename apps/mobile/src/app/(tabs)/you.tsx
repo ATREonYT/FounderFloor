@@ -30,6 +30,7 @@ export default function You() {
   const r = stand.record;
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
   const rows: { glyph: GlyphId; color: string; title: string; line: string; to: string; badge?: number }[] = [
+    { glyph: "cube", color: "#A28457", title: "The Workshop", line: "Your start-up mocked up, and the brief to build it", to: "/workshop" },
     { glyph: "coin", color: "#5E7C93", title: "The Office", line: kpi.length ? `${kpi.length} ${kpi.length === 1 ? "week" : "weeks"} logged · runway and the calendar` : "Log the week, read the runway", to: "/office" },
     { glyph: "bolt", color: "#4F6E6B", title: "Your plan", line: plan ? plan.headline : "Eight questions, four weeks", to: plan ? "/plan" : "/welcome" },
     { glyph: "flask", color: "#6B4E71", title: "The notebook", line: memory.length ? `${memory.length} lines the desk keeps for you` : "What the desk remembers", to: "/memory" },
@@ -38,7 +39,7 @@ export default function You() {
     { glyph: "heart", color: "#2F6F6A", title: "The coaches", line: "Ines, Jonah, Margot, Theo", to: "/coaches" },
     { glyph: "rocket", color: "#8C3B2E", title: "The floor", line: "Other founders' stands, in the real hall", to: "/floor" },
     { glyph: "star", color: "#A28457", title: tier === "free" ? "Plans and Pro" : "Your plan with us", line: tier === "free" ? "Free does a lot. Pro remembers." : `${tier[0].toUpperCase()}${tier.slice(1)} · manage`, to: "/plans" },
-    { glyph: "cube", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook switch", to: "/settings" },
+    { glyph: "leaf", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook switch", to: "/settings" },
   ];
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>

@@ -33,8 +33,8 @@ export default function Plan() {
           <Button variant="secondary" onPress={() => router.push("/welcome" as Href)}>
             {plan ? "Remake the plan" : "Answer the questions"}
           </Button>
-          <Button variant="ghost" onPress={() => router.navigate("/build" as Href)}>
-            Open the map
+          <Button variant="ghost" onPress={() => router.push("/workshop" as Href)}>
+            Mock it up
           </Button>
         </ButtonRow>
       </ScrollView>
