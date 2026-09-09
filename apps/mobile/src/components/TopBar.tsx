@@ -22,6 +22,16 @@ export function TopBar({ left, center, right }: { left?: ReactNode; center?: Rea
   );
 }
 
+/** The way back from a page that is not a tab: to the page before, or to Today. */
+export function Back({ label = "Back" }: { label?: string }) {
+  const router = useRouter();
+  return (
+    <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" })}>
+      <Spec tone="ink">{`← ${label}`}</Spec>
+    </Pressable>
+  );
+}
+
 /** Your avatar when signed in; the door when not. */
 export function You() {
   const router = useRouter();
@@ -35,7 +45,7 @@ export function You() {
     );
   }
   return (
-    <Pressable onPress={() => router.navigate("/stand")} accessibilityRole="button" accessibilityLabel={`${auth.name}, your stand`} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+    <Pressable onPress={() => router.navigate("/you")} accessibilityRole="button" accessibilityLabel={`${auth.name}, you`} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
       <Keeper look={stand.look} scale={1} />
     </Pressable>
   );

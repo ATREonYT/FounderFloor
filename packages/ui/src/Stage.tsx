@@ -131,7 +131,7 @@ export function Stage({
       <View onLayout={(e) => setWidth(Math.round(e.nativeEvent.layout.width))} style={{ height, borderRadius: radiusPx, overflow: "hidden", backgroundColor: wash(color, scheme() === "dark" ? 0.22 : 0.16), position: "relative" }}>
         {/* the wall, the floor, and the hall behind the counter */}
         <Backdrop hall={SCENE_SETS[set].hall} floorH={floorH} scale={scale} width={width} />
-        <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={ambient} edges />
+        <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={false} only="props" edges />
         {/* the counter, and the keeper behind it */}
         <View style={{ position: "absolute", left: "50%", bottom: withCounter ? floorH - 10 * scale : floorH - 6, marginLeft: -counterW / 2, width: counterW, height: counterH + keeperH, alignItems: "center" }}>
           <Animated.View style={[{ position: "absolute", bottom: withCounter ? counterH - 2 : 0, left: keeperX }, body]}>
@@ -147,6 +147,8 @@ export function Stage({
           ) : null}
           {heart ? <Heart key={heart} x={keeperX + keeperW + 4} y={counterH + keeperH - 12} /> : null}
         </View>
+        {/* people walk past in front of the counter, where they can be seen */}
+        <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={ambient} only="walkers" />
         {/* the bubble */}
         {say ? (
           <View style={{ position: "absolute", left: 14, top: 14, right: 14 }}>

@@ -8,10 +8,9 @@
 import { useState } from "react";
 import { Platform, View } from "react-native";
 import { Body, Button, Chip, Dialogue, Display, Pill, Plate, Spec, Sprite, radius, shell, useLayout } from "@founderfloor/ui";
-import { TopBar } from "../../components/TopBar";
-import { BAR } from "../../lib/chrome";
-import { HALLS, type HallId } from "../../lib/mock";
-import { useStand } from "../../lib/stand";
+import { Back, TopBar } from "../components/TopBar";
+import { HALLS, type HallId } from "../lib/mock";
+import { useStand } from "../lib/stand";
 
 const SITE = "https://founderfloor.net";
 
@@ -22,10 +21,10 @@ export default function Floor() {
   const hall = HALLS.find((h) => h.id === hallId)!;
   const stand = useStand();
   const url = `${SITE}/floor/${hallId}`;
-  const clear = L.compact ? L.insets.bottom + BAR.inset + BAR.height : 0;
+  const clear = 0;
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Pill label={hall.name} meta={`${hall.here} here`} live onPress={() => setPick(true)} />} />
+      <TopBar left={<Back />} center={<Pill label={hall.name} meta={`${hall.here} here`} live onPress={() => setPick(true)} />} />
       {stand.source !== "floor" ? (
         <View style={{ paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 8 }}>
           <Plate tone="paperSign" radius={radius.md} padding={10}>

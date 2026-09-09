@@ -19,16 +19,14 @@ export interface TourStep {
 }
 
 export const TOUR: TourStep[] = [
-  { id: "map", target: "map", say: "This is the map: six rooms from idea to money. Tap the room you are in." },
-  { id: "room", target: null, say: "Inside a room: tick what is true, not what you intend. Close it when you are done." },
-  { id: "to-home", target: "tabs", say: "The bar at the bottom is the whole building. Tap Home.", route: "/reception", tab: "Home" },
-  { id: "home", target: "home-next", say: "Home says what to do next. Tap the card and it takes you there." },
-  { id: "to-stand", target: "tabs", say: "Now tap Stand.", route: "/stand", tab: "Stand" },
-  { id: "stand", target: "stand-numbers", say: "Your company on one card. Tap The numbers to fill it in; the coaches read from here." },
-  { id: "to-office", target: "tabs", say: "Tap Office.", route: "/office", tab: "Office" },
-  { id: "office", target: "office-log", say: "Every Friday, five numbers here, two minutes. Tap Log this week to see them." },
-  { id: "to-floor", target: "tabs", say: "Last one: tap Floor.", route: "/floor", tab: "Floor" },
-  { id: "floor", target: null, say: "The floor is other founders' stands, for when you have something to show. That is the building." },
+  { id: "map", target: "map", say: "This is the map: the building, floor by floor, from idea to money. Tap the room you are in." },
+  { id: "room", target: null, say: "Inside a room: this month's tasks, then the room's own list. Tick what is true, not what you intend. Close it when you are done." },
+  { id: "to-today", target: "tabs", say: "The bar at the bottom is the whole building: Today, Map, Coach, You. Tap Today.", route: "/today", tab: "Today" },
+  { id: "today", target: "home-next", say: "Today is one thing: the next task, with a Start button. This week's three tasks sit under it. Tap the card." },
+  { id: "to-coach", target: "tabs", say: "Now tap Coach.", route: "/reception", tab: "Coach" },
+  { id: "coach", target: null, say: "The coach: ask the desk anything about your company. The name at the top picks one of the four coaches." },
+  { id: "to-you", target: "tabs", say: "Last one: tap You.", route: "/you", tab: "You" },
+  { id: "you", target: null, say: "You: your company, the Friday log, your plan, the notebook, and the floor for when you have something to show. That is the building." },
 ];
 
 export interface Rect {

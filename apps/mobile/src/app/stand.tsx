@@ -12,12 +12,12 @@ import { Linking, Platform, Pressable, ScrollView, Share, View } from "react-nat
 import { useRouter, type Href } from "expo-router";
 import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, builderBrief, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
 import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId, Backdrop, Furniture, wash, scheme, type Hall } from "@founderfloor/ui";
-import { TopBar } from "../../components/TopBar";
-import { COLUMN, useBottomChrome } from "../../lib/chrome";
-import { useFounder, useSession } from "../../lib/store";
-import { Hint } from "../../components/Hint";
-import { TourTarget } from "../../components/TourTarget";
-import { useStand, hallName } from "../../lib/stand";
+import { Back, TopBar } from "../components/TopBar";
+import { COLUMN } from "../lib/chrome";
+import { useFounder, useSession } from "../lib/store";
+import { Hint } from "../components/Hint";
+import { TourTarget } from "../components/TourTarget";
+import { useStand, hallName } from "../lib/stand";
 
 const ENTITIES: { v: EntityType; label: string }[] = [
   { v: "none", label: "None yet" },
@@ -47,7 +47,7 @@ const SEGMENTS: { v: Segment; label: string }[] = [
 export default function Stand() {
   const L = useLayout();
   const router = useRouter();
-  const bottom = useBottomChrome();
+  const bottom = L.insets.bottom + 24;
   const stand = useStand();
   const auth = useSession((s) => s.auth);
   const sessionError = useSession((s) => s.error);
@@ -96,22 +96,18 @@ export default function Stand() {
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar
-        left={
-          auth ? (
-            <Pressable onPress={() => setAccount(true)} accessibilityRole="button" accessibilityLabel="Your account" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
-              <Spec tone="ink">{auth.name}</Spec>
-              <Spec tone="faint">{stand.source === "floor" ? "on the floor" : "no stand on a floor"}</Spec>
-            </Pressable>
-          ) : (
-            <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="button" accessibilityLabel="Sign in" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" })}>
-              <Spec tone="ink">Sign in</Spec>
-            </Pressable>
-          )
-        }
+        left={<Back />}
         center={<Spec tone="muted">{`${hallName(stand.hall)} · ${stand.spot}`}</Spec>}
         right={<TierTag tier={stand.tier} />}
       />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
+        {auth ? (
+          <Pressable onPress={() => setAccount(true)} accessibilityRole="button" accessibilityLabel="Your account" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 8 })}>
+            <Spec tone="ink">{auth.name}</Spec>
+            <Spec tone="faint">{stand.source === "floor" ? "· on the floor" : "· no stand on a floor"}</Spec>
+            <Spec tone="accent">· account</Spec>
+          </Pressable>
+        ) : null}
         <Hint id="stand" text="Your stand is your company on one card. Tap The numbers to fill it in; the coaches read from here. Share the card when it is worth showing." />
         {sessionError ? (
           <Plate tone="paper" radius={radius.md} padding={12}>

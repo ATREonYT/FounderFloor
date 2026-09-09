@@ -1,5 +1,7 @@
 /**
- * The shell: five screens behind one menu. On a phone the menu floats over
+ * The shell: four screens behind one menu, in the order every daily app
+ * shares: what to do today, the journey, the coach, and you. The stand,
+ * the office and the floor are pages behind You, not tabs. On a phone the menu floats over
  * the bottom of the screen as a glass pill (the iOS 26 / assistant-app
  * idiom, drawn in the site's glass); on anything wider it is a rail down
  * the left. The native tab bar is never shown — the kit draws all chrome.
@@ -14,7 +16,7 @@ export default function TabsLayout() {
   const L = useLayout();
   const router = useRouter();
   const path = usePathname();
-  const active = path.split("/").filter(Boolean)[0] ?? "reception";
+  const active = path.split("/").filter(Boolean)[0] ?? "today";
   const rail = !L.compact;
   const go = (k: string) => router.navigate(`/${k}` as Href);
   return (
@@ -25,12 +27,11 @@ export default function TabsLayout() {
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
-        <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: shell.paper }, animation: "none", freezeOnBlur: true, lazy: true }}>
-          <Tabs.Screen name="reception" />
-          <Tabs.Screen name="stand" />
+        <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: shell.paper }, animation: "none", lazy: true }}>
+          <Tabs.Screen name="today" />
           <Tabs.Screen name="build" />
-          <Tabs.Screen name="office" />
-          <Tabs.Screen name="floor" />
+          <Tabs.Screen name="reception" />
+          <Tabs.Screen name="you" />
         </Tabs>
         {!rail ? (
           <View pointerEvents="box-none" style={{ position: "absolute", left: BAR.inset + 4, right: BAR.inset + 4, bottom: L.insets.bottom + BAR.inset }}>

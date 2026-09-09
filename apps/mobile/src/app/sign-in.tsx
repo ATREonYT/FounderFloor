@@ -31,7 +31,7 @@ export default function SignIn() {
   const done = async () => {
     if (then === "trial") await claimAfterSignIn();
     if (router.canGoBack()) router.back();
-    else router.replace("/reception");
+    else router.replace("/today");
   };
   const go = async () => {
     setNote(null);
@@ -98,7 +98,7 @@ export default function SignIn() {
                     Later
                   </Button>
                 ) : (
-                  <Button variant="ghost" onPress={() => (router.canGoBack() ? router.back() : router.replace("/reception"))}>
+                  <Button variant="ghost" onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))}>
                     Not now
                   </Button>
                 )}

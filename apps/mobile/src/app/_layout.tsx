@@ -55,6 +55,9 @@ export default function RootLayout() {
           <Stack.Screen name="step" options={{ presentation: "card" }} />
           <Stack.Screen name="review" options={{ presentation: "card" }} />
           <Stack.Screen name="settings" options={{ presentation: "card" }} />
+          <Stack.Screen name="stand" options={{ presentation: "card" }} />
+          <Stack.Screen name="office" options={{ presentation: "card" }} />
+          <Stack.Screen name="floor" options={{ presentation: "card" }} />
         </Stack>
         <TrialSheet />
         <TourOverlay />

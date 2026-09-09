@@ -1,5 +1,5 @@
 /**
- * THE BOTTOM MENU — five entries, drawn as a glass bar of sign-style items.
+ * THE BOTTOM MENU — four entries, drawn as a glass bar of sign-style items.
  *
  * Not a native tab bar. It is the site's `.glass` HUD chrome (the chat
  * strip, the emote bar) turned into navigation: a bevelled glass plate
@@ -22,11 +22,10 @@ import { scheme } from "./theme";
 export type MenuEntry = { key: string; label: string; glyph: GlyphId; badge?: number };
 
 export const MENU: MenuEntry[] = [
-  { key: "reception", label: "Home", glyph: "wave" },
+  { key: "today", label: "Today", glyph: "star" },
   { key: "build", label: "Map", glyph: "cube" },
-  { key: "stand", label: "Stand", glyph: "star" },
-  { key: "office", label: "Office", glyph: "coin" },
-  { key: "floor", label: "Floor", glyph: "flask" },
+  { key: "reception", label: "Coach", glyph: "heart" },
+  { key: "you", label: "You", glyph: "wave" },
 ];
 
 export function Menu({ active, onSelect, entries = MENU }: { active: string; onSelect: (key: string) => void; entries?: MenuEntry[] }) {

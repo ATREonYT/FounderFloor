@@ -22,7 +22,7 @@ export default function Guide() {
     setGuided();
     if (then) router.replace(then as Href);
     else if (router.canGoBack()) router.back();
-    else router.replace("/reception");
+    else router.replace("/today");
   };
   const p = PAGES[i];
   return (

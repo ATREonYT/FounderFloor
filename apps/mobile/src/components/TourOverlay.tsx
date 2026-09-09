@@ -18,7 +18,7 @@ const SCRIM = "rgba(8,10,14,0.62)";
 /** The hole view's border: wide enough to cover any screen from any target. */
 const BIG = 4000;
 /** The corner radius of each target's own shape, so the hole hugs it. */
-const RADIUS: Record<string, number> = { map: 20, tabs: 999, "home-next": 16, "stand-numbers": 12, "office-log": 12 };
+const RADIUS: Record<string, number> = { map: 20, tabs: 999, "home-next": 24 };
 const radiusOf = (id: string | null) => (id ? RADIUS[id] ?? 16 : 16);
 
 export function TourOverlay() {

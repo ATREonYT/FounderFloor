@@ -9,23 +9,23 @@ import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
 import { useIsFocused, useRouter, type Href } from "expo-router";
 import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, remembers, readingPreview, MINES, type KpiEntry } from "@founderfloor/shared";
-import { effectivePlan } from "../../lib/billing";
+import { effectivePlan } from "../lib/billing";
 import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Glyph, GlyphTile, Input, Keeper, Mono, Plate, Scene, Spec, Tap, Toast, haptic, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
-import { TopBar } from "../../components/TopBar";
-import { COLUMN, useBottomChrome, setPendingSay } from "../../lib/chrome";
-import { isoWeek, useFounder } from "../../lib/store";
-import { valueMoment } from "../../lib/trial";
-import { useStand } from "../../lib/stand";
-import { useGate } from "../../lib/gate";
-import { COACHES } from "../../lib/mock";
-import { Hint } from "../../components/Hint";
-import { TourTarget } from "../../components/TourTarget";
+import { Back, TopBar } from "../components/TopBar";
+import { COLUMN, setPendingSay } from "../lib/chrome";
+import { isoWeek, useFounder } from "../lib/store";
+import { valueMoment } from "../lib/trial";
+import { useStand } from "../lib/stand";
+import { useGate } from "../lib/gate";
+import { COACHES } from "../lib/mock";
+import { Hint } from "../components/Hint";
+import { TourTarget } from "../components/TourTarget";
 
 export default function Office() {
   const L = useLayout();
   const router = useRouter();
   const focused = useIsFocused();
-  const bottom = useBottomChrome();
+  const bottom = L.insets.bottom + 24;
   const stand = useStand();
   const gate = useGate();
   const { kpi, logWeek, interviews, addInterview, removeInterview, docs, saveDoc, setRecord } = useFounder();
@@ -85,7 +85,7 @@ export default function Office() {
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
+      <TopBar left={<Back />} center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
         <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The Office">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

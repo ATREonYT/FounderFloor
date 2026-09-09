@@ -1,10 +1,10 @@
 /**
- * THE DESK — the home screen, in the shape every assistant app shares: a
- * greeting, four things to try, a composer at the bottom, a picker pill at
- * the top. What makes it this building: the picker shows the hall you are
- * in and who is there; the assistant is a keeper standing at a pixel
- * counter; the suggestion chips are paper signs; the reply reads like a
- * page beside the keeper. `?coach=` puts a stall keeper behind the desk.
+ * THE COACH TAB — the desk, in the shape every assistant app shares: a
+ * greeting, a few things to try, a composer at the bottom, a picker pill
+ * at the top. The picker is who you are talking to: the desk, or one of
+ * the four coaches. The assistant is a keeper standing at a pixel counter;
+ * the suggestion chips are paper signs; the reply reads like a page
+ * beside the keeper. `?coach=` puts a coach behind the desk.
  */
 import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
@@ -13,7 +13,7 @@ import { Body, Button, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Keep
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome, takePendingSay } from "../../lib/chrome";
 import { COACH_SET } from "../../lib/glyphs";
-import { COACHES, HALLS, STARTERS, greeting, type HallId } from "../../lib/mock";
+import { COACHES, RECEPTIONIST, STARTERS, greeting } from "../../lib/mock";
 import { useStand } from "../../lib/stand";
 import { useGate } from "../../lib/gate";
 import { aiMode, MODE_LINE } from "../../lib/ai";
@@ -25,8 +25,6 @@ import { remembers, MINES, STAGES, currentStage, stageProgress } from "@founderf
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { roomOfWeek } from "../../lib/taskDesk";
 import { Hint } from "../../components/Hint";
-import { TourTarget } from "../../components/TourTarget";
-import { useTour } from "../../lib/tour";
 
 export default function Reception() {
   const L = useLayout();
@@ -38,9 +36,7 @@ export default function Reception() {
   const { coach, messages, busy, thinking, send, reset, starters, source, quota, lastError } = useReceptionist(coachParam);
   const stand = useStand();
   const [draft, setDraft] = useState("");
-  const [hallId, setHallId] = useState<HallId>("main-hall");
-  const [halls, setHalls] = useState(false);
-  const hall = HALLS.find((h) => h.id === hallId)!;
+  const [who, setWho] = useState(false);
   const scroll = useRef<ScrollView>(null);
   const empty = messages.length === 0;
   const atDesk = coach.id === "desk";
@@ -101,7 +97,7 @@ export default function Reception() {
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar
-        center={<Pill label={hall.name} meta={L.compact && !empty ? undefined : `${hall.here} here`} live onPress={() => setHalls(true)} />}
+        center={<Pill label={atDesk ? "The desk" : coach.name} meta={L.compact && !empty ? undefined : atDesk ? "reception" : coach.title} live={aiMode() !== "rehearsal"} onPress={() => setWho(true)} />}
         right={
           !empty ? (
             <Button
@@ -130,6 +126,7 @@ export default function Reception() {
               <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240} ambient={focused} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
                 <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
               </Stage>
+              {atDesk ? <Hint id="coach" text="This is the coach. Ask the desk anything about your company, or tap the name at the top to pick one of the four coaches." /> : null}
               {week ? (
                 <Pressable onPress={() => router.push("/plans")} accessibilityRole="button" style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: shell.line, borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: week.days <= 2 ? shell.accent : shell.verify }} />
@@ -148,41 +145,6 @@ export default function Reception() {
                     </Spec>
                   </Plate>
                 </Pressable>
-              ) : null}
-              {atDesk ? <Hint id="home" text="This is Home. The card below says what to do next; the box at the bottom asks the desk anything. The tabs underneath are the whole building." /> : null}
-              {atDesk ? (
-                <TourTarget id="home-next">
-                <Pressable onPress={() => { if (useTour.getState().active) return; /* on the tour the tap only moves the tour on; the tabs must stay in view */ if (weekTask) router.push({ pathname: "/task", params: { week: String(weekTask.week), i: String(weekTask.i) } }); else router.navigate("/build"); }} accessibilityRole="button" accessibilityLabel={weekTask ? "Next on your plan" : "Next on the map"}>
-                  <Plate tone="panel" radius={radius.xl} padding={14}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                      <GlyphTile id={ROOM_GLYPH[weekRoom.id] ?? "bolt"} color={DOOR[weekRoom.n - 1]} size={44} />
-                      <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                        <Spec tone="muted">{roadmap ? `Up next · Week ${weekNow} · ${weekRoom.name} room` : `Up next · Room ${cur.n}, ${cur.name} · ${curDone} of ${cur.items.length}`}</Spec>
-                        <Body size="sm" medium numberOfLines={2}>
-                          {roadmap ? (weekTask ? weekTask.text : `Every task of week ${weekNow} is done. Read the week back.`) : nextItem ? nextItem.text : "Every room walked. Time for the floor."}
-                        </Body>
-                      </View>
-                      <Body tone="accent">›</Body>
-                    </View>
-                    {focus ? (
-                      <Pressable onPress={() => router.navigate("/build")} accessibilityRole="button" accessibilityLabel="Open the map" style={{ marginTop: 10, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, padding: 10 }}>
-                        <Glyph id="cube" tone="auto" scale={1} />
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Spec tone="muted">{`THIS WEEK · ${focus.replace(/\.$/, "").toUpperCase()}`}</Spec>
-                          <Spec tone="ink">{`${weekDoneCount} of ${weekTotal} tasks done · in the ${weekRoom.name} room on the map`}</Spec>
-                        </View>
-                        <Body tone="accent">›</Body>
-                      </Pressable>
-                    ) : null}
-                    <View style={{ flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                      <Chip grow={false} onPress={() => router.navigate("/office")}>{weekLogged ? "Week logged ✓" : "Log the week"}</Chip>
-                      <Chip grow={false} onPress={() => router.push(roadmap ? "/plan" : "/welcome")}>{roadmap ? "My plan" : "Make my plan"}</Chip>
-                      {roadmap ? <Chip grow={false} onPress={() => router.push({ pathname: "/review", params: { week: String(weekNow) } })}>{`Week ${weekNow}, read back`}</Chip> : null}
-                      <Chip grow={false} onPress={() => router.push("/guide")}>How it works</Chip>
-                    </View>
-                  </Plate>
-                </Pressable>
-                </TourTarget>
               ) : null}
               <View style={{ gap: 6 }}>
                 <Display size={L.compact ? "3xl" : "4xl"}>{atDesk ? "What do you need?" : coach.title}</Display>
@@ -250,30 +212,29 @@ export default function Reception() {
             onAttach={() => router.push("/drawer")}
             placeholder={atDesk ? "Ask the desk…" : `Ask ${coach.name}…`}
             busy={busy}
-            status={aiMode() === "rehearsal" ? `${MODE_LINE.rehearsal} · ${hall.name}` : source === "live" ? `${MODE_LINE[aiMode()]} · ${hall.name}` : lastError ? `Scripted reply. ${lastError}` : `${MODE_LINE[aiMode()]} · ${hall.name}`}
+            status={aiMode() === "rehearsal" ? MODE_LINE.rehearsal : source === "live" ? MODE_LINE[aiMode()] : lastError ? `Scripted reply. ${lastError}` : MODE_LINE[aiMode()]}
           />
         </View>
       </KeyboardAvoidingView>
 
-      <Dialogue open={halls} onClose={() => setHalls(false)} sign="PORTER'S LODGE" keeper="Halloway" blurb="Which floors are open, and who is on them right now." color="#4F6E6B">
+      <Dialogue open={who} onClose={() => setWho(false)} sign="WHO YOU ARE TALKING TO" keeper="The desk" blurb="The desk answers about your company and points you on. A coach goes deep on one thing." color={RECEPTIONIST.color}>
         <View style={{ gap: 8 }}>
-          {HALLS.map((h) => (
-            <View key={h.id} style={{ opacity: h.open ? 1 : 0.5 }}>
-              <Chip
-                grow={false}
-                hint={`${h.here} here · ${h.tagline}`}
-                onPress={() => {
-                  setHallId(h.id);
-                  setHalls(false);
-                }}
-              >
-                {h.id === hallId ? `→ ${h.name}` : h.name}
-              </Chip>
-            </View>
-          ))}
-          <Spec tone="faint" style={{ marginTop: 8 }}>
-            Counts are live on the floor; the desk answers for the hall you pick.
-          </Spec>
+          {[RECEPTIONIST, ...COACHES].map((c) => {
+            const on = c.id === coach.id;
+            return (
+              <Pressable key={c.id} onPress={() => { setWho(false); if (c.id === "desk") router.setParams({ coach: undefined }); else router.setParams({ coach: c.id }); }} accessibilityRole="button" accessibilityLabel={`Talk to ${c.name}`} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1.5, borderColor: on ? c.color : shell.line, backgroundColor: on ? "rgba(0,0,0,0.03)" : "transparent", borderRadius: radius.lg, padding: 10 })}>
+                <Keeper look={c.look} scale={1} color={c.color} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Body size="sm" medium>
+                    {c.name}
+                  </Body>
+                  <Spec tone="faint" numberOfLines={1}>{c.id === "desk" ? "Reception · anything about your company" : `${c.title} · ${c.blurb}`}</Spec>
+                </View>
+                {on ? <Spec tone="accent">now</Spec> : null}
+              </Pressable>
+            );
+          })}
+          <Spec tone="faint" style={{ marginTop: 4 }}>Free has the desk and Ines every day. Your first week with all four is free.</Spec>
         </View>
       </Dialogue>
     </View>
