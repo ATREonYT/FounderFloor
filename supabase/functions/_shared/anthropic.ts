@@ -60,10 +60,10 @@ export function anthropicClient(fetchImpl: typeof fetch = fetch) {
           model: i.model,
           max_tokens: i.maxTokens ?? 400,
           stream: true,
-          system: [
+          system: i.cached ? [
             { type: "text", text: i.system },
             { type: "text", text: i.cached, cache_control: { type: "ephemeral" } },
-          ],
+          ] : i.system,
           messages: i.turns,
         }),
       });

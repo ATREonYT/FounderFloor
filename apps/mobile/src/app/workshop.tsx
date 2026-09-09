@@ -1,13 +1,15 @@
 /**
  * THE WORKSHOP — the start-up, mocked up. A phone drawn on the page with
- * the first three screens of the thing in it, page by page: the front
- * door, the one screen, the price. Every word on them came from the
+ * the first screens of the thing in it, three to five: the front door,
+ * the main screen, what it leads to, the price. With a key, the desk
+ * first writes the brief from everything the founder put into the
+ * building (the big prompt, with a design system decided from the
+ * audience), then designs the whole app to it. Every word came from the
  * founder's own sign, audience and notebook, and every word can be
- * changed by tapping Edit. Under the phone: the build brief, one
- * document a builder works from, and two ways to hand it over: to
- * Lovable, Bolt or v0 for a founder who does not code, or to Claude Code
- * for one who does. With nothing on the sign yet, the page shows a
- * sample and says so.
+ * changed by tapping Edit. Under the phone: the brief, and two ways to
+ * hand it over: to Lovable, Bolt or v0 for a founder who does not code,
+ * or to Claude Code for one who does. With nothing on the sign yet, the
+ * page shows a sample and says so.
  */
 import { useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Share, Text, View } from "react-native";
@@ -32,8 +34,9 @@ export default function Workshop() {
   const [showPrompt, setShowPrompt] = useState<"lovable" | "claude" | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const m = w.mockup;
+  const screens = w.screens;
   const sc = m.screens[Math.min(i, m.screens.length - 1)];
-  const k = KIND[sc.kind];
+  const k = KIND[screens[Math.min(i, screens.length - 1)]?.kind ?? sc.kind];
   const say = (t: string) => {
     setToast(t);
     setTimeout(() => setToast(null), 2600);
@@ -76,7 +79,7 @@ export default function Workshop() {
   const KINDS: { k: ProductKind; label: string }[] = [{ k: "saas", label: "Software" }, { k: "consumer", label: "Consumer app" }, { k: "marketplace", label: "Marketplace" }, { k: "services", label: "Service" }, { k: "hardware", label: "Product" }];
   /** The app, built once per mock-up; the chips drive its screen without reloading it. */
   const html = useMemo(() => w.html, [w.html]);
-  const posterHtml = useMemo(() => mockupPoster(m, m.design?.html), [m]);
+  const posterHtml = useMemo(() => mockupPoster(m, w.designHtml), [m, w.designHtml]);
 
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
@@ -95,7 +98,7 @@ export default function Workshop() {
         </Scene>
         <View style={{ gap: 6 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>{m.source === "sample" ? "Your start-up, mocked up" : `${m.name}, mocked up`}</Display>
-          <Body tone="muted">A working first version, built from your words: three screens you can tap through. Every word can be changed.</Body>
+          <Body tone="muted">A working first version, designed from everything you wrote: the screens you can tap through, and the brief to build it from. Every word can be changed.</Body>
         </View>
         <Hint id="workshop" text="Tap around inside the phone: the buttons and the tab bar work. Tap Edit to change any word, then share the picture with the people you talked to. The brief and the prompts under it are for whoever builds it." color="#A28457" />
         {m.source === "sample" ? (
@@ -116,17 +119,17 @@ export default function Workshop() {
           <View style={{ borderRadius: 40, backgroundColor: INK, padding: 8, shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 12 }, elevation: 10 }}>
             <LiveMock html={html} width={phoneW} height={phoneH} screen={i} onScreen={setI} radius={32} />
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", flexWrap: "wrap", gap: 8 }}>
             <Pressable onPress={() => setI((x) => Math.max(0, x - 1))} disabled={i === 0} accessibilityRole="button" accessibilityLabel="Previous screen" style={{ opacity: i === 0 ? 0.3 : 1, padding: 6 }}>
               <Body>←</Body>
             </Pressable>
-            {m.screens.map((s, n) => (
+            {screens.map((s, n) => (
               <Pressable key={n} onPress={() => setI(n)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: n === i ? KIND[s.kind].color : shell.panel, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: n === i ? KIND[s.kind].color : shell.line }}>
                 <Glyph id={KIND[s.kind].glyph} tone={n === i ? "paper" : "auto"} scale={1} />
                 <Spec tone={n === i ? "paper" : "ink"}>{s.title}</Spec>
               </Pressable>
             ))}
-            <Pressable onPress={() => setI((x) => Math.min(m.screens.length - 1, x + 1))} disabled={i === m.screens.length - 1} accessibilityRole="button" accessibilityLabel="Next screen" style={{ opacity: i === m.screens.length - 1 ? 0.3 : 1, padding: 6 }}>
+            <Pressable onPress={() => setI((x) => Math.min(screens.length - 1, x + 1))} disabled={i === screens.length - 1} accessibilityRole="button" accessibilityLabel="Next screen" style={{ opacity: i === screens.length - 1 ? 0.3 : 1, padding: 6 }}>
               <Body>→</Body>
             </Pressable>
           </View>
@@ -134,25 +137,26 @@ export default function Workshop() {
             <Button size="sm" variant="secondary" onPress={() => setEdit({ ...sc })}>
               Edit this screen
             </Button>
-            <Button size="sm" variant="ghost" onPress={w.rewrite} disabled={w.writing || !w.mine}>
-              {w.writing ? "Drawing…" : "Draw it again"}
+            <Button size="sm" variant="ghost" onPress={w.rewrite} disabled={w.writing || w.designing || !w.mine}>
+              {w.writing ? "Writing…" : "Write it again"}
             </Button>
           </ButtonRow>
         </View>
 
-        {/* the design: the model's own, from a direction; a new direction each time */}
+        {/* the design: the brief first, then the app designed to it; asked again, a direction drawn at random */}
         <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { borderWidth: 1.5, borderColor: "#A28457" } : undefined}>
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
             <Spec tone="muted">THE DESIGN</Spec>
             {w.canDesign ? (
-              <Pressable onPress={w.redesign} disabled={w.designing} accessibilityRole="button" accessibilityLabel="Design it again">
-                <Spec tone="accent">{w.designing ? "Designing…" : w.designed ? "Design it again ↻" : "Design it ↻"}</Spec>
+              <Pressable onPress={w.redesign} disabled={w.designing || w.writing} accessibilityRole="button" accessibilityLabel="Design it again">
+                <Spec tone="accent">{w.designing ? "Designing…" : w.designed ? "A different take ↻" : "Design it ↻"}</Spec>
               </Pressable>
             ) : null}
           </View>
-          {w.designing ? (
+          {w.stage ? (
             <View style={{ marginTop: 8 }}>
-              <Thinking label="The desk is designing your app from scratch…" />
+              <Thinking label={w.stage} />
+              <Spec tone="faint" style={{ marginTop: 6 }}>Two stages: the brief from everything you wrote, then every screen designed to it. About a minute.</Spec>
             </View>
           ) : w.designed ? (
             <Body size="sm" style={{ marginTop: 6 }}>
@@ -160,11 +164,11 @@ export default function Workshop() {
             </Body>
           ) : w.canDesign ? (
             <Body size="sm" tone="muted" style={{ marginTop: 6 }}>
-              The desk designs each app from scratch, from a direction drawn for your company, so no two founders get the same page.
+              The desk reads everything you wrote, writes the brief with a design system decided from your audience, then designs every screen to it. No two founders get the same app.
             </Body>
           ) : (
             <Body size="sm" tone="muted" style={{ marginTop: 6 }}>
-              {m.source === "sample" ? "With your sign written and a key in the app, the desk designs the whole page itself, differently every time. Below are the desk's own five looks." : "Practice mode: the desk's own five looks. With a key it designs the page itself, differently every time."}
+              {m.source === "sample" ? "This sample was drawn the way the desk draws yours with a key in the app: from a brief, screen by screen. Below are the desk's own five looks for practice mode." : "Practice mode: the desk's own five looks. With a key it writes the brief and designs the whole app itself."}
             </Body>
           )}
           {w.designError ? <Spec tone="faint" style={{ marginTop: 6 }}>{w.designError}</Spec> : null}
@@ -172,9 +176,9 @@ export default function Workshop() {
         </Plate>
 
         {/* the look and the kind: the desk's own five looks, when the model has not designed it */}
-        <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { opacity: 0.6 } : undefined}>
+        <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed || m.source === "sample" ? { opacity: 0.6 } : undefined}>
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-            <Spec tone="muted">{w.designed ? "THE FALLBACK LOOK" : "THE LOOK"}</Spec>
+            <Spec tone="muted">{w.designed || m.source === "sample" ? "THE FALLBACK LOOK" : "THE LOOK"}</Spec>
             <Pressable onPress={() => w.setTheme({ hue: theme.hue, style: "clean", seed: Math.floor(Math.random() * 100000) })} accessibilityRole="button" accessibilityLabel="Surprise me">
               <Spec tone="accent">{look.preset === "shuffle" ? "Shuffle again ↻" : "Surprise me ↻"}</Spec>
             </Pressable>
@@ -183,7 +187,7 @@ export default function Workshop() {
             {PRESETS.map((x) => {
               const on = look.preset === x.p;
               return (
-                <Pressable key={x.p} onPress={() => w.setTheme({ hue: theme.hue, style: "clean", preset: x.p })} accessibilityRole="button" accessibilityLabel={`${x.label} look`} style={{ flexBasis: "47%", flexGrow: 1, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1.5, borderColor: on ? shell.ink : shell.line, backgroundColor: on ? shell.ink : shell.panel }}>
+                <Pressable key={x.p} onPress={() => w.setTheme({ hue: theme.hue, style: "clean", preset: x.p })} accessibilityRole="button" accessibilityLabel={`${x.label} look`} style={{ flexBasis: "47%", flexGrow: 1, paddingVertical: 9, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1.5, borderColor: on ? shell.blackout : shell.line, backgroundColor: on ? shell.blackout : shell.panel }}>
                   <Spec tone={on ? "paper" : "ink"}>{x.label}</Spec>
                   <Spec tone={on ? "paperQuiet" : "faint"}>{x.line}</Spec>
                 </Pressable>
@@ -200,7 +204,7 @@ export default function Workshop() {
           <Spec tone="muted" style={{ marginTop: 14 }}>WHAT KIND OF THING IT IS</Spec>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
             {KINDS.map((x) => (
-              <Pressable key={x.k} onPress={() => w.setKind(x.k)} accessibilityRole="button" accessibilityLabel={x.label} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: (m.kind ?? "saas") === x.k ? shell.ink : shell.line, backgroundColor: (m.kind ?? "saas") === x.k ? shell.ink : shell.panel }}>
+              <Pressable key={x.k} onPress={() => w.setKind(x.k)} accessibilityRole="button" accessibilityLabel={x.label} style={{ paddingVertical: 7, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: (m.kind ?? "saas") === x.k ? shell.blackout : shell.line, backgroundColor: (m.kind ?? "saas") === x.k ? shell.blackout : shell.panel }}>
                 <Spec tone={(m.kind ?? "saas") === x.k ? "paper" : "ink"}>{x.label}</Spec>
               </Pressable>
             ))}
@@ -245,13 +249,13 @@ export default function Workshop() {
         {/* the brief */}
         <Plate tone="panel" radius={radius.xl} padding={14}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Spec tone="muted" style={{ flex: 1 }}>THE BUILD BRIEF</Spec>
+            <Spec tone="muted" style={{ flex: 1 }}>THE BRIEF · THE BIG PROMPT</Spec>
             <Pressable onPress={() => setShowBrief((v) => !v)} accessibilityRole="button">
               <Spec tone="accent">{showBrief ? "Hide" : "Read it"}</Spec>
             </Pressable>
           </View>
           <Body size="sm" tone="muted" style={{ marginTop: 4 }}>
-            One document a builder works from: the screens with their exact words, the path, what it keeps, and the rules.
+            {m.brief ? "Written from everything you put into the building: the product, the person it is for, the path, every screen with its exact words, what it keeps, a design system with real colours and type, the words, the build, and what to leave out. This is what you paste into Lovable." : "The screens with their exact words, the path, what it keeps, a design system from the chosen look, and the rules. With a key, the desk writes the full brief from everything you wrote."}
           </Body>
           {showBrief ? (
             <Text selectable style={{ marginTop: 10, fontFamily: "monospace", fontSize: 12, lineHeight: 17, color: shell.ink }}>
@@ -263,14 +267,14 @@ export default function Workshop() {
         {/* the hand-off */}
         <View style={{ gap: 8 }}>
           <Body medium>Now build it</Body>
-          <Body size="sm" tone="muted">The brief goes to whatever builds it. Both prompts use your exact words and forbid extra screens.</Body>
+          <Body size="sm" tone="muted">The brief is the prompt. Both hand-offs carry it whole, with your exact words, the design system, and what to leave out.</Body>
           <Pressable onPress={() => void send("lovable")} accessibilityRole="button" accessibilityLabel="Send to Lovable, Bolt or v0">
             <Plate tone="panel" radius={radius.xl} padding={14}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <GlyphTile id="rocket" color="#3B5B92" size={40} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Body medium>I do not code</Body>
-                  <Spec tone="faint">A prompt for Lovable, Bolt or v0: paste it, get a live site</Spec>
+                  <Spec tone="faint">The brief as one prompt for Lovable, Bolt or v0: paste it, get a live app</Spec>
                 </View>
                 <Body tone="accent">Send ›</Body>
               </View>

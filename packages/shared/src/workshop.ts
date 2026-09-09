@@ -71,8 +71,10 @@ export interface Mockup {
   kind?: ProductKind;
   /** What customers said, with who said it, for the front door's testimonial. */
   quotes?: { who: string; said: string }[];
-  /** The design the model wrote (a whole HTML document, prepared), and the direction it was given. Absent in practice mode. */
-  design?: { html: string; direction: string; seed: number; at: string };
+  /** The brief the model wrote from everything in the building: the big prompt. Absent in practice mode. */
+  brief?: string;
+  /** The design the model wrote (a whole HTML document, prepared), its screens, and what it was designed to. Absent in practice mode. */
+  design?: { html: string; direction: string; seed: number; at: string; screens?: { id: string; title: string }[] };
 }
 
 export const SAMPLE_MOCKUP_INPUT = { name: "Lantern", oneLiner: "Prepaid passes for the cafés people come back to.", audience: "independent café owners", price: "€40 a month" };
@@ -152,7 +154,7 @@ export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
   if (!name || !oneLiner || !audience || !path || !Array.isArray(o.screens)) return null;
   const kinds: ScreenKind[] = ["landing", "signup", "pricing", "app", "checkout"];
   const screens: MockScreen[] = [];
-  for (const x of o.screens.slice(0, 4)) {
+  for (const x of o.screens.slice(0, 5)) {
     const y = (x ?? {}) as Record<string, unknown>;
     const headline = s(y.headline, 90), cta = s(y.cta, 30);
     if (!headline || !cta) continue;
@@ -166,12 +168,13 @@ export function asMockup(v: unknown): Omit<Mockup, "source" | "at"> | null {
   }
   if (screens.length < 2) return null;
   const th = (o.theme ?? null) as Record<string, unknown> | null;
-  const hue = th && typeof th.hue === "number" && th.hue >= 0 && th.hue < 360 ? Math.round(th.hue) : null;
+  const hueOf = (x: unknown) => (typeof x === "number" && x >= 0 && x < 360 ? Math.round(x) : null);
+  const hue = hueOf(th?.hue) ?? hueOf(o.hue);
   const style = th && ["clean", "bold", "soft"].includes(String(th.style)) ? (th.style as "clean" | "bold" | "soft") : "clean";
   const kinds2: ProductKind[] = ["saas", "consumer", "marketplace", "services", "hardware"];
   const kind = kinds2.includes(o.kind as ProductKind) ? (o.kind as ProductKind) : undefined;
   const quotes = Array.isArray(o.quotes) ? o.quotes.map((q) => { const y = (q ?? {}) as Record<string, unknown>; const who = s(y.who, 30), said = s(y.said, 160); return who && said ? { who, said } : null; }).filter((q): q is { who: string; said: string } => !!q).slice(0, 2) : [];
-  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 4, 30), ...(hue !== null ? { theme: { hue, style } } : {}), ...(kind ? { kind } : {}), quotes };
+  return { name, oneLiner, audience, screens, path, keeps: list(o.keeps, 6, 30), ...(hue !== null ? { theme: { hue, style } } : {}), ...(kind ? { kind } : {}), quotes };
 }
 
 /** The build brief: one document a builder can work from, in plain words. */
@@ -213,10 +216,10 @@ export function buildBrief(m: Mockup, opts?: { record?: Partial<StandRecord> | n
 
 export type Builder = "lovable" | "claude";
 
-/** The prompt to paste: for a builder that makes a site from words, or for Claude Code in a repo. */
+/** The prompt to paste: the brief is the prompt. A short frame for a builder that makes a site from words, or for Claude Code in a repo. */
 export function builderPrompt(kind: Builder, m: Mockup, brief: string): string {
   if (kind === "lovable") {
-    return `Build me the first version of ${m.name}: ${m.oneLiner}. It is for ${m.audience}.\n\nMake exactly these screens and nothing else:\n${m.screens.map((s, i) => `${i + 1}. ${s.title}: headline "${s.headline}", ${s.sub ? `sub "${s.sub}", ` : ""}one button "${s.cta}"${s.fields.length ? `, inputs: ${s.fields.join(", ")}` : ""}${s.bullets.length ? `, showing: ${s.bullets.join("; ")}` : ""}${s.price ? `, price ${s.price}` : ""}.`).join("\n")}\n\nThe one path: ${m.path}\n\nKeep it plain: one column, big type, one button per screen, works on a phone. Email sign-up by magic link. Stripe Checkout with one plan. No dashboard, no settings, no extra pages. Use the exact words above; do not improve them.`;
+    return `Build the first version of ${m.name}: ${m.oneLiner}. It is for ${m.audience}.\n\nThe brief below is the whole spec. Read all of it before you build. Build exactly the screens under "The screens", in that order, with the exact copy; apply "The design system" as written (its hex values, type scale, radius and components); keep everything under "Not in this version" out. Mobile first: it must look right at 390 px wide before anything else. Email sign-in by magic link, Stripe Checkout with one plan. Use the words in the brief; do not improve them. When a screen is done, show it before moving on.\n\n---\n\n${brief}`;
   }
-  return `You are building the first version of ${m.name} in this repo. Read BRIEF.md first; it is the whole spec.\n\nStack: Next.js (app router), TypeScript, Tailwind, one Postgres table per noun in "What it keeps", magic-link email sign-in, Stripe Checkout with one plan. Deploy target: Vercel.\n\nBuild only the screens in the brief, in order, with the exact words. One path through the product; no settings, no dashboard, no admin. Mobile first. When a screen is done, run it and tell me what to look at. Do not add features the brief does not name; if something is missing from the brief, ask one question and stop.\n\n---\n\n${brief}`;
+  return `You are building the first version of ${m.name} in this repo. Read BRIEF.md first; it is the whole spec, including the design system.\n\nStack: Next.js (app router), TypeScript, Tailwind, one Postgres table per noun under "What it keeps", magic-link email sign-in, Stripe Checkout with one plan. Deploy target: Vercel.\n\nBuild only the screens in the brief, in order, with the exact words, styled to its design system (put its hex values and type scale in the Tailwind theme first). One path through the product; nothing under "Not in this version". Mobile first. When a screen is done, run it and tell me what to look at. Do not add features the brief does not name; if something is missing from the brief, ask one question and stop.\n\n---\n\n${brief}`;
 }

@@ -15,11 +15,15 @@ test("directions differ by company and by seed, and read as one line", () => {
 test("the model is briefed with the founder's words and forbidden the clichés", () => {
   const m = localMockup({ name: "Tally", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", said: ["Maria: I do the till by hand"] });
   const ctx = designContext(m, buildBrief(m), designDirection("Tally", 3));
-  assert.match(ctx, /DESIGN DIRECTION/);
+  assert.match(ctx, /THE DESIGN SYSTEM/);
   assert.match(ctx, /headline "Weekly numbers for one-person shops"/);
   assert.match(ctx, /Maria: "I do the till by hand"/);
-  assert.match(DESIGN_PROMPT, /no <script> tags/);
+  assert.match(ctx, /THE DESIGN SYSTEM\nFollow the brief's design system/);
+  assert.match(designContext(m, buildBrief(m), designDirection("Tally", 3), "direction"), /A DIFFERENT TAKE/);
+  assert.match(DESIGN_PROMPT, /no <script> at all/);
   assert.match(DESIGN_PROMPT, /purple-to-blue/);
+  assert.match(DESIGN_PROMPT, /data-title/);
+  assert.match(DESIGN_PROMPT, /Lovable, Base44/);
 });
 
 test("a reply is checked, stripped and wired before it runs", () => {
@@ -32,9 +36,32 @@ test("a reply is checked, stripped and wired before it runs", () => {
   assert.match(r.html, /window\.__go=go/);
   assert.match(r.html, /\.screen\{display:none\}/);
   assert.match(designOn(r.html, 2), /__go\(2\)/);
-  assert.deepEqual(prepareDesign(good.replace('<section class="screen" id="s2">', '<section class="page" id="s2">')), { error: "expected 3 screens, found 2" });
+  assert.deepEqual(r.screens, [{ id: "s0", title: "Screen 1" }, { id: "s1", title: "Screen 2" }, { id: "s2", title: "Screen 3" }]);
+  assert.deepEqual(prepareDesign(good.replace('<section class="screen" id="s2">', '<section class="page" id="s2">')), { error: "expected 3 to 6 screens, found 2" });
+  assert.deepEqual(prepareDesign(good.replace('id="s2"', 'id="s4"')), { error: "screens are out of order" });
   assert.deepEqual(prepareDesign(good.replace("<style>", '<link rel="stylesheet" href="https://x.y/z.css"><style>')), { error: "reaches outside the page" });
   assert.deepEqual(prepareDesign(good.replace("body{margin:0}", "body{background:url(https://x.y/a.png)}")), { error: "reaches outside the page" });
   assert.ok("html" in prepareDesign(good.replace('<div data-go="1">go</div>', '<div onclick="steal()" data-go="1">go</div>')));
   assert.doesNotMatch(prepareDesign(good.replace('<div data-go="1">go</div>', '<div onclick="steal()" data-go="1">go</div>')).html, /steal/);
+});
+
+test("a designed page with five named screens is kept, and the sample passes the same check", async () => {
+  const { designScreens } = await import("../src/design.ts");
+  const { SAMPLE_DESIGN_HTML } = await import("../src/sample-design.ts");
+  const five = `<!doctype html><html><head><style>body{margin:0}</style></head><body>${[0, 1, 2, 3, 4].map((i) => `<section class="screen${i === 0 ? " on" : ""}" id="s${i}" data-title="Screen &quot;${i}&quot;"><div data-go="${(i + 1) % 5}">go</div></section>`).join("")}</body></html>`;
+  const r = prepareDesign(five);
+  assert.ok("html" in r);
+  assert.equal(r.screens.length, 5);
+  assert.equal(r.screens[2].title, 'Screen "2"');
+  const s = prepareDesign(SAMPLE_DESIGN_HTML);
+  assert.ok("html" in s);
+  assert.deepEqual(s.screens.map((x) => x.title), ["The front door", "Today", "A pass", "The price"]);
+  assert.ok(SAMPLE_DESIGN_HTML.length < 40000);
+  assert.doesNotMatch(SAMPLE_DESIGN_HTML, /<script|https?:\/\//);
+  assert.equal(designScreens("<div>none</div>").length, 0);
+  const { mockupPoster } = await import("../src/mockup-html.ts");
+  const m = localMockup({});
+  const poster = mockupPoster(m, s.html);
+  assert.equal((poster.match(/__go\((\d)\)/g) ?? []).join(","), "__go(0),__go(1),__go(3)");
+  assert.match(poster, /The front door · Today · The price/);
 });

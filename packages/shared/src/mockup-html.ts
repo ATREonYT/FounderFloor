@@ -382,6 +382,19 @@ export const POSTER_W = 800;
 export const POSTER_H = 690;
 
 /** The three screens side by side in device frames on one page, for the picture. */
+/** Which three screens go on the picture: the front door, the main screen, and the price (the last one). */
+function posterPick(design?: string): number[] {
+  const n = design ? (design.match(/<section\b[^>]*\bid="s\d+"/gi) ?? []).length : 3;
+  return n >= 3 ? [0, 1, n - 1] : [0, 1, 2];
+}
+
+/** The names under the picture: the designed screens' own when there is a design. */
+function posterTitles(m: Mockup, design?: string): string[] {
+  if (!design) return m.screens.map((s) => s.title);
+  const names = Array.from(design.matchAll(/<section\b[^>]*\bdata-title="([^"]{1,40})"/gi)).map((x) => x[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
+  return names.length ? posterPick(design).map((i) => names[i] ?? m.screens[i]?.title ?? "").filter(Boolean) : m.screens.map((s) => s.title);
+}
+
 export function mockupPoster(m: Mockup, design?: string): string {
   const L = lookOf(m);
   const F = FONTS[L.font];
@@ -398,6 +411,6 @@ h1{font-size:${L.font === "serif" ? "27px" : "24px"};letter-spacing:${F.track};l
 .dev iframe{display:block;width:390px;height:844px;border:0;border-radius:30px;background:#fff;transform:scale(0.5487);transform-origin:0 0;pointer-events:none}
 .foot{display:flex;justify-content:space-between;margin-top:16px;color:#94a3b8;font-size:11px;font-family:-apple-system,system-ui,sans-serif}
 </style></head><body><script>(function(){function fit(){var s=Math.min(1,window.innerWidth/${POSTER_W});document.body.style.transform="scale("+s+")"}fit();window.addEventListener("resize",fit)})()</script><div class="k">${esc(m.name)}</div><h1>${esc(m.oneLiner)}</h1><p class="sub">For ${esc(m.audience)}.</p>
-<div class="row">${one(0)}${one(1)}${one(2)}</div>
-<div class="foot"><span>${m.screens.map((s) => esc(s.title)).join(" · ")}</span><span>mocked up on FounderFloor</span></div></body></html>`;
+<div class="row">${posterPick(design).map(one).join("")}</div>
+<div class="foot"><span>${posterTitles(m, design).map(esc).join(" · ")}</span><span>mocked up on FounderFloor</span></div></body></html>`;
 }

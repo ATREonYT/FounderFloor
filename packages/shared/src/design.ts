@@ -2,14 +2,15 @@
  * The design, written by the model. A template family always has a
  * fingerprint, however many switches it has; the only way to make apps
  * nobody can trace back here is to have the model design and write each
- * one itself, the way the builder tools do. So: a design direction is
- * drawn for this company (a typographic idea, a layout idea, a colour
- * mood, a motif, a studio it might have come from), the model gets the
- * brief and the direction and returns a complete HTML document for the
- * three screens, and the app checks it, strips anything that could
- * reach out of the page, and puts its own navigation in. The direction
- * space is large and the model is told to make its own decisions, so
- * two founders never get the same page. The template is the fallback.
+ * one itself, the way the builder tools do. So: the brief (with the
+ * design system it decided from the audience) is the law, the model
+ * gets it with the exact words and returns a complete HTML document for
+ * every screen in it, and the app checks it, strips anything that could
+ * reach out of the page, and puts its own navigation in. "Design it
+ * again" swaps the brief's system for a direction drawn at random (a
+ * typographic idea, a layout idea, a colour mood, a motif, a studio it
+ * might have come from), so a second take is a different take. The
+ * template is the fallback when there is no key.
  */
 import type { Mockup } from "./workshop.ts";
 
@@ -91,20 +92,33 @@ export function directionLine(d: DesignDirection): string {
   return `As if by ${d.studio}: ${d.mood}; ${d.type}; ${d.layout}; ${d.motif}.`;
 }
 
-export const DESIGN_PROMPT = `You are a senior product designer who also writes front-end code. You design the first version of one founder's product as a mobile web app and return ONE complete HTML document, nothing else: no prose, no markdown fences.
+export const DESIGN_PROMPT = `You are the design lead and front-end engineer of a small studio that ships polished first versions. The standard is what a founder gets from Lovable, Base44 or a good agency: a product that looks shipped, not a wireframe. You are handed the build brief for one product, with its design system, its screens and its exact words, and you return ONE complete HTML document that is that product's first version, running: every screen in the brief, laid out and styled to the brief's design system, with the real words on it. No prose, no markdown fences, only the document.
 
-The document must:
-- Be self-contained: inline CSS in one <style>, no external fonts, images, scripts or stylesheets, no @import, no <script> tags at all (the host injects navigation). Draw pictures with CSS gradients, shapes and inline SVG only. Use system font stacks (-apple-system, ui-serif, ui-rounded, ui-monospace, "Helvetica Neue", Georgia are all available).
-- Fit a 390 by 844 phone with no page scroll: html and body 100% height with overflow hidden; each screen is a flex column; the part that scrolls is inside the screen.
-- Contain exactly three <section class="screen" id="s0"|"s1"|"s2"> elements, the first also carrying class "on". Screen 0 is the front door (landing), screen 1 is the product's main screen, screen 2 is the price. Anything tappable that should move between screens carries data-go="0", "1" or "2". Every screen has at least one way to reach another.
-- Include a drawn status bar at the top (9:41, signal, battery) and, if the design has a tab bar, mark the active tab.
-- Use the founder's exact words where the brief gives them: the headline, the line under it, the button, the bullets, the price, the customers' quotes with their names, the activity lines. Never invent customers, numbers or testimonials the brief does not contain. Never use lorem ipsum, emoji, or the words "Get started", "Unlock", "Empower", "Seamless".
-- Be genuinely designed, not a template: follow the DESIGN DIRECTION below as a starting point and then make your own decisions the way a real studio would. Choose the layout that fits the kind of product (a dashboard, a feed, listings, bookings or a product page). Do not use a purple-to-blue gradient hero, do not centre everything, do not put a rounded card on everything. Typography carries the design: pick sizes and weights deliberately. Keep the CSS compact; the whole document under 26,000 characters.
-- Look finished: aligned, spaced on an 8 point grid, readable contrast, real-feeling data in the main screen.`;
+THE DOCUMENT
+- Self-contained: one <style> block, no external fonts, images, scripts or stylesheets, no @import, no <script> at all (the host injects navigation). System font stacks only: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; ui-serif, Georgia; ui-rounded; ui-monospace, "SF Mono".
+- A 390 by 844 phone with no page scroll: html and body 100% height, overflow hidden. Each screen is a flex column: a fixed top (status bar, header), a scrolling middle (overflow-y auto, and enough content to scroll on the main screen), and a fixed bottom (tab bar, primary action or home indicator).
+- One <section class="screen" id="sK" data-title="Its name"> per screen in the brief, in the brief's order, K counting from 0, the first also carrying class "on". Anything tappable that moves between screens carries data-go="K". Every screen reaches at least one other, and each primary action leads where the brief says.
+- A drawn status bar on every screen (9:41, signal, wifi, battery) and a home indicator at the bottom, in that screen's ink.
+- Under 40,000 characters. Put the palette, type scale and radius in :root variables; reuse classes across screens; no repeated inline styles.
 
-/** What the model is given: the brief, the words, and the direction. */
-export function designContext(m: Mockup, brief: string, d: DesignDirection): string {
-  return `DESIGN DIRECTION\n${directionLine(d)}\n\nTHE PRODUCT\nKind: ${m.kind ?? "saas"}. Name: ${m.name}. Sign: ${m.oneLiner}. Audience: ${m.audience}.\n\nTHE WORDS, SCREEN BY SCREEN (use them exactly)\n${m.screens.map((s, i) => `Screen ${i} (${s.kind}): headline "${s.headline}"; under it "${s.sub}"; button "${s.cta}"; inputs ${s.fields.length ? s.fields.map((f) => `"${f}"`).join(", ") : "none"}; lines ${s.bullets.map((b) => `"${b}"`).join(", ")}${s.price ? `; price "${s.price}"` : ""}${s.stat ? `; the one number: "${s.stat.label}" = ${s.stat.value}` : ""}`).join("\n")}\n\nCUSTOMERS' OWN WORDS\n${(m.quotes ?? []).map((q) => `${q.who}: "${q.said}"`).join("\n") || "none given; show no testimonial"}\n\nTHE BRIEF\n${brief}`;
+THE STANDARD
+- The brief's design system is the law: its hex values, its type scale, its radius, its component descriptions, its navigation pattern, light or dark as it says. Where the brief is silent, decide the way that studio would and stay consistent across screens.
+- Real components, not boxes with text: a header with a title and one or two actions; inputs with labels, placeholders and a visible focus ring; list rows with a leading mark (an initials avatar, an icon or a drawn thumbnail), a title, a second line and a trailing value or chevron; cards with a drawn image area; stat tiles with a big number, a label and a change; badges; a segmented control or filter chips where a list needs them; a tab bar with 3 to 5 items and inline SVG icons with the active one marked; a primary button that looks pressable: solid fill, 600 weight, 48 to 52 px high.
+- Inline SVG icons drawn by you, 20 to 24 px, one stroke width throughout, stroke currentColor. Never emoji as icons. Never the words "image", "photo" or "placeholder" in a grey box: draw the picture with gradients, shapes or a pattern that means something in this product.
+- Data that feels alive: the main screen shows six to ten real-looking rows or items using the customers' first names and the nouns from the brief, with sensible times, amounts and counts. Show the empty state the brief describes on the screen it belongs to, or not at all.
+- A hierarchy you can read at arm's length: one display-size line per screen, then titles, body, labels. Spacing on a 4 pt grid, 16 to 20 px side margins, the same gaps everywhere. Touch targets at least 44 px. Text contrast at least 4.5:1 against its ground.
+- The front door sells: the sign as the headline, the line under it, one primary action, proof in the customers' own words with their names, the price said plainly. The pricing screen is honest: the one price, what it includes, how to stop, one line of trust.
+- The founder's exact words are used exactly. Never invent customers, numbers or testimonials the brief does not contain. Never lorem ipsum. Never "Get started", "Unlock", "Empower", "Seamless", "Supercharge".
+- Not a template: no purple-to-blue gradient hero, not everything centred, not a rounded card around every element, no identical three-card grid, no generic SaaS dashboard. The look must be traceable to this brief's audience and market, never to a UI kit.
+
+Before you write, decide: light or dark; the one accent and the one or two places it appears on each screen; the header pattern; the navigation pattern; the picture that stands in for photography. Then write the whole document in one pass, and check every data-go before you finish.`;
+
+/** What the model is given: the brief (the law), the exact words, and either the brief's own design system or a different direction. */
+export function designContext(m: Mockup, brief: string, d: DesignDirection, mode: "brief" | "direction" = "brief"): string {
+  const lead = mode === "direction"
+    ? `A DIFFERENT TAKE\nThe founder asked for another design. Keep the brief's screens, words and facts exactly, but set its design system aside and design to this direction instead, making your own decisions from it:\n${directionLine(d)}`
+    : `THE DESIGN SYSTEM\nFollow the brief's design system section. If the brief has none, use this direction as your starting point and make your own decisions from it:\n${directionLine(d)}`;
+  return `${lead}\n\nTHE PRODUCT\nKind: ${m.kind ?? "saas"}. Name: ${m.name}. Sign: ${m.oneLiner}. Audience: ${m.audience}.\n\nTHE WORDS, SCREEN BY SCREEN (use them exactly; the brief may add screens between these)\n${m.screens.map((s, i) => `Screen ${i} (${s.kind}): headline "${s.headline}"; under it "${s.sub}"; primary action "${s.cta}"; inputs ${s.fields.length ? s.fields.map((f) => `"${f}"`).join(", ") : "none"}; lines ${s.bullets.map((b) => `"${b}"`).join(", ")}${s.price ? `; price "${s.price}"` : ""}${s.stat ? `; the one number: "${s.stat.label}" = ${s.stat.value}` : ""}`).join("\n")}\n\nCUSTOMERS' OWN WORDS\n${(m.quotes ?? []).map((q) => `${q.who}: "${q.said}"`).join("\n") || "none given; show no testimonial"}\n\nTHE BRIEF\n${brief}`;
 }
 
 /** The HTML out of a reply that may have prose or fences around it. */
@@ -115,19 +129,42 @@ export function extractHtml(text: string): string | null {
   return text.slice(start, end + 7);
 }
 
-/** The document, checked and made safe: three screens, nothing that reaches out, the host's own navigation. Null if it is not usable. */
-export function prepareDesign(html: string): { html: string } | { error: string } {
-  if (html.length > 60000) return { error: "too long" };
+export interface DesignScreen {
+  id: string;
+  title: string;
+}
+
+/** The screens in a prepared page, in order, with the names the designer gave them. */
+export function designScreens(html: string): DesignScreen[] {
+  const out: DesignScreen[] = [];
+  const re = /<section\b([^>]*)>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const attrs = m[1];
+    if (!/class="[^"]*\bscreen\b/.test(attrs)) continue;
+    const id = attrs.match(/\bid="(s\d+)"/)?.[1];
+    if (!id) continue;
+    const title = attrs.match(/\bdata-title="([^"]{1,40})"/)?.[1]?.replace(/&quot;/g, '"').replace(/&amp;/g, "&") ?? `Screen ${out.length + 1}`;
+    out.push({ id, title });
+  }
+  return out;
+}
+
+/** The document, checked and made safe: three to six screens in order, nothing that reaches out, the host's own navigation. An error if it is not usable. */
+export function prepareDesign(html: string): { html: string; screens: DesignScreen[] } | { error: string } {
+  if (html.length > 120000) return { error: "too long" };
   let h = html.replace(/<script[\s\S]*?<\/script>/gi, "").replace(/\son\w+="[^"]*"/gi, "").replace(/\son\w+='[^']*'/gi, "");
   if (/<link\b/i.test(h) || /@import/i.test(h) || /\b(src|href)\s*=\s*["']?\s*(https?:)?\/\//i.test(h) || /url\(\s*["']?\s*(https?:)?\/\//i.test(h)) return { error: "reaches outside the page" };
-  const screens = h.match(/<section[^>]*class="[^"]*\bscreen\b[^"]*"[^>]*>/gi) ?? [];
-  if (screens.length !== 3) return { error: `expected 3 screens, found ${screens.length}` };
-  if (!/data-go=["']?[12]/.test(h) || !/id="s0"/.test(h) || !/id="s1"/.test(h) || !/id="s2"/.test(h)) return { error: "screens are not wired" };
+  const screens = designScreens(h);
+  if (screens.length < 3 || screens.length > 6) return { error: `expected 3 to 6 screens, found ${screens.length}` };
+  if (screens.some((s, i) => s.id !== `s${i}`)) return { error: "screens are out of order" };
+  if (!/data-go=["']?[1-9]/.test(h)) return { error: "screens are not wired" };
   const guard = `<style>.screen{display:none}.screen.on{display:flex;flex-direction:column}</style>`;
-  const nav = `<script>(function(){var s=document.querySelectorAll('.screen');function go(i){s.forEach(function(el,k){el.classList.toggle('on',k===i)});try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(String(i))}catch(e){}try{window.parent&&window.parent!==window&&window.parent.postMessage({mock:i},'*')}catch(e){}}document.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t){e.preventDefault();go(Number(t.getAttribute('data-go')))}});window.addEventListener('message',function(e){var d=e.data;if(d&&typeof d.go==='number')go(d.go)});window.__go=go;})();</script>`;
+  const nav = `<script>(function(){var s=document.querySelectorAll('.screen');function go(i){if(i<0||i>=s.length)return;s.forEach(function(el,k){el.classList.toggle('on',k===i)});try{window.ReactNativeWebView&&window.ReactNativeWebView.postMessage(String(i))}catch(e){}try{window.parent&&window.parent!==window&&window.parent.postMessage({mock:i},'*')}catch(e){}}document.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t){e.preventDefault();go(Number(t.getAttribute('data-go')))}});window.addEventListener('message',function(e){var d=e.data;if(d&&typeof d.go==='number')go(d.go)});window.__go=go;})();</script>`;
   h = /<\/head>/i.test(h) ? h.replace(/<\/head>/i, `${guard}</head>`) : h.replace(/<body/i, `${guard}<body`);
   h = /<\/body>/i.test(h) ? h.replace(/<\/body>/i, `${nav}</body>`) : h + nav;
-  return { html: h };
+  if (!/class="[^"]*\bon\b[^"]*"/.test(h.match(/<section\b[^>]*>/i)?.[0] ?? "")) h = h.replace(/(<section\b[^>]*class=")([^"]*\bscreen\b)/i, "$1on $2");
+  return { html: h, screens };
 }
 
 /** A design opened on a given screen. */

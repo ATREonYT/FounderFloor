@@ -22,7 +22,7 @@ test("a model mock-up is validated, not trusted", () => {
   assert.equal(ok.screens.length, 2);
   assert.equal(ok.screens[1].kind, "app");
   assert.equal(ok.screens[0].bullets.length, 3);
-  assert.equal(ok.keeps.length, 4);
+  assert.equal(ok.keeps.length, 5);
   assert.match(MOCKUP_PROMPT, /exactly 3 objects/);
 });
 
@@ -34,7 +34,7 @@ test("the brief and the prompts carry the exact words", () => {
   assert.match(b, /Maria: I do the till by hand/);
   assert.match(b, /Stripe Checkout/);
   const lov = builderPrompt("lovable", m, b);
-  assert.match(lov, /Make exactly these screens and nothing else/);
+  assert.match(lov, /The brief below is the whole spec/);
   assert.match(lov, /"Weekly numbers for one-person shops"/);
   const cc = builderPrompt("claude", m, b);
   assert.match(cc, /Read BRIEF\.md first/);
@@ -117,4 +117,38 @@ test("the thing on the sign is found under its verb and its unit", () => {
   const m = localMockup({ name: "Roomly", oneLiner: "Rent a quiet room by the hour.", audience: "freelancers", said: ["Petros said he would pay €8 an hour"], segment: "marketplace" });
   assert.match(m.screens[1].bullets[1], /paid for a quiet room/);
   assert.equal(m.screens[1].stat.label, "quiet room this week");
+});
+
+test("the brief is the big prompt: every section, the founder's words, a spec in the fence, and the hand-off carries it whole", async () => {
+  const { BRIEF_PROMPT, BRIEF_SECTIONS, briefContext, splitBrief, briefComplete, localBrief } = await import("../src/workshop-brief.ts");
+  for (const sec of BRIEF_SECTIONS) assert.match(BRIEF_PROMPT, new RegExp(`## ${sec}`));
+  assert.match(BRIEF_PROMPT, /hex values/);
+  assert.match(BRIEF_PROMPT, /Never invent customers/);
+  const ctx = briefContext({ record: { name: "Tally", oneLiner: "Weekly numbers for one-person shops.", publicPricing: "€12 a month" }, profile: { name: "Alex", audiences: "shop owners", goal: "first customer", skills: ["design"], hoursPerWeek: 8 }, said: ["Maria: I do the till by hand"], work: ["wrote: asked five owners"], fresh: true });
+  assert.match(ctx, /Sign: Weekly numbers for one-person shops\./);
+  assert.match(ctx, /- Maria: I do the till by hand/);
+  assert.match(ctx, /WORK WRITTEN INTO TASKS\n- wrote: asked five owners/);
+  assert.match(ctx, /different brief/);
+  assert.match(briefContext({ record: {}, said: [] }), /Nothing written down yet/);
+  const doc = BRIEF_SECTIONS.map((s) => `## ${s}\nWords about ${s.toLowerCase()}.`).join("\n\n");
+  const reply = `Here is the brief.\n\n${doc}\n\n\`\`\`json\n${JSON.stringify({ name: "Tally", oneLiner: "Weekly numbers", audience: "shop owners", kind: "saas", path: "Land, pay.", keeps: ["shops", "weeks", "payments"], hue: 150, screens: [{ kind: "landing", title: "Front door", headline: "Weekly numbers", cta: "Start" }, { kind: "signup", title: "Sign in", headline: "Your email", cta: "Send the link" }, { kind: "app", title: "This week", headline: "This week", cta: "Add", stat: { label: "Takings", value: "€1,240" } }, { kind: "app", title: "A day", headline: "Tuesday", cta: "Save" }, { kind: "pricing", title: "The price", headline: "€12 a month", cta: "Start", price: "€12 a month" }] })}\n\`\`\``;
+  const { brief, spec } = splitBrief(reply);
+  assert.ok(briefComplete(brief));
+  assert.match(brief, /^# Tally\n\n## The product/);
+  assert.doesNotMatch(brief, /```/);
+  assert.equal(spec.screens.length, 5);
+  assert.equal(spec.theme.hue, 150);
+  assert.equal(spec.screens[1].kind, "signup");
+  assert.equal(splitBrief("no fence, no sections").spec, null);
+  assert.ok(!briefComplete("## The product\nonly"));
+  const m = localMockup({ name: "Tally", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", price: "€12 a month" });
+  const lb = localBrief(m, { notes: ["Maria: I do the till by hand"] });
+  assert.match(lb, /## The design system/);
+  assert.match(lb, /## Rules/);
+  assert.ok(lb.indexOf("## The design system") < lb.indexOf("## Rules"));
+  const lov = builderPrompt("lovable", m, lb);
+  assert.match(lov, /The brief below is the whole spec/);
+  assert.match(lov, /## The design system/);
+  assert.match(lov, /Not in this version/);
+  assert.match(builderPrompt("claude", m, lb), /Tailwind theme first/);
 });

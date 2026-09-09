@@ -48,6 +48,8 @@ git-ignored) with one line:
 
 ```
 EXPO_PUBLIC_DEV_ANTHROPIC_KEY=sk-ant-…
+# optional: the Workshop writes the brief and designs the app on the careful model
+EXPO_PUBLIC_ANTHROPIC_MODEL_CAREFUL=claude-sonnet-5
 ```
 
 and restart `npx expo run:ios`. The status lines switch to **Live · dev key
