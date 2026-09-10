@@ -46,6 +46,9 @@ export function unitOf(sign: string, archetype: Archetype): string {
       .replace(/\s+(by|per|a|an|every)\s+(the\s+)?(hour|day|week|month|year|night|visit|seat|minute)s?\s*$/i, "")
       .replace(/\s+in\s+(ten|five|two|\d+)\s+(minutes?|seconds?|clicks?|taps?)\s*$/i, "")
       .replace(/^(rent|book|buy|get|find|order|hire|sell|share|allows?|lets?|helps?|track|manage|send|make|build|create|plan|run)\s+(you\s+|your\s+)?(a|an|the|your)?\s*/i, "")
+      .replace(/\b(tomorrow's|today's|tonight's|tonight|today|tomorrow|now|daily|weekly|monthly|instantly|fast|quickly|easily|online|anywhere|anytime)\b/gi, " ")
+      .replace(/(^|\s)'s\b/g, " ")
+      .replace(/\s+/g, " ")
       .trim();
   const pre = clean(sign.split(/\s+for\s+/i)[0]);
   const short = (phrase: string): string | null => {

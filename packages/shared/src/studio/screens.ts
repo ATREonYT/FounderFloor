@@ -7,7 +7,7 @@
  */
 import type { StudioPlan } from "./plan.ts";
 import { detailTitle } from "./nouns.ts";
-import { avatar, bars, button, chips, dots, esc, feature, field, header, homeBar, ic, iconButton, included, lineChart, map, pic, pill, progress, quote, ring, row, search, section, segmented, stat, statusBar, tabBar } from "./parts.ts";
+import { agenda, avatar, balanceCard, bars, button, cartBar, categoryRow, chips, dayHeader, dots, esc, feature, field, header, homeBar, ic, iconButton, included, lessonPath, lineChart, map, option, pic, pill, productTile, progress, promo, quickActions, quote, rating, ring, ringTrio, row, search, section, segmented, sheet, stat, statSpark, statTrio, statusBar, statusDot, stepper, stories, tabBar, ticks, timeline, unitBanner, unread } from "./parts.ts";
 
 export interface Money {
   text: string;
@@ -33,6 +33,8 @@ export interface Content {
   unit: string;
   places: string[];
   seed: number;
+  /** What goes in front of the noun on tiles and rows, by archetype. */
+  adjectives?: string[];
 }
 
 /** Where each screen sits, so every tap goes to the right one. */
@@ -52,6 +54,13 @@ export interface Screen {
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DATES = ["Today, 08:12", "Today, 10:40", "Yesterday", "Mon", "Sun", "Fri", "Thu", "Last week"];
 const ADJ = ["Quiet", "Bright", "Corner", "Small", "Large", "New", "Popular", "Nearby", "Sunny", "Late-night"];
+/** What goes in front of the noun, by what the product sells: a room is quiet, a loaf is seeded, a lesson is short. */
+export const ADJECTIVES: Record<string, string[]> = {
+  store: ["Classic", "Seeded", "Small", "Large", "Fresh", "Daily", "Popular", "New", "Whole", "Half"],
+  listings: ADJ,
+  learn: ["First", "Short", "Daily", "Quick", "Full", "Bonus", "Weekend", "Ten-minute"],
+  map: ["Airport", "Old town", "Harbour", "Station", "Late", "Early", "Shared", "Direct"],
+};
 
 export const money = (m: Money | null, k = 1, per = false): string => (m ? `${m.sym}${Math.round(m.n * k)}${per && m.per ? ` ${m.per}` : ""}` : `€${Math.round(40 * k)}`);
 const cap = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -65,7 +74,8 @@ const item = (c: Content, i: number): string => {
   const w = c.unit.split(" ");
   const noun = w[w.length - 1];
   if (w.length > 1 && i === 0) return cap(c.unit);
-  return `${ADJ[(i + c.seed) % ADJ.length]} ${noun}`;
+  const adj = c.adjectives ?? ADJ;
+  return `${adj[(i + c.seed) % adj.length]} ${noun}`;
 };
 const line = (c: Content, i: number): string => {
   const pool = [...c.quotes.map((q) => q.said), ...c.activity, ...c.bullets];
@@ -82,7 +92,7 @@ function frame(p: StudioPlan, o: { head?: string; body: string; tabs?: { icon: s
   const nav = p.treatment.nav;
   const top = o.tabs && nav === "top" ? tabBar(o.tabs, o.on ?? 0).replace('class="tab"', 'class="tab top"') : "";
   const bottom = o.tabs ? (nav === "pill" ? tabBar(o.tabs, o.on ?? 0).replace('class="tab"', 'class="tab pillbar"') + homeBar() : nav === "top" ? homeBar() : tabBar(o.tabs, o.on ?? 0)) : homeBar();
-  return `${statusBar()}${o.head ?? ""}${top}<div class="body${o.flush ? " flush" : ""}">${o.body}<div class="tail${o.fab ? " fab" : ""}"></div></div>${o.fab ?? ""}${bottom}`;
+  return `${statusBar()}${o.head ?? ""}${top}<div class="body${o.flush ? " flush" : ""}">${o.body}<div class="end${o.fab ? " after-fab" : ""}"></div></div>${o.fab ?? ""}${bottom}`;
 }
 
 const TABS: Record<StudioPlan["archetype"], { icon: string; label: string }[]> = {
@@ -148,7 +158,7 @@ export function landing(c: Content, p: StudioPlan, n: Nav): Screen {
       top = `<div class="hero ${h}">${h === "card" ? `<div class="in">${heroInner(email)}</div>` : heroInner(email)}</div>`;
       below = `${features}${proof || faces}${priceLine}`;
   }
-  return { title: "The front door", html: `${statusBar()}${top}<div class="body" style="padding-top:18px">${below}<div class="tail"></div></div>${homeBar()}` };
+  return { title: "The front door", html: `${statusBar()}${top}<div class="body" style="padding-top:18px">${below}<div class="end"></div></div>${homeBar()}` };
 }
 
 /** A card that shows the product working, for a front door that demonstrates. */
@@ -179,9 +189,10 @@ function tile(c: Content, p: StudioPlan, i: number, go?: number): string {
   return `<div class="tile"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(p.treatment.pic, c.seed + i * 7, "tile")}<b>${esc(item(c, i))}</b><span>${esc(place(c, i))}</span><span class="price">${money(c.price, [1, 1.5, 0.75, 2, 1.25, 0.5][i % 6])}${p.archetype === "listings" && c.price?.per ? ` <span class="small muted" style="display:inline">${esc(c.price.per)}</span>` : ""}</span></div>`;
 }
 
-function post(c: Content, i: number): string {
+function post(c: Content, i: number, p?: StudioPlan): string {
   const who = person(c, i);
-  return `<div class="post"><div class="ph">${avatar(who, 36, i)}<div><b>${esc(who)}</b><span>${esc(DATES[i % DATES.length])}</span></div></div><p>${esc(cap(postLine(c, i).replace(/^"|"$/g, "")))}</p><div class="acts"><span>${ic("heart", 16)}${12 + ((i * 7 + c.seed) % 40)}</span><span>${ic("message", 16)}${1 + ((i * 3) % 9)}</span><span>${ic("share", 16)}</span></div></div>`;
+  const picture = p && i % 3 === 1 ? pic(p.treatment.pic, c.seed + i * 11, "hero").replace('class="pic', 'style="height:160px;margin:10px 0 4px" class="pic') : "";
+  return `<div class="post"><div class="ph">${avatar(who, 36, i)}<div><b>${esc(who)}</b><span>${esc(DATES[i % DATES.length])}</span></div></div><p>${esc(cap(postLine(c, i).replace(/^"|"$/g, "")))}</p>${picture}<div class="acts"><span>${ic("heart", 16)}${12 + ((i * 7 + c.seed) % 40)}</span><span>${ic("message", 16)}${1 + ((i * 3) % 9)}</span><span>${ic("share", 16)}</span></div></div>`;
 }
 
 // ─── sign-in ────────────────────────────────────────────────────────────
@@ -194,57 +205,79 @@ export function signIn(c: Content, p: StudioPlan, n: Nav): Screen {
 export function main(c: Content, p: StudioPlan, n: Nav): Screen {
   const tabs = TABS[p.archetype].map((t, i) => ({ ...t, go: i === 0 ? n.main : undefined }));
   const you = avatar(c.people[c.people.length - 1], 40, 2);
+  const manner = p.treatment.pic;
   const g = (i: number, extra?: Partial<Parameters<typeof row>[0]>) => row({ go: n.detail, ...extra, title: extra?.title ?? person(c, i) });
   switch (p.archetype) {
     case "ledger": {
-      const rows = [0, 1, 2, 3, 4, 5, 6].map((i) => g(i, { lead: avatar(person(c, i), 40, i), meta: `${cap(c.unit)} #${1040 + i} · ${DATES[i]}`, trail: `<span>${money(c.price, [1, 2.5, 1, 4, 0.5, 3, 1.5][i])}</span>${i % 3 === 1 ? pill("Due", "warn") : pill("Paid", "ok")}` })).join("");
-      const body = `<div class="stats">${stat(cap(c.stat?.label ?? "Paid this week"), c.stat ? c.stat.value : money(c.price, 7), "+18% vs last week")}${stat("Outstanding", money(c.price, 4), `2 ${plural(c.unit)} due`, "warn")}</div><div class="mt16">${segmented(["All", "Paid", "Due"])}</div>${rows}`;
-      return { title: "Today", html: frame(p, { head: header({ title: "Today", eyebrow: "Tuesday 9 September", right: you, big: true }), body, tabs, fab: `<div class="fab" data-go="${n.detail}">${ic("plus", 20)}New ${esc(c.unit)}</div>` }) };
+      // Revolut, Stripe: the balance, four actions, the days
+      const tx = (i: number, k: number, due = false) => g(i, { lead: avatar(person(c, i), 40, i), meta: `${cap(c.unit)} #${1040 + i}`, trail: `<span class="mono">${due ? "" : "+"}${money(c.price, k)}</span>${due ? pill("Due", "warn") : pill("Paid", "ok")}` });
+      const body = `${balanceCard("Paid this week", money(c.price, 7), `${7} ${plural(c.unit)} · ${c.people.length} clients`)}${quickActions([{ icon: "plus", label: `New ${c.unit}`, go: n.detail }, { icon: "send", label: "Send" }, { icon: "bell", label: "Remind" }, { icon: "more", label: "More" }])}${segmented(["All", "Paid", "Due"])}${dayHeader("Today", `+${money(c.price, 3.5)}`)}${tx(0, 1)}${tx(1, 2.5, true)}${tx(2, 1)}${dayHeader("Yesterday", `+${money(c.price, 2)}`)}${tx(3, 1.5)}${tx(4, 0.5, true)}${dayHeader("Monday", `+${money(c.price, 3)}`)}${tx(5, 2)}${tx(6, 1)}`;
+      return { title: "Today", html: frame(p, { head: header({ title: "Today", eyebrow: "Tuesday 9 September", right: you, big: true }), body, tabs }) };
     }
     case "feed": {
+      // Instagram, Threads: people first, then the composer, then the posts
       const composer = `<div class="card tight" style="display:flex;gap:10px;align-items:center;margin-bottom:6px">${you}<span class="muted" style="flex:1">What are you working on?</span>${ic("camera", 20)}</div>`;
-      const body = `${composer}${[0, 1, 2, 3, 4].map((i) => `<div data-go="${n.detail}">${post(c, i)}</div>`).join("")}`;
-      return { title: "Home", html: frame(p, { head: header({ title: c.name, right: `${iconButton("bell")}` , big: true }), body, tabs, fab: `<div class="fab" data-go="${n.detail}">${ic("plus", 20)}Post</div>` }) };
+      const body = `${stories(c.people)}${composer}${[0, 1, 2, 3, 4].map((i) => `<div data-go="${n.detail}">${post(c, i, p)}</div>`).join("")}`;
+      return { title: "Home", html: frame(p, { head: header({ title: c.name, right: `${iconButton("bell")}`, big: true }), body, tabs, fab: `<div class="fab" data-go="${n.detail}">${ic("plus", 20)}Post</div>` }) };
     }
     case "listings": {
-      const body = `${search(`Find a ${c.unit} near you`)}${chips(["All", ...c.places.slice(0, 4)])}${section("Near you", "Map")}<div class="tiles">${[0, 1, 2, 3, 4, 5].map((i) => tile(c, p, i, n.detail)).join("")}</div>`;
-      return { title: "Explore", html: frame(p, { head: header({ title: `${cap(plural(c.unit))} near you`, eyebrow: place(c, 0), right: iconButton("filter"), big: false }), body, tabs }) };
+      // Airbnb: one search pill, categories, picture-led cards, a map pill
+      const searchPill = `<div class="srch" style="height:54px;border-radius:999px;box-shadow:var(--sh);background:var(--cardbg);border:var(--bd)">${ic("search", 20)}<span style="display:flex;flex-direction:column;line-height:1.2"><b style="color:var(--fg);font-size:14px">Find a ${esc(c.unit)}</b><span style="font-size:12px">${esc(place(c, 0))} · Any day · For you</span></span></div>`;
+      const cats = categoryRow([{ icon: "grid", label: "All" }, { icon: "star", label: "Top rated" }, { icon: "pin", label: "Near me" }, { icon: "clock", label: "Today" }, { icon: "heart", label: "Saved" }]);
+      const card = (i: number) => `<div class="tile" data-go="${n.detail}">${pic(manner, c.seed + i * 7, "tile").replace("tile", "tile").replace('class="pic', 'style="height:170px" class="pic')}<span class="heart">${ic("heart", 16)}</span><div class="spread"><b>${esc(item(c, i))}</b>${rating(["4.9", "4.8", "4.7", "5.0", "4.6", "4.9"][i])}</div><span>${esc(place(c, i))}</span><span class="price">${money(c.price, [1, 1.5, 0.75, 2, 1.25, 0.5][i])} <span class="small muted" style="display:inline;font-weight:500">${esc(c.price?.per || "per " + c.unit)}</span></span></div>`;
+      const body = `${searchPill}<div class="mt12">${cats}</div><div class="gap12">${[0, 1, 2, 3, 4, 5].map(card).join("")}</div>`;
+      return { title: "Explore", html: frame(p, { body, tabs, fab: `<div class="mappill" data-go="${n.detail}">${ic("pin", 18)}Map</div>` }) };
     }
     case "bookings": {
+      // Fresha, Calendly: the day strip, two numbers, the day as an agenda
       const days = `<div class="day">${DAYS.map((d, i) => `<span${i === 1 ? ' class="on"' : ""}>${d}<b>${8 + i}</b></span>`).join("")}</div>`;
-      const times = ["09:00", "10:30", "12:00", "14:00", "15:30", "17:00"];
-      const rows = [0, 1, 2, 3, 4, 5].map((i) => g(i, { lead: `<span class="strong" style="width:48px;font-variant-numeric:tabular-nums">${times[i]}</span>`, meta: `${cap(c.unit)} · ${place(c, i)}`, trail: i === 0 ? pill("Now", "brand") : i === 3 ? pill("New", "soft") : ic("chevron", 18) })).join("");
-      const body = `${days}<div class="stats">${stat("Booked today", "6", "2 free slots left")}${stat("This week", money(c.price, 14), "+3 bookings")}</div>${section("Today")}${rows}`;
+      const ag = agenda([
+        { time: "09:00", title: person(c, 0), meta: `${cap(c.unit)} · ${place(c, 0)}`, tone: 0, go: n.detail },
+        { time: "10:30", title: person(c, 1), meta: `${cap(c.unit)} · ${place(c, 1)}`, tone: 1, span: 2, go: n.detail },
+        { time: "12:00", title: "Free", meta: "Tap to book", tone: 3, go: n.detail },
+        { time: "14:00", title: person(c, 2), meta: `${cap(c.unit)} · ${place(c, 2)}`, tone: 2, go: n.detail },
+        { time: "15:30", title: person(c, 3), meta: `${cap(c.unit)} · ${place(c, 3)}`, tone: 0, span: 2, go: n.detail },
+        { time: "17:30", title: "Free", meta: "Tap to book", tone: 3, go: n.detail },
+      ]);
+      const body = `${days}<div class="stats">${stat("Booked today", "4", "2 free slots")}${stat("This week", money(c.price, 14), "+3 vs last week")}</div>${section("Today")}${ag}`;
       return { title: "Today", html: frame(p, { head: header({ title: "Tuesday", eyebrow: "9 September", right: you, big: true }), body, tabs, fab: `<div class="fab" data-go="${n.detail}">${ic("plus", 20)}New booking</div>` }) };
     }
     case "tracker": {
-      const items = [`Morning ${c.unit}`, `Ten-minute ${c.unit}`, `Log today's ${c.unit}`, "Evening check-in"].map((t, i) => row({ lead: `<span class="av ${i < 2 ? "t0" : "t3"}" style="width:32px;height:32px">${i < 2 ? ic("check", 16) : ""}</span>`, title: cap(String(t).replace(/^"|"$/g, "")), meta: i < 2 ? "Done" : "Not yet", trail: ic("chevron", 18), go: n.detail })).join("");
-      const body = `<div class="card spread">${ring(64, "today", 110)}<div style="flex:1;padding-left:16px"><div style="font:700 22px/1.1 var(--fh)">Day 12</div><div class="small muted mt8">in a row</div><div class="mt12">${pill("Best streak: 19", "soft")}</div></div></div>${section("Today")}${items}${section("This week")}<div class="card">${bars([3, 5, 4, 6, 5, 7, 6], DAYS)}</div>`;
-      return { title: "Today", html: frame(p, { head: header({ title: `Hello, ${person(c, c.people.length - 1).split(" ")[0]}`, eyebrow: "Tuesday 9 September", right: iconButton("bell"), big: true }), body, tabs }) };
+      // Apple Fitness, Strava: the rings, the streak, today's items, the week
+      const items = [`Morning ${c.unit}`, `Ten-minute ${c.unit}`, `Log today's ${c.unit}`, "Evening check-in"].map((t, i) => row({ lead: `<span class="av ${i < 2 ? "t0" : "t3"}" style="width:32px;height:32px">${i < 2 ? ic("check", 16) : ""}</span>`, title: cap(t), meta: i < 2 ? "Done" : "Not yet", trail: ic("chevron", 18), go: n.detail })).join("");
+      const body = `<div class="card">${ringTrio([{ pct: 72, label: "today" }, { pct: 55, label: "week" }, { pct: 90, label: "goal" }])}${statTrio([{ value: "12", label: "day streak" }, { value: "3 of 4", label: "today" }, { value: "22 min", label: "so far" }])}<div class="spread"><span class="pl soft">${ic("flame", 14)} Best streak: 19</span><span class="small muted">Keep it going</span></div></div>${section("Today")}${items}${section("This week")}<div class="card">${bars([3, 5, 4, 6, 5, 7, 6], DAYS)}</div>`;
+      return { title: "Today", html: frame(p, { head: header({ title: "Today", eyebrow: "Tuesday 9 September", right: iconButton("bell"), big: true }), body, tabs }) };
     }
     case "learn": {
-      const names = [`What a ${c.unit} is`, `Your first ${c.unit}`, `${cap(c.thing)}: the basics`, `Practice: ${c.unit} two`, `Check what you learned`];
-      const lessons = [0, 1, 2, 3, 4].map((i) => row({ lead: `<span class="av ${i < 2 ? "t0" : "t2"}" style="width:40px;height:40px">${ic(i < 2 ? "check" : "play", 18)}</span>`, title: `${i + 1}. ${names[i]}`, meta: i < 2 ? "Done" : `${8 + i * 3} min`, trail: ic("chevron", 18), go: n.detail })).join("");
-      const body = `<div class="card" data-go="${n.detail}"><div class="eyebrow">Continue</div><div class="spread mt8"><b style="font:700 18px var(--fh)">${esc(cap(c.unit))} · lesson 3</b><span class="small muted">12 min</span></div><div class="mt12">${progress(58)}</div></div><div class="stats mt12">${stat("Streak", "12 days", "Keep it")}${stat("This week", "4 lessons", "of 5")}</div>${section("Up next")}${lessons}`;
+      // Duolingo: the unit, the streak, the path
+      const names = [`What a ${c.unit} is`, `Your first ${c.unit}`, `${cap(c.thing)}: the basics`, `Practice: ${c.unit} two`, `Check what you learned`, `${cap(c.unit)} three`];
+      const path = lessonPath(names.map((t, i) => ({ title: t, state: i < 2 ? "done" : i === 2 ? "now" : i === 3 ? "next" : "locked" })), n.detail);
+      const body = `${unitBanner("Unit 1", `${cap(c.thing)}: the basics`, 12, "340 XP")}<div class="card tight spread" data-go="${n.detail}"><div><div class="eyebrow">Continue</div><b>${esc(names[2])}</b><div class="mt8" style="width:180px">${progress(58)}</div></div><span class="btn p sm" style="width:auto">Start</span></div>${path}`;
       return { title: "Learn", html: frame(p, { head: header({ title: "Learn", eyebrow: c.name, right: you, big: true }), body, tabs }) };
     }
     case "inbox": {
-      const rows = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => g(i, { lead: avatar(person(c, i), 44, i), meta: cap(line(c, i).replace(/^"|"$/g, "")), trail: i < 2 ? pill(String(i + 1), "brand") : `<span class="small muted">${DATES[i % DATES.length].replace("Today, ", "")}</span>` })).join("");
-      const body = `${search("Search")}${rows}`;
-      return { title: "Chats", html: frame(p, { head: header({ title: "Chats", right: iconButton("edit"), big: true }), body, tabs, fab: `<div class="fab" data-go="${n.detail}">${ic("plus", 20)}New</div>` }) };
+      // WhatsApp, Telegram: the search, the chats, the unread counts
+      const rows = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => g(i, { lead: avatar(person(c, i), 48, i), meta: cap(line(c, i).replace(/^"|"$/g, "")), trail: `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="small ${i < 2 ? "strong" : "muted"}" style="${i < 2 ? "color:var(--p)" : ""}">${esc(DATES[i % DATES.length].replace("Today, ", ""))}</span>${i < 2 ? unread(i + 1) : ticks(i % 3 === 0)}</div>` })).join("");
+      const body = `${search("Search")}${dayHeader("Pinned")}${g(0, { lead: avatar(person(c, 0), 48, 0), meta: cap(line(c, 0).replace(/^"|"$/g, "")), trail: `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="small strong" style="color:var(--p)">08:12</span>${unread(2)}</div>` })}${dayHeader("Chats")}${rows}`;
+      return { title: "Chats", html: frame(p, { head: header({ title: "Chats", right: `${iconButton("camera")}${iconButton("edit")}`, big: true }), body, tabs, fab: `<div class="fab" data-go="${n.detail}">${ic("plus", 20)}New</div>` }) };
     }
     case "map": {
-      const near = [0, 1, 2, 3].map((i) => g(i, { lead: `<span class="av t${i % 4}" style="width:40px;height:40px">${ic("pin", 18)}</span>`, title: `${place(c, i)} ${c.unit}`, meta: `${(0.3 + i * 0.6).toFixed(1)} km · ${4 + i * 3} min`, trail: `<span>${money(c.price, [1, 1.2, 0.8, 1.5][i])}</span>` })).join("");
-      const body = `${map(c.seed, 230)}<div class="mt12">${search("Where to?")}</div>${section("Near you", "See all")}${near}`;
-      return { title: "Map", html: frame(p, { head: header({ title: c.name, eyebrow: place(c, 0), right: you }), body, tabs }) };
+      // Uber, Bolt: the map, the sheet, where to, saved places, recents
+      const saved = `<div style="display:flex;gap:10px;margin:12px 0 6px">${[["home", "Home"], ["briefcase", "Work"], ["star", "Saved"]].map(([i, l]) => `<span class="chip">${ic(i, 16)} ${l}</span>`).join("")}</div>`;
+      const recent = [0, 1, 2].map((i) => g(i, { lead: `<span class="av t3" style="width:40px;height:40px">${ic("clock", 18)}</span>`, title: `${place(c, i)} ${c.unit}`, meta: `${(0.3 + i * 0.6).toFixed(1)} km · ${4 + i * 3} min`, trail: `<span class="mono">${money(c.price, [1, 1.2, 0.8][i])}</span>` })).join("");
+      const body = `${map(c.seed, 330, "border-radius:0;margin:0 -20px")}${sheet(`${search("Where to?").replace('class="srch"', 'class="srch" style="height:52px;font-size:17px;font-weight:600;color:var(--fg)"')}${saved}${section("Recent")}${recent}`)}`;
+      return { title: "Map", html: frame(p, { body, tabs }) };
     }
     case "store": {
-      const body = `${search(`Search ${plural(c.unit)}`)}${chips(["All", "Popular", "New", ...c.places.slice(0, 2)])}<div class="card" data-go="${n.detail}">${pic(p.treatment.pic, c.seed, "hero").replace('class="pic', 'style="margin:-16px -16px 14px;border-radius:var(--rl) var(--rl) 0 0" class="pic')}<div class="spread"><div><b style="font:700 18px var(--fh)">${esc(item(c, 0))}</b><div class="small muted">${esc(place(c, 0))}</div></div><span class="pl brand">${money(c.price)}</span></div></div>${section("Popular", "See all")}<div class="tiles">${[1, 2, 3, 4].map((i) => tile(c, p, i, n.detail)).join("")}</div>`;
-      return { title: "Shop", html: frame(p, { head: header({ title: c.name, eyebrow: `Delivering to ${place(c, 1)}`, right: `${iconButton("cart")}` }), body, tabs }) };
+      // Amazon, Shop, Glovo: the search, the promo, the categories, the tiles, the cart
+      const tiles = [1, 2, 3, 4].map((i) => productTile(manner, c.seed + i * 5, item(c, i), place(c, i), money(c.price, [1.5, 0.75, 2, 1.25][i - 1]), ["4.8", "4.6", "4.9", "4.7"][i - 1], n.detail)).join("");
+      const body = `${search(`Search ${plural(c.unit)}`)}${promo(manner, c.seed, "This week", `${cap(item(c, 0))}, fresh today`, "Order now", n.detail)}${chips(["All", "Popular", "New", ...c.places.slice(0, 2)])}${section("Popular", "See all")}<div class="tiles">${tiles}</div>`;
+      return { title: "Shop", html: frame(p, { head: header({ title: c.name, eyebrow: `Delivering to ${place(c, 1)}`, right: `<span style="position:relative">${iconButton("cart")}<span class="unread" style="position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;font-size:11px">2</span></span>` }), body, tabs, fab: cartBar("2", money(c.price, 2.5), "View cart", n.detail) }) };
     }
     default: {
-      const acts = [0, 1, 2, 3, 4].map((i) => row({ lead: `<span class="av t${i % 4}" style="width:36px;height:36px">${ic(["bolt", "users", "card", "check", "bell"][i], 16)}</span>`, title: cap(line(c, i).replace(/^"|"$/g, "")), meta: DATES[i], trail: ic("chevron", 18), go: n.detail })).join("");
-      const body = `<div class="stats">${stat(cap(c.stat?.label ?? "This week"), c.stat?.value ?? "12", "+3 vs last week")}${stat("Active", String(c.people.length + 4), "this week")}</div><div class="card mt12" data-go="${n.detail}"><div class="spread"><b>Last 7 days</b><span class="small muted">${money(c.price, 7)}</span></div>${lineChart([4, 6, 5, 8, 7, 10, 12])}</div>${section("Activity", "All")}${acts}`;
+      // Linear, Vercel, Stripe: two tiles with a spark each, a range, one chart, activity with a status word
+      const acts = [0, 1, 2, 3, 4].map((i) => row({ lead: avatar(person(c, i), 36, i), title: cap(line(c, i).replace(/^"|"$/g, "")), meta: DATES[i], trail: statusDot(i % 3 === 1 ? "warn" : "ok", i % 3 === 1 ? "Waiting" : "Done"), go: n.detail })).join("");
+      const body = `<div class="stats">${statSpark(cap(c.stat?.label ?? "This week"), c.stat?.value ?? "12", "+3", [4, 6, 5, 8, 7, 10, 12])}${statSpark("Active", String(c.people.length + 4), "+2", [6, 7, 7, 9, 10, 12, 16])}</div><div class="mt12">${segmented(["7 days", "30 days", "This year"])}</div><div class="card" data-go="${n.detail}"><div class="spread"><b>Last 7 days</b><span class="small muted">Sun to Sat</span></div>${lineChart([4, 6, 5, 8, 7, 10, 12], 310, 100, money(c.price, 7))}</div>${section("Activity", "All")}${acts}`;
       return { title: "Overview", html: frame(p, { head: header({ title: "Overview", eyebrow: c.name, right: you, big: true }), body, tabs }) };
     }
   }
@@ -254,49 +287,52 @@ export function main(c: Content, p: StudioPlan, n: Nav): Screen {
 export function detail(c: Content, p: StudioPlan, n: Nav): Screen {
   const back = iconButton("back", n.main);
   const who = person(c, 0);
+  const manner = p.treatment.pic;
   switch (p.archetype) {
     case "ledger": {
-      const body = `<div style="display:flex;align-items:center;gap:14px">${avatar(who, 56, 0)}<div><h2>${esc(who)}</h2><div class="sub" style="font-size:14px">${esc(cap(c.unit))} #1040 · sent ${DATES[2].toLowerCase()}</div></div></div><div class="card mt16"><div class="eyebrow">Amount</div><div class="price-big"><b>${money(c.price, 2.5)}</b><span class="muted">due Friday</span></div><div class="mt12">${pill("Awaiting payment", "warn")}</div></div><div class="gap8 mt12">${button("Mark as paid", { go: n.main })}${button("Send a reminder", { kind: "s" })}</div>${section("Lines")}${[0, 1, 2].map((i) => row({ title: cap([c.unit, `${c.unit}, renewal`, "Service fee"][i]), meta: `${[1, 1, 1][i]} × ${money(c.price, [1, 1, 0.5][i])}`, trail: `<span>${money(c.price, [1, 1, 0.5][i])}</span>` })).join("")}`;
-      return { title: detailTitle("ledger", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: iconButton("more") })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const body = `<div style="display:flex;align-items:center;gap:14px">${avatar(who, 56, 0)}<div><h2>${esc(who)}</h2><div class="sub" style="font-size:14px">${esc(cap(c.unit))} #1040 · sent yesterday</div></div></div><div class="card mt16"><div class="eyebrow">Amount</div><div class="price-big"><b>${money(c.price, 2.5)}</b><span class="muted">due Friday</span></div><div class="mt12">${pill("Awaiting payment", "warn")}</div></div>${timeline([{ title: "Sent", meta: "Yesterday, 16:40", state: "done" }, { title: "Opened", meta: "Today, 08:12", state: "done" }, { title: "Paid", meta: "Due Friday", state: "next" }])}<div class="gap8">${button("Mark as paid", { go: n.main })}${button("Send a reminder", { kind: "s" })}</div>${section("Lines")}${[0, 1, 2].map((i) => row({ title: cap([c.unit, `${c.unit}, renewal`, "Service fee"][i]), meta: `1 × ${money(c.price, [1, 1, 0.5][i])}`, trail: `<span class="mono">${money(c.price, [1, 1, 0.5][i])}</span>` })).join("")}`;
+      return { title: detailTitle("ledger", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: iconButton("more") })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "feed": {
       const replies = [`Same here. Show it to me on Thursday?`, `I would pay for that.`, `Post the ${c.unit} when it is done, I want to see it.`];
-      const body = `${post(c, 0)}<div class="mt16 gap8">${[1, 2, 3].map((i) => `<div class="bubble${i === 2 ? " me" : ""}"><b class="small" style="display:block;opacity:.8">${esc(person(c, i))}</b>${esc(replies[i - 1])}</div>`).join("")}</div>`;
-      return { title: "A post", html: `${statusBar()}${header({ title: "Thread", left: back, right: iconButton("share") })}<div class="body">${body}<div class="tail"></div></div><div style="padding:8px 20px 6px;flex:none">${field("", `Reply to ${who.split(" ")[0]}…`, "send").replace('<span class="fl"></span>', "")}</div>${homeBar()}` };
+      const body = `${post(c, 0)}<div class="mt16 gap8">${[1, 2, 3].map((i) => `<div class="bubble withtail${i === 2 ? " me" : ""}"><b class="small" style="display:block;opacity:.8">${esc(person(c, i))}</b>${esc(replies[i - 1])}</div>`).join("")}</div>`;
+      return { title: "A post", html: `${statusBar()}${header({ title: "Thread", left: back, right: iconButton("share") })}<div class="body">${body}<div class="end"></div></div><div class="inbar">${iconButton("camera")}<div class="fi"><span class="ph">Reply to ${esc(who.split(" ")[0])}…</span></div>${iconButton("send")}</div>${homeBar()}` };
     }
     case "listings": {
-      const body = `${pic(p.treatment.pic, c.seed + 3, "hero")}<div class="spread"><h2>${esc(item(c, 0))}</h2><span class="pl soft">${ic("star", 14)} 4.9</span></div><p class="sub mt8">${esc(place(c, 0))} · ${esc(c.audience)}</p><p class="mt12" style="font-size:15px;line-height:1.5">${esc(c.sign)}.${c.quotes[0] ? ` ${esc(c.quotes[0].who)} says: “${esc(c.quotes[0].said)}”` : ""}</p>${section("Listed by")}${row({ lead: avatar(who, 44, 0), title: who, meta: "Responds within an hour", trail: iconButton("message") })}<div class="card spread mt16"><div><div style="font:700 24px/1 var(--fh)">${money(c.price)}</div><div class="small muted mt8">${esc(c.price?.per || "per booking")}</div></div><span class="btn p" style="width:auto" data-go="${n.price}">${esc(c.cta)}</span></div>`;
-      return { title: detailTitle("listings", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: `${iconButton("heart")}${iconButton("share")}` })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const amen = c.bullets.filter(unquoted).slice(0, 3).map((b) => b.replace(/^what you get:\s*/i, ""));
+      const body = `${pic(manner, c.seed + 3, "hero").replace('class="pic', 'style="height:240px;margin:0 -20px 16px;border-radius:0" class="pic')}<div class="spread"><h2>${esc(item(c, 0))}</h2>${rating("4.9", "38")}</div><p class="sub mt8">${esc(place(c, 0))} · for ${esc(c.audience)}</p><div class="badges">${[...amen, `Cancel any time`].slice(0, 3).map((b) => `<span>${ic("check", 14)}${esc(cap(b))}</span>`).join("")}</div><p style="font-size:15px;line-height:1.5">${esc(c.sign)}.${c.quotes[0] ? ` ${esc(c.quotes[0].who)} says: “${esc(c.quotes[0].said)}”` : ""}</p>${section("Listed by")}${row({ lead: avatar(who, 44, 0), title: who, meta: "Responds within an hour", trail: iconButton("message") })}<div class="card spread mt16"><div><div style="font:700 24px/1 var(--fh)">${money(c.price)}</div><div class="small muted mt8">${esc(c.price?.per || "per booking")}</div></div><span class="btn p" style="width:auto" data-go="${n.price}">${esc(c.cta)}</span></div>`;
+      return { title: detailTitle("listings", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: `${iconButton("heart")}${iconButton("share")}` })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "bookings": {
       const slots = ["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00"].map((t, i) => `<span class="${i === 3 ? "on" : i === 1 || i === 6 ? "off" : ""}">${t}</span>`).join("");
-      const body = `${row({ lead: avatar(who, 48, 0), title: who, meta: c.quotes[0] ? `“${c.quotes[0].said}”` : `Regular since ${DATES[5]}`, trail: iconButton("phone") })}${section("What")}${chips([cap(c.unit), `Long ${c.unit}`, "Consultation"])}${section("When")}<div class="day">${DAYS.map((d, i) => `<span${i === 1 ? ' class="on"' : ""}>${d}<b>${8 + i}</b></span>`).join("")}</div><div class="slots">${slots}</div><div class="card spread mt24"><div><div class="eyebrow">Total</div><div style="font:700 24px/1 var(--fh);margin-top:6px">${money(c.price)}</div></div>${button("Confirm booking", { go: n.main, full: false })}</div>`;
-      return { title: "A booking", html: `${statusBar()}${header({ title: "New booking", left: back })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const body = `${row({ lead: avatar(who, 48, 0), title: who, meta: c.quotes[0] ? `“${c.quotes[0].said}”` : `Regular since ${DATES[5]}`, trail: iconButton("phone") })}${section("What")}${[0, 1, 2].map((i) => row({ title: [cap(c.unit), `Long ${c.unit}`, "Consultation"][i], meta: ["45 min", "90 min", "20 min"][i], trail: `<span class="mono">${money(c.price, [1, 1.8, 0.5][i])}</span>${i === 0 ? `<span class="av t0" style="width:24px;height:24px;margin-left:8px">${ic("check", 14)}</span>` : ""}` })).join("")}${section("When")}<div class="day">${DAYS.map((d, i) => `<span${i === 1 ? ' class="on"' : ""}>${d}<b>${8 + i}</b></span>`).join("")}</div><div class="slots">${slots}</div><div class="card spread mt24"><div><div class="eyebrow">Total</div><div style="font:700 24px/1 var(--fh);margin-top:6px">${money(c.price)}</div></div>${button("Confirm booking", { go: n.main, full: false })}</div>`;
+      return { title: "A booking", html: `${statusBar()}${header({ title: "New booking", left: back })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "tracker": {
-      const body = `<div class="center" style="padding-top:8px">${ring(72, "this week", 150)}</div><div class="stats mt16">${stat("Today", "3 of 4", "one to go")}${stat("Best day", "Friday", "4 of 4")}</div><div class="card mt12">${bars([3, 5, 4, 6, 5, 7, 6], DAYS)}</div><div class="mt16">${button(`Log ${c.unit}`, { go: n.main, icon: "plus" })}</div>${section("History")}${[0, 1, 2, 3].map((i) => row({ title: `${cap(c.unit)} · ${[22, 18, 25, 20][i]} min`, meta: DATES[i], trail: ic("check", 18) })).join("")}`;
-      return { title: detailTitle("tracker", c.unit), html: `${statusBar()}${header({ title: cap(c.unit), left: back, right: iconButton("more") })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const body = `${map(c.seed + 4, 170)}<div class="mt12"><div class="eyebrow">Today, 06:40</div><h2 class="mt8">Morning ${esc(c.unit)}</h2></div>${statTrio([{ value: "22 min", label: "time" }, { value: "3 of 4", label: "sets" }, { value: "Day 12", label: "streak" }])}<div class="card">${bars([3, 5, 4, 6, 5, 7, 6], DAYS)}</div><div class="mt16">${button(`Log ${c.unit}`, { go: n.main, icon: "plus" })}</div>${section("History")}${[0, 1, 2, 3].map((i) => row({ lead: `<span class="av t${i % 4}" style="width:36px;height:36px">${ic("check", 16)}</span>`, title: `${cap(c.unit)} · ${[22, 18, 25, 20][i]} min`, meta: DATES[i + 1], trail: `<span class="small muted">${["+3", "+2", "+4", "+2"][i]}</span>` })).join("")}`;
+      return { title: detailTitle("tracker", c.unit), html: `${statusBar()}${header({ title: cap(c.unit), left: back, right: iconButton("share") })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "learn": {
-      const body = `${pic(p.treatment.pic, c.seed + 5, "hero")}<div class="eyebrow">Lesson 3 · 12 min</div><h2 class="mt8">${esc(cap(c.thing))}: the basics</h2><p class="sub mt8">${esc(c.sign)}</p><div class="steps mt16">${[`What a ${c.unit} is`, `Try a ${c.unit} yourself`, "Check what you learned"].map((t, i) => `<div class="step"><i>${i + 1}</i><div><b>${esc(t)}</b><span>${i === 0 ? "Read, 3 min" : i === 1 ? "Try it, 5 min" : "Check, 2 min"}</span></div></div>`).join("")}</div><div class="mt24">${button("Start the lesson", { go: n.main, icon: "play" })}</div>`;
-      return { title: "A lesson", html: `${statusBar()}${header({ title: "", left: back, right: iconButton("bookmark") })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const body = `${pic(manner, c.seed + 5, "hero")}<div class="spread"><div class="eyebrow">Lesson 3 · 12 min</div><span class="pl soft">${ic("bolt", 14)} +20 XP</span></div><h2 class="mt8">${esc(cap(c.thing))}: the basics</h2><p class="sub mt8">${esc(c.sign)}</p><div class="steps mt16">${[`What a ${c.unit} is`, `Try a ${c.unit} yourself`, "Check what you learned"].map((t, i) => `<div class="step"><i>${i + 1}</i><div><b>${esc(t)}</b><span>${i === 0 ? "Read, 3 min" : i === 1 ? "Try it, 5 min" : "Check, 2 min"}</span></div></div>`).join("")}</div><div class="mt24">${button("Start the lesson", { go: n.main, icon: "play" })}</div>`;
+      return { title: "A lesson", html: `${statusBar()}${header({ title: "", left: back, right: iconButton("bookmark") })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "inbox": {
-      const msgs = [0, 1, 2, 3].map((i) => `<div class="bubble${i % 2 ? " me" : ""}">${esc(cap(line(c, i).replace(/^"|"$/g, "")))}</div>`).join("");
-      const body = `<p class="small muted center mb12">Today</p>${msgs}`;
-      return { title: "A chat", html: `${statusBar()}${header({ title: who, eyebrow: "Online", left: back, right: iconButton("phone") })}<div class="body">${body}<div class="tail"></div></div><div style="padding:8px 20px 6px;flex:none;display:flex;gap:8px;align-items:center">${iconButton("plus")}<div class="fi" style="flex:1"><span class="ph">Message</span></div>${iconButton("send").replace("icb", "icb").replace("<span", '<span style="background:var(--p);color:var(--op);border:0"')}</div>${homeBar()}` };
+      const msgs = [0, 1, 2, 3].map((i) => `<div class="bubble withtail${i % 2 ? " me" : ""}">${esc(cap(line(c, i).replace(/^"|"$/g, "")))}${i % 2 ? `<span style="display:block;text-align:right;font-size:11px;opacity:.8;margin-top:4px">${["10:41", "10:44"][(i - 1) / 2]} ${ticks(i === 1)}</span>` : ""}</div>`).join("");
+      const body = `<span class="datepill">Today</span>${msgs}<div class="small muted" style="margin-top:6px">${esc(who.split(" ")[0])} is typing…</div>`;
+      return { title: "A chat", html: `${statusBar()}${header({ title: who, eyebrow: "Online", left: back, right: `${iconButton("phone")}${iconButton("more")}` })}<div class="body">${body}<div class="end"></div></div><div class="inbar">${iconButton("plus")}<div class="fi"><span class="ph">Message</span></div>${iconButton("mic")}${iconButton("send").replace('class="icb"', 'class="icb" style="background:var(--p);color:var(--op);border:0"')}</div>${homeBar()}` };
     }
     case "map": {
-      const body = `${map(c.seed + 9, 200)}<div class="card mt12">${row({ lead: avatar(who, 44, 0), title: who, meta: `${cap(c.unit)} · 4 min away`, trail: pill("On the way", "brand") })}</div><div class="steps mt16">${["Request sent", "On the way", "Arriving"].map((s, i) => `<div class="step"><i style="${i > 1 ? "opacity:.35" : ""}">${i < 2 ? ic("check", 14) : i + 1}</i><div><b>${s}</b><span>${["08:12", "08:15", "about 08:22"][i]}</span></div></div>`).join("")}</div><div class="card spread mt16"><div><div class="eyebrow">Fare</div><div style="font:700 24px/1 var(--fh);margin-top:6px">${money(c.price)}</div></div>${button("Cancel", { kind: "q", full: false, small: true })}</div>`;
-      return { title: "A trip", html: `${statusBar()}${header({ title: "Your trip", left: back })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const opts = [option("car", "Standard", "4 min away · 2 seats", money(c.price), true, n.main), option("car", "Comfort", "6 min away · 3 seats", money(c.price, 1.4)), option("truck", "Large", "8 min away · 6 seats", money(c.price, 1.9))];
+      const body = `${map(c.seed + 9, 200, "border-radius:0;margin:0 -20px")}${sheet(`${section("Choose a ride")}${opts.join("")}${timeline([{ title: `${place(c, 0)}`, meta: "Pick-up, now", state: "done" }, { title: `${place(c, 2)} ${c.unit}`, meta: "Drop-off, about 08:22", state: "next" }])}<div class="card spread"><div><div class="eyebrow">Fare</div><div style="font:700 24px/1 var(--fh);margin-top:6px">${money(c.price)}</div></div>${button("Confirm ride", { go: n.main, full: false })}</div>`)}`;
+      return { title: "A trip", html: `${statusBar()}${header({ title: "Your trip", left: back })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "store": {
-      const body = `${pic(p.treatment.pic, c.seed + 2, "hero")}<div class="spread"><h2>${esc(item(c, 0))}</h2><span style="font:700 22px/1 var(--fh)">${money(c.price)}</span></div><p class="sub mt8">${esc(c.sign)}</p>${section("Options")}${chips(["Regular", "Large", "Bundle of 3"])}${section("What people say")}${c.quotes[0] ? quote(c.quotes[0].who, c.quotes[0].said, 0) : `<p class="muted">Nothing written down yet.</p>`}<div class="mt24">${button(`Add to cart · ${money(c.price)}`, { go: n.main, icon: "cart" })}</div>`;
-      return { title: detailTitle("store", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: iconButton("heart") })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const body = `${pic(manner, c.seed + 2, "hero").replace('class="pic', 'style="height:250px;margin:0 -20px 12px;border-radius:0" class="pic')}<div class="center mb12">${dots(1, 4).replace('class="dots"', 'class="dots" style="display:inline-grid;grid-template-columns:repeat(4,8px);gap:6px;margin:0"').replace(/<i/g, '<i style="width:8px;height:8px;border-width:1px"')}</div><div class="spread"><h2>${esc(item(c, 0))}</h2><span style="font:700 22px/1 var(--fh)" class="mono">${money(c.price)}</span></div><div class="mt8">${rating("4.8", "126")}</div><p class="sub mt8">${esc(c.sign)}</p>${section("Options")}${chips(["Regular", "Large", "Bundle of 3"])}${section("How many")}<div class="spread">${stepper(1)}${button(`Add to cart · ${money(c.price)}`, { go: n.main, icon: "cart", full: false })}</div>${section("What people say")}${c.quotes[0] ? quote(c.quotes[0].who, c.quotes[0].said, 0) : `<p class="muted">Nothing written down yet.</p>`}`;
+      return { title: detailTitle("store", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: `${iconButton("heart")}${iconButton("share")}` })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     default: {
-      const body = `<div class="eyebrow">${esc(cap(c.stat?.label ?? "This week"))}</div><div class="price-big"><b>${esc(c.stat?.value ?? "12")}</b><span class="muted">${pill("+18%", "ok")}</span></div><div class="card mt16">${bars([5, 7, 6, 9, 8, 11, 12], DAYS)}</div>${section("By customer")}${[0, 1, 2, 3].map((i) => row({ lead: avatar(person(c, i), 36, i), title: person(c, i), meta: `${3 + i * 2} this week`, trail: `<span>${money(c.price, [2, 1.5, 1, 0.5][i])}</span>` })).join("")}`;
-      return { title: "The numbers", html: `${statusBar()}${header({ title: "The numbers", left: back, right: iconButton("share") })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+      const body = `<div class="eyebrow">${esc(cap(c.stat?.label ?? "This week"))}</div><div class="price-big"><b>${esc(c.stat?.value ?? "12")}</b><span class="muted">${pill("+18%", "ok")}</span></div><div class="mt12">${segmented(["Week", "Month", "Year"])}</div><div class="card">${bars([5, 7, 6, 9, 8, 11, 12], DAYS)}</div>${section("By customer")}${[0, 1, 2, 3].map((i) => row({ lead: avatar(person(c, i), 36, i), title: person(c, i), meta: `${3 + i * 2} this week`, trail: `<span class="mono">${money(c.price, [2, 1.5, 1, 0.5][i])}</span>` })).join("")}`;
+      return { title: "The numbers", html: `${statusBar()}${header({ title: "The numbers", left: back, right: iconButton("share") })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
   }
 }
@@ -307,7 +343,7 @@ export function price(c: Content, p: StudioPlan, n: Nav): Screen {
   const big = c.price ? `<div class="price-big"><b>${money(c.price)}</b><span class="sub">${esc(c.price.per || (perUse ? `per ${c.unit}` : ""))}</span></div>` : `<h2 style="font-size:32px">${esc(c.pricing.headline)}</h2>`;
   const lines = (c.pricing.bullets.length ? c.pricing.bullets : ["Everything, no tiers", "Stop whenever", "A person answers email"]).map(included).join("");
   const body = `${big}<p class="sub mt8">${esc(c.pricing.sub)}</p><div class="card mt16" style="padding:6px 16px">${lines}</div><div class="trust">${ic("shield", 26)}<div><b>Stop whenever, from the app.</b><span>${perUse ? "You pay per " + esc(c.unit) + ". No membership." : "No card until the free week ends. No tiers, no add-ons."}</span></div></div><div class="gap8 mt24">${button(c.pricing.cta, { go: n.main })}${button("Talk to us first", { kind: "q" })}</div><p class="small muted center mt12">Used by ${esc(c.audience)} this week.</p>`;
-  return { title: "The price", html: `${statusBar()}${header({ title: "", eyebrow: "The price", left: iconButton("close", n.landing) })}<div class="body">${body}<div class="tail"></div></div>${homeBar()}` };
+  return { title: "The price", html: `${statusBar()}${header({ title: "", eyebrow: "The price", left: iconButton("close", n.landing) })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
 }
 
 export const dotsPart = dots;

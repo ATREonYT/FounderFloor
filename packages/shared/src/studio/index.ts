@@ -11,7 +11,7 @@ import type { Mockup } from "../workshop.ts";
 import { namesIn, priceIn, signNouns } from "../workshop.ts";
 import { designPlan, planCss, planText, type StudioPlan, type PlanInput } from "./plan.ts";
 import { esc } from "./parts.ts";
-import { detail, landing, main, price, signIn, type Content, type Money, type Nav, type Screen } from "./screens.ts";
+import { ADJECTIVES, detail, landing, main, price, signIn, type Content, type Money, type Nav, type Screen } from "./screens.ts";
 import { unitOf } from "./nouns.ts";
 
 export * from "./plan.ts";
@@ -59,6 +59,7 @@ export function contentOf(m: Mockup, opts: { said?: string[]; seed?: number; arc
     unit: unit || "thing",
     places: PLACES,
     seed: opts.seed ?? 0,
+    adjectives: opts.archetype ? ADJECTIVES[opts.archetype] : undefined,
   };
 }
 

@@ -194,13 +194,13 @@ export function tabBar(items: { icon: string; label: string; go?: number }[], on
 }
 
 /** A line chart drawn from values, as an SVG with an area fill and an emphasised last point. */
-export function lineChart(values: number[], w = 350, h = 110): string {
+export function lineChart(values: number[], w = 350, h = 110, label?: string): string {
   const max = Math.max(...values) * 1.15 || 1;
   const min = Math.min(...values) * 0.7;
   const pts = values.map((v, i) => [Math.round((i / (values.length - 1)) * (w - 8)) + 4, Math.round(h - 6 - ((v - min) / (max - min)) * (h - 18))]);
   const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0]} ${p[1]}`).join(" ");
   const last = pts[pts.length - 1];
-  return `<svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><defs><linearGradient id="g${w}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--p)" stop-opacity=".28"/><stop offset="1" stop-color="var(--p)" stop-opacity="0"/></linearGradient></defs>${[0.25, 0.5, 0.75].map((f) => `<line x1="0" x2="${w}" y1="${Math.round(h * f)}" y2="${Math.round(h * f)}" stroke="var(--line)" stroke-width="1"/>`).join("")}<path d="${d} L${last[0]} ${h} L4 ${h} Z" fill="url(#g${w})"/><path d="${d}" fill="none" stroke="var(--p)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="5" fill="var(--p)" stroke="var(--card)" stroke-width="2.5"/></svg>`;
+  return `<svg class="chart" viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none"><defs><linearGradient id="g${w}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--p)" stop-opacity=".28"/><stop offset="1" stop-color="var(--p)" stop-opacity="0"/></linearGradient></defs>${[0.25, 0.5, 0.75].map((f) => `<line x1="0" x2="${w}" y1="${Math.round(h * f)}" y2="${Math.round(h * f)}" stroke="var(--line)" stroke-width="1"/>`).join("")}<path d="${d} L${last[0]} ${h} L4 ${h} Z" fill="url(#g${w})"/><path d="${d}" fill="none" stroke="var(--p)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0]}" cy="${last[1]}" r="5" fill="var(--p)" stroke="var(--card)" stroke-width="2"/>${label ? `<text x="${Math.min(last[0], w - 4)}" y="${Math.max(12, last[1] - 12)}" text-anchor="end" font-size="12" font-weight="700" fill="var(--fg)" font-family="inherit">${esc(label)}</text>` : ""}</svg>`;
 }
 
 /** Bars for seven days, the last emphasised. */
@@ -233,12 +233,112 @@ export function feature(icon: string, title: string, line: string): string {
 export const included = (text: string): string => `<div class="inc">${ic("check", 20)}<span>${esc(text)}</span></div>`;
 
 /** A drawn map: a grid of streets with a route and pins. */
-export function map(seed: number, h = 220): string {
+export function map(seed: number, h = 220, extra = ""): string {
   const a = seed % 40;
-  return `<div class="map" style="height:${h}px"><i class="st h" style="top:28%"></i><i class="st h" style="top:62%"></i><i class="st v" style="left:${22 + a}%"></i><i class="st v" style="left:${60 + (a % 20)}%"></i><i class="st v thin" style="left:${40 + (a % 10)}%"></i><i class="st h thin" style="top:45%"></i><svg class="route" viewBox="0 0 390 ${h}" preserveAspectRatio="none"><path d="M40 ${h * 0.8} L ${100 + a} ${h * 0.8} L ${100 + a} ${h * 0.3} L ${250 + a} ${h * 0.3} L ${250 + a} ${h * 0.55} L 340 ${h * 0.55}" fill="none" stroke="var(--p)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 0"/></svg><span class="pin a" style="left:32px;top:${h * 0.8 - 30}px">${ic("pin", 30)}</span><span class="pin b" style="left:${325}px;top:${h * 0.55 - 30}px">${ic("pin", 30)}</span></div>`;
+  return `<div class="map" style="height:${h}px;${extra}"><i class="st h" style="top:28%"></i><i class="st h" style="top:62%"></i><i class="st v" style="left:${22 + a}%"></i><i class="st v" style="left:${60 + (a % 20)}%"></i><i class="st v thin" style="left:${40 + (a % 10)}%"></i><i class="st h thin" style="top:45%"></i><svg class="route" viewBox="0 0 390 ${h}" preserveAspectRatio="none"><path d="M40 ${h * 0.8} L ${100 + a} ${h * 0.8} L ${100 + a} ${h * 0.3} L ${250 + a} ${h * 0.3} L ${250 + a} ${h * 0.55} L 340 ${h * 0.55}" fill="none" stroke="var(--p)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 0"/></svg><span class="pin a" style="left:32px;top:${h * 0.8 - 30}px">${ic("pin", 30)}</span><span class="pin b" style="left:${325}px;top:${h * 0.55 - 30}px">${ic("pin", 30)}</span></div>`;
 }
 
 /** Punches, seats, dots: n of total filled. */
 export function dots(n: number, total: number): string {
   return `<div class="dots">${Array.from({ length: total }, (_, i) => `<i${i < n ? ' class="on"' : ""}></i>`).join("")}</div>`;
+}
+
+// ─── the parts the category leaders taught ───────────────────────────────
+
+/** A balance card (Revolut, Stripe): the big number on the primary, the account line, a masked number. */
+export function balanceCard(label: string, value: string, line: string, tail = "•••• 4321"): string {
+  return `<div class="bal"><div class="bl">${esc(label)}</div><div class="bv">${esc(value)}</div><div class="bf"><span>${esc(line)}</span><span class="mono">${esc(tail)}</span></div></div>`;
+}
+
+/** A row of round quick actions (Revolut, banking apps): four at most. */
+export function quickActions(items: { icon: string; label: string; go?: number }[]): string {
+  return `<div class="qa">${items.slice(0, 4).map((x) => `<span class="q"${x.go !== undefined ? ` data-go="${x.go}"` : ""}><i>${ic(x.icon, 22)}</i><b>${esc(x.label)}</b></span>`).join("")}</div>`;
+}
+
+/** A group header with a day and a total (transactions grouped by day). */
+export const dayHeader = (day: string, total?: string): string => `<div class="dayh"><span>${esc(day)}</span>${total ? `<span class="mono">${esc(total)}</span>` : ""}</div>`;
+
+/** A row of people with a ring (stories): the first is "you". */
+export function stories(names: string[]): string {
+  return `<div class="stories">${names.slice(0, 6).map((n, i) => `<span class="st${i === 0 ? " you" : ""}"><span class="ring-av">${avatar(n, 52, i)}</span><b>${esc(i === 0 ? "You" : n.split(" ")[0])}</b></span>`).join("")}</div>`;
+}
+
+/** Category icons with labels under them (Airbnb), the first active. */
+export function categoryRow(items: { icon: string; label: string }[], on = 0): string {
+  return `<div class="cats">${items.map((x, i) => `<span class="cat${i === on ? " on" : ""}">${ic(x.icon, 24)}<b>${esc(x.label)}</b></span>`).join("")}</div>`;
+}
+
+/** Stars with a number (Airbnb, stores). */
+export const rating = (value: string, count?: string): string => `<span class="rate">${ic("star", 14)}<b>${esc(value)}</b>${count ? `<span>(${esc(count)})</span>` : ""}</span>`;
+
+/** A learning path (Duolingo): nodes down a winding line; done, current and locked. */
+export function lessonPath(items: { title: string; state: "done" | "now" | "next" | "locked" }[], go?: number): string {
+  const offs = [0, 48, 72, 48, 0, -48, -72, -48];
+  return `<div class="path">${items.map((x, i) => `<div class="node ${x.state}" style="margin-left:${72 + offs[i % offs.length]}px"${go !== undefined && x.state !== "locked" ? ` data-go="${go}"` : ""}><i>${x.state === "done" ? ic("check", 22) : x.state === "locked" ? ic("lock", 20) : x.state === "now" ? ic("star", 22) : ic("book", 20)}</i><b>${esc(x.title)}</b></div>`).join("")}</div>`;
+}
+
+/** A unit banner over the path (Duolingo), with a streak and a score. */
+export function unitBanner(eyebrow: string, title: string, streak: number, points: string): string {
+  return `<div class="unit"><div><div class="eyebrow">${esc(eyebrow)}</div><b>${esc(title)}</b></div><div class="ustats"><span>${ic("flame", 18)}${streak}</span><span>${ic("bolt", 18)}${esc(points)}</span></div></div>`;
+}
+
+/** An agenda (calendar apps): a time gutter and blocks with a colour and a duration. */
+export function agenda(items: { time: string; title: string; meta: string; tone: number; span?: number; go?: number }[]): string {
+  return `<div class="agenda">${items.map((x) => `<div class="slot"><span class="tm">${esc(x.time)}</span><div class="blk t${x.tone % 4}" style="min-height:${(x.span ?? 1) * 56}px"${x.go !== undefined ? ` data-go="${x.go}"` : ""}><b>${esc(x.title)}</b><span>${esc(x.meta)}</span></div></div>`).join("")}</div>`;
+}
+
+/** A bottom sheet sitting over a map (Uber): a handle, then whatever is inside. */
+export const sheet = (inner: string): string => `<div class="sheet"><i class="handle"></i>${inner}</div>`;
+
+/** A ride or delivery option (Uber): a mark, a name and an ETA, and the price. */
+export function option(icon: string, title: string, meta: string, price: string, on = false, go?: number): string {
+  return `<div class="opt${on ? " on" : ""}"${go !== undefined ? ` data-go="${go}"` : ""}><span class="av t${on ? 0 : 3}" style="width:44px;height:44px">${ic(icon, 22)}</span><div class="rt"><div class="rn">${esc(title)}</div><div class="rm">${esc(meta)}</div></div><b class="mono">${esc(price)}</b></div>`;
+}
+
+/** A promo banner (stores): a picture, a line, a button. */
+export function promo(manner: string, seed: number, eyebrow: string, title: string, cta: string, go?: number): string {
+  return `<div class="promo"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(manner, seed, "promo-pic")}<div class="promo-t"><div class="eyebrow">${esc(eyebrow)}</div><b>${esc(title)}</b><span class="btn p sm" style="width:auto;display:inline-flex;margin-top:10px">${esc(cta)}</span></div></div>`;
+}
+
+/** A product tile with a round add button and a rating (stores). */
+export function productTile(manner: string, seed: number, title: string, meta: string, price: string, stars: string, go?: number): string {
+  return `<div class="tile prod"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(manner, seed, "tile")}<span class="add">${ic("plus", 18)}</span><b>${esc(title)}</b><span>${esc(meta)}</span><div class="spread mt8"><span class="price">${esc(price)}</span>${rating(stars)}</div></div>`;
+}
+
+/** A sticky bar with a count and a total and one action (stores). */
+export const cartBar = (count: string, total: string, label: string, go?: number): string => `<div class="cartbar"${go !== undefined ? ` data-go="${go}"` : ""}><span class="cnt">${esc(count)}</span><span class="tot">${esc(total)}</span><b>${esc(label)}${ic("arrow", 18)}</b></div>`;
+
+/** A quantity stepper. */
+export const stepper = (n: number): string => `<div class="stepper"><span>${ic("minus", 16)}</span><b>${n}</b><span>${ic("plus", 16)}</span></div>`;
+
+/** Three rings side by side (Apple Fitness) or one big one with two numbers (Strava). */
+export function ringTrio(rings: { pct: number; label: string }[]): string {
+  return `<div class="rings">${rings.map((r, i) => `<div class="rg r${i}">${ring(r.pct, r.label, 92).replace('class="ring"', `class="ring c${i}"`)}</div>`).join("")}</div>`;
+}
+
+/** A stat trio in a row (Strava): three numbers with labels, tabular. */
+export const statTrio = (items: { value: string; label: string }[]): string => `<div class="trio">${items.map((x) => `<div><b>${esc(x.value)}</b><span>${esc(x.label)}</span></div>`).join("")}</div>`;
+
+/** A sparkline: a thin line in a stat tile. */
+export function sparkline(values: number[], w = 120, h = 32): string {
+  const max = Math.max(...values) || 1, min = Math.min(...values);
+  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - 3 - ((v - min) / (max - min || 1)) * (h - 6)}`);
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}"><polyline points="${pts.join(" ")}" fill="none" stroke="var(--p)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${pts[pts.length - 1].split(",")[0]}" cy="${pts[pts.length - 1].split(",")[1]}" r="4" fill="var(--p)" stroke="var(--card)" stroke-width="2"/></svg>`;
+}
+
+/** A stat tile with a sparkline (Linear, Vercel, Stripe). */
+export function statSpark(label: string, value: string, delta: string, values: number[], tone: "ok" | "warn" | "mute" = "ok"): string {
+  return `<div class="stat"><div class="sl">${esc(label)}</div><div class="sv">${esc(value)}</div><div class="spread"><span class="sd ${tone}">${esc(delta)}</span>${sparkline(values, 88, 26)}</div></div>`;
+}
+
+/** An unread count. */
+export const unread = (n: number): string => `<span class="unread">${n}</span>`;
+
+/** Read ticks, a status dot: small marks that say a state without colour alone. */
+export const ticks = (read: boolean): string => `<span class="ticks${read ? " read" : ""}">${ic("check", 14)}${ic("check", 14)}</span>`;
+export const statusDot = (tone: "ok" | "warn" | "mute", label: string): string => `<span class="sdot ${tone}"><i></i>${esc(label)}</span>`;
+
+/** A step timeline (orders, rides): done, current, next. */
+export function timeline(steps: { title: string; meta: string; state: "done" | "now" | "next" }[]): string {
+  return `<div class="tl">${steps.map((s) => `<div class="tls ${s.state}"><i>${s.state === "done" ? ic("check", 12) : ""}</i><div><b>${esc(s.title)}</b><span>${esc(s.meta)}</span></div></div>`).join("")}</div>`;
 }

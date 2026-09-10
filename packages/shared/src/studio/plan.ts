@@ -9,6 +9,7 @@
  * written out as a design system, for the brief and the model.
  */
 import { FONTS, PRODUCTS, type FontRow, type Palette, type ProductRow } from "./tables.ts";
+import { referenceLine } from "./references.ts";
 
 export type Archetype = "ledger" | "feed" | "listings" | "bookings" | "tracker" | "learn" | "inbox" | "map" | "dashboard" | "store";
 export type Landing = "hero" | "features" | "minimal" | "proof" | "story" | "demo" | "search" | "trust";
@@ -63,7 +64,7 @@ export function treatmentOf(style: string): TreatmentId {
   return "flat";
 }
 
-const STOP = new Set("the a an and or for to of in on with by at from is are that this it its their who we you your my our people app apps platform tool service services business businesses help helps make makes get new one way best easy every all can so not no yes more less them they us me i be will would could should have has had do does did into over under out up down about than then there here where when what which how why let lets allow allows each other others life bring come back without any aged ten minute hour day month year quick fast easy simple better best personal trusted busy own real free first last next like just also very really thing things idea ideas dream dreams".split(" "));
+const STOP = new Set("the a an and or for to of in on with by at from is are that this it its their who we you your my our people app apps platform tool service services business businesses help helps make makes get new one way best easy every all can so not no yes more less them they us me i be will would could should have has had do does did into over under out up down about than then there here where when what which how why let lets allow allows each other others life bring come back without any aged ten minute hour day month year quick fast easy simple better best personal trusted busy own real free first last next like just also very really thing things idea ideas dream dreams side tomorrow tonight today".split(" "));
 
 /** Words the tables do not list but founders write, by product type. */
 const EXTRA: Record<string, string> = {
@@ -77,7 +78,7 @@ const EXTRA: Record<string, string> = {
   "Coworking Space": "room rooms desk desks space quiet hour hourly office",
   "Marketplace (P2P)": "rent renting sell buy handmade secondhand lend borrow swap marketplace",
   "Classifieds / Buy-Sell": "sell selling buy secondhand used handmade",
-  "E-commerce": "shop store sell products orders checkout",
+  "E-commerce": "shop store sell products checkout basket",
   "Recipe & Cooking App": "recipe recipes cook cooking meal meals dinner",
   "Calorie & Nutrition Counter": "meal meals diet diabetes nutrition eating calories food plan",
   "Booking & Appointment App": "book booking bookings appointment appointments slot slots schedule",
@@ -89,7 +90,7 @@ const EXTRA: Record<string, string> = {
   "Kids Learning (ABC & Math)": "kids children maths math abc learning games school",
   "Language Learning App": "language languages english greek spanish vocabulary words speak",
   "Online Course/E-learning": "course courses learn learning lessons teach tutorials",
-  "Bakery/Cafe": "cafe cafes coffee bakery barista regulars espresso",
+  "Bakery/Cafe": "cafe cafes coffee bakery barista regulars espresso bread loaf loaves pastry pastries croissant croissants cake cakes baker",
   "Restaurant/Food Service": "restaurant restaurants menu table tables diners kitchen",
   "SaaS (General)": "subscription saas software dashboard teams",
   "CRM & Client Management": "clients customers leads pipeline follow followups crm",
@@ -108,7 +109,8 @@ const EXTRA: Record<string, string> = {
   "Childcare/Daycare": "nursery childcare babysitter babysitting kids",
   "Senior Care/Elderly": "elderly seniors carers care parents",
   "Logistics/Delivery": "delivery deliveries courier couriers parcels shipping",
-  "Ride Hailing / Transportation": "taxi ride rides driver drivers lift",
+  "Food Delivery / On-Demand": "order orders dinner takeaway delivered",
+  "Ride Hailing / Transportation": "taxi taxis cab cabs airport ride rides driver drivers lift lifts pool carpool share sharing seat seats",
   "Parking Finder": "parking park spot spots",
   "Travel/Tourism Agency": "travel trips tours tourists holiday",
   "Hotel/Hospitality": "hotel hotels rooms stays guests",
@@ -129,7 +131,7 @@ const EXTRA: Record<string, string> = {
   "Survey / Form Builder": "survey surveys forms form feedback",
   "Review Platform": "reviews review ratings",
   "Directory / Listing Site": "directory listings find nearby local",
-  "Chat & Messaging App": "chat chats messaging messages",
+  "Chat & Messaging App": "chat chats messaging messages group groups team teams whatsapp",
   "Email Client": "email emails inbox",
   "Timer & Pomodoro": "focus timer pomodoro",
   "Study Together / Virtual Coworking": "study studying students focus together",
@@ -185,7 +187,8 @@ export function readProduct(input: { sign: string; pitch?: string; audience?: st
     let score = 0;
     const keys = new Set([...p.k.flatMap((k) => tokens(k)), ...tokens(p.t), ...tokens(EXTRA[p.t] ?? "")]);
     for (const [ws, w] of weights) for (const t of ws) if (keys.has(t)) score += w;
-    if (boost && boost.test(p.t)) score += 4;
+    // the stand's segment tips a type that the words already point to; on its own it only breaks ties
+    if (boost && boost.test(p.t)) score += score > 0 ? 4 : 1;
     return { product: p, score };
   });
   scored.sort((a, b) => b.score - a.score);
@@ -390,6 +393,7 @@ export function planText(p: StudioPlan): string {
     `- Shape: radius ${t.r[0]}/${t.r[1]}/${t.r[2]} px (controls, cards, sheets); buttons ${t.r[3] >= 999 ? "pill-shaped" : `${t.r[3]} px`}, 50 px high. ${border}. ${shadow}.`,
     `- Spacing: a 4 pt grid, 20 px side margins, 12 px between rows, 16 px between sections.`,
     `- Navigation: ${nav}. Main screen: a ${p.archetype}. Front door: a ${p.landing} pattern.`,
+    `- ${referenceLine(p.archetype)}`,
     `- Icons: inline SVG, 1.8 px stroke, 22 px, in the current text colour. No emoji.`,
     `- Pictures: drawn, not stock: ${t.pic} shapes in the primary, secondary and accent colours.`,
     `- Motion: 180 ms ease-out on presses and sheet openings; nothing moves on its own.`,
@@ -583,8 +587,94 @@ h3{font:700 17px/1.3 var(--fh);${heading}}
 .gap8{display:flex;flex-direction:column;gap:8px}.gap12{display:flex;flex-direction:column;gap:12px}
 .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt24{margin-top:24px}.mb12{margin-bottom:12px}
 .muted{color:var(--mf)}.small{font-size:13px}.strong{font-weight:600}
-.tail{height:${t.nav === "pill" ? 110 : 24}px}
-.tail.fab{height:${t.nav === "pill" ? 150 : 90}px}
+.end{height:${t.nav === "pill" ? 110 : 24}px}
+.end.after-fab{height:${t.nav === "pill" ? 150 : 90}px}
+.mono{font-variant-numeric:tabular-nums}
+.bal{background:${t.id === "aurora" || t.id === "glass" ? `linear-gradient(135deg,${c.p},${mix(c.p, c.a, 0.55)})` : "var(--p)"};color:var(--op);border-radius:var(--rl);padding:18px 18px 16px;box-shadow:${t.shadow === "none" ? "none" : `0 14px 30px ${rgba(c.p, 0.35)}`}${t.border === "thick" ? ";border:2px solid var(--fg)" : ""}}
+.bal .bl{font-size:13px;font-weight:600;opacity:.8}
+.bal .bv{font:700 38px/1.05 var(--fh);letter-spacing:-.02em;margin:8px 0 14px;font-variant-numeric:tabular-nums}
+.bal .bf{display:flex;justify-content:space-between;font-size:13px;opacity:.85}
+.qa{display:flex;justify-content:space-between;margin:16px 0 6px}
+.qa .q{display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;font-size:12px;font-weight:600;color:var(--fg)}
+.qa .q i{width:52px;height:52px;border-radius:${rb >= 999 ? "50%" : "var(--rm)"};display:inline-flex;align-items:center;justify-content:center;background:var(--cardbg);border:var(--bd);box-shadow:var(--sh);color:var(--fg);${glass}}
+.qa .q:first-child i{background:var(--p);color:var(--op);border-color:var(--p)}
+.dayh{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--mf);${t.heading === "upper" ? "text-transform:uppercase;letter-spacing:.06em;" : ""}margin:18px 0 2px}
+.stories{display:flex;gap:14px;overflow:hidden;padding:4px 0 10px}
+.stories .st{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--mf);flex:none}
+.stories .ring-av{display:inline-flex;padding:3px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--a))}
+.stories .ring-av .av{border:2px solid var(--bg)}
+.stories .you .ring-av{background:var(--line)}
+.cats{display:flex;gap:6px;overflow:hidden;padding:2px 0 10px;border-bottom:1px solid ${c.b};margin-bottom:12px}
+.cats .cat{flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;width:68px;padding:6px 0 8px;font-size:11px;font-weight:600;color:var(--mf);border-bottom:2px solid transparent}
+.cats .cat.on{color:var(--fg);border-bottom-color:var(--fg)}
+.rate{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--fg)}
+.rate .ic{color:var(--fg)}.rate span{color:var(--mf);font-weight:500}
+.tile{position:relative}
+.tile .heart{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:${rgba(c.card, 0.9)};display:inline-flex;align-items:center;justify-content:center;color:var(--fg);box-shadow:0 2px 6px ${rgba(c.fg, 0.15)}}
+.tile .rate{display:inline-flex;color:var(--fg);margin:0;flex:none}.tile .rate span{display:inline;margin:0}
+.tile .spread b{display:inline}
+.unit{display:flex;justify-content:space-between;align-items:center;background:var(--p);color:var(--op);border-radius:var(--rl);padding:14px 16px;margin-bottom:8px}
+.unit .eyebrow{color:${rgba(c.op, 0.75)}}
+.unit b{font:700 18px/1.2 var(--fh)}
+.ustats{display:flex;gap:10px}
+.ustats span{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:14px;background:${rgba(c.op, 0.16)};padding:6px 10px;border-radius:999px}
+.path{display:flex;flex-direction:column;gap:18px;padding:14px 0 6px;position:relative}
+.path:before{content:"";position:absolute;left:105px;top:0;bottom:0;border-left:3px dashed ${c.b}}
+.node{display:flex;align-items:center;gap:12px;width:220px;position:relative}
+.node i{width:66px;height:66px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;background:var(--card);border:var(--bd);color:var(--mf);box-shadow:0 6px 0 ${rgba(c.fg, 0.12)}}
+.node.done i{background:var(--p);color:var(--op);border-color:var(--p);box-shadow:0 6px 0 ${mix(c.p, "#000000", 0.25)}}
+.node.now i{background:var(--a);color:var(--oa);border-color:var(--a);box-shadow:0 6px 0 ${mix(c.a, "#000000", 0.25)};transform:scale(1.08)}
+.node.locked i{opacity:.55}
+.node b{font-size:14px;font-weight:600;line-height:1.2}
+.node.locked b{color:var(--mf)}
+.agenda{display:flex;flex-direction:column;gap:8px}
+.slot{display:flex;gap:10px;align-items:stretch}
+.slot .tm{width:46px;flex:none;font-size:12px;font-weight:600;color:var(--mf);padding-top:8px;font-variant-numeric:tabular-nums}
+.slot .blk{flex:1;border-radius:var(--rm);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;border-left:4px solid var(--p)}
+.slot .blk b{font-size:15px;font-weight:600;display:block}.slot .blk span{font-size:12px;opacity:.85;display:block;margin-top:2px}
+.slot .blk.t0{background:${c.tints[0][0]};color:${c.tints[0][1]};border-left-color:${c.p}}.slot .blk.t1{background:${c.tints[1][0]};color:${c.tints[1][1]};border-left-color:${c.a}}.slot .blk.t2{background:${c.tints[2][0]};color:${c.tints[2][1]};border-left-color:${c.s}}.slot .blk.t3{background:var(--cardbg);color:var(--mf);border-left-color:${c.b};border:1px dashed ${c.b}}
+.sheet{background:var(--card);border-radius:var(--rl) var(--rl) 0 0;padding:8px 20px 12px;margin:-28px -20px 0;position:relative;box-shadow:0 -10px 30px ${rgba(c.fg, 0.18)}}
+.sheet .handle{display:block;width:40px;height:5px;border-radius:3px;background:${c.b};margin:0 auto 12px}
+.opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--rm);border:1.5px solid transparent;margin-bottom:6px}
+.opt.on{border-color:var(--fg);background:var(--cardbg)}
+.opt b{font-size:16px}
+.promo{position:relative;border-radius:var(--rl);overflow:hidden;background:var(--cardbg);border:var(--bd);display:flex;min-height:150px;margin-bottom:4px}
+.promo .promo-pic{position:absolute;inset:0;min-height:0;border-radius:0}
+.promo .promo-t{position:relative;padding:16px;width:60%;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(90deg,var(--card) 60%,transparent)}
+.promo .promo-t b{font:700 18px/1.2 var(--fh);display:block;margin-top:4px}
+.tile.prod .add{position:absolute;right:20px;margin-top:-30px;width:34px;height:34px;border-radius:50%;background:var(--fg);color:var(--bg);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 4px 10px ${rgba(c.fg, 0.25)}}
+.cartbar{position:absolute;left:16px;right:16px;bottom:${t.nav === "pill" ? 96 : 94}px;height:56px;border-radius:${rb >= 999 ? "999px" : "var(--rm)"};background:var(--fg);color:var(--bg);display:flex;align-items:center;gap:12px;padding:0 8px 0 8px;box-shadow:0 12px 30px ${rgba(c.fg, 0.35)}}
+.cartbar .cnt{width:40px;height:40px;border-radius:${rb >= 999 ? "50%" : "var(--rs)"};background:${rgba(c.bg, 0.18)};display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+.cartbar .tot{flex:1;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
+.cartbar b{display:inline-flex;align-items:center;gap:6px;padding-right:10px;font-size:15px}
+.stepper{display:inline-flex;align-items:center;gap:14px;height:44px;padding:0 10px;border-radius:${rb >= 999 ? "999px" : "var(--rm)"};border:1.5px solid ${c.b}}
+.stepper span{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:${c.dark ? rgba(c.fg, 0.1) : mix(c.bg, c.fg, 0.06)}}
+.stepper b{min-width:16px;text-align:center;font-variant-numeric:tabular-nums}
+.rings{display:flex;justify-content:space-between;gap:8px}
+.rings .rg{flex:1;display:flex;justify-content:center}
+.ring.c1 circle:last-child{stroke:var(--a)}.ring.c2 circle:last-child{stroke:var(--s)}
+.trio{display:flex;border-top:1px solid ${c.b};border-bottom:1px solid ${c.b};padding:12px 0;margin:14px 0}
+.trio div{flex:1;text-align:center;border-left:1px solid ${c.b}}.trio div:first-child{border-left:0}
+.trio b{display:block;font:700 22px/1.1 var(--fh);font-variant-numeric:tabular-nums}.trio span{font-size:12px;color:var(--mf);font-weight:600}
+.spark{display:block;flex:none}
+.unread{min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--p);color:var(--op);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.ticks{display:inline-flex;color:var(--mf)}.ticks .ic+.ic{margin-left:-8px}.ticks.read{color:var(--p)}
+.sdot{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--mf)}
+.sdot i{width:8px;height:8px;border-radius:50%;background:var(--mf)}.sdot.ok i{background:var(--ok)}.sdot.warn i{background:var(--warn)}
+.tl{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.tls{display:flex;gap:14px;align-items:flex-start;padding-bottom:18px;position:relative}
+.tls:before{content:"";position:absolute;left:11px;top:24px;bottom:0;border-left:2px solid ${c.b}}
+.tls:last-child:before{display:none}
+.tls i{width:24px;height:24px;border-radius:50%;flex:none;display:inline-flex;align-items:center;justify-content:center;background:var(--card);border:2px solid ${c.b};color:var(--op)}
+.tls.done i{background:var(--p);border-color:var(--p)}.tls.now i{border-color:var(--p);box-shadow:0 0 0 4px ${rgba(c.p, 0.2)}}
+.tls b{display:block;font-size:15px}.tls span{font-size:13px;color:var(--mf)}
+.tls.next b{color:var(--mf)}
+.bubble.withtail{border-bottom-left-radius:4px}.bubble.me.withtail{border-bottom-left-radius:var(--rl);border-bottom-right-radius:4px}
+.datepill{display:block;width:max-content;margin:6px auto 12px;padding:4px 10px;border-radius:999px;background:${c.dark ? rgba(c.fg, 0.1) : mix(c.bg, c.fg, 0.07)};font-size:12px;font-weight:600;color:var(--mf)}
+.inbar{display:flex;gap:8px;align-items:center;padding:8px 16px 6px;flex:none}
+.inbar .fi{flex:1;height:44px}
+.mappill{position:absolute;left:50%;transform:translateX(-50%);bottom:${t.nav === "pill" ? 102 : 100}px;height:44px;padding:0 18px;border-radius:999px;background:var(--fg);color:var(--bg);display:inline-flex;align-items:center;gap:8px;font-weight:700;box-shadow:0 10px 24px ${rgba(c.fg, 0.3)}}
+.bar i{border-radius:4px 4px 0 0}
 ${t.id === "brutal" ? ".card,.stat,.tile,.quote,.icb,.chip,.fi{box-shadow:4px 4px 0 var(--fg)}.btn.p{box-shadow:4px 4px 0 var(--fg)}.row{border-bottom:2px solid var(--fg)}" : ""}
 ${t.id === "hud" ? ".card,.stat,.tile{border:1px solid " + rgba(c.p, 0.4) + ";box-shadow:inset 0 0 0 1px " + rgba(c.p, 0.08) + "}.eyebrow,.stat .sl{color:" + c.p + "}" : ""}
 ${t.id === "clay" ? ".card,.stat,.tile,.quote,.btn.p{box-shadow:inset 0 -6px 12px " + rgba(c.fg, 0.08) + ",inset 0 4px 8px rgba(255,255,255,.45),0 12px 24px " + rgba(c.fg, 0.1) + "}" : ""}

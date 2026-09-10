@@ -32,6 +32,10 @@ test("the founder's words are read as the right kind of product", () => {
   assert.equal(top("Ten-minute maths games for kids aged 6 to 9.", "parents", "consumer"), "Kids Learning (ABC & Math)");
   assert.equal(top("Allows founders to meet and help eachother bring ideas to life", "developers", "consumer"), "Membership/Community");
   assert.equal(top("Weekly numbers for one-person shops.", "shop owners", "b2b-saas"), "Analytics Dashboard");
+  assert.ok(["Bakery/Cafe", "Restaurant/Food Service", "Food Delivery / On-Demand"].includes(top("Order tomorrow's bread tonight.", "neighbours", "consumer")));
+  assert.equal(top("Order tomorrow's bread tonight.", "neighbours", "consumer", ["Despina: the good bread is gone by nine"]), "Bakery/Cafe");
+  assert.equal(top("Group chats for five-a-side teams.", "amateur footballers", "consumer"), "Chat & Messaging App");
+  assert.equal(top("Share a taxi from the airport.", "travellers", "marketplace"), "Ride Hailing / Transportation");
   // nothing matched: the kind decides
   assert.equal(readProduct({ sign: "Zxq", kind: "services" })[0].product.t, "Booking & Appointment App");
 });
@@ -43,6 +47,8 @@ test("the unit is the noun the product deals in", () => {
   assert.equal(unitOf("A personal trainer in your pocket for busy dads.", "tracker"), "workout");
   assert.equal(unitOf("One API for sending invoices from any app.", "ledger"), "invoice");
   assert.equal(unitOf("Sell your handmade jewellery without a shop.", "listings"), "handmade jewellery");
+  assert.equal(unitOf("Order tomorrow's bread tonight.", "store"), "bread");
+  assert.equal(unitOf("Group chats for five-a-side teams.", "inbox"), "group chat");
   assert.equal(unitOf("Zxq wibble flarp gronk yonder blorp", "learn"), "lesson");
   assert.equal(singular("weekly numbers"), "weekly number");
   assert.equal(singular("passes"), "pass");
@@ -89,6 +95,8 @@ test("every founder gets a whole app that passes the page check, with three to f
     { name: "Numbo", oneLiner: "Ten-minute maths games for kids aged 6 to 9.", audience: "parents", price: "", said: [], segment: "consumer" },
     { name: "Ping", oneLiner: "Group chats for five-a-side teams.", audience: "amateur footballers", price: "", said: [], segment: "consumer" },
     { name: "Hop", oneLiner: "Share a taxi from the airport.", audience: "travellers", price: "€12 a ride", said: [], segment: "marketplace" },
+    { name: "Crumb", oneLiner: "Order tomorrow's bread tonight.", audience: "neighbours", price: "€4 a loaf", said: ["Despina: the good bread is gone by nine"], segment: "consumer" },
+    { name: "Tally", oneLiner: "Weekly numbers for one-person shops.", audience: "shop owners", price: "€12 a month", said: [], segment: "b2b-saas" },
   ];
   const seen = new Set();
   for (const f of founders) {
@@ -105,5 +113,7 @@ test("every founder gets a whole app that passes the page check, with three to f
     assert.ok(r.html.length < 60000, `${f.name} ${r.html.length}`);
     seen.add(`${r.plan.archetype}|${r.plan.treatment.id}|${r.plan.colours.p}`);
   }
-  assert.ok(seen.size >= 5, "the founders' apps should differ");
+  assert.ok(seen.size >= 7, "the founders' apps should differ");
+  const archetypes = new Set(founders.map((f) => studioDesign(localMockup(f), { said: f.said, segment: f.segment }).plan.archetype));
+  for (const a of ["ledger", "bookings", "listings", "tracker", "learn", "inbox", "map", "store", "dashboard"]) assert.ok(archetypes.has(a), `no founder reached the ${a} archetype`);
 });
