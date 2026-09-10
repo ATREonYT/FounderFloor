@@ -113,6 +113,8 @@ export function Plate({
           ]}
           pointerEvents="none"
         />
+        {/* the light on the top edge: what makes foamcore read as lacquer */}
+        {tone !== "plate" ? <View pointerEvents="none" style={{ position: "absolute", top: 1, left: radius, right: radius + BEVEL, height: 1, backgroundColor: alpha.gloss() }} /> : null}
         <View style={[{ flexShrink: 1 }, padding !== undefined ? { padding } : null]}>{children}</View>
       </View>
     </View>

@@ -20,6 +20,7 @@ import { useGate } from "../lib/gate";
 import { COACHES } from "../lib/mock";
 import { Hint } from "../components/Hint";
 import { TourTarget } from "../components/TourTarget";
+import { StopLine } from "../components/Road";
 
 export default function Office() {
   const L = useLayout();
@@ -87,6 +88,7 @@ export default function Office() {
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <TopBar left={<Back />} center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
+        <StopLine id="customer" label="THE OFFICE" />
         <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The Office">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <GlyphTile id="coin" color="#5E7C93" size={36} />

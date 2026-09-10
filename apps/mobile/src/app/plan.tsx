@@ -8,6 +8,7 @@ import { GOALS } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Display, Scene, Spec, radius, shell, useLayout } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 import { PlanView } from "../components/PlanView";
+import { StopLine } from "../components/Road";
 
 export default function Plan() {
   const L = useLayout();
@@ -20,6 +21,7 @@ export default function Plan() {
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
+        <StopLine id={plan ? "week" : "plan"} label="YOUR PLAN" />
         <Scene set="lobby" height={L.compact ? 140 : 170} radiusPx={radius.xl} accessibilityLabel="Your plan">
           <Spec tone="muted">{profile ? `${GOALS.find((g) => g.id === profile.goal)?.label ?? ""} · ${profile.horizon === "3m" ? "3 months" : profile.horizon === "6m" ? "6 months" : "a year"}`.toUpperCase() : "NO PLAN YET"}</Spec>
         </Scene>
@@ -30,7 +32,7 @@ export default function Plan() {
           <Body tone="muted">Answer the desk's eight questions and a plan appears here.</Body>
         )}
         <ButtonRow>
-          <Button variant="secondary" onPress={() => router.push("/welcome" as Href)}>
+          <Button variant={plan ? "secondary" : "primary"} arrow={!plan} onPress={() => router.push("/welcome" as Href)}>
             {plan ? "Remake the plan" : "Answer the questions"}
           </Button>
           <Button variant="ghost" onPress={() => router.push("/workshop" as Href)}>

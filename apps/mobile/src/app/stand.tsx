@@ -18,6 +18,7 @@ import { useFounder, useSession } from "../lib/store";
 import { Hint } from "../components/Hint";
 import { TourTarget } from "../components/TourTarget";
 import { useStand, hallName } from "../lib/stand";
+import { StopLine } from "../components/Road";
 
 const ENTITIES: { v: EntityType; label: string }[] = [
   { v: "none", label: "None yet" },
@@ -101,6 +102,7 @@ export default function Stand() {
         right={<TierTag tier={stand.tier} />}
       />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
+        <StopLine id="idea" label="YOUR COMPANY" />
         {auth ? (
           <Pressable onPress={() => setAccount(true)} accessibilityRole="button" accessibilityLabel="Your account" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 8 })}>
             <Spec tone="ink">{auth.name}</Spec>

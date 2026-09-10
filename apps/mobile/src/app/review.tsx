@@ -13,6 +13,7 @@ import { useFounder } from "../lib/store";
 import { aiMode } from "../lib/ai";
 import { useWeekReview } from "../lib/review";
 import { weekNow } from "../lib/taskDesk";
+import { StopLine } from "../components/Road";
 
 const WEEK_GLYPH: GlyphId[] = ["bolt", "wave", "coin", "star"];
 const COLOR = "#4F6E6B";
@@ -48,7 +49,10 @@ export default function Review() {
           <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
             <Spec tone="ink">← Back</Spec>
           </Pressable>
-          <Spec tone="muted">{facts.over ? "THE WEEK IS OVER" : wN === now ? "STILL RUNNING" : "NOT YET"}</Spec>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <StopLine id="week" />
+            <Spec tone="muted">{facts.over ? "THE WEEK IS OVER" : wN === now ? "STILL RUNNING" : "NOT YET"}</Spec>
+          </View>
         </View>
 
         {/* the weeks, along the top */}

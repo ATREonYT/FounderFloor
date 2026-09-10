@@ -131,7 +131,7 @@ export const signage = { size: 12, letterSpacing: 0.12 * 12, uppercase: true } a
 export const shadow = {
   card: [
     { color: "rgba(18,23,27,0.05)", offset: { width: 0, height: 1 }, radius: 2 },
-    { color: "rgba(18,23,27,0.08)", offset: { width: 0, height: 6 }, radius: 16 },
+    { color: "rgba(18,23,27,0.10)", offset: { width: 0, height: 10 }, radius: 24 },
   ],
   float: [
     { color: "rgba(18,23,27,0.07)", offset: { width: 0, height: 2 }, radius: 6 },

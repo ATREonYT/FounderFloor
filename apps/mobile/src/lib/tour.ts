@@ -22,7 +22,7 @@ export const TOUR: TourStep[] = [
   { id: "map", target: "map", say: "This is the map: the building, floor by floor, from idea to money. Tap the room you are in." },
   { id: "room", target: null, say: "Inside a room: this month's tasks, then the room's own list. Tick what is true, not what you intend. Close it when you are done." },
   { id: "to-today", target: "tabs", say: "The bar at the bottom is the whole building: Today, Map, Coach, You. Tap Today.", route: "/today", tab: "Today" },
-  { id: "today", target: "home-next", say: "Today is one thing: the next task, with a Start button. This week's three tasks sit under it. Tap the card." },
+  { id: "today", target: "home-next", say: "Today is one thing: the next task, with a Start button. Under it is the road: seven stops from your idea to your first paying customer, and where you are. Tap the card." },
   { id: "to-coach", target: "tabs", say: "Now tap Coach.", route: "/reception", tab: "Coach" },
   { id: "coach", target: null, say: "The coach: ask the desk anything about your company. The name at the top picks one of the four coaches." },
   { id: "to-you", target: "tabs", say: "Last one: tap You.", route: "/you", tab: "You" },

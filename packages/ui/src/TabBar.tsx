@@ -19,6 +19,7 @@ import { Pressable, View, type LayoutChangeEvent } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 import { MENU, type MenuEntry } from "./Menu";
 import { Sprite, type SpriteId } from "./Sprite";
+import { Sheen } from "./Sheen";
 import { Spec } from "./Text";
 import { alpha, scheme } from "./theme";
 import { haptic } from "./Tap";
@@ -95,13 +96,18 @@ export function TabBar({
           shadowRadius: cast.radius,
           shadowOpacity: 1,
           elevation: 8,
+          overflow: "visible",
         }}
       >
+        {/* the light on the glass: a line along the top edge */}
+        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 20, right: 20, height: 1, backgroundColor: alpha.gloss(), borderRadius: 1 }} />
         {width > 0 ? (
           <Animated.View
             pointerEvents="none"
-            style={[{ position: "absolute", left: 0, top: (HEIGHT - 2 - DISC) / 2, width: DISC, height: DISC, borderRadius: DISC / 2, backgroundColor: shell.ink }, disc]}
-          />
+            style={[{ position: "absolute", left: 0, top: (HEIGHT - 2 - DISC) / 2, width: DISC, height: DISC, borderRadius: DISC / 2, backgroundColor: shell.ink, overflow: "hidden" }, disc]}
+          >
+            <Sheen strength={0.22} reach={0.5} />
+          </Animated.View>
         ) : null}
         {entries.map((e) => {
           const on = e.key === active;

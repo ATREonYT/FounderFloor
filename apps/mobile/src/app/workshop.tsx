@@ -17,6 +17,8 @@ import { useRouter, type Href } from "expo-router";
 import { mockupPoster, POSTER_H, POSTER_W, PRODUCTS, type MockScreen } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Dialogue, Display, Glyph, GlyphTile, Input, Plate, Scene, Spec, Thinking, Toast, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
 import { useWorkshop } from "../lib/workshop";
+import { useFounder } from "../lib/store";
+import { StopLine } from "../components/Road";
 import { LiveMock } from "../components/LiveMock";
 import { Hint } from "../components/Hint";
 
@@ -41,9 +43,11 @@ export default function Workshop() {
     setToast(t);
     setTimeout(() => setToast(null), 2600);
   };
+  const setHandedOff = useFounder((s) => s.setHandedOff);
   const send = async (kind: "lovable" | "claude") => {
     try {
       await Share.share({ message: w.prompt(kind), title: kind === "lovable" ? `${m.name}: build prompt` : `${m.name}: CLAUDE.md and brief` });
+      if (w.mine) setHandedOff();
     } catch {
       say("Could not open the share sheet.");
     }
@@ -80,7 +84,7 @@ export default function Workshop() {
           <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
             <Spec tone="ink">← Back</Spec>
           </Pressable>
-          <Spec tone="muted">THE WORKSHOP</Spec>
+          <StopLine id="app" label="THE WORKSHOP" />
         </View>
         <Scene set="workshop" height={L.compact ? 130 : 160} radiusPx={radius.xl} color="#A28457" accessibilityLabel="The workshop">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>

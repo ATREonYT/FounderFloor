@@ -13,6 +13,7 @@ import { Body, Button, Display, Glyph, GlyphTile, Plate, Spec, Stage, Streak, Ta
 import { TopBar } from "../../components/TopBar";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
+import { Road } from "../../components/Road";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { ROOM_GLYPH } from "../../lib/glyphs";
 import { RECEPTIONIST, greeting } from "../../lib/mock";
@@ -59,7 +60,7 @@ export default function Today() {
         <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood="idle" scale={2} height={L.compact ? 160 : 190} ambient={focused} set="lobby">
           <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "day one" : stand.streak ? `${stand.streak}-day streak` : "day one"} />
         </Stage>
-        <Hint id="today" text="This is Today: the one thing to do next, and this week's three tasks. The map, the coach and everything about you are in the bar below." />
+        <Hint id="today" text="Today is one thing to do next. Under it, the road: seven stops from your idea to your first paying customer, and where you are on it. Tap any stop to go there." />
 
         {/* the one thing */}
         <TourTarget id="home-next">
@@ -94,6 +95,9 @@ export default function Today() {
             </Plate>
           </Tap>
         </TourTarget>
+
+        {/* the road: seven stops, where you are, what to do now */}
+        <Road />
 
         {/* this week, as a checklist */}
         {week ? (

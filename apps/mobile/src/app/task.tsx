@@ -24,6 +24,7 @@ import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
 import { ROOM_ORDER, roomOfWeek, taskKey, useTask, weekNow } from "../lib/taskDesk";
 import { STAGES, parseDoor } from "@founderfloor/shared";
+import { StopLine } from "../components/Road";
 
 /** The room each kind of work is drawn in. */
 export const KIND_ROOM: Record<TaskKind, { set: SceneSet; glyph: GlyphId; color: string }> = {
@@ -146,7 +147,10 @@ export default function Task() {
             <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back to the plan" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
               <Spec tone="ink">← Plan</Spec>
             </Pressable>
-            <Spec tone="muted">{`WEEK ${wN}${wN === now ? " · THIS WEEK" : ""} · TASK ${idx + 1} OF ${week.do.length}`}</Spec>
+            <View style={{ alignItems: "flex-end", gap: 4 }}>
+              <StopLine id="week" />
+              <Spec tone="muted">{`WEEK ${wN}${wN === now ? " · THIS WEEK" : ""} · TASK ${idx + 1} OF ${week.do.length}`}</Spec>
+            </View>
           </View>
 
           {/* the room */}

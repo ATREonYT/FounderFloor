@@ -19,6 +19,7 @@ import type { ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
 import { Body } from "./Text";
+import { Sheen } from "./Sheen";
 import { curve, ms, radius, shell } from "./tokens";
 
 type Variant = "primary" | "secondary" | "ghost";
@@ -91,30 +92,32 @@ export function Button({
     >
       <Animated.View
         style={[
-          { borderRadius: radius.full, justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 6 },
-          pad,
-          look,
+          { borderRadius: radius.full },
           variant === "primary" && {
-            shadowColor: "rgba(190,36,27,0.35)",
-            shadowOffset: { width: 0, height: 6 },
-            shadowRadius: 14,
+            shadowColor: "rgba(190,36,27,0.4)",
+            shadowOffset: { width: 0, height: 8 },
+            shadowRadius: 16,
             shadowOpacity: 1,
-            elevation: 3,
+            elevation: 4,
           },
           press,
           style,
         ]}
       >
-        <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
-          {children}
-        </Body>
-        {arrow && (
-          <Animated.View style={lean}>
-            <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
-              →
-            </Body>
-          </Animated.View>
-        )}
+        <View style={[{ borderRadius: radius.full, overflow: "hidden", justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 6 }, pad, look]}>
+          {/* the light on the top half: lacquer, not plastic */}
+          {variant === "primary" ? <Sheen strength={0.26} reach={0.5} /> : variant === "secondary" && !onDark ? <Sheen strength={0.5} reach={0.5} /> : null}
+          <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
+            {children}
+          </Body>
+          {arrow && (
+            <Animated.View style={lean}>
+              <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
+                →
+              </Body>
+            </Animated.View>
+          )}
+        </View>
       </Animated.View>
     </Pressable>
   );

@@ -10,6 +10,7 @@ export { FONT_MAP } from "./fonts";
 export { Sprite, spriteMeta, PIXELATED_CSS, type SpriteId } from "./Sprite";
 export { SpriteCycle } from "./SpriteCycle";
 export { Plate, type PlateTone } from "./Plate";
+export { Sheen } from "./Sheen";
 export { Display, Body, Mono, Spec, Signage, Kbd } from "./Text";
 export { Button, ButtonRow } from "./Button";
 export { Sign, type GlyphId } from "./Sign";

@@ -65,4 +65,6 @@ export const alpha = {
   glassFill: () => (current === "dark" ? "rgba(26,32,38,0.92)" : "rgba(255,255,255,0.86)"),
   scrim: () => (current === "dark" ? "rgba(0,0,0,0.6)" : "rgba(18,23,27,0.45)"),
   placeholder: () => (current === "dark" ? "rgba(167,174,181,0.6)" : "rgba(77,83,90,0.6)"),
+  /** The light on a surface's top edge: the one line that makes a plate read as lacquer. */
+  gloss: () => (current === "dark" ? "rgba(237,240,244,0.10)" : "rgba(255,255,255,0.75)"),
 };

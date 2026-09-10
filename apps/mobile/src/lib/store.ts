@@ -320,6 +320,9 @@ interface FounderState {
   /** The start-up, mocked up: three screens, the path, what it keeps. */
   mockup: Mockup | null;
   setMockup(m: Mockup | null): void;
+  /** The brief was sent to a builder at least once: stop six on the road. */
+  handedOff: boolean;
+  setHandedOff(): void;
   /** The desk's notebook: what the founder did, in dated lines. On the device; read by the prompts only when memoryOn is true. */
   memory: MemoryEntry[];
   /** null until the founder has answered the notebook question. */
@@ -432,6 +435,8 @@ export const useFounder = create<FounderState>()(
       setReview: (r) => set({ reviews: { ...get().reviews, [r.week]: r } }),
       mockup: null,
       setMockup: (mockup) => set({ mockup }),
+      handedOff: false,
+      setHandedOff: () => set({ handedOff: true }),
       memory: [],
       memoryOn: null,
       setMemoryOn: (on) => set({ memoryOn: on }),
@@ -493,7 +498,7 @@ export const useFounder = create<FounderState>()(
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
       version: 9,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, ...(persisted as object) }) as unknown as FounderState,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

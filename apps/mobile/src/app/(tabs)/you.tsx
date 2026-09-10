@@ -10,6 +10,7 @@ import { useRouter, type Href } from "expo-router";
 import { fmtMoney } from "@founderfloor/shared";
 import { Body, Button, Display, GlyphTile, Keeper, Plate, RankBadge, Spec, TierTag, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
+import { RoadStrip } from "../../components/Road";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useStand } from "../../lib/stand";
 import { useFounder, useInbox, useSession } from "../../lib/store";
@@ -30,15 +31,16 @@ export default function You() {
   const r = stand.record;
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
   const rows: { glyph: GlyphId; color: string; title: string; line: string; to: string; badge?: number }[] = [
-    { glyph: "cube", color: "#A28457", title: "The Workshop", line: "Your start-up mocked up, and the brief to build it", to: "/workshop" },
-    { glyph: "coin", color: "#5E7C93", title: "The Office", line: kpi.length ? `${kpi.length} ${kpi.length === 1 ? "week" : "weeks"} logged · runway and the calendar` : "Log the week, read the runway", to: "/office" },
-    { glyph: "bolt", color: "#4F6E6B", title: "Your plan", line: plan ? plan.headline : "Eight questions, four weeks", to: plan ? "/plan" : "/welcome" },
-    { glyph: "flask", color: "#6B4E71", title: "The notebook", line: memory.length ? `${memory.length} lines the desk keeps for you` : "What the desk remembers", to: "/memory" },
+    { glyph: "cube", color: "#A28457", title: "The Workshop", line: "See your app, and send the brief to build it (stops 5 and 6)", to: "/workshop" },
+    { glyph: "coin", color: "#5E7C93", title: "The Office", line: kpi.length ? `${kpi.length} ${kpi.length === 1 ? "week" : "weeks"} logged · your numbers, what people said` : "Your numbers, what people said (stops 2 and 7)", to: "/office" },
+    { glyph: "bolt", color: "#4F6E6B", title: "Your plan", line: plan ? plan.headline : "Eight questions, then four weeks of tasks (stops 3 and 4)", to: plan ? "/plan" : "/welcome" },
+    { glyph: "flask", color: "#6B4E71", title: "The notebook", line: memory.length ? `${memory.length} lines the desk remembers about you` : "What the desk remembers about you", to: "/memory" },
     { glyph: "chip", color: "#3B5B92", title: "The drawer", line: docs.length ? `${docs.length} ${docs.length === 1 ? "draft" : "drafts"} the coaches wrote` : "Drafts the coaches write for you", to: "/drawer" },
     { glyph: "wave", color: "#B4762E", title: "Inbox", line: unread ? `${unread} unread` : "Notes left at your stand", to: "/inbox", badge: unread },
-    { glyph: "heart", color: "#2F6F6A", title: "The coaches", line: "Ines, Jonah, Margot, Theo", to: "/coaches" },
-    { glyph: "rocket", color: "#8C3B2E", title: "The floor", line: "Other founders' stands, in the real hall", to: "/floor" },
+    { glyph: "heart", color: "#2F6F6A", title: "The coaches", line: "Four people to ask: plan, sales, pitch, money", to: "/coaches" },
+    { glyph: "rocket", color: "#8C3B2E", title: "The floor", line: "Other founders, and what they are building", to: "/floor" },
     { glyph: "star", color: "#A28457", title: tier === "free" ? "Plans and Pro" : "Your plan with us", line: tier === "free" ? "Free does a lot. Pro remembers." : `${tier[0].toUpperCase()}${tier.slice(1)} · manage`, to: "/plans" },
+    { glyph: "leaf", color: "#4E6E4E", title: "How it works", line: "The road, the rooms, the desk: the whole guide", to: "/guide" },
     { glyph: "leaf", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook switch", to: "/settings" },
   ];
   return (
@@ -63,6 +65,9 @@ export default function You() {
             </Button>
           ) : null}
         </View>
+
+        {/* the road, in one strip */}
+        <RoadStrip />
 
         {/* your company */}
         <Pressable onPress={() => router.push("/stand" as Href)} accessibilityRole="button" accessibilityLabel="Your company" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
