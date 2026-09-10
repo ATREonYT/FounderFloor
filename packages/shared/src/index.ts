@@ -24,4 +24,5 @@ export * from "./workshop-brief.ts";
 export * from "./design-craft.ts";
 export * from "./studio/index.ts";
 export * from "./road.ts";
+export * from "./work.ts";
 export * from "./sample-design.ts";

@@ -65,7 +65,7 @@ export const GOALS: { id: Goal; label: string; line: string }[] = [
 /** The door the standing maps to. */
 export const doorFor = (s: Standing): Door => (s === "itch" ? "find" : s === "idea" ? "have" : "running");
 
-export const PLAN_PROMPT = `You make a four-week plan for one founder from a short profile. Return JSON only, with keys: headline (one sentence, warm, specific to them, under 16 words), why (two sentences on why this path fits their pace and goal), weeks (array of exactly 4 objects with n, focus (under 8 words) and do (3 concrete actions, each under 14 words, each doable in that week at their pace)), firstRoom (one of idea, validate, setup, customers, money, raise), weeklyGoal (one measurable goal for week 1, under 12 words, with a number), target90 (one measurable target for 90 days, under 12 words, with a number). Match the tone they asked for: gentle, direct or blunt. Never invent facts about them; use only the profile. No prose outside the JSON.`;
+export const PLAN_PROMPT = `You make a four-week plan for one founder from a short profile. Assume they have never built a company or an app: every action must be something a person with no training can do this week, in plain words, with no code, no spec, no wireframe and no deck. Building happens in the Workshop, which draws the app and writes the brief a builder tool makes the working version from; say "Open the Workshop" or "Send the brief to Lovable" for anything to build. The founder's own actions are talking to real people, deciding, and writing down what happened. Return JSON only, with keys: headline (one sentence, warm, specific to them, under 16 words), why (two sentences on why this path fits their pace and goal), weeks (array of exactly 4 objects with n, focus (under 8 words) and do (3 concrete actions, each under 14 words, each doable in that week at their pace)), firstRoom (one of idea, validate, setup, customers, money, raise), weeklyGoal (one measurable goal for week 1, under 12 words, with a number), target90 (one measurable target for 90 days, under 12 words, with a number). Match the tone they asked for: gentle, direct or blunt. Never invent facts about them; use only the profile. No prose outside the JSON.`;
 
 const paceHours: Record<Pace, string> = { evenings: "five hours a week", "part-time": "fifteen hours a week", "all-in": "full weeks" };
 
@@ -90,20 +90,20 @@ export function localPlan(p: Profile): FounderPlan {
       ? [
           { n: 1, focus: "Find the problem", do: ["Pick the people you know best", "Ask five of them what wastes their week", "Write down the exact words they use"] },
           { n: 2, focus: "Pick one idea", do: ["Run the idea finder from your answers", "Read the best one back with the second opinion", "Put it on the sign"] },
-          { n: 3, focus: "Test the price", do: ["Say a price out loud to three people", "Write down the face they made", "Put up a one-page site with an email box"] },
+          { n: 3, focus: "Test the price", do: ["Say a price out loud to three people", "Write down the face they made", "Open the Workshop and send the brief to Lovable for a one-page website"] },
           { n: 4, focus: "First yes", do: ["Ask one person to pay, even a little", "Log the week in the Office", "Decide: keep going or change the idea"] },
         ]
       : p.standing === "idea"
         ? [
             { n: 1, focus: "Read it back", do: ["Write the idea in one sentence", "Get the second opinion on it", "List ten real people who have the problem"] },
             { n: 2, focus: "Talk, do not build", do: ["Five conversations about the problem", "Write their words in the interview book", "Change the sentence if they changed it"] },
-            { n: 3, focus: "A price and a page", do: ["Say a price to three of them", "One-page site, one button, one email box", "Twenty-five emails from strangers"] },
+            { n: 3, focus: "A price and a page", do: ["Say a price to three of them", "Open the Workshop and send the brief to Lovable for the first version", "Twenty-five emails from strangers"] },
             { n: 4, focus: "The first yes", do: ["Ask one person to pay", "Log the week", "Set the 90-day target with Ines"] },
           ]
         : p.standing === "building"
           ? [
               { n: 1, focus: "People, not features", do: ["Three people use it this week", "Watch one of them without helping", "Write down where they got stuck"] },
-              { n: 2, focus: "The first payment", do: ["Ask one user to pay", "Set up the way to take money", "Draft the pricing sheet"] },
+              { n: 2, focus: "The first payment", do: ["Ask one user to pay", "Pick how people pay you, a payment link is enough", "Draft the pricing sheet"] },
               { n: 3, focus: "Five paying", do: ["Ten outreach messages, your voice, no link", "Log the week in the Office", "Interview book: five entries"] },
               { n: 4, focus: "Why they stay", do: ["Ask the payers why they stayed", "Cut one thing nobody uses", "Set the 90-day target"] },
             ]

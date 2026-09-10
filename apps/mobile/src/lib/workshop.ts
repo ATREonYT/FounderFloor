@@ -12,7 +12,7 @@
  * rewrite only if the founder asks for one.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { briefComplete, briefContext, BRIEF_PROMPT, builderPrompt, designContext, designDirection, designScreens, DESIGN_PROMPT, directionLine, extractHtml, founderLog, localBrief, localMockup, prepareDesign, SAMPLE_DESIGN_HTML, splitBrief, studioDesign, type Builder, type MockScreen, type Mockup, type StudioResult } from "@founderfloor/shared";
+import { briefComplete, briefContext, BRIEF_PROMPT, builderPrompt, designContext, designDirection, designScreens, DESIGN_PROMPT, directionLine, extractHtml, founderLog, localBrief, localMockup, prepareDesign, SAMPLE_DESIGN_HTML, splitBrief, studioDesign, workLines, type Builder, type MockScreen, type Mockup, type StudioResult } from "@founderfloor/shared";
 import { aiMode, askModel } from "./ai";
 import { useStand } from "./stand";
 import { useFounder } from "./store";
@@ -23,6 +23,7 @@ export function useWorkshop() {
   const memory = useFounder((s) => s.memory);
   const memoryOn = useFounder((s) => s.memoryOn);
   const interviews = useFounder((s) => s.interviews);
+  const lists = useFounder((s) => s.work);
   const mockup = useFounder((s) => s.mockup);
   const setMockup = useFounder((s) => s.setMockup);
   const [writing, setWriting] = useState(false);
@@ -41,8 +42,8 @@ export function useWorkshop() {
   const mine = stand.source !== "rehearsal" && !!r.oneLiner;
   /** What customers said, for the mock-up and the brief: interviews first, then notebook lines in their words. */
   const said = [...interviews.slice(0, 8).map((i) => `${i.who}: ${i.said}`), ...memory.filter((e) => e.kind === "note" || e.kind === "outcome").slice(-6).map((e) => e.text)];
-  /** The work written into tasks, for the brief: what the founder actually did. */
-  const work = memory.filter((e) => e.kind === "work" || e.kind === "decision").slice(-10).map((e) => e.text);
+  /** What the founder wrote on the lists and into tasks, for the brief: what they actually did, in their words. */
+  const work = [...workLines(lists), ...memory.filter((e) => e.kind === "work" || e.kind === "decision").slice(-10).map((e) => e.text)].slice(-24);
   const input = mine ? { name: r.name, oneLiner: r.oneLiner, audience: profile?.audiences, price: r.publicPricing, said, segment: r.segment } : {};
   const seedNow = localMockup(input, profile).seed;
 

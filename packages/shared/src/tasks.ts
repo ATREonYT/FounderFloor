@@ -7,7 +7,7 @@
  * writes it from the profile and the plan when there is a key; these
  * rules write it when there is not, so the page is never empty.
  */
-import { BUILDING, DOOR_RULE, HOUSE_RULES } from "./prompts/index.ts";
+import { BUILDING, DOOR_RULE, HOUSE_RULES, PLAIN } from "./prompts/index.ts";
 import { toneLine, type FounderPlan, type PlanWeek, type Profile } from "./profile.ts";
 
 /** The kind of work decides the room the page is drawn in and the glyph on the door. */
@@ -97,10 +97,10 @@ export function localTaskGuide(text: string, opts: { profile?: Profile | null; w
       { do: "Write their exact words down within an hour of hanging up.", tip: "Quotes, not summaries. You will use them on your sign." },
     ],
     build: [
-      { do: "Write down the one thing this has to do, in one sentence.", tip: "If the sentence has 'and' in it, cut the second half." },
-      { do: "List the three screens or steps a person walks through to get it.", tip: "Sketch them on paper first. Paper is faster to throw away." },
-      { do: "Build the narrowest path that works end to end, rough edges and all.", tip: "No settings, no accounts, no polish. One path." },
-      { do: "Put it in front of one real person and watch them use it.", tip: "Do not help. Where they get stuck is your next task." },
+      { do: "Say in one sentence what it has to do for one person.", tip: "If the sentence has 'and' in it, cut the second half. You do not build anything yourself here." },
+      { do: "Open the Workshop and look at the screens it drew from your words.", tip: "Tap through them. If a word on a screen is wrong, change your sign or your notes and it redraws." },
+      { do: "Send the brief to Lovable and wait for the first working version.", tip: "Copy, paste, press build. A link comes back. That link is your app." },
+      { do: "Give the link to one real person and watch them use it.", tip: "Do not help. Where they get stuck is your next task." },
     ],
     write: [
       { do: "Name the one reader: who exactly is this for?", tip: `Picture one person from ${who}, not a crowd.` },
@@ -135,7 +135,7 @@ export function localTaskGuide(text: string, opts: { profile?: Profile | null; w
   };
   const done: Record<TaskKind, string> = {
     talk: `${n ?? 5} conversations written down, in their words, before the week ends.`,
-    build: "One real person has used it end to end while you watched.",
+    build: "One real person has used the link while you watched, and you wrote down where they got stuck.",
     write: n ? `It is live in ${n} places and you know where the replies came from.` : "It is sent or posted, with one clear ask at the end.",
     research: "Ten lines written, with the surprise on top and one thing that changes.",
     numbers: "This week's numbers are logged in the Office next to last week's.",
@@ -144,7 +144,7 @@ export function localTaskGuide(text: string, opts: { profile?: Profile | null; w
   };
   const starters: Record<TaskKind, string[]> = {
     talk: ["Write me the message I send to ask for fifteen minutes.", "What are the five questions I should ask?", "What if nobody replies?"],
-    build: ["Help me cut this down to the smallest version.", "What should I build first, and what can wait?", "How do I test it without a full product?"],
+    build: ["What exactly do I paste into Lovable?", "What should the first version do, and what can wait?", "The link is here. What do I show people first?"],
     write: ["Draft a first version for me to edit.", "Where should I post this for my audience?", "How do I make the ask at the end clearer?"],
     research: ["Where do I look first?", "How much research is enough here?", "What would change my mind?"],
     numbers: ["Which numbers matter most this week?", "What is a good enough way to track this?", "How do I read these next to last week's?"],
@@ -155,7 +155,7 @@ export function localTaskGuide(text: string, opts: { profile?: Profile | null; w
   return { title, why, time: paceTime[pace][kind], kind, steps: steps[kind], done: done[kind], starters: starters[kind], source: "rehearsal" };
 }
 
-export const TASK_PROMPT = `You turn one line of a founder's four-week plan into a short working page. Return JSON only, with keys: title (the task as a short imperative, under 9 words), why (one sentence on why this matters this week for this founder, under 24 words), time (how long it takes at their pace, under 6 words, like "About 45 minutes" or "Two evenings"), kind (one of talk, build, write, research, numbers, sell, plan), steps (array of 3 to 5 objects with do (one concrete action, under 16 words, starting with a verb) and tip (one line of hard-won advice for that step, under 18 words)), done (one sentence with something countable that says when it is finished, under 18 words), starters (3 questions the founder might ask a coach about this task, each under 12 words, in the founder's own voice). Use the founder's audience and situation; never invent facts about them. Match the tone they asked for. No prose outside the JSON.`;
+export const TASK_PROMPT = `You turn one line of a founder's four-week plan into a short working page. ${PLAIN} Return JSON only, with keys: title (the task as a short imperative, under 9 words), why (one sentence on why this matters this week for this founder, under 24 words), time (how long it takes at their pace, under 6 words, like "About 45 minutes" or "Two evenings"), kind (one of talk, build, write, research, numbers, sell, plan), steps (array of 3 to 5 objects with do (one concrete action, under 16 words, starting with a verb) and tip (one line of hard-won advice for that step, under 18 words)), done (one sentence with something countable that says when it is finished, under 18 words), starters (3 questions the founder might ask a coach about this task, each under 12 words, in the founder's own voice). Use the founder's audience and situation; never invent facts about them. Match the tone they asked for. No prose outside the JSON.`;
 
 /** One guide from the model's reply, or null if the shape is wrong. */
 export function asTaskGuide(v: unknown): Omit<TaskGuide, "source"> | null {
@@ -180,7 +180,7 @@ export function asTaskGuide(v: unknown): Omit<TaskGuide, "source"> | null {
 }
 
 /** What the model is told about the founder and the plan when it writes or discusses a task. */
-export function taskContext(text: string, opts: { profile?: Profile | null; week?: PlanWeek | null; plan?: FounderPlan | null; guide?: TaskGuide | null; notes?: string; ticked?: number[]; /** The founder's notebook, already rendered by founderLog (empty without consent). */ log?: string }): string {
+export function taskContext(text: string, opts: { profile?: Profile | null; week?: PlanWeek | null; plan?: FounderPlan | null; guide?: TaskGuide | null; notes?: string; ticked?: number[]; /** The founder's notebook, already rendered by founderLog (empty without consent). */ log?: string; /** What the founder wrote on the map's lists, already rendered by workBlock. */ lists?: string }): string {
   const p = opts.profile;
   const lines = [
     p ? `Founder: ${p.name || "unnamed"}. Standing: ${p.standing}. Goal: ${p.goal}. Horizon: ${p.horizon}. Pace: ${p.pace}. Audience: ${p.audiences || "not given"}. Likes: ${p.likes.join(", ") || "not given"}. ${toneLine(p.tone)}` : "Founder: no profile yet.",
@@ -189,6 +189,7 @@ export function taskContext(text: string, opts: { profile?: Profile | null; week
     `The task open now: ${text}`,
     opts.guide ? `Steps on the page: ${opts.guide.steps.map((st, i) => `${i + 1}. ${st.do}${opts.ticked?.includes(i) ? " (done)" : ""}`).join(" ")} Finished when: ${opts.guide.done}` : "",
     opts.notes?.trim() ? `The founder's notes on this task: ${opts.notes.trim().slice(0, 1200)}` : "",
+    opts.lists ?? "",
     opts.log ?? "",
   ];
   return lines.filter(Boolean).join("\n");
@@ -203,17 +204,17 @@ You are the desk, helping with exactly one task from the founder's plan; the tas
 export function stepOpener(kind: TaskKind, step: TaskStep): string {
   const ask: Record<TaskKind, string> = {
     talk: "Who did you talk to, and what did they say? Names and their exact words, even the awkward ones.",
-    build: "What did you make, and what does it do end to end right now? What broke?",
+    build: "Which screen did you look at, what would you change, or what link came back? If you are lost, say where.",
     write: "Paste what you wrote, or tell me where it went and what came back.",
-    research: "What did you find? The surprise first, then where it came from.",
+    research: "What did you find out? The surprise first, then where it came from.",
     numbers: "Give me the numbers, even zeros. Where did each one come from?",
     sell: "Who did you ask, what price did you say, and what exactly did they answer?",
     plan: "What did you decide, and what did you decide against? One line each.",
   };
-  return `This step: ${step.do} ${ask[kind]}`;
+  return `${ask[kind]} Write it here, in your own words; I keep it and build on it.`;
 }
 
 export const STEP_DESK_PROMPT = `${HOUSE_RULES}
 ${BUILDING}
 ${DOOR_RULE}
-You are the desk at one step of one task. The founder writes what they did, found, or are thinking, so that it is written down here and not somewhere else. Reply in under 90 words: first reflect the facts back in one line (names, numbers, decisions, in their words), then say the one thing that matters about it, then the single next action. If what they wrote finishes the step, say so and tell them to tick it. If they are stuck, name the smallest thing they can do in twenty minutes. Never praise for its own sake; never ask more than one question.`;
+You are the desk at one step of one task. The founder writes what they did, found, or are thinking, so that it is written down here and not somewhere else. If they ask how to do the step, tell them in plain words, the smallest first move, and which door in the building does it for them. Reply in under 90 words: first reflect the facts back in one line (names, numbers, decisions, in their words), then say the one thing that matters about it, then the single next action. If what they wrote finishes the step, say so and tell them to tick it. If they are stuck, name the smallest thing they can do in twenty minutes. Never praise for its own sake; never ask more than one question.`;

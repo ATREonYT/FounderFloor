@@ -98,7 +98,7 @@ export default function Review() {
 
             <Section k={1} enter={enter} glyph="star" color="#2F6F6A" title="WHAT WENT WELL" items={review.well} />
             <Section k={2} enter={enter} glyph="flask" color="#8C3B2E" title="WHAT TO FIX" items={review.fix} />
-            <Section k={3} enter={enter} glyph="bolt" color="#3B5B92" title="HOW, THIS WEEK" items={review.how} numbered />
+            <Section k={3} enter={enter} glyph="bolt" color="#3B5B92" title="HOW, THIS WEEK · TAP ONE TO DO IT" items={review.how} numbered onOpen={(i) => router.push({ pathname: "/did", params: { id: `review-${review.week}-${i}`, text: review.how[i] } } as Href)} />
 
             <ButtonRow>
               <Button arrow onPress={() => router.replace("/plan" as Href)}>
@@ -123,7 +123,7 @@ export default function Review() {
   );
 }
 
-function Section({ k, enter, glyph, color, title, items, numbered = false }: { k: number; enter: (k: number) => ReturnType<typeof FadeInDown.delay>; glyph: GlyphId; color: string; title: string; items: string[]; numbered?: boolean }) {
+function Section({ k, enter, glyph, color, title, items, numbered = false, onOpen }: { k: number; enter: (k: number) => ReturnType<typeof FadeInDown.delay>; glyph: GlyphId; color: string; title: string; items: string[]; numbered?: boolean; /** Each item opens its own room to write what happened. */ onOpen?: (i: number) => void }) {
   return (
     <Animated.View entering={enter(k)} style={{ gap: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -131,16 +131,18 @@ function Section({ k, enter, glyph, color, title, items, numbered = false }: { k
         <Spec tone="muted">{title}</Spec>
       </View>
       {items.map((t, i) => (
-        <View key={i} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 14, borderWidth: 1, borderColor: shell.line, borderLeftWidth: 4, borderLeftColor: color, padding: 12 }}>
+        <Pressable key={i} onPress={onOpen ? () => onOpen(i) : undefined} disabled={!onOpen} accessibilityRole={onOpen ? "button" : undefined} accessibilityLabel={onOpen ? `${t}. Open it to write what you did` : undefined} style={({ pressed }) => ({ flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 14, borderWidth: 1, borderColor: shell.line, borderLeftWidth: 4, borderLeftColor: color, padding: 12, opacity: pressed ? 0.8 : 1 })}>
           {numbered ? (
             <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
               <Spec tone="ink">{String(i + 1)}</Spec>
             </View>
           ) : null}
-          <Body size="sm" style={{ flex: 1 }}>
-            {t}
-          </Body>
-        </View>
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Body size="sm">{t}</Body>
+            {onOpen ? <Spec tone="accent">How, and write what you did →</Spec> : null}
+          </View>
+          {onOpen ? <Body tone="accent">›</Body> : null}
+        </Pressable>
       ))}
     </Animated.View>
   );

@@ -8,7 +8,7 @@
  * page, and the status line says so.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { asTaskGuide, founderLog, localTaskGuide, stepOpener, taskContext, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
+import { asTaskGuide, founderLog, localTaskGuide, stepOpener, taskContext, workBlock, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
 import { EMPTY_TASK, useFounder, type TaskOutcome, type TaskTurn } from "./store";
 
@@ -27,8 +27,10 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
   const addMemory = useFounder((s) => s.addMemory);
   const memory = useFounder((s) => s.memory);
   const memoryOn = useFounder((s) => s.memoryOn);
+  const lists = useFounder((s) => s.work);
   /** The notebook as the model reads it: nothing until the founder said yes. */
   const log = () => founderLog(memory, memoryOn === true);
+  const listsBlock = () => workBlock(lists);
   const [writing, setWriting] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [source, setSource] = useState<"live" | "rehearsal">(work.guide?.source ?? "rehearsal");
@@ -58,7 +60,7 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
         const reply = await askModel({
           fn: "guide",
           body: { question: "task", task: text, profile, week, plan: plan ? { headline: plan.headline, weeklyGoal: plan.weeklyGoal, target90: plan.target90 } : null, fresh },
-          direct: { system: TASK_PROMPT, turns: [{ role: "user", content: taskContext(text, { profile, week, plan, log: log() }) + (fresh ? "\nWrite it differently from the last time: other steps, other angle." : "") }], maxTokens: 900 },
+          direct: { system: TASK_PROMPT, turns: [{ role: "user", content: taskContext(text, { profile, week, plan, lists: listsBlock(), log: log() }) + (fresh ? "\nWrite it differently from the last time: other steps, other angle." : "") }], maxTokens: 900 },
         });
         const g = asTaskGuide(parseJson(reply));
         if (!alive.current) return;
@@ -119,7 +121,7 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
       void askModel({
         fn: "coach-chat",
         body: { coach: "desk", message: t, turns: turns.slice(0, -1), task: { text, guide, notes: work.notes, ticks: work.ticks } },
-        direct: { system: TASK_DESK_PROMPT, cached: taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, log: log() }), turns, maxTokens: 450 },
+        direct: { system: TASK_DESK_PROMPT, cached: taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, lists: listsBlock(), log: log() }), turns, maxTokens: 450 },
       })
         .then((full) => {
           if (!alive.current) return;
@@ -207,6 +209,7 @@ export function useStepRoom(key: string, text: string, week: PlanWeek | null, st
   const addMemory = useFounder((s) => s.addMemory);
   const memory = useFounder((s) => s.memory);
   const memoryOn = useFounder((s) => s.memoryOn);
+  const lists = useFounder((s) => s.work);
   const [thinking, setThinking] = useState(false);
   const [source, setSource] = useState<"live" | "rehearsal">("rehearsal");
   const [lastError, setLastError] = useState<string | null>(null);
@@ -248,7 +251,7 @@ export function useStepRoom(key: string, text: string, week: PlanWeek | null, st
         return;
       }
       const history = [...turns, { id: "x", role: "you" as const, text: t }].slice(-10).map((m) => ({ role: (m.role === "you" ? "user" : "assistant") as "user" | "assistant", content: m.text }));
-      const ctx = taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, log: founderLog(memory, memoryOn === true) }) + `\nThe step open now: ${step + 1}. ${st.do} Tip on the page: ${st.tip}`;
+      const ctx = taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, lists: workBlock(lists), log: founderLog(memory, memoryOn === true) }) + `\nThe step open now: ${step + 1}. ${st.do} Tip on the page: ${st.tip}`;
       void askModel({
         fn: "coach-chat",
         body: { coach: "desk", message: t, turns: history.slice(0, -1), task: { text, guide, step, notes: work.notes, ticks: work.ticks } },
@@ -274,7 +277,7 @@ export function useStepRoom(key: string, text: string, week: PlanWeek | null, st
           if (alive.current) setThinking(false);
         });
     },
-    [key, step, st, guide, turns, thinking, text, profile, week, plan, work, memory, memoryOn, addTurn, addMemory],
+    [key, step, st, guide, turns, thinking, text, profile, week, plan, work, memory, memoryOn, lists, addTurn, addMemory],
   );
 
   return {

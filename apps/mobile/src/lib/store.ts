@@ -314,6 +314,9 @@ interface FounderState {
   setTaskOutcome(key: string, outcome: TaskOutcome): void;
   /** What was written at one step of a task: the founder's work and the desk's answers. */
   addStepTurn(key: string, step: number, turn: TaskTurn): void;
+  /** The notes on any line the building told the founder to do (a room's list, the week's reading), by the line's id: their words and the desk's answers. */
+  work: Record<string, TaskTurn[]>;
+  addWorkTurn(id: string, turn: TaskTurn): void;
   /** Each week read back, by week number. */
   reviews: Record<number, WeekReview>;
   setReview(r: WeekReview): void;
@@ -431,6 +434,8 @@ export const useFounder = create<FounderState>()(
         const work = { ...(t.work ?? {}), [step]: [...(t.work?.[step] ?? []), turn].slice(-40) };
         set({ tasks: { ...get().tasks, [key]: { ...t, work } } });
       },
+      work: {},
+      addWorkTurn: (id, turn) => set({ work: { ...get().work, [id]: [...(get().work[id] ?? []), turn].slice(-40) } }),
       reviews: {},
       setReview: (r) => set({ reviews: { ...get().reviews, [r.week]: r } }),
       mockup: null,
@@ -497,8 +502,8 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 9,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, ...(persisted as object) }) as unknown as FounderState,
+      version: 10,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

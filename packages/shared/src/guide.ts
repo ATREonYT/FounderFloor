@@ -22,7 +22,7 @@ export function askGuide(record: StandRecord, ticks: string[], stageId?: StageId
   const next = stage.items.find((i) => !ticks.includes(i.id)) ?? stage.items[stage.items.length - 1];
   const rw = runwayMonths({ cash: record.cash, burn: record.burn, mrr: record.mrr });
   const pressure = Number.isFinite(rw) && rw < 6 ? ` Runway is ${fmtMonths(rw)}, so this is the week for it, not next month.` : "";
-  return `The one thing this week: ${next.text.toLowerCase()}.${pressure}\n\n1. Block ninety minutes tomorrow morning before anything else and do only this.\n2. ${next.text}. Done means: ${next.proof.toLowerCase()}.\n3. Put the proof on the stand and tick it here, so the next question is a different one.\n\nWhat is the first of the ninety minutes going to be?`;
+  return `The one thing this week: ${next.text.toLowerCase()}.${pressure}\n\nHow: ${next.how}\n\n1. Block ninety minutes tomorrow morning before anything else and do only this.\n2. ${next.text}. Done means: ${next.proof.toLowerCase()}.\n3. Tap the line on the list and write what happened, then tick it, so the next question is a different one.\n\nWhat is the first of the ninety minutes going to be?`;
 }
 
 export function whereAmI(record: StandRecord, ticks: string[]): string {

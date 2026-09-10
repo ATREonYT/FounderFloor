@@ -17,7 +17,7 @@ import { useGate } from "../../lib/gate";
 import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
-import { ROOM_GLYPH } from "../../lib/glyphs";
+import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
 import { useTour } from "../../lib/tour";
@@ -29,7 +29,7 @@ import { useStand } from "../../lib/stand";
 import { askGuide, whereAmI } from "@founderfloor/shared";
 import { COACHES } from "../../lib/mock";
 
-const DOOR = ["#8C3B2E", "#3B5B92", "#4E6E4E", "#B4762E", "#2F6F6A", "#6B4E71"];
+const DOOR = STAGES.map((s) => ROOM_COLOR[s.id]);
 
 export default function Build() {
   const L = useLayout();
@@ -38,6 +38,7 @@ export default function Build() {
   const bottom = useBottomChrome();
   const ticks = useFounder((s) => s.ticks);
   const toggleTick = useFounder((s) => s.toggleTick);
+  const work = useFounder((s) => s.work);
   const saveDoc = useFounder((s) => s.saveDoc);
   const kpi = useFounder((s) => s.kpi);
   const interviews = useFounder((s) => s.interviews);
@@ -172,7 +173,7 @@ export default function Build() {
         </Plate>
       </ScrollView>
 
-      <Dialogue open={!!open} onClose={() => { setOpen(null); closedStep("room"); }} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tick what is true, not what you intend.">
+      <Dialogue open={!!open} onClose={() => { setOpen(null); closedStep("room"); }} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tap a line for how to do it and to write what you did. Tick what is true, not what you intend.">
         {open ? (
           <View style={{ gap: 12 }}>
             <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} set="workshop" ambient={false} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
@@ -198,14 +199,14 @@ export default function Build() {
                     <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}, ${reviews[w].score} of 100 →` : `Read week ${w} back →`; })()}</Spec>
                   </Pressable>
                 ) : null}
-                <Spec tone="muted" style={{ marginTop: 4 }}>THE ROOM'S OWN LIST</Spec>
+                <Spec tone="muted" style={{ marginTop: 4 }}>THE ROOM'S OWN LIST · TAP A LINE</Spec>
               </View>
             ) : null}
             <Progress value={stageProgress(open, ticks)} label={open.name} right={`${Math.round(stageProgress(open, ticks) * 100)}%`} color={stageProgress(open, ticks) >= 1 ? shell.verify : shell.accent} />
             <View>
               {open.items.map((it, i) => (
                 <View key={it.id} style={{ borderTopWidth: i ? 1 : 0, borderTopColor: shell.line }}>
-                  <Tick done={ticks.includes(it.id)} text={it.text} proof={it.proof} onToggle={() => tick(open, it.id)} />
+                  <Tick done={ticks.includes(it.id)} text={it.text} proof={it.proof} onToggle={() => tick(open, it.id)} written={(work[it.id] ?? []).filter((m) => m.role === "you").length} onOpen={() => { setOpen(null); router.push({ pathname: "/did", params: { id: it.id } } as Href); }} />
                 </View>
               ))}
             </View>

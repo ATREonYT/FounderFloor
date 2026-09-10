@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
-import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, DESK_PROMPT, standBlock, memoryBlock, founderLog, remembers, toneLine, type CoachId } from "@founderfloor/shared";
+import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, DESK_PROMPT, standBlock, memoryBlock, founderLog, workBlock, remembers, toneLine, type CoachId } from "@founderfloor/shared";
 import { effectivePlan } from "./billing";
 import { valueMoment } from "./trial";
 import { askModel, aiMode, AiError } from "./ai";
@@ -76,7 +76,7 @@ export function useReceptionist(coachId?: string) {
     const { founder: f } = ctx.current;
     const who = f.profile ? `\nFounder: ${f.profile.name}. ${toneLine(f.profile.tone)}${f.roadmap ? ` Their plan this month: ${f.roadmap.weeks.map((w) => `week ${w.n} ${w.focus}`).join("; ")}.` : ""}` : "";
     // the notebook is the founder's and goes with every question they said yes to; the staff's own notes between visits stay Pro
-    return who + founderLog(f.memory, f.memoryOn === true) + memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
+    return who + (f.memoryOn === true ? workBlock(f.work) : "") + founderLog(f.memory, f.memoryOn === true) + memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
   };
   /** A note for next time, and the value moment on a coach's first real reply. */
   const remember = (asked: string, said: string) => {
