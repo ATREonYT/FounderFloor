@@ -63,7 +63,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
               <View style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
                 <View style={{ backgroundColor: open ? wash(color, 0.1) : shell.panel, borderRadius: 20, borderWidth: 1.5, borderColor: open ? color : shell.line, padding: 12, gap: 8 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Spec tone="muted">{`WEEK ${w.n} · ${STAGES[roomOfWeek(plan, w.n)].name.toUpperCase()} ROOM`}</Spec>
+                    <Spec tone="muted">{`Week ${w.n} · ${STAGES[roomOfWeek(plan, w.n)].name} room`}</Spec>
                     {open ? (
                       <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 2 }}>
                         <Spec tone="paper">this week</Spec>
@@ -119,7 +119,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
           <Plate tone="panel" radius={radius.lg} padding={12} style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <GlyphTile id="bolt" color={color} size={28} scale={1} />
-              <Spec tone="muted">THIS WEEK</Spec>
+              <Spec tone="muted">This week</Spec>
             </View>
             <Body size="sm" medium style={{ marginTop: 6 }}>
               {plan.weeklyGoal}
@@ -128,7 +128,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
           <Plate tone="panel" radius={radius.lg} padding={12} style={{ flex: 1 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <GlyphTile id="rocket" color={color} size={28} scale={1} />
-              <Spec tone="muted">IN 90 DAYS</Spec>
+              <Spec tone="muted">In 90 days</Spec>
             </View>
             <Body size="sm" medium style={{ marginTop: 6 }}>
               {plan.target90}

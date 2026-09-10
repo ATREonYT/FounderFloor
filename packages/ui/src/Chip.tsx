@@ -7,7 +7,7 @@
 import { Pressable } from "react-native";
 import { Plate } from "./Plate";
 import { Body, Spec } from "./Text";
-import { radius, shell } from "./tokens";
+import { radius } from "./tokens";
 
 export function Chip({ children, hint, onPress, grow = true }: { children: string; hint?: string; onPress?: () => void; grow?: boolean }) {
   return (
@@ -16,7 +16,7 @@ export function Chip({ children, hint, onPress, grow = true }: { children: strin
       accessibilityRole="button"
       style={({ pressed }) => [{ opacity: pressed ? 0.72 : 1 }, grow ? { flexGrow: 1, flexBasis: 156 } : null]}
     >
-      <Plate tone="paperSign" radius={radius.xl} padding={12} style={{ flex: 1 }} lineColor={shell.line}>
+      <Plate tone="panel" radius={radius.xl} padding={12} style={{ flex: 1 }}>
         <Body size="sm">{children}</Body>
         {hint ? (
           <Spec tone="faint" style={{ marginTop: 4 }}>

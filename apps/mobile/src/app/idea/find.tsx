@@ -77,7 +77,7 @@ export default function Find() {
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: shell.paper }} contentContainerStyle={{ paddingTop: L.insets.top + 16, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 16 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: L.insets.top + 16, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 16 }} keyboardShouldPersistTaps="handled">
       <Pressable onPress={() => router.replace("/start")} accessibilityRole="button" style={{ alignSelf: "flex-start" }}>
         <Spec tone="muted">← The doors</Spec>
       </Pressable>

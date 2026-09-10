@@ -87,7 +87,7 @@ export default function Check() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 16, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 16 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <Pressable onPress={() => router.replace("/start")} accessibilityRole="button">

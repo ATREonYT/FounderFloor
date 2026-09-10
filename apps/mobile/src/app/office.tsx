@@ -85,15 +85,15 @@ export default function Office() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <TopBar left={<Back />} center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <StopLine id="customer" label="THE OFFICE" />
+        <StopLine id="customer" label="The office" />
         <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The Office">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <GlyphTile id="coin" color="#5E7C93" size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Spec tone="muted">{`WEEK ${wk.slice(-2)}`}</Spec>
+              <Spec tone="muted">{`Week ${wk.slice(-2)}`}</Spec>
               <Body medium numberOfLines={1}>{d ? `${fmtMoney(d.latest.revenue, cur)} this month · ${d.revenue}` : "Nothing logged yet"}</Body>
             </View>
           </View>
@@ -145,7 +145,7 @@ export default function Office() {
                     <View style={{ flexDirection: "row", gap: 12 }}>
                       <Keeper look={theo.look} scale={1} color={theo.color} />
                       <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                        <Spec tone="muted">THEO · THE READING</Spec>
+                        <Spec tone="muted">Theo · The reading</Spec>
                         <Body size="sm">{readingPreview(d.latest, d.prev, cur)}</Body>
                         <Body size="sm" medium>
                           {MINES["office-reading"].title}

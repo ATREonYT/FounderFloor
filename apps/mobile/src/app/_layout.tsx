@@ -6,6 +6,7 @@
  */
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { TrialSheet } from "../components/TrialSheet";
 import { TourOverlay } from "../components/TourOverlay";
@@ -13,7 +14,7 @@ import { useEffect } from "react";
 import { Platform, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { FONT_MAP, PIXELATED_CSS, shell, applyScheme } from "@founderfloor/ui";
+import { FONT_MAP, Ground, PIXELATED_CSS, shell, applyScheme } from "@founderfloor/ui";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -32,11 +33,15 @@ export default function RootLayout() {
     document.head.appendChild(s);
     return () => s.remove();
   }, [scheme]);
-  if (!loaded) return <View style={{ flex: 1, backgroundColor: shell.paper }} />;
+  if (!loaded) return <View style={{ flex: 1 }} />;
   return (
     <GestureHandlerRootView key={scheme} style={{ flex: 1, backgroundColor: shell.paper }}>
+      {/* the hall's lights, once, behind every page: what the glass refracts */}
+      <Ground />
       <SafeAreaProvider>
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: shell.paper } }}>
+        {/* the navigators paint no ground of their own: the lights show through every page */}
+        <ThemeProvider value={{ ...(scheme === "dark" ? DarkTheme : DefaultTheme), colors: { ...(scheme === "dark" ? DarkTheme : DefaultTheme).colors, background: "transparent", card: "transparent" } }}>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="sign-in" options={{ presentation: "modal" }} />
           <Stack.Screen name="inbox" options={{ presentation: "card" }} />
@@ -60,6 +65,7 @@ export default function RootLayout() {
           <Stack.Screen name="floor" options={{ presentation: "card" }} />
           <Stack.Screen name="workshop" options={{ presentation: "card" }} />
         </Stack>
+        </ThemeProvider>
         <TrialSheet />
         <TourOverlay />
       </SafeAreaProvider>

@@ -6,7 +6,7 @@
  */
 import { ScrollView, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { Bars, Body, Booth, Button, Display, Keeper, Plate, Spec, art, radius, shell, useLayout } from "@founderfloor/ui";
+import { Bars, Body, Booth, Button, Display, Glow, Keeper, Plate, Spec, art, radius, scheme, shell, useLayout } from "@founderfloor/ui";
 import { TopBar } from "../components/TopBar";
 import { Pressable } from "react-native";
 import { COLUMN } from "../lib/chrome";
@@ -24,7 +24,7 @@ export default function Coaches() {
   const floor = art.floors[(stand.hall as keyof typeof art.floors) ?? "main-hall"] ?? art.floors["main-hall"];
   const cols = L.compact ? 1 : 2;
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <TopBar left={<Pressable onPress={() => router.back()} accessibilityRole="button" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}><Spec tone="ink">← Back</Spec></Pressable>} center={<Spec tone="muted">{`${stand.name} · four at the counter`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 240, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
         <View style={{ gap: 8, paddingBottom: 4 }}>
@@ -36,7 +36,7 @@ export default function Coaches() {
 
         {/* the staff at the booth */}
         <Plate tone="panel" radius={radius.xl}>
-          <View style={{ backgroundColor: floor.a, borderBottomWidth: 4, borderBottomColor: floor.wall, paddingVertical: 16, alignItems: "center" }}>
+          <View style={{ backgroundColor: scheme() === "dark" ? "rgba(255,255,255,0.06)" : floor.a, borderBottomWidth: 4, borderBottomColor: scheme() === "dark" ? "rgba(255,255,255,0.10)" : floor.wall, paddingVertical: 16, alignItems: "center" }}>
             <Booth swatch={stand.swatch} carpetSwatch={stand.carpetSwatch} pattern={stand.pattern} look={stand.look} scale={L.compact ? 1 : 2} parts={["plinth", "carpet", "banner", "counter"]} />
             <View style={{ flexDirection: "row", gap: L.compact ? 16 : 40, marginTop: -8 }}>
               {COACHES.map((c) => (
@@ -52,12 +52,8 @@ export default function Coaches() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           {COACHES.map((c) => (
             <Plate key={c.id} tone="panel" radius={radius.xl} style={{ flexBasis: cols === 1 ? "100%" : "48%", flexGrow: 1 }}>
-              <View style={{ flexDirection: "row", height: 6 }}>
-                {Array.from({ length: 14 }).map((_, i) => (
-                  <View key={i} style={{ flex: 1, backgroundColor: i % 2 ? shell.panel : c.color }} />
-                ))}
-              </View>
               <View style={{ padding: 16, gap: 12 }}>
+                <Glow color={c.color} x={0.08} y={0.05} r={0.6} strength={0.4} />
                 <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
                   <Keeper look={c.look} scale={2} color={c.color} />
                   <View style={{ flex: 1, minWidth: 0 }}>

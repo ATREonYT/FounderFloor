@@ -44,8 +44,8 @@ export default function You() {
     { glyph: "leaf", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook switch", to: "/settings" },
   ];
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar left={<View />} center={<Spec tone="muted">YOU</Spec>} />
+    <View style={{ flex: 1 }}>
+      <TopBar left={<View />} center={<Spec tone="muted">You</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
         {/* who you are */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -73,7 +73,7 @@ export default function You() {
         <Pressable onPress={() => router.push("/stand" as Href)} accessibilityRole="button" accessibilityLabel="Your company" style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
           <Plate tone="panel" radius={radius.xl} padding={16}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Spec tone="muted" style={{ flex: 1 }}>YOUR COMPANY</Spec>
+              <Spec tone="muted" style={{ flex: 1 }}>Your company</Spec>
               <RankBadge monthlyRevenue={r.mrr} />
             </View>
             <Display size="lg" style={{ marginTop: 8 }}>{stand.name || "No name on the sign yet"}</Display>

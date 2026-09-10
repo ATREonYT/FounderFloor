@@ -52,8 +52,8 @@ export default function Today() {
   const today = new Date();
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
-      <TopBar center={<Spec tone="muted">{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }).toUpperCase()}</Spec>} />
+    <View style={{ flex: 1 }}>
+      <TopBar center={<Spec tone="muted">{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
         <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood="idle" scale={2} height={L.compact ? 160 : 190} ambient={focused} set="lobby">
           <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "day one" : stand.streak ? `${stand.streak}-day streak` : "day one"} />
@@ -66,7 +66,7 @@ export default function Today() {
             <Plate tone="panel" radius={radius.xxl} padding={0} ring={wash(color, 0.5)}>
               <View style={{ backgroundColor: wash(color, 0.1), borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <GlyphTile id={plan ? ROOM_GLYPH[room.id] ?? "bolt" : "bolt"} color={color} size={32} scale={1} />
-                <Spec tone="muted" style={{ flex: 1 }}>{!plan ? "FIRST THING" : next ? `NEXT UP · WEEK ${wk} · ${room.name.toUpperCase()} ROOM` : `WEEK ${wk} · ALL DONE`}</Spec>
+                <Spec tone="muted" style={{ flex: 1 }}>{!plan ? "First thing" : next ? `Next up · Week ${wk} · ${room.name} room` : `Week ${wk} · All done`}</Spec>
                 {next?.guide?.time ? <Spec tone="faint">{next.guide.time}</Spec> : null}
               </View>
               <View style={{ padding: 16, gap: 14 }}>

@@ -49,7 +49,7 @@ export default function Did() {
 
   if (!r.item) {
     return (
-      <View style={{ flex: 1, backgroundColor: shell.paper, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
         <Body tone="muted">That line is not on a list any more.</Body>
         <Button variant="secondary" onPress={back}>
           Back
@@ -60,13 +60,13 @@ export default function Did() {
   const item = r.item;
   const color = item.room ? ROOM_COLOR[item.room.id] : "#3B5B92";
   const glyph = item.room ? ROOM_GLYPH[item.room.id] ?? "bolt" : "bolt";
-  const label = item.room ? `${item.room.name.toUpperCase()} ROOM · ROOM ${item.room.n} OF 6` : "FROM THE WEEK'S READING";
+  const label = item.room ? `${item.room.name} room · Room ${item.room.n} of 6` : "FROM THE WEEK'S READING";
   const status = r.quota ? r.quota : r.source === "live" ? "Live · kept here, in your notebook, and read by the desk and the Workshop" : aiMode() === "rehearsal" ? "Practice mode · kept here and in your notebook" : r.lastError ? `Practice mode · ${r.lastError}` : "Kept here and in your notebook";
   const avatar = <Keeper look={RECEPTIONIST.look} scale={1} framed color={color} />;
   const mine = r.turns.filter((m) => m.role === "you").length;
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         {/* the line, pinned: what it is, and the tick */}
         <View style={{ paddingTop: L.insets.top + 8, paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 12, backgroundColor: wash(color, 0.1), borderBottomWidth: 1.5, borderBottomColor: wash(color, 0.35) }}>
@@ -98,8 +98,8 @@ export default function Did() {
               </View>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <Spec tone="faint">{mine ? `${mine} ${mine === 1 ? "LINE" : "LINES"} WRITTEN` : "NOTHING WRITTEN YET"}</Spec>
-              <Spec tone="faint">{r.ticked ? "DONE" : "TICK THE CIRCLE WHEN TRUE"}</Spec>
+              <Spec tone="faint">{mine ? `${mine} ${mine === 1 ? "line" : "lines"} written` : "Nothing written yet"}</Spec>
+              <Spec tone="faint">{r.ticked ? "DONE" : "Tick the circle when true"}</Spec>
             </View>
           </View>
         </View>
@@ -108,7 +108,7 @@ export default function Did() {
           {/* how to do it, for someone who never has */}
           <Plate tone="panel" radius={radius.xl} padding={14}>
             <View style={{ gap: 8 }}>
-              <Spec tone="muted">HOW TO DO IT</Spec>
+              <Spec tone="muted">How to do it</Spec>
               <Body>{item.how}</Body>
               {item.door ? (
                 <View style={{ flexDirection: "row", marginTop: 2 }}>

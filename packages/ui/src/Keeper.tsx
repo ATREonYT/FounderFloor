@@ -10,7 +10,13 @@ import { View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, cancelAnimation } from "react-native-reanimated";
 import { Sprite, type SpriteId } from "./Sprite";
 import { Booth } from "./Booth";
-import { radius, shell } from "./tokens";
+import { radius } from "./tokens";
+import { alpha, scheme } from "./theme";
+
+function wash(hex: string, a: number): string {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
 
 export type Look = { skin: number; outfit: number; hair: number };
 
@@ -40,7 +46,9 @@ export function Keeper({ look, scale = 2, speaking = false, framed = true, color
         width: w + 8 * scale,
         height: h + 4 * scale,
         borderRadius: radius.md,
-        backgroundColor: color ? color : shell.well,
+        backgroundColor: color ? wash(color, scheme() === "dark" ? 0.55 : 0.75) : alpha.wellFill(),
+        borderWidth: 1,
+        borderColor: color ? wash(color, 0.5) : alpha.hairline(),
         alignItems: "center",
         justifyContent: "flex-end",
         overflow: "hidden",

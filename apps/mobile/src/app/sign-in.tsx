@@ -64,7 +64,7 @@ export default function SignIn() {
   const cta = { in: "Walk in", new: "Take the badge", verify: "Confirm", forgot: "Send the code", reset: "Set it and walk in" }[mode];
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 24, paddingBottom: L.insets.bottom + 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 520, alignSelf: "center", gap: 20 }} keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

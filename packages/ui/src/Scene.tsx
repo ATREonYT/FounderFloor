@@ -17,6 +17,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, type LayoutChangeEvent } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, useReducedMotion, cancelAnimation } from "react-native-reanimated";
+import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { Sprite, spriteMeta, type SpriteId } from "./Sprite";
 import { SpriteCycle } from "./SpriteCycle";
 import { art, shell } from "./tokens";
@@ -199,10 +200,8 @@ function Walker({ w, width, floorH, scale }: { w: SceneWalker; width: number; fl
 export function Scene({
   set = "lobby",
   height = 172,
-  scale = 2,
-  radiusPx = 20,
+  radiusPx = 22,
   color,
-  ambient = true,
   children,
   accessibilityLabel,
 }: {
@@ -210,32 +209,43 @@ export function Scene({
   height?: number;
   scale?: 1 | 2 | 3;
   radiusPx?: number;
-  /** A wash over the wall (a keeper's colour, a door's). Defaults to the hall's own light. */
+  /** The glow's colour (a keeper's, a room's). Defaults to the hall's own light. */
   color?: string;
   ambient?: boolean;
-  /** Laid over the scene, bottom-left, for a title or a chip. */
+  /** Laid over the band, bottom-left, for a title or a chip. */
   children?: ReactNode;
   accessibilityLabel?: string;
 }) {
-  const [width, setWidth] = useState(360);
-  const s = SCENE_SETS[set];
-  const floorH = Math.round(height * 0.38);
+  // the night hall: a page header is a short pane of glass lit in its colour, not a tiled room; the set only picks a default light
   const dark = scheme() === "dark";
-  const ground = color ? washHex(color, dark ? 0.26 : 0.16) : dark ? shell.panel : lighten(art.floors[s.hall].a);
+  const light = color ?? HALL_LIGHT[SCENE_SETS[set].hall];
+  const h = Math.min(height, 84);
   return (
-    <View
-      onLayout={(e: LayoutChangeEvent) => setWidth(Math.round(e.nativeEvent.layout.width))}
-      accessibilityRole={accessibilityLabel ? "image" : undefined}
-      accessibilityLabel={accessibilityLabel}
-      style={{ height, borderRadius: radiusPx, overflow: "hidden", backgroundColor: ground, position: "relative" }}
-    >
-      <Backdrop hall={s.hall} floorH={floorH} scale={scale} width={width} />
-      <Furniture set={set} width={width} floorH={floorH} scale={scale} ambient={ambient} />
-      {children ? (
-        <View style={{ position: "absolute", left: 12, right: 12, bottom: 10, flexDirection: "row" }}>
-          <View style={{ backgroundColor: dark ? "rgba(18,20,24,0.78)" : "rgba(255,255,255,0.84)", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, maxWidth: "100%" }}>{children}</View>
-        </View>
-      ) : null}
+    <View accessibilityRole={accessibilityLabel ? "image" : undefined} accessibilityLabel={accessibilityLabel} style={{ height: h, borderRadius: radiusPx, overflow: "hidden", position: "relative", justifyContent: "center", paddingHorizontal: 14, backgroundColor: dark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.6)", borderWidth: 1, borderColor: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)" }}>
+      <BandGlow color={light} />
+      {children ? <View style={{ flexDirection: "row" }}>{children}</View> : null}
+    </View>
+  );
+}
+
+/** Each hall's own light, for a header that names no colour. */
+const HALL_LIGHT: Record<Hall, string> = { "main-hall": "#4C7DFF", "indie-alley": "#E4A85B", "ramen-district": "#FF6B3D", "cofounder-row": "#E4C77A", "tutorial-hall": "#6FD3E0" };
+
+function BandGlow({ color }: { color: string }) {
+  const dark = scheme() === "dark";
+  const id = `band${color.replace("#", "")}`;
+  return (
+    <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }}>
+      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <Defs>
+          <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={color} stopOpacity={dark ? 0.55 : 0.42} />
+            <Stop offset="0.6" stopColor={color} stopOpacity={dark ? 0.18 : 0.14} />
+            <Stop offset="1" stopColor={color} stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Circle cx={82} cy={10} r={70} fill={`url(#${id})`} />
+      </Svg>
     </View>
   );
 }
@@ -258,9 +268,10 @@ export function Glyph({ id, tone = "ink", scale = 2 }: { id: "bolt" | "leaf" | "
 
 /** A glyph in a soft rounded well, the app's icon tile. */
 export function GlyphTile({ id, color, size = 40, scale = 2 }: { id: Parameters<typeof Glyph>[0]["id"]; color?: string; size?: number; scale?: 1 | 2 | 3 }) {
-  const bg = color ? washHex(color, scheme() === "dark" ? 0.32 : 0.18) : shell.well;
+  const dark = scheme() === "dark";
+  const bg = color ? washHex(color, dark ? 0.28 : 0.16) : dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
   return (
-    <View style={{ width: size, height: size, borderRadius: Math.round(size / 3), backgroundColor: bg, alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: size, height: size, borderRadius: Math.round(size / 3), backgroundColor: bg, borderWidth: 1, borderColor: color ? washHex(color, dark ? 0.35 : 0.22) : dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)", alignItems: "center", justifyContent: "center" }}>
       <Glyph id={id} tone="auto" scale={scale} />
     </View>
   );

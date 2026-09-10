@@ -29,13 +29,13 @@ export default function Settings() {
     say(r.ok ? (next.daily === "off" && !next.friday ? "Reminders off." : "Reminders set.") : r.reason ?? "Could not set that.");
   };
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
         <Scene set="office" height={L.compact ? 132 : 160} radiusPx={radius.xl} ambient={false} accessibilityLabel="Settings">
-          <Spec tone="muted">{auth ? auth.email || auth.name : "NOT SIGNED IN"}</Spec>
+          <Spec tone="muted">{auth ? auth.email || auth.name : "Not signed in"}</Spec>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>Settings</Display>
 

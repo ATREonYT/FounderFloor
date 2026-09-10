@@ -23,7 +23,7 @@ export default function Floor() {
   const url = `${SITE}/floor/${hallId}`;
   const clear = 0;
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <TopBar left={<Back />} center={<Pill label={hall.name} meta={`${hall.here} here`} live onPress={() => setPick(true)} />} />
       {stand.source !== "floor" ? (
         <View style={{ paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 8 }}>

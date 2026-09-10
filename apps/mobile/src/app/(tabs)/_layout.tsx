@@ -20,14 +20,14 @@ export default function TabsLayout() {
   const rail = !L.compact;
   const go = (k: string) => router.navigate(`/${k}` as Href);
   return (
-    <View style={{ flex: 1, flexDirection: rail ? "row" : "column", backgroundColor: shell.paper }}>
+    <View style={{ flex: 1, flexDirection: rail ? "row" : "column" }}>
       {rail ? (
         <View style={{ paddingLeft: 12, paddingTop: L.insets.top + 12, paddingBottom: L.insets.bottom + 12, justifyContent: "center" }}>
           <Menu active={active} onSelect={go} />
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
-        <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: shell.paper }, animation: "none", lazy: true }}>
+        <Tabs tabBar={() => null} screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: "transparent" }, animation: "none", lazy: true }}>
           <Tabs.Screen name="today" />
           <Tabs.Screen name="build" />
           <Tabs.Screen name="reception" />

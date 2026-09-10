@@ -11,6 +11,7 @@ import { AccessibilityInfo, View } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { Spec } from "./Text";
 import { ease, ms, radius, shell, u } from "./tokens";
+import { alpha } from "./theme";
 
 export function Progress({
   value,
@@ -47,7 +48,7 @@ export function Progress({
           {right ? <Spec tone="ink">{right}</Spec> : null}
         </View>
       ) : null}
-      <View style={{ height, backgroundColor: shell.well, borderRadius: radius.full, overflow: "hidden", borderWidth: 1, borderColor: shell.line }}>
+      <View style={{ height, backgroundColor: alpha.wellFill(), borderRadius: radius.full, overflow: "hidden", borderWidth: 1, borderColor: alpha.hairline() }}>
         <Animated.View style={[{ height: "100%", backgroundColor: color, minWidth: v > 0 ? u : 0 }, fill]} />
       </View>
     </View>

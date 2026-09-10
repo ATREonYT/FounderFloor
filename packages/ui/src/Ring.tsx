@@ -17,6 +17,7 @@ import Svg, { Circle } from "react-native-svg";
 import Animated, { Easing, useAnimatedProps, useReducedMotion, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
 import { Display, Spec } from "./Text";
 import { ease, shell } from "./tokens";
+import { scheme } from "./theme";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -25,7 +26,7 @@ export function Ring({
   size = 72,
   stroke = 8,
   color = shell.accent,
-  track = "rgba(18,23,27,0.10)",
+  track,
   label,
   sub,
   delay = 0,
@@ -60,7 +61,7 @@ export function Ring({
       accessibilityValue={{ min: 0, max: 100, now: Math.round(v * 100) }}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track} strokeWidth={stroke} fill="none" />
+        <Circle cx={size / 2} cy={size / 2} r={r} stroke={track ?? (scheme() === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)")} strokeWidth={stroke} fill="none" />
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}

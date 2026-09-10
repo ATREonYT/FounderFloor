@@ -29,8 +29,8 @@ export function Road() {
   return (
     <Plate tone="panel" radius={radius.xl} padding={0}>
       <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-        <Spec tone="muted">THE ROAD</Spec>
-        <Spec tone="faint">{`STOP ${road.now.n} OF 7 · ${road.done} DONE`}</Spec>
+        <Spec tone="muted">The road</Spec>
+        <Spec tone="faint">{`Stop ${road.now.n} of 7 · ${road.done} done`}</Spec>
       </View>
       <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
         {road.stops.map((s, i) => {
@@ -49,7 +49,7 @@ export function Road() {
                     {s.title}
                   </Body>
                   {s.progress ? <Spec tone="faint">{s.progress}</Spec> : null}
-                  {s.state === "done" ? <Spec tone="faint">DONE</Spec> : null}
+                  {s.state === "done" ? <Spec tone="faint">Done</Spec> : null}
                   <Body tone={on ? "accent" : "muted"} accessibilityElementsHidden importantForAccessibility="no">›</Body>
                 </View>
                 {on ? (
@@ -102,7 +102,7 @@ export function StopLine({ id, label }: { id: StopId; label?: string }) {
   return (
     <Pressable onPress={() => router.push("/today" as Href)} accessibilityRole="button" accessibilityLabel={`Stop ${stop.n} of 7: ${stop.title}. Open the road`} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.7 : 1 })}>
       <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: look.color }} />
-      <Spec tone="muted">{`${label ? `${label} · ` : ""}STOP ${stop.n} OF 7`}</Spec>
+      <Spec tone="muted">{`${label ? `${label} · ` : ""}stop ${stop.n} of 7`}</Spec>
     </Pressable>
   );
 }

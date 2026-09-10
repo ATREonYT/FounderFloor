@@ -12,7 +12,7 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import Animated, { FadeInDown, FadeInRight, FadeOutLeft, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
 import { LIKES, GOALS, PLAN_PROMPT, localPlan, asPlan, doorFor, founderLog, type Profile, type FounderPlan, type Standing, type Goal, type Horizon, type Pace, type Tone } from "@founderfloor/shared";
-import { Body, Button, Display, Glyph, Input, Keeper, Plate, Spec, Tap, Thinking, art, onDark, radius, scheme, shell, useLayout, wash, type GlyphId, type Mood } from "@founderfloor/ui";
+import { Body, Button, Display, Glyph, Input, Keeper, Plate, Spec, Tap, Thinking, art, onDark, radius, scheme, shell, useLayout, wash, type GlyphId, type Mood, alpha } from "@founderfloor/ui";
 import { RECEPTIONIST } from "../lib/mock";
 import { useFounder } from "../lib/store";
 import { askModel, parseJson, aiMode } from "../lib/ai";
@@ -200,7 +200,7 @@ export default function Welcome() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       {/* a wash in the step's colour behind the top of the screen */}
       {/* a wash in the step's colour that fades out behind the header, in bands */}
       <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0 }}>
@@ -218,7 +218,7 @@ export default function Welcome() {
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
             <Keeper look={RECEPTIONIST.look} scale={2} color={wash(color, 0.35)} speaking={mood !== "idle"} />
-            <View style={{ flex: 1, backgroundColor: scheme() === "dark" ? shell.panel : art.bubblePaper, borderWidth: 1.5, borderColor: shell.ink, borderRadius: 20, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10 }}>
+            <View style={{ flex: 1, backgroundColor: alpha.raisedFill(), borderWidth: 1, borderColor: alpha.hairline(), borderRadius: 20, borderBottomLeftRadius: 6, paddingHorizontal: 14, paddingVertical: 10 }}>
               <Spec tone="muted">The desk</Spec>
               <Body size="sm">{step === "plan" && plan ? plan.headline : SAY[step]}</Body>
             </View>
@@ -310,7 +310,7 @@ export default function Welcome() {
           </Animated.View>
 
         </ScrollView>
-        <View style={{ paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: L.insets.bottom + 12, paddingTop: 10, width: "100%", maxWidth: 560, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: shell.paper, borderTopWidth: 1, borderTopColor: shell.line }}>
+        <View style={{ paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: L.insets.bottom + 12, paddingTop: 10, width: "100%", maxWidth: 560, alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 12, borderTopWidth: 1, borderTopColor: alpha.hairline() }}>
           {i > 0 && step !== "plan" ? (
             <Button variant="ghost" onPress={() => setI(i - 1)}>
               Back

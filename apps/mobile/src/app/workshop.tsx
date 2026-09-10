@@ -78,18 +78,18 @@ export default function Workshop() {
   const posterHtml = useMemo(() => mockupPoster(m, w.designHtml), [m, w.designHtml]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
             <Spec tone="ink">← Back</Spec>
           </Pressable>
-          <StopLine id="app" label="THE WORKSHOP" />
+          <StopLine id="app" label="The workshop" />
         </View>
         <Scene set="workshop" height={L.compact ? 130 : 160} radiusPx={radius.xl} color="#A28457" accessibilityLabel="The workshop">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <GlyphTile id="cube" color="#A28457" size={28} scale={1} />
-            <Spec tone="ink">{m.source === "sample" ? "A SAMPLE" : w.designed ? "DESIGNED FOR YOU" : "DRAWN BY THE STUDIO"}</Spec>
+            <Spec tone="ink">{m.source === "sample" ? "A sample" : w.designed ? "Designed for you" : "Drawn by the studio"}</Spec>
           </View>
         </Scene>
         <View style={{ gap: 6 }}>
@@ -142,7 +142,7 @@ export default function Workshop() {
         {/* the design: the brief first, then the app designed to it; asked again, a direction drawn at random */}
         <Plate tone="panel" radius={radius.xl} padding={14} ring={w.designed ? "#A28457" : undefined}>
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-            <Spec tone="muted">THE DESIGN</Spec>
+            <Spec tone="muted">The design</Spec>
             {w.canDesign ? (
               <Pressable onPress={w.redesign} disabled={w.designing || w.writing} accessibilityRole="button" accessibilityLabel="Design it again">
                 <Spec tone="accent">{w.designing ? "Designing…" : w.designed ? "A different take ↻" : "Design it ↻"}</Spec>
@@ -175,7 +175,7 @@ export default function Workshop() {
         {w.studio ? (
           <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { opacity: 0.6 } : undefined}>
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-              <Spec tone="muted">{w.designed ? "THE STUDIO'S OWN TAKE" : "THE STUDIO"}</Spec>
+              <Spec tone="muted">{w.designed ? "The studio's own take" : "The studio"}</Spec>
               <Pressable onPress={w.anotherTake} accessibilityRole="button" accessibilityLabel="Another take">
                 <Spec tone="accent">Another take ↻</Spec>
               </Pressable>
@@ -184,7 +184,7 @@ export default function Workshop() {
               {w.studio.line}
             </Body>
             <Spec tone="faint" style={{ marginTop: 4 }}>{`Take ${w.studio.seed + 1}. The palette, the type and the shapes come from the tables for this kind of product; every take fits it and looks different.`}</Spec>
-            <Spec tone="muted" style={{ marginTop: 14 }}>READ AS</Spec>
+            <Spec tone="muted" style={{ marginTop: 14 }}>Read as</Spec>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
               {[...new Set([w.studio.product, ...w.studio.readings])].slice(0, 6).map((t) => {
                 const on = t === w.studio?.product;
@@ -221,11 +221,11 @@ export default function Workshop() {
 
         {/* the path and what it keeps */}
         <Plate tone="panel" radius={radius.xl} padding={14}>
-          <Spec tone="muted">THE ONE PATH</Spec>
+          <Spec tone="muted">The one path</Spec>
           <Body size="sm" style={{ marginTop: 4 }}>
             {m.path}
           </Body>
-          <Spec tone="muted" style={{ marginTop: 10 }}>WHAT IT KEEPS</Spec>
+          <Spec tone="muted" style={{ marginTop: 10 }}>What it keeps</Spec>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
             {m.keeps.map((kp) => (
               <View key={kp} style={{ backgroundColor: shell.well, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
@@ -238,7 +238,7 @@ export default function Workshop() {
         {/* the brief */}
         <Plate tone="panel" radius={radius.xl} padding={14}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Spec tone="muted" style={{ flex: 1 }}>THE BRIEF · THE BIG PROMPT</Spec>
+            <Spec tone="muted" style={{ flex: 1 }}>The brief · The big prompt</Spec>
             <Pressable onPress={() => setShowBrief((v) => !v)} accessibilityRole="button">
               <Spec tone="accent">{showBrief ? "Hide" : "Read it"}</Spec>
             </Pressable>
@@ -324,11 +324,11 @@ export default function Workshop() {
         {edit ? (
           <View style={{ gap: 12 }}>
             <Input label="HEADLINE" value={edit.headline} onChangeText={(v) => setEdit({ ...edit, headline: v })} />
-            <Input label="UNDER IT" value={edit.sub} onChangeText={(v) => setEdit({ ...edit, sub: v })} multiline />
-            <Input label="THE ONE BUTTON" value={edit.cta} onChangeText={(v) => setEdit({ ...edit, cta: v })} />
+            <Input label="Under it" value={edit.sub} onChangeText={(v) => setEdit({ ...edit, sub: v })} multiline />
+            <Input label="The one button" value={edit.cta} onChangeText={(v) => setEdit({ ...edit, cta: v })} />
             {edit.kind === "pricing" ? <Input label="PRICE" value={edit.price ?? ""} onChangeText={(v) => setEdit({ ...edit, price: v })} /> : null}
             {edit.bullets.map((b, n) => (
-              <Input key={n} label={`LINE ${n + 1}`} value={b} onChangeText={(v) => setEdit({ ...edit, bullets: edit.bullets.map((x, q) => (q === n ? v : x)) })} />
+              <Input key={n} label={`Line ${n + 1}`} value={b} onChangeText={(v) => setEdit({ ...edit, bullets: edit.bullets.map((x, q) => (q === n ? v : x)) })} />
             ))}
             <ButtonRow>
               <Button onPress={() => { w.editScreen(i, edit); setEdit(null); say("Changed."); }}>Keep</Button>

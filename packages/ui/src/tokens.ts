@@ -14,7 +14,7 @@
 // Mutable on purpose: theme.ts swaps every value for the dark scheme and the
 // root remounts, so components keep reading `shell.x` at render and never
 // carry a stale colour. Never destructure a colour at module scope.
-export type ShellKey = "panel" | "paper" | "well" | "line" | "faint" | "muted" | "strong" | "ink" | "blackout" | "accent" | "accentLift" | "accentSoft" | "accentFill" | "gold" | "goldDeep" | "fountain" | "verify";
+export type ShellKey = "panel" | "paper" | "well" | "line" | "faint" | "muted" | "strong" | "ink" | "blackout" | "accent" | "accentLift" | "accentSoft" | "accentFill" | "onAccent" | "gold" | "goldDeep" | "fountain" | "verify";
 export const shell: Record<ShellKey, string> = {
   panel: "#FAFDFF", // foamcore — cards, header, footer
   paper: "#EDF0F4", // screed — page ground, inputs
@@ -28,7 +28,8 @@ export const shell: Record<ShellKey, string> = {
   accent: "#BE241B", // tarp — CTAs, live dots (on paper)
   accentLift: "#E05B4C", // tarp-lift — the accent ON DARK grounds only
   accentSoft: "#FBE1DD", // tarp-wash
-  accentFill: "#BE241B", // the accent as a fill under paper text: the same red by day, a deeper cut by night so white still clears 4.5:1
+  accentFill: "#F2613F", // the accent as a fill: ember, under ink text in both schemes
+  onAccent: "#101418", // the text on an ember fill: ink, never white (6.5:1 by night, 5.8:1 by day)
   gold: "#B18C39", // brass — membership fills/dots/borders only
   goldDeep: "#775800", // brass-deep — membership as TEXT
   fountain: "#207582", // WAYFINDING ONLY — input focus
@@ -91,15 +92,15 @@ export const u = 4;
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 } as const;
 
 /** Radii are 1u/2u/3u/4u and CONCENTRIC (child = parent − gap). */
-export const radius = { sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, full: 999 } as const;
+export const radius = { sm: 10, md: 14, lg: 18, xl: 22, xxl: 30, full: 999 } as const;
 // xxl is the app's own addition (not on the site): the soft pill every 2026
 // assistant app draws its composer and its picker in. Still concentric.
 
 /** lib/data/shop.ts BOOTH_SWATCHES — the fourteen banner/carpet colours. */
 export const swatches = ["#8C3B2E", "#C4562B", "#4E6E4E", "#7A8C50", "#3B5B92", "#57829B", "#6B4E71", "#2F6F6A", "#A98C5B", "#8A6B4D", "#555049", "#B08D2E", "#A64D79", "#3F4A5A"] as const;
 
-/** The signature: an 8px bevel on the top-right corner only, on every plate. */
-export const BEVEL = 8;
+/** The first world's clipped corner. Kept as a number for the site's badge; the app's glass draws no bevel. */
+export const BEVEL = 0;
 
 /** The hall's tile and sprite metrics (lib/types.ts, game/sprites.ts). */
 export const TILE = 32;
@@ -107,20 +108,21 @@ export const SPRITE = { w: 20, h: 28 } as const;
 
 // ─── type (tailwind.config.ts fontSize, on the unit) ─────────────────────
 export const type = {
-  xs: { size: 12, line: 16 },
-  sm: { size: 16, line: 24 },
-  base: { size: 16, line: 24 },
-  lg: { size: 20, line: 28 },
-  xl: { size: 28, line: 32 },
-  "3xl": { size: 36, line: 40, tracking: -0.018 * 36 },
-  "4xl": { size: 48, line: 52, tracking: -0.022 * 48 },
+  xs: { size: 13, line: 18 },
+  sm: { size: 15, line: 20 },
+  base: { size: 17, line: 24 },
+  lg: { size: 19, line: 26 },
+  xl: { size: 26, line: 32, tracking: -0.015 * 26 },
+  "3xl": { size: 34, line: 40, tracking: -0.02 * 34 },
+  "4xl": { size: 44, line: 50, tracking: -0.025 * 44 },
 } as const;
 
+/** One family, Inter, at four weights; mono survives for code and pasted text only. */
 export const fontFamily = {
-  display: "Archivo",
-  displayMedium: "Archivo-Medium",
-  body: "IBMPlexSans",
-  bodyMedium: "IBMPlexSans-Medium",
+  display: "Inter-SemiBold",
+  displayMedium: "Inter-Bold",
+  body: "Inter",
+  bodyMedium: "Inter-Medium",
   mono: "IBMPlexMono",
   monoMedium: "IBMPlexMono-Medium",
 } as const;
@@ -131,12 +133,12 @@ export const signage = { size: 12, letterSpacing: 0.12 * 12, uppercase: true } a
 // ─── depth (tailwind boxShadow: layered and soft) ────────────────────────
 export const shadow = {
   card: [
-    { color: "rgba(18,23,27,0.05)", offset: { width: 0, height: 1 }, radius: 2 },
-    { color: "rgba(18,23,27,0.10)", offset: { width: 0, height: 10 }, radius: 24 },
+    { color: "rgba(0,0,0,0.04)", offset: { width: 0, height: 1 }, radius: 2 },
+    { color: "rgba(0,0,0,0.12)", offset: { width: 0, height: 12 }, radius: 28 },
   ],
   float: [
-    { color: "rgba(18,23,27,0.07)", offset: { width: 0, height: 2 }, radius: 6 },
-    { color: "rgba(18,23,27,0.16)", offset: { width: 0, height: 18 }, radius: 40 },
+    { color: "rgba(0,0,0,0.10)", offset: { width: 0, height: 4 }, radius: 10 },
+    { color: "rgba(0,0,0,0.35)", offset: { width: 0, height: 20 }, radius: 44 },
   ],
 } as const;
 

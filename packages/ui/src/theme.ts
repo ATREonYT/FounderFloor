@@ -12,19 +12,20 @@ import { shell, type ShellKey } from "./tokens";
 export type Scheme = "light" | "dark";
 
 export const LIGHT: Record<ShellKey, string> = {
-  panel: "#FAFDFF",
-  paper: "#EDF0F4",
-  well: "#E3E7EB",
-  line: "#D0D5D9",
-  faint: "#656C73",
-  muted: "#4D535A",
+  panel: "#FFFFFF",
+  paper: "#F2F4F7",
+  well: "#E9ECF0",
+  line: "#E1E4E8",
+  faint: "#646B73",
+  muted: "#5B626A",
   strong: "#3D434A",
-  ink: "#12171B",
-  blackout: "#020508",
+  ink: "#101418",
+  blackout: "#0B0E12",
   accent: "#BE241B",
   accentLift: "#E05B4C",
-  accentSoft: "#FBE1DD",
-  accentFill: "#BE241B",
+  accentSoft: "#FDE4DC",
+  accentFill: "#F2613F",
+  onAccent: "#101418",
   gold: "#B18C39",
   goldDeep: "#775800",
   fountain: "#207582",
@@ -32,23 +33,24 @@ export const LIGHT: Record<ShellKey, string> = {
 };
 
 export const DARK: Record<ShellKey, string> = {
-  panel: "#1A2026",
-  paper: "#12171B",
-  well: "#232A31",
-  line: "#2E353C",
-  faint: "#8A929A",
-  muted: "#A7AEB5",
+  panel: "#1C1F23",
+  paper: "#0B0E12",
+  well: "#171A1E",
+  line: "#22262B",
+  faint: "#888A8E",
+  muted: "#A6A9AB",
   strong: "#C9CFD5",
-  ink: "#EDF0F4",
-  blackout: "#020508",
-  accent: "#E05B4C",
-  accentLift: "#F0806F",
-  accentSoft: "#3A1F1C",
-  accentFill: "#C93F31",
-  gold: "#D7B15B",
+  ink: "#F4F6F8",
+  blackout: "#05070A",
+  accent: "#FF6B3D",
+  accentLift: "#FF8A5B",
+  accentSoft: "#3A2118",
+  accentFill: "#FF6B3D",
+  onAccent: "#101418",
+  gold: "#E4C77A",
   goldDeep: "#E4C77A",
-  fountain: "#4FA3B0",
-  verify: "#4CAF6A",
+  fountain: "#6FD3E0",
+  verify: "#4CD08A",
 };
 
 let current: Scheme = "light";
@@ -62,11 +64,21 @@ export function applyScheme(s: Scheme): void {
 }
 
 /** Hairline and scrim alphas that depend on the scheme. */
+/** The glass: fills, hairlines and lights that depend on the scheme. Every value is white or black at an alpha, so it composes over the hall's lights. */
 export const alpha = {
-  hairline: () => (current === "dark" ? "rgba(237,240,244,0.12)" : "rgba(208,213,217,0.7)"),
-  glassFill: () => (current === "dark" ? "rgba(26,32,38,0.92)" : "rgba(255,255,255,0.86)"),
-  scrim: () => (current === "dark" ? "rgba(0,0,0,0.6)" : "rgba(18,23,27,0.45)"),
-  placeholder: () => (current === "dark" ? "rgba(167,174,181,0.6)" : "rgba(77,83,90,0.6)"),
-  /** The light on a surface's top edge: the one line that makes a plate read as lacquer. */
-  gloss: () => (current === "dark" ? "rgba(237,240,244,0.10)" : "rgba(255,255,255,0.75)"),
+  hairline: () => (current === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"),
+  /** The card: white over the blur. */
+  panelFill: () => (current === "dark" ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.72)"),
+  /** The bar and the composer: a little stronger, so they sit over content. */
+  glassFill: () => (current === "dark" ? "rgba(22,26,31,0.72)" : "rgba(255,255,255,0.80)"),
+  /** A lit or pressed surface. */
+  raisedFill: () => (current === "dark" ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.92)"),
+  /** The quiet inset. */
+  wellFill: () => (current === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)"),
+  scrim: () => (current === "dark" ? "rgba(0,0,0,0.62)" : "rgba(16,20,24,0.40)"),
+  placeholder: () => (current === "dark" ? "rgba(244,246,248,0.42)" : "rgba(16,20,24,0.42)"),
+  /** The light on a surface's top edge. */
+  gloss: () => (current === "dark" ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.95)"),
+  /** The blur behind a pane, for expo-blur. */
+  blurTint: () => (current === "dark" ? "dark" : "light") as "dark" | "light",
 };

@@ -32,7 +32,7 @@ export default function Review() {
 
   if (!plan || !week || !facts) {
     return (
-      <View style={{ flex: 1, backgroundColor: shell.paper, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
         <Body tone="muted">Make a plan first; the weeks come from it.</Body>
         <Button variant="secondary" onPress={() => router.replace("/welcome" as Href)}>
           Answer the questions
@@ -43,7 +43,7 @@ export default function Review() {
   const score = review?.score ?? 0;
   const tone = score >= 65 ? "#2F6F6A" : score >= 40 ? "#B4762E" : "#8C3B2E";
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
@@ -51,7 +51,7 @@ export default function Review() {
           </Pressable>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <StopLine id="week" />
-            <Spec tone="muted">{facts.over ? "THE WEEK IS OVER" : wN === now ? "STILL RUNNING" : "NOT YET"}</Spec>
+            <Spec tone="muted">{facts.over ? "The week is over" : wN === now ? "Still running" : "Not yet"}</Spec>
           </View>
         </View>
 
@@ -70,7 +70,7 @@ export default function Review() {
         </View>
 
         <Scene set="office" height={L.compact ? 130 : 160} radiusPx={radius.xl} color={COLOR} ambient={false} accessibilityLabel={`Week ${wN}`}>
-          <Spec tone="ink">{week.focus.replace(/\.$/, "").toUpperCase()}</Spec>
+          <Spec tone="ink">{week.focus.replace(/\.$/, "")}</Spec>
         </Scene>
 
         {review ? (
@@ -96,9 +96,9 @@ export default function Review() {
               </Plate>
             </Animated.View>
 
-            <Section k={1} enter={enter} glyph="star" color="#2F6F6A" title="WHAT WENT WELL" items={review.well} />
-            <Section k={2} enter={enter} glyph="flask" color="#8C3B2E" title="WHAT TO FIX" items={review.fix} />
-            <Section k={3} enter={enter} glyph="bolt" color="#3B5B92" title="HOW, THIS WEEK · TAP ONE TO DO IT" items={review.how} numbered onOpen={(i) => router.push({ pathname: "/did", params: { id: `review-${review.week}-${i}`, text: review.how[i] } } as Href)} />
+            <Section k={1} enter={enter} glyph="star" color="#2F6F6A" title="What went well" items={review.well} />
+            <Section k={2} enter={enter} glyph="flask" color="#8C3B2E" title="What to fix" items={review.fix} />
+            <Section k={3} enter={enter} glyph="bolt" color="#3B5B92" title="How, this week · tap one to do it" items={review.how} numbered onOpen={(i) => router.push({ pathname: "/did", params: { id: `review-${review.week}-${i}`, text: review.how[i] } } as Href)} />
 
             <ButtonRow>
               <Button arrow onPress={() => router.replace("/plan" as Href)}>

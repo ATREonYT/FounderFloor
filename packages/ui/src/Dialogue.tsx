@@ -29,6 +29,7 @@ import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useRedu
 import { scheduleOnRN } from "react-native-worklets";
 import { useLayout } from "./Responsive";
 import { Plate } from "./Plate";
+import { Glow } from "./Stage";
 import { Body, Display, Spec } from "./Text";
 import { curve, ms, radius, shell, spring } from "./tokens";
 import { alpha } from "./theme";
@@ -185,25 +186,23 @@ export function Dialogue({
             card,
           ]}
         >
-          <Plate tone="panel" radius={sheet ? R_SHEET : radius.xl} contentStyle={{ maxHeight: L.panel.maxHeight + (sheet ? R_SHEET : 0), flexDirection: "column" }}>
+          <Plate tone="glass" radius={sheet ? R_SHEET : radius.xl} contentStyle={{ maxHeight: L.panel.maxHeight + (sheet ? R_SHEET : 0), flexDirection: "column" }}>
             <GestureDetector gesture={pan}>
             <View>
-            {/* the awning stripe, so the panel is visibly the stall you opened */}
-            <View style={{ flexDirection: "row", height: 8, borderTopLeftRadius: sheet ? R_SHEET : radius.xl, borderTopRightRadius: sheet ? R_SHEET : radius.xl, overflow: "hidden" }}>
-              {Array.from({ length: 14 }).map((_, i) => (
-                <View key={i} style={{ flex: 1, backgroundColor: i % 2 ? shell.paper : color }} />
-              ))}
+            {/* the speaker's light, low behind the header, so the sheet is visibly the stall you opened */}
+            <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, top: 0, height: 140, overflow: "hidden", borderTopLeftRadius: sheet ? R_SHEET : radius.xl, borderTopRightRadius: sheet ? R_SHEET : radius.xl }}>
+              <Glow color={color} x={0.15} y={0.1} r={0.7} strength={0.35} />
             </View>
-            {sheet ? <View style={{ alignSelf: "center", width: 36, height: 4, borderRadius: 2, backgroundColor: shell.line, marginTop: 8 }} /> : null}
+            {sheet ? <View style={{ alignSelf: "center", width: 36, height: 5, borderRadius: 3, backgroundColor: alpha.hairline(), marginTop: 10 }} /> : null}
 
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: shell.line }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: alpha.hairline() }}>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <Display size="lg" style={{ letterSpacing: -0.4 }}>
                     {sign}
                   </Display>
-                  <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <Spec tone="paper">{keeper}</Spec>
+                  <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 9, paddingVertical: 3 }}>
+                    <Spec style={{ color: "#FFFFFF" }}>{keeper}</Spec>
                   </View>
                 </View>
                 {blurb ? (
@@ -212,7 +211,7 @@ export function Dialogue({
                   </Body>
                 ) : null}
               </View>
-              <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, backgroundColor: pressed ? shell.line : shell.well, alignItems: "center", justifyContent: "center" })}>
+              <Pressable onPress={close} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, backgroundColor: pressed ? alpha.raisedFill() : alpha.wellFill(), borderWidth: 1, borderColor: alpha.hairline(), alignItems: "center", justifyContent: "center" })}>
                 <Body medium>×</Body>
               </Pressable>
             </View>
@@ -224,7 +223,7 @@ export function Dialogue({
             </ScrollView>
 
             {footer ? (
-              <View style={{ borderTopWidth: 1, borderTopColor: shell.line, paddingHorizontal: 20, paddingVertical: 10 }}>
+              <View style={{ borderTopWidth: 1, borderTopColor: alpha.hairline(), paddingHorizontal: 20, paddingVertical: 10 }}>
                 <Spec tone="muted">{footer}</Spec>
               </View>
             ) : null}

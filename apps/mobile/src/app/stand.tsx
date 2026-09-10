@@ -95,14 +95,14 @@ export default function Stand() {
   const num = (v: string) => Math.max(0, Math.round(Number(v.replace(/[^\d.]/g, "")) || 0));
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <TopBar
         left={<Back />}
         center={<Spec tone="muted">{`${hallName(stand.hall)} · ${stand.spot}`}</Spec>}
         right={<TierTag tier={stand.tier} />}
       />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <StopLine id="idea" label="YOUR COMPANY" />
+        <StopLine id="idea" label="Your company" />
         {auth ? (
           <Pressable onPress={() => setAccount(true)} accessibilityRole="button" accessibilityLabel="Your account" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 8 })}>
             <Spec tone="ink">{auth.name}</Spec>
@@ -184,7 +184,7 @@ export default function Stand() {
         {/* this week */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Spec tone="muted">THIS WEEK</Spec>
+            <Spec tone="muted">This week</Spec>
             <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "1 day" : stand.streak ? `${stand.streak} days` : "day one"} />
           </View>
           {r.weeklyGoal ? (
@@ -218,7 +218,7 @@ export default function Stand() {
         {/* money */}
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 16 }}>
           <Plate tone="panel" radius={radius.xl} padding={20} style={{ flex: 1 }}>
-            <Spec tone="muted">RUNWAY</Spec>
+            <Spec tone="muted">Runway</Spec>
             {r.burn ? (
               <>
                 <View style={{ marginTop: 8 }}>
@@ -260,7 +260,7 @@ export default function Stand() {
         {/* filings + workshop */}
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 16 }}>
           <Plate tone="panel" radius={radius.xl} padding={20} style={{ flex: 1 }}>
-            <Spec tone="muted">NEXT FILING</Spec>
+            <Spec tone="muted">Next filing</Spec>
             {nextFiling ? (
               <>
                 <Display size="lg" style={{ marginTop: 8 }}>{`${nextFiling.daysLeft} days`}</Display>
@@ -282,7 +282,7 @@ export default function Stand() {
             )}
           </Plate>
           <Plate tone="panel" radius={radius.xl} padding={20} style={{ flex: 1 }}>
-            <Spec tone="muted">THE WORKSHOP</Spec>
+            <Spec tone="muted">The workshop</Spec>
             <Display size="lg" style={{ marginTop: 8 }}>{`${stage.n}. ${stage.name}`}</Display>
             <View style={{ marginTop: 8 }}>
               <Progress value={stageProgress(stage, ticks)} right={`${stage.items.filter((i) => ticks.includes(i.id)).length}/${stage.items.length}`} />
@@ -299,19 +299,19 @@ export default function Stand() {
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
           <Pressable onPress={() => router.navigate("/office")} accessibilityRole="button" style={{ flex: 1 }}>
             <Plate tone="paperSign" radius={radius.lg} padding={14}>
-              <Spec tone="muted">THE OFFICE</Spec>
+              <Spec tone="muted">The office</Spec>
               <Body size="sm" style={{ marginTop: 4 }}>Weekly log, interviews, the calendar, the update.</Body>
             </Plate>
           </Pressable>
           <Pressable onPress={() => router.push("/drawer")} accessibilityRole="button" style={{ flex: 1 }}>
             <Plate tone="paperSign" radius={radius.lg} padding={14}>
-              <Spec tone="muted">THE DRAWER</Spec>
+              <Spec tone="muted">The drawer</Spec>
               <Body size="sm" style={{ marginTop: 4 }}>One-pager, landing copy, pricing, launch checklist.</Body>
             </Plate>
           </Pressable>
           <Pressable onPress={() => router.push("/idea/check")} accessibilityRole="button" style={{ flex: 1 }}>
             <Plate tone="paperSign" radius={radius.lg} padding={14}>
-              <Spec tone="muted">SECOND OPINION</Spec>
+              <Spec tone="muted">Second opinion</Spec>
               <Body size="sm" style={{ marginTop: 4 }}>Read the idea back after this week's conversations.</Body>
             </Plate>
           </Pressable>
@@ -320,7 +320,7 @@ export default function Stand() {
           <Plate tone="plate" radius={radius.lg} padding={14}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <View style={{ flex: 1 }}>
-                <Spec tone="paperQuiet">HAND IT TO YOUR BUILDER</Spec>
+                <Spec tone="paperQuiet">Hand it to your builder</Spec>
                 <Body size="sm" tone="paper" style={{ marginTop: 4 }}>
                   The stand as a brief for Claude Code, Cursor or Lovable: build first, do not build yet, done means. No copying between apps.
                 </Body>
@@ -455,7 +455,7 @@ export default function Stand() {
           </Pressable>
           {me && !me.verified ? (
             <Plate tone="paper" radius={radius.md} padding={12} lineColor={shell.accent}>
-              <Spec tone="muted">CONFIRM YOUR EMAIL</Spec>
+              <Spec tone="muted">Confirm your email</Spec>
               <Body size="sm" style={{ marginTop: 4 }}>
                 The welcome email has a six-digit code. The Friday review and the hand-offs go only to a confirmed address.
               </Body>
@@ -482,7 +482,7 @@ export default function Stand() {
             <Pressable onPress={() => { setAccount(false); router.push("/dev/console" as Href); }} accessibilityRole="button" accessibilityLabel="Dev console">
               <Plate tone="plate" radius={radius.md} padding={12}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <Spec tone="paper" style={{ flex: 1 }}>OPERATOR · DEV CONSOLE</Spec>
+                  <Spec tone="paper" style={{ flex: 1 }}>Operator · Dev console</Spec>
                   <Body tone="accentLift">→</Body>
                 </View>
               </Plate>

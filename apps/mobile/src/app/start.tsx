@@ -29,7 +29,7 @@ export default function Start() {
     else router.replace(d.to as Href);
   };
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: shell.paper }} contentContainerStyle={{ paddingTop: L.insets.top + 32, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 20 }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: L.insets.top + 32, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 20 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <Sprite id="logo-mark" scale={2} />
         <Spec tone="muted">FounderFloor</Spec>

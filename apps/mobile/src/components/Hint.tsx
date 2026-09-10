@@ -15,7 +15,7 @@ export function Hint({ id, text, color }: { id: string; text: string; color?: st
   const touring = useTour((s) => s.active);
   if (seen || touring) return null;
   return (
-    <Plate tone="paper" radius={radius.lg} padding={12} lineColor={color ?? RECEPTIONIST.color}>
+    <Plate tone="panel" radius={radius.xl} padding={12} ring={color ?? RECEPTIONIST.color}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <Keeper look={RECEPTIONIST.look} scale={1} color={RECEPTIONIST.color} />
         <Body size="sm" style={{ flex: 1 }}>

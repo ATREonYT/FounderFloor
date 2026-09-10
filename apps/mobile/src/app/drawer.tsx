@@ -45,13 +45,13 @@ export default function Drawer() {
     setOpen(doc);
   };
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 760, alignSelf: "center", gap: 16 }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
         <Scene set="archive" height={L.compact ? 164 : 192} radiusPx={radius.xl} ambient={false} accessibilityLabel="The drawer">
-          <Spec tone="muted">{docs.length ? `${docs.length} DOCUMENT${docs.length === 1 ? "" : "S"}` : "EMPTY SO FAR"}</Spec>
+          <Spec tone="muted">{docs.length ? `${docs.length} document${docs.length === 1 ? "" : "S"}` : "EMPTY SO FAR"}</Spec>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The drawer</Display>
         <Body tone="muted">{`Written from ${stand.name}'s numbers, in your words.`}</Body>
@@ -69,7 +69,7 @@ export default function Drawer() {
             ))}
           </Plate>
         ) : null}
-        <Spec tone="muted">DRAFT SOMETHING</Spec>
+        <Spec tone="muted">Draft something</Spec>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {DOC_KINDS.filter((k) => k.kind !== "update").map((k) => (
             <Pressable key={k.kind} onPress={() => draft(k)} disabled={!!busy} accessibilityRole="button" style={({ pressed }) => ({ flexBasis: L.compact ? "100%" : "48%", flexGrow: 1, opacity: pressed || busy === k.kind ? 0.7 : 1 })}>

@@ -36,9 +36,9 @@ export function Input({
           {
             minHeight: 46,
             borderRadius: radius.lg,
-            borderWidth: 2,
-            borderColor: focused ? shell.fountain : onDark ? "rgba(237,240,244,0.18)" : "transparent",
-            backgroundColor: onDark ? "rgba(237,240,244,0.10)" : shell.well,
+            borderWidth: 1.5,
+            borderColor: focused ? shell.fountain : onDark ? "rgba(244,246,248,0.18)" : alpha.hairline(),
+            backgroundColor: onDark ? "rgba(244,246,248,0.10)" : alpha.wellFill(),
             paddingHorizontal: 12,
             paddingVertical: 8,
             fontFamily: mono ? fontFamily.mono : fontFamily.body,

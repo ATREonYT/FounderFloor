@@ -15,7 +15,8 @@
  * The disc jumps (no spring) on the first layout and under reduced motion.
  */
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View, type LayoutChangeEvent } from "react-native";
+import { Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from "react-native";
+import { BlurView } from "expo-blur";
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 import { MENU, type MenuEntry } from "./Menu";
 import { Sprite, type SpriteId } from "./Sprite";
@@ -87,9 +88,6 @@ export function TabBar({
           paddingHorizontal: PAD,
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: alpha.glassFill(),
-          borderWidth: 1,
-          borderColor: shell.line,
           borderRadius: radius.full,
           shadowColor: cast.color,
           shadowOffset: cast.offset,
@@ -99,14 +97,19 @@ export function TabBar({
           overflow: "visible",
         }}
       >
-        {/* the light on the glass: a line along the top edge */}
-        <View pointerEvents="none" style={{ position: "absolute", top: 0, left: 20, right: 20, height: 1, backgroundColor: alpha.gloss(), borderRadius: 1 }} />
+        {/* the pane: a real blur of the page scrolling under it, the tint, the hairline, the light along the top edge */}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius.full, overflow: "hidden" }]}>
+          <BlurView intensity={40} tint={scheme() === "dark" ? "dark" : "light"} experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined} style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: alpha.glassFill() }]} />
+          <View style={{ position: "absolute", top: 0, left: 24, right: 24, height: 1, backgroundColor: alpha.gloss() }} />
+        </View>
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius.full, borderWidth: 1, borderColor: alpha.hairline() }]} />
         {width > 0 ? (
           <Animated.View
             pointerEvents="none"
-            style={[{ position: "absolute", left: 0, top: (HEIGHT - 2 - DISC) / 2, width: DISC, height: DISC, borderRadius: DISC / 2, backgroundColor: shell.ink, overflow: "hidden" }, disc]}
+            style={[{ position: "absolute", left: 0, top: (HEIGHT - 2 - DISC) / 2, width: DISC, height: DISC, borderRadius: DISC / 2, backgroundColor: shell.ink, overflow: "hidden", shadowColor: "rgba(0,0,0,0.3)", shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, shadowOpacity: 1 }, disc]}
           >
-            <Sheen strength={0.22} reach={0.5} />
+            <Sheen strength={0.3} reach={0.5} />
           </Animated.View>
         ) : null}
         {entries.map((e) => {

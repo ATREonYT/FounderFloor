@@ -41,7 +41,7 @@ export default function Memory() {
     }
   };
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/settings"))} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
@@ -56,7 +56,7 @@ export default function Memory() {
         <Body tone="muted">What the desk has written down about your work here. It stays on this phone. It goes to the AI with your questions only while the switch below says so.</Body>
 
         <Plate tone="panel" radius={radius.xl} padding={16}>
-          <Choices label="THE DESK KEEPS NOTES" value={memoryOn === true ? "on" : memoryOn === false ? "off" : "ask"} options={[{ v: "on", label: "Yes" }, { v: "off", label: "No" }, ...(memoryOn === null ? [{ v: "ask", label: "Not decided" }] : [])]} onChange={(v) => (v === "ask" ? setAsk(true) : (setMemoryOn(v === "on"), say(v === "on" ? "The desk keeps notes." : "The desk writes nothing new.")))} />
+          <Choices label="The desk keeps notes" value={memoryOn === true ? "on" : memoryOn === false ? "off" : "ask"} options={[{ v: "on", label: "Yes" }, { v: "off", label: "No" }, ...(memoryOn === null ? [{ v: "ask", label: "Not decided" }] : [])]} onChange={(v) => (v === "ask" ? setAsk(true) : (setMemoryOn(v === "on"), say(v === "on" ? "The desk keeps notes." : "The desk writes nothing new.")))} />
           <Spec tone="faint" style={{ marginTop: 8 }}>
             {memoryOn === false ? "Nothing new is written. What is below stays until you burn it." : memoryOn === true ? "Ticks, outcomes, notes, what the desk said, and the weeks you log." : "Tap the question to read what would be kept."}
           </Spec>
@@ -81,7 +81,7 @@ export default function Memory() {
                     <GlyphTile id={KIND_GLYPH[e.kind]} color={NOTEBOOK_COLOR} size={28} scale={1} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                    <Spec tone="faint">{`${MEMORY_KINDS[e.kind].label.toUpperCase()} · ${e.at.slice(11, 16)}`}</Spec>
+                    <Spec tone="faint">{`${MEMORY_KINDS[e.kind].label} · ${e.at.slice(11, 16)}`}</Spec>
                     <Body size="sm">{e.text}</Body>
                   </View>
                 </View>

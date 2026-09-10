@@ -34,13 +34,13 @@ type Common = { children: ReactNode; tone?: Tone; style?: StyleProp<TextStyle>; 
 
 export function Display({ children, tone = "ink", size = "xl", style, ...rest }: Common & { size?: "lg" | "xl" | "3xl" | "4xl" }) {
   const s = T[size];
+  const heavy = size === "3xl" || size === "4xl";
   return (
     <RNText
       {...rest}
       accessibilityRole={rest.accessibilityRole ?? "header"}
       style={[
-        { fontFamily: F.display, fontSize: s.size, lineHeight: s.line, color: TONE(tone) },
-        "tracking" in s ? { letterSpacing: s.tracking } : null,
+        { fontFamily: heavy ? F.displayMedium : F.display, fontWeight: heavy ? "700" : "600", fontSize: s.size, lineHeight: s.line, color: TONE(tone), letterSpacing: "tracking" in s ? s.tracking : -0.01 * s.size },
         style,
       ]}
     >
@@ -67,10 +67,10 @@ export function Mono({ children, tone = "ink", size = "sm", medium = false, styl
   );
 }
 
-/** `.micro` — the metadata label. Mono 12, normal case, normal tracking. */
+/** The label: Inter 13 medium, sentence case, tabular figures. */
 export function Spec({ children, tone = "muted", style, ...rest }: Common) {
   return (
-    <RNText {...rest} style={[{ fontFamily: F.mono, fontSize: T.xs.size, lineHeight: T.xs.line, color: TONE(tone), fontVariant: ["tabular-nums"] }, style]}>
+    <RNText {...rest} style={[{ fontFamily: F.bodyMedium, fontWeight: "500", fontSize: T.xs.size, lineHeight: T.xs.line, letterSpacing: 0.01 * T.xs.size, color: TONE(tone), fontVariant: ["tabular-nums"] }, style]}>
       {children}
     </RNText>
   );
@@ -82,7 +82,7 @@ export function Signage({ children, tone = "paper", style, ...rest }: Common) {
     <RNText
       {...rest}
       style={[
-        { fontFamily: F.display, fontSize: signage.size, lineHeight: 14, letterSpacing: signage.letterSpacing, textTransform: "uppercase", color: TONE(tone) },
+        { fontFamily: F.display, fontWeight: "600", fontSize: signage.size, lineHeight: 14, letterSpacing: signage.letterSpacing, textTransform: "uppercase", color: TONE(tone) },
         style,
       ]}
     >

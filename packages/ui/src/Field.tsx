@@ -16,7 +16,7 @@ export function Choices<T extends string>({ label, value, options, onChange }: {
           const on = o.v === value;
           return (
             <Pressable key={o.v} onPress={() => onChange(o.v)} accessibilityRole="radio" accessibilityState={{ selected: on }} style={{ borderWidth: 1, borderColor: on ? shell.ink : shell.line, backgroundColor: on ? shell.ink : "transparent", borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Spec tone={on ? "paper" : "ink"}>{o.label}</Spec>
+              <Spec tone="ink" style={on ? { color: shell.paper } : undefined}>{o.label}</Spec>
             </Pressable>
           );
         })}

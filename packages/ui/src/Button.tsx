@@ -1,26 +1,24 @@
 /**
  * The button, with the site's press feel.
  *
- * `.btn-press`: a control answers before it is pressed. Hover (pointer
- * devices) lifts it 1px and deepens its cast; the press puts it down 2px,
- * harder than it came up — "what a real key feels like" — over 60ms, and
- * the RELEASE settles back on the site's one overshoot curve (220ms,
- * --ease-release). That spring is the only overshoot in the whole app.
+ * A control answers before it is pressed: hover (pointer devices) lifts
+ * it 1px, the press puts it down 2px over 100ms, the release settles back
+ * with no bounce. A button is pressed all day.
  *
- * Shape: a pill, every size. The app's controls are soft fills, not
- * hairline boxes: the box was the site's marketing idiom and read as
- * blocky next to the pixel keepers.
- *   primary    accent fill, paper text
- *   secondary  well fill (laminate), ink text (on dark: paper/12 fill, paper text)
- *   ghost      no fill, muted text; on dark, paper/70
- * Disabled is opacity .5 with no colour change; heights 36 / 44 / 52.
+ * Shape: a pill, every size, on glass.
+ *   primary    ember, lit from the top, ink text (never white on ember)
+ *   secondary  raised glass, ink text
+ *   ghost      no fill, muted text
+ * Disabled is opacity .5 with no colour change; heights 36 / 44 / 52, and
+ * the small one reaches 44 through its slop.
  */
 import type { ReactNode } from "react";
 import { Pressable, View, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, Easing } from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
 import { Body } from "./Text";
-import { Sheen } from "./Sheen";
 import { curve, ms, radius, shell } from "./tokens";
+import { alpha, scheme } from "./theme";
 
 type Variant = "primary" | "secondary" | "ghost";
 
@@ -39,10 +37,10 @@ export function Button({
   children: ReactNode;
   onPress?: () => void;
   variant?: Variant;
-  /** Sitting on a blackout/ink ground — flips the hairline tones. */
+  /** Sitting on an opaque dark ground: the secondary and ghost read in paper. */
   onDark?: boolean;
   disabled?: boolean;
-  /** Appends the site's → which leans 3px on hover/press. */
+  /** Appends the → which leans 3px on hover/press. */
   arrow?: boolean;
   size?: "sm" | "md" | "lg";
   style?: ViewStyle;
@@ -53,8 +51,8 @@ export function Button({
   const dx = useSharedValue(0);
   const press = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
   const lean = useAnimatedStyle(() => ({ transform: [{ translateX: dx.value }] }));
+  const dark = scheme() === "dark";
 
-  // the key goes down the instant the finger lands and comes back up on release, no bounce: a button is pressed all day
   const down = () => {
     y.value = withTiming(2, { duration: ms.press, easing: Easing.bezier(...curve.out) });
   };
@@ -72,9 +70,10 @@ export function Button({
     variant === "primary"
       ? { backgroundColor: shell.accentFill }
       : variant === "secondary"
-        ? { backgroundColor: onDark ? "rgba(237,240,244,0.12)" : shell.well }
+        ? { backgroundColor: onDark ? "rgba(244,246,248,0.14)" : alpha.raisedFill(), borderWidth: 1, borderColor: onDark ? "rgba(244,246,248,0.16)" : alpha.hairline() }
         : { backgroundColor: "transparent", paddingHorizontal: size === "sm" ? 8 : 12 };
-  const textTone = variant === "primary" ? "paper" : onDark ? (variant === "ghost" ? "paperQuiet" : "paper") : variant === "ghost" ? "muted" : "ink";
+  const textTone: "onAccent" | "paper" | "paperQuiet" | "ink" | "muted" = variant === "primary" ? "onAccent" : onDark ? (variant === "ghost" ? "paperQuiet" : "paper") : variant === "ghost" ? "muted" : "ink";
+  const textColor = textTone === "onAccent" ? shell.onAccent : undefined;
 
   return (
     <Pressable
@@ -95,9 +94,9 @@ export function Button({
         style={[
           { borderRadius: radius.full },
           variant === "primary" && {
-            shadowColor: "rgba(190,36,27,0.4)",
-            shadowOffset: { width: 0, height: 8 },
-            shadowRadius: 16,
+            shadowColor: dark ? "rgba(255,107,61,0.45)" : "rgba(242,97,63,0.35)",
+            shadowOffset: { width: 0, height: 10 },
+            shadowRadius: 20,
             shadowOpacity: 1,
             elevation: 4,
           },
@@ -107,13 +106,17 @@ export function Button({
       >
         <View style={[{ borderRadius: radius.full, overflow: "hidden", justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 6 }, pad, look]}>
           {/* the light on the top half: lacquer, not plastic */}
-          {variant === "primary" ? <Sheen strength={0.26} reach={0.5} /> : variant === "secondary" && !onDark ? <Sheen strength={0.5} reach={0.5} /> : null}
-          <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
+          {variant === "primary" ? (
+            <LinearGradient pointerEvents="none" colors={["rgba(255,255,255,0.38)", "rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)"]} locations={[0, 0.55, 1]} style={{ position: "absolute", left: 0, right: 0, top: 0, bottom: 0 }} />
+          ) : variant === "secondary" ? (
+            <LinearGradient pointerEvents="none" colors={[dark ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.9)", "rgba(255,255,255,0)"]} style={{ position: "absolute", left: 0, right: 0, top: 0, height: "55%" }} />
+          ) : null}
+          <Body size="sm" medium tone={textTone === "onAccent" ? "ink" : textTone} style={textColor ? { color: textColor, fontWeight: "600" } : { fontWeight: "600" }}>
             {children}
           </Body>
           {arrow && (
             <Animated.View style={lean}>
-              <Body size="sm" medium tone={textTone as "paper" | "paperQuiet" | "ink" | "muted"}>
+              <Body size="sm" medium tone={textTone === "onAccent" ? "ink" : textTone} style={textColor ? { color: textColor, fontWeight: "600" } : { fontWeight: "600" }}>
                 →
               </Body>
             </Animated.View>

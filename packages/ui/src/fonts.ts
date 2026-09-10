@@ -6,13 +6,14 @@
  * into packages/ui/assets/fonts. Spectral is OG-card-only and is not here.
  * `font-synthesis: none` is a site rule: never fake a bold — load the weight.
  */
-import { Archivo_400Regular, Archivo_500Medium } from "@expo-google-fonts/archivo";
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 
+/** The night hall: one family, Inter, at four weights. Plex Mono stays for code and pasted text. */
 export const FONT_MAP = {
-  Archivo: Archivo_400Regular,
-  "Archivo-Medium": Archivo_500Medium,
-  IBMPlexSans: require("../assets/fonts/IBMPlexSans-Variable.ttf"),
-  "IBMPlexSans-Medium": require("../assets/fonts/IBMPlexSans-Variable.ttf"),
+  Inter: Inter_400Regular,
+  "Inter-Medium": Inter_500Medium,
+  "Inter-SemiBold": Inter_600SemiBold,
+  "Inter-Bold": Inter_700Bold,
   IBMPlexMono: require("../assets/fonts/IBMPlexMono-Regular.ttf"),
   "IBMPlexMono-Medium": require("../assets/fonts/IBMPlexMono-Medium.ttf"),
 } as const;

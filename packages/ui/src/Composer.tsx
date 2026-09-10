@@ -67,7 +67,7 @@ export function Composer({
               onPress={onAttach}
               accessibilityRole="button"
               accessibilityLabel="Attach"
-              style={({ pressed }) => ({ width: 36, height: 36, borderRadius: radius.full, backgroundColor: shell.well, alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 })}
+              style={({ pressed }) => ({ width: 36, height: 36, borderRadius: radius.full, backgroundColor: alpha.wellFill(), borderWidth: 1, borderColor: alpha.hairline(), alignItems: "center", justifyContent: "center", opacity: pressed ? 0.7 : 1 })}
             >
               <Body medium tone="muted" style={{ lineHeight: 20 }}>
                 +
@@ -109,8 +109,8 @@ export function Composer({
             accessibilityLabel="Send"
             accessibilityState={{ disabled: !canSend }}
           >
-            <Animated.View style={[{ width: 36, height: 36, borderRadius: radius.full, backgroundColor: canSend ? shell.accentFill : shell.well, alignItems: "center", justifyContent: "center" }, arrow]}>
-              <Body medium tone={canSend ? "paper" : "faint"} style={{ lineHeight: 20 }}>
+            <Animated.View style={[{ width: 36, height: 36, borderRadius: radius.full, backgroundColor: canSend ? shell.accentFill : alpha.wellFill(), alignItems: "center", justifyContent: "center" }, arrow]}>
+              <Body medium tone={canSend ? "ink" : "faint"} style={{ lineHeight: 20, color: canSend ? shell.onAccent : undefined }}>
                 ↑
               </Body>
             </Animated.View>

@@ -47,7 +47,7 @@ export default function Plans() {
     } else say(r.error);
   };
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 960, alignSelf: "center", gap: 16 }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Not now</Spec>
@@ -58,7 +58,7 @@ export default function Plans() {
           </Plate>
         ) : null}
         <Scene set="cafe" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The staff room">
-          <Spec tone="muted">{week ? `THE WHOLE STAFF · ${week.days} DAY${week.days === 1 ? "" : "S"} LEFT` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} DAYS OF THE WHOLE STAFF, FREE, AT YOUR FIRST VALUE MOMENT`}</Spec>
+          <Spec tone="muted">{week ? `The whole staff · ${week.days} day${week.days === 1 ? "" : "S"} left` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} days of the whole staff, free, at your first value moment`}</Spec>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>Keep the whole staff.</Display>
         <Body tone="muted" size="lg">

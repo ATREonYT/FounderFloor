@@ -95,7 +95,7 @@ export default function Reception() {
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <TopBar
         center={<Pill label={atDesk ? "The desk" : coach.name} meta={L.compact && !empty ? undefined : atDesk ? "reception" : coach.title} live={aiMode() !== "rehearsal"} onPress={() => setWho(true)} />}
         right={
@@ -136,7 +136,7 @@ export default function Reception() {
               {forgets ? (
                 <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: MINES["coach-memory"].why } })} accessibilityRole="button" accessibilityLabel="The staff remember, on Pro">
                   <Plate tone="paper" radius={radius.lg} padding={12} lineColor={coach.color}>
-                    <Spec tone="muted">{`${coach.name.toUpperCase()} · ${notes.filter((n) => n.coach === coach.name).length} NOTES, UNREAD`}</Spec>
+                    <Spec tone="muted">{`${coach.name} · ${notes.filter((n) => n.coach === coach.name).length} notes, unread`}</Spec>
                     <Body size="sm" style={{ marginTop: 4 }}>
                       {`${MINES["coach-memory"].title} ${MINES["coach-memory"].line}`}
                     </Body>

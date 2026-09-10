@@ -1,63 +1,40 @@
 /**
- * THE PLATE — the one surface every panel, sign, chip and card sits on.
+ * THE PLATE — the one surface every panel, sheet, chip and card sits on:
+ * a pane of frosted glass in the night hall.
  *
- * Its signature is the site's `.clip-badge`: an 8px bevel across the
- * top-right corner only, "the corner you punch a lanyard clip through on an
- * expo badge", on every plate and nowhere else in the world. React Native
- * cannot clip-path, so the bevel is real geometry: one SVG path with three
- * round corners and the cut, painted as the fill and stroked as the
- * hairline, so the outline is exactly the shape. Nothing else on the app
- * may cut a corner.
+ * Anatomy, back to front: a real blur of whatever is behind (the hall's
+ * lights, a scene, a list scrolling under a bar), the tint fill, a
+ * one-pixel hairline, and the light on the top edge, a highlight that
+ * fades across the first third of the height. Depth comes from the blur
+ * and the light, not from a shadow; only the float tone casts one, and
+ * only because it hangs over content.
  *
- * Tones (globals.css):
- *   panel   .panel  — foamcore fill, line/70 hairline, card shadow
- *   glass   .glass  — rgba(255,255,255,.86), line/60 hairline, float shadow.
- *           The site blurs what is behind glass; RN has no cheap backdrop
- *           blur, and glass only ever sits over the hall (a WebView), so
- *           the fill alone is used. Recorded as a deviation.
- *   plate   the Sign plate — blackout fill, blackout hairline
- *   paperSign — the quiet sign: foamcore fill, trestle hairline
+ * Tones:
+ *   panel   the card: white at 7% by night, 72% by day, blur 24
+ *   glass   the bar and the composer: stronger, blur 40, sits over content
+ *   paper   the quiet inset: a well, blur 12
+ *   plate   the one opaque dark sign (the stand's name)
+ *   paperSign  the same as panel (kept for the screens that ask for it)
+ *
+ * A ring is a 1.5px stroke in a colour on the same outline: the card that
+ * is lit, the task that is done. Never a border on the outside.
  */
-import { useState, type ReactNode } from "react";
-import { View, type LayoutChangeEvent, type ViewStyle, StyleSheet } from "react-native";
-import Svg, { Path } from "react-native-svg";
-import { BEVEL, radius as R, shell, shadow } from "./tokens";
-import { alpha } from "./theme";
+import type { ReactNode } from "react";
+import { Platform, View, type ViewStyle, StyleSheet } from "react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import { radius as R, shell, shadow } from "./tokens";
+import { alpha, scheme } from "./theme";
 
 export type PlateTone = "panel" | "glass" | "plate" | "paperSign" | "paper";
 
-// computed per render: the shell's colours change with the scheme
-const TONES = (): Record<PlateTone, { fill: string; line: string; shadow?: "card" | "float" }> => ({
-  panel: { fill: shell.panel, line: alpha.hairline(), shadow: "card" },
-  glass: { fill: alpha.glassFill(), line: alpha.hairline(), shadow: "float" },
-  plate: { fill: shell.blackout, line: shell.blackout },
-  paperSign: { fill: shell.panel, line: shell.line },
-  paper: { fill: shell.paper, line: shell.line },
+const TONES = (): Record<PlateTone, { fill: string; line: string; blur: number; shadow?: "card" | "float"; gloss: boolean }> => ({
+  panel: { fill: alpha.panelFill(), line: alpha.hairline(), blur: 24, gloss: true },
+  paperSign: { fill: alpha.panelFill(), line: alpha.hairline(), blur: 24, gloss: true },
+  glass: { fill: alpha.glassFill(), line: alpha.hairline(), blur: 40, shadow: "float", gloss: true },
+  paper: { fill: alpha.wellFill(), line: "transparent", blur: 12, gloss: false },
+  plate: { fill: shell.blackout, line: "rgba(255,255,255,0.08)", blur: 0, gloss: true },
 });
-
-/**
- * The plate's outline as one path: round corners at top-left, bottom-left
- * and bottom-right, the clip corner cut at top-right, inset by `i` so a
- * hairline stroked on it sits inside the box. Fill and stroke share it, so
- * the outline is the shape and nothing is square that the surface is not.
- */
-function outline(w: number, h: number, r: number, i = 0): string {
-  const rr = Math.max(0, Math.min(r, (Math.min(w, h) - 2 * i) / 2));
-  const x0 = i, y0 = i, x1 = w - i, y1 = h - i;
-  const b = BEVEL;
-  return [
-    `M${x0 + rr},${y0}`,
-    `H${x1 - b}`,
-    `L${x1},${y0 + b}`,
-    `V${y1 - rr}`,
-    `A${rr},${rr} 0 0 1 ${x1 - rr},${y1}`,
-    `H${x0 + rr}`,
-    `A${rr},${rr} 0 0 1 ${x0},${y1 - rr}`,
-    `V${y0 + rr}`,
-    `A${rr},${rr} 0 0 1 ${x0 + rr},${y0}`,
-    "Z",
-  ].join(" ");
-}
 
 export function Plate({
   tone = "panel",
@@ -79,49 +56,48 @@ export function Plate({
   contentStyle?: ViewStyle;
   /** Override the hairline — the composer speaks fountain while focused. */
   lineColor?: string;
-  /** A 1.5px ring in this colour on the same outline: the card that is lit, the task that is done. Never a square border on the outside. */
+  /** A 1.5px ring in this colour on the same outline: the card that is lit, the task that is done. */
   ring?: string;
   testID?: string;
 }) {
-  const [size, setSize] = useState({ w: 0, h: 0 });
-  const base = TONES()[tone];
-  const t = lineColor ? { ...base, line: lineColor } : base;
-  const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    if (width !== size.w || height !== size.h) setSize({ w: width, h: height });
-  };
+  const t = TONES()[tone];
   const cast = t.shadow ? shadow[t.shadow][1] : null;
+  const dark = scheme() === "dark";
   return (
     <View
       testID={testID}
-      onLayout={onLayout}
       style={[
         cast && {
           shadowColor: cast.color,
           shadowOffset: cast.offset,
           shadowRadius: cast.radius,
           shadowOpacity: 1,
-          elevation: t.shadow === "float" ? 8 : 3,
+          elevation: 8,
         },
         style,
       ]}
     >
       <View style={[styles.host, { borderRadius: radius }, contentStyle]}>
-        {size.w > 0 && (
-          <Svg
+        {t.blur > 0 ? (
+          <BlurView
             pointerEvents="none"
+            intensity={t.blur}
+            tint={dark ? "dark" : "light"}
+            experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
             style={StyleSheet.absoluteFill}
-            width={size.w}
-            height={size.h}
-            viewBox={`0 0 ${size.w} ${size.h}`}
-          >
-            <Path d={outline(size.w, size.h, radius)} fill={t.fill} />
-            <Path d={outline(size.w, size.h, radius, 0.5)} stroke={t.line} strokeWidth={1} fill="none" />
-            {ring ? <Path d={outline(size.w, size.h, radius, 1)} stroke={ring} strokeWidth={1.5} fill="none" /> : null}
-          </Svg>
-        )}
-        {/* the light on the top edge: what makes foamcore read as lacquer */}
-        {tone !== "plate" ? <View pointerEvents="none" style={{ position: "absolute", top: 1, left: radius, right: radius + BEVEL, height: 1, backgroundColor: alpha.gloss() }} /> : null}
+          />
+        ) : null}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: t.fill }]} />
+        {t.gloss ? (
+          <LinearGradient
+            pointerEvents="none"
+            colors={[alpha.gloss(), "rgba(255,255,255,0)"]}
+            locations={[0, 1]}
+            style={{ position: "absolute", top: 0, left: 0, right: 0, height: 28, opacity: dark ? 0.5 : 0.9 }}
+          />
+        ) : null}
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: 1, borderColor: lineColor ?? t.line }]} />
+        {ring ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: 1.5, borderColor: ring }]} /> : null}
         <View style={[{ flexShrink: 1 }, padding !== undefined ? { padding } : null]}>{children}</View>
       </View>
     </View>

@@ -28,7 +28,7 @@ export default function Inbox() {
   const open = items.find((x) => x.id === openId) ?? null;
   const unread = items.filter((t) => t.unread).length;
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <View style={{ paddingTop: L.insets.top + 8, paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 8, flexDirection: "row", alignItems: "center" }}>
         <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
           <Spec tone="ink">← Back</Spec>
@@ -40,7 +40,7 @@ export default function Inbox() {
       </View>
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: 720, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: L.insets.bottom + 24, gap: 16 }}>
         <Scene set="mailroom" height={L.compact ? 164 : 192} radiusPx={radius.xl} accessibilityLabel="The mailroom">
-          <Spec tone="muted">{unread ? `${unread} WAITING` : "ALL READ"}</Spec>
+          <Spec tone="muted">{unread ? `${unread} waiting` : "ALL READ"}</Spec>
         </Scene>
         <View style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>Inbox</Display>

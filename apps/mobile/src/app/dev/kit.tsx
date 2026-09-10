@@ -106,7 +106,7 @@ export default function Kit() {
   const [entity, setEntity] = useState("de-llc");
   const [ticked, setTicked] = useState(false);
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 24, paddingBottom: 140, paddingHorizontal: L.shell.paddingHorizontal, gap: 16, maxWidth: L.shell.maxWidth, alignSelf: "center", width: "100%" }}>
         <View style={{ gap: 8 }}>
           <Spec tone="muted">FounderFloor · the kit · {L.cls} · {L.width}×{L.height}</Spec>

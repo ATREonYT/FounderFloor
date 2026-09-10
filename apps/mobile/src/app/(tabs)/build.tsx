@@ -118,7 +118,7 @@ export default function Build() {
       STAGES.map((s, i) => {
         const p = stageProgress(s, ticks);
         const weeks = roomWeeks.filter((x) => x.room === i).map((x) => x.w.n);
-        return { id: s.id, name: s.name, color: DOOR[i], glyph: ROOM_GLYPH[s.id] ?? "bolt", tasks: tasksIn(i).map((t) => ({ text: t.text, done: t.done })), week: weeks.length ? `WEEK ${weeks.join(" & ")}` : undefined, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length} on the list`, progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
+        return { id: s.id, name: s.name, color: DOOR[i], glyph: ROOM_GLYPH[s.id] ?? "bolt", tasks: tasksIn(i).map((t) => ({ text: t.text, done: t.done })), week: weeks.length ? `Week ${weeks.join(" & ")}` : undefined, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length} on the list`, progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ticks, roomWeeks, planDone, opened],
@@ -126,14 +126,14 @@ export default function Build() {
   const walked = plan ? planDone.length / Math.max(1, plan.weeks.reduce((n, w) => n + w.do.length, 0)) : pathProgress(ticks);
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <TopBar center={<Spec tone="muted">{`The map · ${Math.round(walked * 100)}% walked`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
         <Scene set="workshop" height={L.compact ? 150 : 180} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The map">
           <Pressable onPress={() => void openRoom(here)} accessibilityRole="button" accessibilityLabel="Open the room you are in" style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <GlyphTile id={ROOM_GLYPH[here.id] ?? "bolt"} color={DOOR[hereIndex]} size={36} />
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Spec tone="muted">{plan ? `YOU ARE IN · WEEK ${wk}` : "YOU ARE IN"}</Spec>
+              <Spec tone="muted">{plan ? `You are in · Week ${wk}` : "YOU ARE IN"}</Spec>
               <Body medium numberOfLines={1}>{plan ? `${here.name} · ${tasksIn(hereIndex).filter((t) => t.done).length} of ${tasksIn(hereIndex).length} tasks done` : `${cur.name} · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
             </View>
             <Body tone="accent">›</Body>
@@ -179,7 +179,7 @@ export default function Build() {
             <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} set="workshop" ambient={false} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
             {tasksIn(open.n - 1).length ? (
               <View style={{ gap: 8 }}>
-                <Spec tone="muted">{`YOUR PLAN, IN THIS ROOM · ${roomWeeks.filter((x) => x.room === open.n - 1).map((x) => `WEEK ${x.w.n}`).join(" & ")}`}</Spec>
+                <Spec tone="muted">{`Your plan, in this room · ${roomWeeks.filter((x) => x.room === open.n - 1).map((x) => `WEEK ${x.w.n}`).join(" & ")}`}</Spec>
                 {tasksIn(open.n - 1).map((t) => (
                   <Tap key={`${t.week}-${t.i}`} onPress={() => { setOpen(null); router.push({ pathname: "/task", params: { week: String(t.week), i: String(t.i) } } as Href); }} accessibilityRole="button" accessibilityLabel={`Open task: ${t.text}`} scale={0.985}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: t.done ? wash(DOOR[open.n - 1], 0.1) : shell.paper, borderRadius: 16, borderWidth: 1, borderColor: t.done ? DOOR[open.n - 1] : shell.line, paddingVertical: 9, paddingHorizontal: 10 }}>
@@ -199,7 +199,7 @@ export default function Build() {
                     <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}, ${reviews[w].score} of 100 →` : `Read week ${w} back →`; })()}</Spec>
                   </Pressable>
                 ) : null}
-                <Spec tone="muted" style={{ marginTop: 4 }}>THE ROOM'S OWN LIST · TAP A LINE</Spec>
+                <Spec tone="muted" style={{ marginTop: 4 }}>The room's own list · Tap A line</Spec>
               </View>
             ) : null}
             <Progress value={stageProgress(open, ticks)} label={open.name} right={`${Math.round(stageProgress(open, ticks) * 100)}%`} color={stageProgress(open, ticks) >= 1 ? shell.verify : shell.accent} />
@@ -221,7 +221,7 @@ export default function Build() {
             {guide ? <Typed q={guide.q} text={guide.text} look={ines.look} color={ines.color} /> : null}
             {DOC_KINDS.filter((k) => k.room === open.id && k.kind !== "update").length ? (
               <View style={{ gap: 8, marginTop: 4 }}>
-                <Spec tone="muted">DRAFT IT FOR ME</Spec>
+                <Spec tone="muted">Draft it for me</Spec>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   {DOC_KINDS.filter((k) => k.room === open.id && k.kind !== "update").map((k) => (
                     <Button

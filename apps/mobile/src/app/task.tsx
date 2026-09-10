@@ -126,7 +126,7 @@ export default function Task() {
 
   if (!plan || !week || !text) {
     return (
-      <View style={{ flex: 1, backgroundColor: shell.paper, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 }}>
         <Body tone="muted">That task is not on your plan any more.</Body>
         <Button variant="secondary" onPress={back}>
           Back
@@ -139,7 +139,7 @@ export default function Task() {
   const status = t.quota ? t.quota : t.source === "live" ? "Live · the desk knows this task, your plan and your notes" : aiMode() === "rehearsal" ? "Practice mode · the desk answers from the page" : t.lastError ? `Practice mode · ${t.lastError}` : "The desk is open";
 
   return (
-    <View style={{ flex: 1, backgroundColor: shell.paper }}>
+    <View style={{ flex: 1 }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
           {/* the way back, and where this sits in the plan */}
@@ -149,7 +149,7 @@ export default function Task() {
             </Pressable>
             <View style={{ alignItems: "flex-end", gap: 4 }}>
               <StopLine id="week" />
-              <Spec tone="muted">{`WEEK ${wN}${wN === now ? " · THIS WEEK" : ""} · TASK ${idx + 1} OF ${week.do.length}`}</Spec>
+              <Spec tone="muted">{`Week ${wN}${wN === now ? " · this week" : ""} · Task ${idx + 1} of ${week.do.length}`}</Spec>
             </View>
           </View>
 
@@ -157,7 +157,7 @@ export default function Task() {
           <Scene key={room.set} set={room.set} height={L.compact ? 150 : 180} radiusPx={radius.xl} color={room.color} accessibilityLabel={TASK_KINDS[kind].label}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <GlyphTile id={room.glyph} color={room.color} size={28} scale={1} />
-              <Spec tone="ink">{TASK_KINDS[kind].label.toUpperCase()}</Spec>
+              <Spec tone="ink">{TASK_KINDS[kind].label}</Spec>
             </View>
           </Scene>
 
@@ -214,7 +214,7 @@ export default function Task() {
                 <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 20, padding: 12 }}>
                   <GlyphTile id={outcome.how === "did" ? "star" : outcome.how === "partly" ? "wave" : "flask"} color={room.color} size={36} scale={1} />
                   <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                    <Spec tone="muted">{outcome.how === "did" ? "YOU DID IT" : outcome.how === "partly" ? "PARTLY DONE" : "YOU GOT STUCK"}</Spec>
+                    <Spec tone="muted">{outcome.how === "did" ? "You did it" : outcome.how === "partly" ? "Partly done" : "You got stuck"}</Spec>
                     <Body size="sm" medium>
                       {outcome.text || (outcome.how === "stuck" ? "Ask the desk below where to go from here." : "In the notebook.")}
                     </Body>
@@ -225,7 +225,7 @@ export default function Task() {
               {/* the steps */}
               <View style={{ gap: 8 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                  <Spec tone="muted">THE STEPS</Spec>
+                  <Spec tone="muted">The steps</Spec>
                   <Spec tone="faint">Tap a step to write in it</Spec>
                 </View>
                 {t.guide.steps.map((s, i) => {
@@ -265,7 +265,7 @@ export default function Task() {
                 <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 20, padding: 12 }}>
                   <GlyphTile id="star" color={room.color} size={36} scale={1} />
                   <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                    <Spec tone="muted">YOU ARE DONE WHEN</Spec>
+                    <Spec tone="muted">You are done when</Spec>
                     <Body size="sm" medium>
                       {t.guide.done}
                     </Body>
@@ -275,12 +275,12 @@ export default function Task() {
 
               {/* the founder's own notes */}
               <Animated.View entering={enter(t.guide.steps.length + 2)}>
-                <Input label="YOUR NOTES" value={t.notes} onChangeText={t.setNotes} onBlur={t.noteDown} multiline placeholder="Names, quotes, what happened, what you would change…" style={{ minHeight: 88, textAlignVertical: "top" }} />
+                <Input label="Your notes" value={t.notes} onChangeText={t.setNotes} onBlur={t.noteDown} multiline placeholder="Names, quotes, what happened, what you would change…" style={{ minHeight: 88, textAlignVertical: "top" }} />
               </Animated.View>
 
               {/* the desk, on this task */}
               <View style={{ gap: 10 }}>
-                <Spec tone="muted">ASK THE DESK ABOUT THIS</Spec>
+                <Spec tone="muted">Ask the desk about this</Spec>
                 {t.chat.length === 0 ? (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                     {t.guide.starters.map((s) => (
