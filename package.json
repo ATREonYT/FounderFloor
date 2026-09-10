@@ -2,7 +2,7 @@
   "name": "founderfloor",
   "version": "0.1.0",
   "private": true,
-  "description": "A walkable 2D expo floor for startups — booths, founders, chat, connections.",
+  "description": "A walkable 2D expo floor for startups \u2014 booths, founders, chat, connections.",
   "scripts": {
     "dev": "concurrently -n web,ws -c blue,yellow \"next dev\" \"node server/index.mjs\"",
     "dev:web": "next dev",
@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "concurrently -n web,ws -c blue,yellow \"next start\" \"node server/index.mjs\"",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint"
+    "lint": "next lint",
+    "studio:bundle": "esbuild tools/studio-bundle-entry.ts --bundle --format=esm --platform=node --target=node18 --outfile=dist/founderfloor-studio.mjs"
   },
   "dependencies": {
     "concurrently": "9.1.0",

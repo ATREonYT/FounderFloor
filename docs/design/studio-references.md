@@ -30,3 +30,7 @@ From the UI/UX Pro Max guidelines (MIT) and the data visualisation method: touch
 - Anthropic frontend-design skill: https://github.com/anthropics/skills (Apache 2.0)
 
 Rendered examples for eleven founders live in `docs/design/studio/`.
+
+## The studio as one file
+
+`npx -y esbuild@0.24.2 tools/studio-bundle-entry.ts --bundle --format=esm --platform=node --outfile=dist/founderfloor-studio.mjs` (or `npm run studio:bundle` with esbuild installed) produces the whole engine as one runnable JavaScript file: the tables, the plan, the parts, the screens, the prompts the model path uses, and a command line that turns a sign into a page. The header of `tools/studio-bundle-entry.ts` shows the usage.
