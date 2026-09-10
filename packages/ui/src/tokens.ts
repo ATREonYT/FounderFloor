@@ -14,7 +14,7 @@
 // Mutable on purpose: theme.ts swaps every value for the dark scheme and the
 // root remounts, so components keep reading `shell.x` at render and never
 // carry a stale colour. Never destructure a colour at module scope.
-export type ShellKey = "panel" | "paper" | "well" | "line" | "faint" | "muted" | "strong" | "ink" | "blackout" | "accent" | "accentLift" | "accentSoft" | "gold" | "goldDeep" | "fountain" | "verify";
+export type ShellKey = "panel" | "paper" | "well" | "line" | "faint" | "muted" | "strong" | "ink" | "blackout" | "accent" | "accentLift" | "accentSoft" | "accentFill" | "gold" | "goldDeep" | "fountain" | "verify";
 export const shell: Record<ShellKey, string> = {
   panel: "#FAFDFF", // foamcore — cards, header, footer
   paper: "#EDF0F4", // screed — page ground, inputs
@@ -28,6 +28,7 @@ export const shell: Record<ShellKey, string> = {
   accent: "#BE241B", // tarp — CTAs, live dots (on paper)
   accentLift: "#E05B4C", // tarp-lift — the accent ON DARK grounds only
   accentSoft: "#FBE1DD", // tarp-wash
+  accentFill: "#BE241B", // the accent as a fill under paper text: the same red by day, a deeper cut by night so white still clears 4.5:1
   gold: "#B18C39", // brass — membership fills/dots/borders only
   goldDeep: "#775800", // brass-deep — membership as TEXT
   fountain: "#207582", // WAYFINDING ONLY — input focus

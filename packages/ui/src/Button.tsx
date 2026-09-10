@@ -70,7 +70,7 @@ export function Button({
   const pad = size === "sm" ? { minHeight: 36, paddingHorizontal: 14 } : size === "lg" ? { minHeight: 52, paddingHorizontal: 28 } : { minHeight: 44, paddingHorizontal: 20 };
   const look: ViewStyle =
     variant === "primary"
-      ? { backgroundColor: shell.accent }
+      ? { backgroundColor: shell.accentFill }
       : variant === "secondary"
         ? { backgroundColor: onDark ? "rgba(237,240,244,0.12)" : shell.well }
         : { backgroundColor: "transparent", paddingHorizontal: size === "sm" ? 8 : 12 };
@@ -78,6 +78,7 @@ export function Button({
 
   return (
     <Pressable
+      hitSlop={size === "sm" ? 4 : undefined}
       onPress={onPress}
       onPressIn={down}
       onPressOut={up}

@@ -24,7 +24,7 @@ export function Tick({ done, text, proof, onToggle, onOpen, written = 0 }: { don
       style={({ pressed }) => ({ flexDirection: "row", gap: 12, paddingVertical: 10, alignItems: "flex-start", opacity: pressed ? 0.7 : 1 })}
     >
       {onOpen ? (
-        <Pressable onPress={onToggle} hitSlop={10} accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={done ? "Mark not done" : "Mark done"}>
+        <Pressable onPress={onToggle} hitSlop={11} accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={done ? "Mark not done" : "Mark done"}>
           {box}
         </Pressable>
       ) : (
@@ -37,7 +37,7 @@ export function Tick({ done, text, proof, onToggle, onOpen, written = 0 }: { don
         {proof ? <Spec tone="faint">{proof}</Spec> : null}
         {onOpen ? <Spec tone={written ? "ink" : "accent"} style={{ marginTop: 2 }}>{written ? `${written} ${written === 1 ? "line" : "lines"} written →` : "How, and write what you did →"}</Spec> : null}
       </View>
-      {onOpen ? <Body tone="accent">›</Body> : null}
+      {onOpen ? <Body tone="accent" accessibilityElementsHidden importantForAccessibility="no">›</Body> : null}
     </Pressable>
   );
 }

@@ -15,14 +15,12 @@ import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
 import { Road } from "../../components/Road";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
-import { ROOM_GLYPH } from "../../lib/glyphs";
+import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
 import { RECEPTIONIST, greeting } from "../../lib/mock";
 import { useStand } from "../../lib/stand";
 import { isoWeek, useFounder } from "../../lib/store";
 import { roomOfWeek, taskKey, weekNow } from "../../lib/taskDesk";
 import { useTour } from "../../lib/tour";
-
-const DOOR = ["#8C3B2E", "#3B5B92", "#4E6E4E", "#B4762E", "#2F6F6A", "#6B4E71"];
 
 export default function Today() {
   const L = useLayout();
@@ -41,7 +39,7 @@ export default function Today() {
   const week = plan?.weeks.find((w) => w.n === wk) ?? null;
   const roomIdx = plan ? roomOfWeek(plan, wk) : 0;
   const room = STAGES[roomIdx];
-  const color = DOOR[roomIdx];
+  const color = ROOM_COLOR[room.id];
   const nextI = week ? week.do.findIndex((_, i) => !planDone.includes(taskKey(wk, i))) : -1;
   const next = week && nextI >= 0 ? { i: nextI, text: week.do[nextI], guide: tasks[taskKey(wk, nextI)]?.guide ?? null } : null;
   const doneCount = week ? week.do.filter((_, i) => planDone.includes(taskKey(wk, i))).length : 0;
@@ -114,7 +112,7 @@ export default function Today() {
                 const ticked = steps ? Math.min(steps, (tasks[key]?.ticks ?? []).filter((x) => x < steps).length) : 0;
                 return (
                   <Pressable key={key} onPress={() => openTask(i)} accessibilityRole="button" accessibilityLabel={d} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 10, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>
-                    <Pressable onPress={() => { toggle(key); void haptic(on ? "light" : "success"); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8} style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+                    <Pressable onPress={() => { toggle(key); void haptic(on ? "light" : "success"); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={10} style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
                       {on ? <Glyph id="star" tone="paper" scale={1} /> : null}
                     </Pressable>
                     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -123,12 +121,12 @@ export default function Today() {
                       </Body>
                       {!on && ticked ? <Spec tone="faint">{`${ticked} of ${steps} steps`}</Spec> : null}
                     </View>
-                    <Body tone="accent">›</Body>
+                    <Body tone="accent" accessibilityElementsHidden importantForAccessibility="no">›</Body>
                   </Pressable>
                 );
               })}
             </Plate>
-            <Pressable onPress={() => router.push("/plan" as Href)} accessibilityRole="button" style={{ alignSelf: "flex-start", paddingVertical: 4 }}>
+            <Pressable onPress={() => router.push("/plan" as Href)} accessibilityRole="button" accessibilityLabel="All four weeks of the plan" style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingRight: 8 }}>
               <Spec tone="accent">All four weeks →</Spec>
             </Pressable>
           </View>

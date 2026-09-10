@@ -26,7 +26,7 @@ export function TopBar({ left, center, right }: { left?: ReactNode; center?: Rea
 export function Back({ label = "Back" }: { label?: string }) {
   const router = useRouter();
   return (
-    <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
+    <Pressable hitSlop={4} onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
       <Spec tone="ink">{`← ${label}`}</Spec>
     </Pressable>
   );
@@ -39,7 +39,7 @@ export function You() {
   const stand = useStand();
   if (!auth) {
     return (
-      <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="button" accessibilityLabel="Sign in" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
+      <Pressable hitSlop={4} onPress={() => router.push("/sign-in")} accessibilityRole="button" accessibilityLabel="Sign in" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" })}>
         <Spec tone="ink">Sign in</Spec>
       </Pressable>
     );
@@ -55,7 +55,7 @@ export function Mailbox() {
   const router = useRouter();
   const unread = useInbox((s) => s.items.filter((x) => x.unread).length);
   return (
-    <Pressable onPress={() => router.push("/inbox")} accessibilityRole="button" accessibilityLabel={unread ? `Inbox, ${unread} unread` : "Inbox"} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, width: 36, height: 36, borderRadius: radius.full, backgroundColor: shell.well, alignItems: "center", justifyContent: "center" })}>
+    <Pressable hitSlop={4} onPress={() => router.push("/inbox")} accessibilityRole="button" accessibilityLabel={unread ? `Inbox, ${unread} unread` : "Inbox"} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, width: 36, height: 36, borderRadius: radius.full, backgroundColor: shell.well, alignItems: "center", justifyContent: "center" })}>
       <Sprite id={scheme() === "dark" ? "glyph-chip-paper" : "glyph-chip-ink"} scale={2} />
       {unread ? (
         <View style={{ position: "absolute", top: -5, right: -5, minWidth: 16, height: 16, borderRadius: radius.full, backgroundColor: shell.accent, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>

@@ -50,7 +50,7 @@ export function Road() {
                   </Body>
                   {s.progress ? <Spec tone="faint">{s.progress}</Spec> : null}
                   {s.state === "done" ? <Spec tone="faint">DONE</Spec> : null}
-                  <Body tone={on ? "accent" : "muted"}>›</Body>
+                  <Body tone={on ? "accent" : "muted"} accessibilityElementsHidden importantForAccessibility="no">›</Body>
                 </View>
                 {on ? (
                   <View style={{ marginTop: 6, gap: 8, backgroundColor: wash(look.color, 0.08), borderRadius: radius.lg, padding: 12, overflow: "hidden" }}>

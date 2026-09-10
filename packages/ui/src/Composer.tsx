@@ -109,7 +109,7 @@ export function Composer({
             accessibilityLabel="Send"
             accessibilityState={{ disabled: !canSend }}
           >
-            <Animated.View style={[{ width: 36, height: 36, borderRadius: radius.full, backgroundColor: canSend ? shell.accent : shell.well, alignItems: "center", justifyContent: "center" }, arrow]}>
+            <Animated.View style={[{ width: 36, height: 36, borderRadius: radius.full, backgroundColor: canSend ? shell.accentFill : shell.well, alignItems: "center", justifyContent: "center" }, arrow]}>
               <Body medium tone={canSend ? "paper" : "faint"} style={{ lineHeight: 20 }}>
                 ↑
               </Body>

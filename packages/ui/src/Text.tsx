@@ -30,7 +30,7 @@ const TONE = (t: Tone): string =>
     faint: shell.faint,
   })[t];
 
-type Common = { children: ReactNode; tone?: Tone; style?: StyleProp<TextStyle>; numberOfLines?: number; accessibilityRole?: "header" | "text" | "link"; onPress?: () => void };
+type Common = { children: ReactNode; tone?: Tone; style?: StyleProp<TextStyle>; numberOfLines?: number; accessibilityRole?: "header" | "text" | "link"; onPress?: () => void; accessibilityElementsHidden?: boolean; importantForAccessibility?: "auto" | "yes" | "no" | "no-hide-descendants" };
 
 export function Display({ children, tone = "ink", size = "xl", style, ...rest }: Common & { size?: "lg" | "xl" | "3xl" | "4xl" }) {
   const s = T[size];
