@@ -4,9 +4,10 @@
  * Its signature is the site's `.clip-badge`: an 8px bevel across the
  * top-right corner only, "the corner you punch a lanyard clip through on an
  * expo badge", on every plate and nowhere else in the world. React Native
- * cannot clip-path, so the bevel is real geometry: an SVG polygon paints the
- * fill, and a matching polyline draws the hairline on top. The other three
- * corners keep the radius. Nothing else on the app may cut a corner.
+ * cannot clip-path, so the bevel is real geometry: one SVG path with three
+ * round corners and the cut, painted as the fill and stroked as the
+ * hairline, so the outline is exactly the shape. Nothing else on the app
+ * may cut a corner.
  *
  * Tones (globals.css):
  *   panel   .panel  — foamcore fill, line/70 hairline, card shadow
@@ -19,7 +20,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { View, type LayoutChangeEvent, type ViewStyle, StyleSheet } from "react-native";
-import Svg, { Polygon, Polyline } from "react-native-svg";
+import Svg, { Path } from "react-native-svg";
 import { BEVEL, radius as R, shell, shadow } from "./tokens";
 import { alpha } from "./theme";
 
@@ -34,13 +35,28 @@ const TONES = (): Record<PlateTone, { fill: string; line: string; shadow?: "card
   paper: { fill: shell.paper, line: shell.line },
 });
 
-/** The bevelled outline for a w x h plate with radius r. */
-function outline(w: number, h: number, r: number): string {
-  // straight-edged where the bevel is; the SVG polygon cannot round the
-  // other corners, so the rounding comes from the overflow:hidden host
-  // View's borderRadius and the polygon simply fills the whole box minus
-  // the bevel triangle.
-  return `0,0 ${w - BEVEL},0 ${w},${BEVEL} ${w},${h} 0,${h}`;
+/**
+ * The plate's outline as one path: round corners at top-left, bottom-left
+ * and bottom-right, the clip corner cut at top-right, inset by `i` so a
+ * hairline stroked on it sits inside the box. Fill and stroke share it, so
+ * the outline is the shape and nothing is square that the surface is not.
+ */
+function outline(w: number, h: number, r: number, i = 0): string {
+  const rr = Math.max(0, Math.min(r, (Math.min(w, h) - 2 * i) / 2));
+  const x0 = i, y0 = i, x1 = w - i, y1 = h - i;
+  const b = BEVEL;
+  return [
+    `M${x0 + rr},${y0}`,
+    `H${x1 - b}`,
+    `L${x1},${y0 + b}`,
+    `V${y1 - rr}`,
+    `A${rr},${rr} 0 0 1 ${x1 - rr},${y1}`,
+    `H${x0 + rr}`,
+    `A${rr},${rr} 0 0 1 ${x0},${y1 - rr}`,
+    `V${y0 + rr}`,
+    `A${rr},${rr} 0 0 1 ${x0 + rr},${y0}`,
+    "Z",
+  ].join(" ");
 }
 
 export function Plate({
@@ -51,6 +67,7 @@ export function Plate({
   padding,
   contentStyle,
   lineColor,
+  ring,
   testID,
 }: {
   tone?: PlateTone;
@@ -62,6 +79,8 @@ export function Plate({
   contentStyle?: ViewStyle;
   /** Override the hairline — the composer speaks fountain while focused. */
   lineColor?: string;
+  /** A 1.5px ring in this colour on the same outline: the card that is lit, the task that is done. Never a square border on the outside. */
+  ring?: string;
   testID?: string;
 }) {
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -96,23 +115,11 @@ export function Plate({
             height={size.h}
             viewBox={`0 0 ${size.w} ${size.h}`}
           >
-            <Polygon points={outline(size.w, size.h, radius)} fill={t.fill} />
-            <Polyline
-              points={`${size.w - BEVEL},0.5 ${size.w - 0.5},${BEVEL}`}
-              stroke={t.line}
-              strokeWidth={1}
-              fill="none"
-            />
+            <Path d={outline(size.w, size.h, radius)} fill={t.fill} />
+            <Path d={outline(size.w, size.h, radius, 0.5)} stroke={t.line} strokeWidth={1} fill="none" />
+            {ring ? <Path d={outline(size.w, size.h, radius, 1)} stroke={ring} strokeWidth={1.5} fill="none" /> : null}
           </Svg>
         )}
-        <View
-          style={[
-            styles.border,
-            { borderRadius: radius, borderColor: t.line },
-            // the hairline is drawn by the View; the bevel edge by the SVG.
-          ]}
-          pointerEvents="none"
-        />
         {/* the light on the top edge: what makes foamcore read as lacquer */}
         {tone !== "plate" ? <View pointerEvents="none" style={{ position: "absolute", top: 1, left: radius, right: radius + BEVEL, height: 1, backgroundColor: alpha.gloss() }} /> : null}
         <View style={[{ flexShrink: 1 }, padding !== undefined ? { padding } : null]}>{children}</View>
@@ -123,5 +130,4 @@ export function Plate({
 
 const styles = StyleSheet.create({
   host: { overflow: "hidden", position: "relative" },
-  border: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderWidth: 1 },
 });

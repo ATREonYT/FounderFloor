@@ -65,7 +65,7 @@ export default function Today() {
         {/* the one thing */}
         <TourTarget id="home-next">
           <Tap onPress={() => { if (useTour.getState().active) return; if (!plan) router.push("/welcome" as Href); else if (next) openTask(next.i); else router.push({ pathname: "/review", params: { week: String(wk) } } as Href); }} accessibilityLabel={!plan ? "Make your plan" : next ? `Next up: ${next.text}` : "Read the week back"} scale={0.985}>
-            <Plate tone="panel" radius={radius.xxl} padding={0} style={{ borderWidth: 1.5, borderColor: wash(color, 0.5) }}>
+            <Plate tone="panel" radius={radius.xxl} padding={0} ring={wash(color, 0.5)}>
               <View style={{ backgroundColor: wash(color, 0.1), borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <GlyphTile id={plan ? ROOM_GLYPH[room.id] ?? "bolt" : "bolt"} color={color} size={32} scale={1} />
                 <Spec tone="muted" style={{ flex: 1 }}>{!plan ? "FIRST THING" : next ? `NEXT UP · WEEK ${wk} · ${room.name.toUpperCase()} ROOM` : `WEEK ${wk} · ALL DONE`}</Spec>
@@ -137,7 +137,7 @@ export default function Today() {
         {/* the week's two rituals */}
         <View style={{ flexDirection: "row", gap: 10 }}>
           <Tap onPress={() => router.push("/office" as Href)} accessibilityLabel={weekLogged ? "Week logged. Open the Office" : "Log the week"} style={{ flex: 1 }} scale={0.98}>
-            <Plate tone="panel" radius={radius.xl} padding={14} style={friday && !weekLogged ? { borderWidth: 1.5, borderColor: shell.accent } : undefined}>
+            <Plate tone="panel" radius={radius.xl} padding={14} ring={friday && !weekLogged ? shell.accent : undefined}>
               <GlyphTile id="coin" color="#5E7C93" size={32} scale={1} />
               <Body size="sm" medium style={{ marginTop: 10 }}>
                 {weekLogged ? "Week logged ✓" : "Log the week"}

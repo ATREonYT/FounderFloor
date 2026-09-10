@@ -140,7 +140,7 @@ export default function Workshop() {
         </View>
 
         {/* the design: the brief first, then the app designed to it; asked again, a direction drawn at random */}
-        <Plate tone="panel" radius={radius.xl} padding={14} style={w.designed ? { borderWidth: 1.5, borderColor: "#A28457" } : undefined}>
+        <Plate tone="panel" radius={radius.xl} padding={14} ring={w.designed ? "#A28457" : undefined}>
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
             <Spec tone="muted">THE DESIGN</Spec>
             {w.canDesign ? (

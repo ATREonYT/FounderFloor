@@ -55,7 +55,7 @@ export function Mailbox() {
   const router = useRouter();
   const unread = useInbox((s) => s.items.filter((x) => x.unread).length);
   return (
-    <Pressable onPress={() => router.push("/inbox")} accessibilityRole="button" accessibilityLabel={unread ? `Inbox, ${unread} unread` : "Inbox"} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, width: 36, height: 36, borderRadius: radius.md, borderWidth: 1, borderColor: shell.line, alignItems: "center", justifyContent: "center" })}>
+    <Pressable onPress={() => router.push("/inbox")} accessibilityRole="button" accessibilityLabel={unread ? `Inbox, ${unread} unread` : "Inbox"} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, width: 36, height: 36, borderRadius: radius.full, backgroundColor: shell.well, alignItems: "center", justifyContent: "center" })}>
       <Sprite id={scheme() === "dark" ? "glyph-chip-paper" : "glyph-chip-ink"} scale={2} />
       {unread ? (
         <View style={{ position: "absolute", top: -5, right: -5, minWidth: 16, height: 16, borderRadius: radius.full, backgroundColor: shell.accent, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 }}>

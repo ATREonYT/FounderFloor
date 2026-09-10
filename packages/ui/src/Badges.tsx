@@ -19,7 +19,7 @@ export const TIER_PRICING = { pro: { monthly: 9, annual: 79 }, founder: { monthl
 export function TierTag({ tier }: { tier: SubTier }) {
   const s = tier === "free" ? { b: shell.line, t: "muted" as const } : tier === "pro" ? { b: "rgba(190,36,27,0.4)", t: "accent" as const } : { b: "rgba(177,140,57,0.5)", t: "goldDeep" as const };
   return (
-    <View style={{ borderWidth: 1, borderColor: s.b, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2, alignSelf: "flex-start" }}>
+    <View style={{ borderWidth: 1, borderColor: s.b, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 2, alignSelf: "flex-start" }}>
       <Spec tone={s.t}>{TIER_LABEL[tier]}</Spec>
     </View>
   );

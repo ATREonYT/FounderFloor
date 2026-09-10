@@ -182,7 +182,7 @@ export default function Task() {
             <>
               {/* how far along, and the switch on the plan */}
               <Animated.View entering={enter(0)}>
-                <Plate tone="panel" radius={radius.xl} padding={14} style={done ? { borderWidth: 1.5, borderColor: room.color } : undefined}>
+                <Plate tone="panel" radius={radius.xl} padding={14} ring={done ? room.color : undefined}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                     <View style={{ width: 64, height: 64 }}>
                       <Ring value={total ? ticked / total : 0} size={64} label={done ? "✓" : `${ticked}/${total}`} sub={done ? "done" : "steps"} color={room.color} />
@@ -211,7 +211,7 @@ export default function Task() {
 
               {/* how it went, once said */}
               {outcome ? (
-                <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 16, padding: 12 }}>
+                <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 20, padding: 12 }}>
                   <GlyphTile id={outcome.how === "did" ? "star" : outcome.how === "partly" ? "wave" : "flask"} color={room.color} size={36} scale={1} />
                   <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                     <Spec tone="muted">{outcome.how === "did" ? "YOU DID IT" : outcome.how === "partly" ? "PARTLY DONE" : "YOU GOT STUCK"}</Spec>
@@ -233,9 +233,9 @@ export default function Task() {
                   return (
                     <Animated.View key={i} entering={enter(i + 1)}>
                       <Tap onPress={() => router.push({ pathname: "/step", params: { week: String(wN), i: String(idx), s: String(i) } } as Href)} accessibilityRole="button" accessibilityLabel={`Open step ${i + 1}: ${s.do}`} scale={0.985}>
-                        <Animated.View style={{ ...TICK_T, flexDirection: "row", gap: 12, backgroundColor: on ? wash(room.color, 0.1) : shell.panel, borderRadius: 16, borderWidth: 1.5, borderColor: on ? room.color : shell.line, padding: 12 }}>
+                        <Animated.View style={{ ...TICK_T, flexDirection: "row", gap: 12, backgroundColor: on ? wash(room.color, 0.1) : shell.panel, borderRadius: 20, borderWidth: 1.5, borderColor: on ? room.color : shell.line, padding: 12 }}>
                           <Pressable onPress={() => { t.tick(i); void haptic(on ? "light" : "medium"); }} accessibilityRole="checkbox" accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8}>
-                            <Animated.View style={{ ...TICK_T, width: 32, height: 32, borderRadius: 16, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
+                            <Animated.View style={{ ...TICK_T, width: 32, height: 32, borderRadius: 20, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
                               {on ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(i + 1)}</Spec>}
                             </Animated.View>
                           </Pressable>
@@ -262,7 +262,7 @@ export default function Task() {
 
               {/* when it is finished */}
               <Animated.View entering={enter(t.guide.steps.length + 1)}>
-                <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 16, padding: 12 }}>
+                <View style={{ flexDirection: "row", gap: 12, alignItems: "center", backgroundColor: wash(room.color, 0.08), borderRadius: 20, padding: 12 }}>
                   <GlyphTile id="star" color={room.color} size={36} scale={1} />
                   <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                     <Spec tone="muted">YOU ARE DONE WHEN</Spec>
@@ -335,7 +335,7 @@ export default function Task() {
                   {t.writing ? "Writing…" : "Rewrite the page"}
                 </Button>
               </ButtonRow>
-              <Pressable onPress={() => router.push({ pathname: "/review", params: { week: String(wN) } } as Href)} accessibilityRole="button" accessibilityLabel="Read the week back" style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.panel, borderRadius: 14, borderWidth: 1, borderColor: shell.line, padding: 12 }}>
+              <Pressable onPress={() => router.push({ pathname: "/review", params: { week: String(wN) } } as Href)} accessibilityRole="button" accessibilityLabel="Read the week back" style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.panel, borderRadius: 18, borderWidth: 1, borderColor: shell.line, padding: 12 }}>
                 <GlyphTile id="coin" color="#4F6E6B" size={30} scale={1} />
                 <Body size="sm" medium style={{ flex: 1 }}>
                   {`How is week ${wN} going? The desk reads it back.`}
@@ -349,7 +349,7 @@ export default function Task() {
             <View style={{ gap: 12 }}>
               <Thinking label="The desk is writing your page…" />
               {[0, 1, 2].map((k) => (
-                <View key={k} style={{ height: 72, borderRadius: 16, backgroundColor: shell.well }} />
+                <View key={k} style={{ height: 72, borderRadius: 20, backgroundColor: shell.well }} />
               ))}
             </View>
           )}
@@ -371,7 +371,7 @@ export default function Task() {
               ] as [TaskOutcome["how"], string, GlyphId][]
             ).map(([v, l, g]) => (
               <Tap key={v} onPress={() => { setHow(v); void haptic("light"); }} accessibilityRole="radio" accessibilityLabel={`${l}${how === v ? ", selected" : ""}`} style={{ flex: 1 }}>
-                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 14, borderWidth: 1.5, borderColor: how === v ? room.color : shell.line, backgroundColor: how === v ? wash(room.color, 0.12) : shell.paper }}>
+                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 18, borderWidth: 1.5, borderColor: how === v ? room.color : shell.line, backgroundColor: how === v ? wash(room.color, 0.12) : shell.paper }}>
                   <Glyph id={g} tone="auto" scale={2} />
                   <Spec tone="ink">{l}</Spec>
                 </View>

@@ -81,7 +81,7 @@ export default function Coaches() {
                 )}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                   {c.topics.map((t) => (
-                    <View key={t} style={{ backgroundColor: shell.well, borderRadius: radius.sm, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <View key={t} style={{ backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 }}>
                       <Spec tone="ink">{t}</Spec>
                     </View>
                   ))}

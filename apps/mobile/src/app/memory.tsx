@@ -43,7 +43,7 @@ export default function Memory() {
   return (
     <View style={{ flex: 1, backgroundColor: shell.paper }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>
-        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/settings"))} accessibilityRole="button" style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: shell.line, borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center" }}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/settings"))} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
         <Scene set="archive" height={L.compact ? 140 : 170} radiusPx={radius.xl} color={NOTEBOOK_COLOR} accessibilityLabel="The notebook">
@@ -76,7 +76,7 @@ export default function Memory() {
             <View key={d} style={{ gap: 8 }}>
               <Spec tone="muted">{label(d)}</Spec>
               {list.map((e) => (
-                <View key={e.id} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 14, borderWidth: 1, borderColor: shell.line, padding: 10 }}>
+                <View key={e.id} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 18, borderWidth: 1, borderColor: shell.line, padding: 10 }}>
                   <View style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: wash(NOTEBOOK_COLOR, 0.14), alignItems: "center", justifyContent: "center" }}>
                     <GlyphTile id={KIND_GLYPH[e.kind]} color={NOTEBOOK_COLOR} size={28} scale={1} />
                   </View>

@@ -70,7 +70,7 @@ export default function Step() {
         <View style={{ paddingTop: L.insets.top + 8, paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: 12, backgroundColor: wash(room.color, 0.1), borderBottomWidth: 1.5, borderBottomColor: wash(room.color, 0.35) }}>
           <View style={{ width: "100%", maxWidth: 640, alignSelf: "center", gap: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back to the task" style={{ borderWidth: 1, borderColor: wash(room.color, 0.5), borderRadius: radius.md, paddingHorizontal: 10, height: 36, justifyContent: "center", backgroundColor: shell.panel }}>
+              <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back to the task" style={{ borderRadius: radius.full, paddingHorizontal: 12, height: 36, justifyContent: "center", backgroundColor: shell.panel }}>
                 <Spec tone="ink">← Task</Spec>
               </Pressable>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>

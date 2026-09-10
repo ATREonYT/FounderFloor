@@ -182,7 +182,7 @@ export default function Build() {
                 <Spec tone="muted">{`YOUR PLAN, IN THIS ROOM · ${roomWeeks.filter((x) => x.room === open.n - 1).map((x) => `WEEK ${x.w.n}`).join(" & ")}`}</Spec>
                 {tasksIn(open.n - 1).map((t) => (
                   <Tap key={`${t.week}-${t.i}`} onPress={() => { setOpen(null); router.push({ pathname: "/task", params: { week: String(t.week), i: String(t.i) } } as Href); }} accessibilityRole="button" accessibilityLabel={`Open task: ${t.text}`} scale={0.985}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: t.done ? wash(DOOR[open.n - 1], 0.1) : shell.paper, borderRadius: 12, borderWidth: 1, borderColor: t.done ? DOOR[open.n - 1] : shell.line, paddingVertical: 9, paddingHorizontal: 10 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: t.done ? wash(DOOR[open.n - 1], 0.1) : shell.paper, borderRadius: 16, borderWidth: 1, borderColor: t.done ? DOOR[open.n - 1] : shell.line, paddingVertical: 9, paddingHorizontal: 10 }}>
                       <View style={{ width: 22, height: 22, borderRadius: 7, backgroundColor: t.done ? DOOR[open.n - 1] : wash(DOOR[open.n - 1], 0.14), alignItems: "center", justifyContent: "center" }}>
                         {t.done ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(t.i + 1)}</Spec>}
                       </View>

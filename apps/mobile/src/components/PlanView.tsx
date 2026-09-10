@@ -61,7 +61,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                 {!last ? <View style={{ flex: 1, width: 3, backgroundColor: finished ? color : wash(color, 0.18), marginVertical: 4, borderRadius: 2 }} /> : null}
               </View>
               <View style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
-                <View style={{ backgroundColor: open ? wash(color, 0.1) : shell.panel, borderRadius: 16, borderWidth: 1.5, borderColor: open ? color : shell.line, padding: 12, gap: 8 }}>
+                <View style={{ backgroundColor: open ? wash(color, 0.1) : shell.panel, borderRadius: 20, borderWidth: 1.5, borderColor: open ? color : shell.line, padding: 12, gap: 8 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <Spec tone="muted">{`WEEK ${w.n} · ${STAGES[roomOfWeek(plan, w.n)].name.toUpperCase()} ROOM`}</Spec>
                     {open ? (
@@ -88,7 +88,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                       const ticked = steps ? Math.min(steps, tasks[key]?.ticks.filter((x) => x < steps).length ?? 0) : 0;
                       return (
                         <Tap key={key} onPress={onOpen ? () => onOpen(w.n, i) : tick} accessibilityLabel={d} accessibilityRole={onOpen ? "button" : "checkbox"} scale={0.985}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 10 }}>
+                          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 16, paddingVertical: 9, paddingHorizontal: 10 }}>
                             <Pressable onPress={onOpen ? tick : undefined} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8}>
                               <Animated.View style={{ transitionProperty: ["backgroundColor", "borderColor"], transitionDuration: 150, transitionTimingFunction: "ease-out", width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
                                 {on ? <Glyph id="star" tone="paper" scale={1} /> : null}

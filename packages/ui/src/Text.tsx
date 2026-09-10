@@ -100,7 +100,7 @@ export function Kbd({ children, tone = "ink" }: { children: ReactNode; tone?: "i
         borderWidth: 1,
         borderColor: dark ? "rgba(237,240,244,0.4)" : shell.line,
         borderRadius: radius.sm,
-        paddingHorizontal: 6,
+        paddingHorizontal: 7,
         paddingVertical: 2,
         alignSelf: "flex-start",
       }}

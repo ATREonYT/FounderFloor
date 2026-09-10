@@ -47,7 +47,7 @@ export function Progress({
           {right ? <Spec tone="ink">{right}</Spec> : null}
         </View>
       ) : null}
-      <View style={{ height, backgroundColor: shell.well, borderRadius: radius.sm, overflow: "hidden", borderWidth: 1, borderColor: shell.line }}>
+      <View style={{ height, backgroundColor: shell.well, borderRadius: radius.full, overflow: "hidden", borderWidth: 1, borderColor: shell.line }}>
         <Animated.View style={[{ height: "100%", backgroundColor: color, minWidth: v > 0 ? u : 0 }, fill]} />
       </View>
     </View>

@@ -77,8 +77,8 @@ function Row<T extends string>({ o, on, color, onPress, k }: { o: Opt<T>; on: bo
   return (
     <Animated.View entering={FadeInDown.delay(40 + k * 40).duration(200)}>
       <Tap onPress={onPress} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.985}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: on ? wash(color, 0.1) : shell.panel, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, borderWidth: 1.5, borderColor: on ? color : shell.line, height: 92 }}>
-          <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: on ? color : wash(color, 0.12), alignItems: "center", justifyContent: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: on ? wash(color, 0.1) : shell.panel, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 14, borderWidth: 1.5, borderColor: on ? color : shell.line, height: 92 }}>
+          <View style={{ width: 42, height: 42, borderRadius: 16, backgroundColor: on ? color : wash(color, 0.12), alignItems: "center", justifyContent: "center" }}>
             <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
           </View>
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
@@ -91,7 +91,7 @@ function Row<T extends string>({ o, on, color, onPress, k }: { o: Opt<T>; on: bo
               </Body>
             ) : null}
           </View>
-          <View style={{ width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 24, height: 24, borderRadius: 16, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
             {on ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: onDark.text }} /> : null}
           </View>
         </View>
@@ -104,13 +104,13 @@ function Row<T extends string>({ o, on, color, onPress, k }: { o: Opt<T>; on: bo
 function Segments<T extends string>({ opts, value, color, onPick }: { opts: Opt<T>[]; value: T | null; color: string; onPick: (v: T) => void }) {
   return (
     <Animated.View entering={FadeInDown.delay(40).duration(200)} style={{ gap: 10 }}>
-      <View style={{ flexDirection: "row", backgroundColor: shell.panel, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: shell.line }}>
+      <View style={{ flexDirection: "row", backgroundColor: shell.panel, borderRadius: 20, padding: 4, borderWidth: 1, borderColor: shell.line }}>
         {opts.map((o) => {
           const on = value === o.v;
           return (
             <View key={o.v} style={{ flex: 1 }}>
               <Tap onPress={() => onPick(o.v)} accessibilityLabel={o.label} accessibilityRole="radio" scale={0.97}>
-                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 12, backgroundColor: on ? color : "transparent" }}>
+                <View style={{ alignItems: "center", gap: 6, paddingVertical: 12, borderRadius: 16, backgroundColor: on ? color : "transparent" }}>
                   <Glyph id={o.glyph} tone={on ? "paper" : "auto"} scale={2} />
                   <Body size="sm" medium tone={on ? "paper" : "ink"}>
                     {o.label}
@@ -218,7 +218,7 @@ export default function Welcome() {
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
             <Keeper look={RECEPTIONIST.look} scale={2} color={wash(color, 0.35)} speaking={mood !== "idle"} />
-            <View style={{ flex: 1, backgroundColor: scheme() === "dark" ? shell.panel : art.bubblePaper, borderWidth: 1.5, borderColor: shell.ink, borderRadius: 16, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10 }}>
+            <View style={{ flex: 1, backgroundColor: scheme() === "dark" ? shell.panel : art.bubblePaper, borderWidth: 1.5, borderColor: shell.ink, borderRadius: 20, borderBottomLeftRadius: 4, paddingHorizontal: 14, paddingVertical: 10 }}>
               <Spec tone="muted">The desk</Spec>
               <Body size="sm">{step === "plan" && plan ? plan.headline : SAY[step]}</Body>
             </View>

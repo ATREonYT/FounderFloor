@@ -61,7 +61,7 @@ export default function Review() {
             const on = w.n === wN;
             const future = w.n > now;
             return (
-              <Pressable key={w.n} onPress={() => router.replace({ pathname: "/review", params: { week: String(w.n) } } as Href)} accessibilityRole="button" accessibilityLabel={`Week ${w.n}`} style={{ flex: 1, alignItems: "center", gap: 6, paddingVertical: 10, borderRadius: 14, backgroundColor: on ? COLOR : shell.panel, borderWidth: 1.5, borderColor: on ? COLOR : shell.line, opacity: future ? 0.55 : 1 }}>
+              <Pressable key={w.n} onPress={() => router.replace({ pathname: "/review", params: { week: String(w.n) } } as Href)} accessibilityRole="button" accessibilityLabel={`Week ${w.n}`} style={{ flex: 1, alignItems: "center", gap: 6, paddingVertical: 10, borderRadius: 18, backgroundColor: on ? COLOR : shell.panel, borderWidth: 1.5, borderColor: on ? COLOR : shell.line, opacity: future ? 0.55 : 1 }}>
                 <Glyph id={WEEK_GLYPH[k % WEEK_GLYPH.length]} tone={on ? "paper" : "auto"} scale={1} />
                 <Spec tone={on ? "paper" : "ink"}>{`Week ${w.n}`}</Spec>
               </Pressable>
@@ -114,7 +114,7 @@ export default function Review() {
           <View style={{ gap: 12 }}>
             <Thinking label="The desk is reading your week…" />
             {[0, 1, 2].map((k) => (
-              <View key={k} style={{ height: 84, borderRadius: 16, backgroundColor: shell.well }} />
+              <View key={k} style={{ height: 84, borderRadius: 20, backgroundColor: shell.well }} />
             ))}
           </View>
         )}
@@ -131,9 +131,9 @@ function Section({ k, enter, glyph, color, title, items, numbered = false, onOpe
         <Spec tone="muted">{title}</Spec>
       </View>
       {items.map((t, i) => (
-        <Pressable key={i} onPress={onOpen ? () => onOpen(i) : undefined} disabled={!onOpen} accessibilityRole={onOpen ? "button" : undefined} accessibilityLabel={onOpen ? `${t}. Open it to write what you did` : undefined} style={({ pressed }) => ({ flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 14, borderWidth: 1, borderColor: shell.line, borderLeftWidth: 4, borderLeftColor: color, padding: 12, opacity: pressed ? 0.8 : 1 })}>
+        <Pressable key={i} onPress={onOpen ? () => onOpen(i) : undefined} disabled={!onOpen} accessibilityRole={onOpen ? "button" : undefined} accessibilityLabel={onOpen ? `${t}. Open it to write what you did` : undefined} style={({ pressed }) => ({ flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 18, borderWidth: 1, borderColor: shell.line, borderLeftWidth: 4, borderLeftColor: color, padding: 12, opacity: pressed ? 0.8 : 1 })}>
           {numbered ? (
-            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 24, height: 24, borderRadius: 16, backgroundColor: wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
               <Spec tone="ink">{String(i + 1)}</Spec>
             </View>
           ) : null}

@@ -260,7 +260,7 @@ export function Glyph({ id, tone = "ink", scale = 2 }: { id: "bolt" | "leaf" | "
 export function GlyphTile({ id, color, size = 40, scale = 2 }: { id: Parameters<typeof Glyph>[0]["id"]; color?: string; size?: number; scale?: 1 | 2 | 3 }) {
   const bg = color ? washHex(color, scheme() === "dark" ? 0.32 : 0.18) : shell.well;
   return (
-    <View style={{ width: size, height: size, borderRadius: Math.round(size / 4), backgroundColor: bg, alignItems: "center", justifyContent: "center" }}>
+    <View style={{ width: size, height: size, borderRadius: Math.round(size / 3), backgroundColor: bg, alignItems: "center", justifyContent: "center" }}>
       <Glyph id={id} tone="auto" scale={scale} />
     </View>
   );

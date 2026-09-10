@@ -44,12 +44,12 @@ export default function Start() {
           <Tap key={d.door} onPress={() => go(d)} accessibilityLabel={d.title}>
             <Plate tone="panel" radius={radius.xl}>
               <View style={{ flexDirection: "row", gap: 16, padding: 16, alignItems: "center" }}>
-                <View style={{ width: 48, height: 64, backgroundColor: d.color, borderRadius: 3, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderWidth: 2, borderColor: shell.ink, alignItems: "center", justifyContent: "center" }}>
+                <View style={{ width: 48, height: 64, backgroundColor: d.color, borderRadius: 3, borderTopLeftRadius: 18, borderTopRightRadius: 18, borderWidth: 2, borderColor: shell.ink, alignItems: "center", justifyContent: "center" }}>
                   <Glyph id={d.glyph} tone="paper" scale={2} />
                   <View style={{ position: "absolute", right: 6, top: 30, width: 4, height: 4, borderRadius: 2, backgroundColor: shell.accentLift }} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                  <View style={{ alignSelf: "flex-start", backgroundColor: shell.blackout, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <View style={{ alignSelf: "flex-start", backgroundColor: shell.blackout, borderRadius: radius.full, paddingHorizontal: 6, paddingVertical: 2 }}>
                     <Signage>{d.sign}</Signage>
                   </View>
                   <Display size="lg">{d.title}</Display>

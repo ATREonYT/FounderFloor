@@ -35,7 +35,7 @@ import { alpha } from "./theme";
 import { haptic } from "./Tap";
 
 /** The sheet's corner radius; the lower corners hang below the screen edge by the same amount. */
-const R_SHEET = 24;
+const R_SHEET = 28;
 
 /** Where the finger would come to rest if it kept decelerating (Apple's exponential-decay form). */
 function project(velocity: number, decelerationRate = 0.998): number {
