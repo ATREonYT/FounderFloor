@@ -12,7 +12,7 @@
  */
 import { useEffect, type ReactNode } from "react";
 import { View } from "react-native";
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from "react-native-reanimated";
+import Animated, { Easing, LinearTransition, useAnimatedStyle, useSharedValue, withDelay, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { Plate } from "./Plate";
 import { Body, Spec } from "./Text";
 import { ease, ms, radius, shell } from "./tokens";
@@ -25,7 +25,8 @@ function Rise({ children, style }: { children: ReactNode; style?: object }) {
     t.value = withTiming(1, { duration: ms.bubbleRise, easing: Easing.bezier(...ease.out) });
   }, [t]);
   const a = useAnimatedStyle(() => ({ opacity: t.value, transform: [{ translateY: (1 - t.value) * 6 }] }));
-  return <Animated.View style={[a, style]}>{children}</Animated.View>;
+  // a reply that is still arriving grows line by line; the layout transition eases each step instead of jumping
+  return <Animated.View layout={LinearTransition.duration(180)} style={[a, style]}>{children}</Animated.View>;
 }
 
 export function Message({ role, text, streaming = false, avatar, maxWidth = "80%" }: { role: Role; text: string; streaming?: boolean; avatar?: ReactNode; maxWidth?: number | `${number}%` }) {

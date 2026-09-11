@@ -290,10 +290,15 @@ function Typed({ q, text, look, color }: { q: string; text: string; look: { skin
         <Keeper look={look} scale={1} color={color} speaking={n < text.length} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Spec tone="muted">{q}</Spec>
-          <Body style={{ marginTop: 4 }}>
-            {text.slice(0, n)}
-            {n < text.length ? <Body tone="accent">▍</Body> : null}
-          </Body>
+          {/* laid out at its final size underneath; the words appear over it, so the card never grows while it types */}
+          <View style={{ marginTop: 4 }}>
+            <Body style={{ opacity: 0 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              {text}
+            </Body>
+            <Body style={{ position: "absolute", left: 0, top: 0, right: 0 }}>
+              {text.slice(0, n)}
+            </Body>
+          </View>
         </View>
       </View>
     </Plate>

@@ -74,7 +74,7 @@ export default function Today() {
     <View style={{ flex: 1 }}>
       <TopBar center={<Spec tone="muted">{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood={mood} scale={2} height={L.compact ? 160 : 190} ambient={focused} set="lobby">
+        <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood={mood} scale={2} height={L.compact ? 200 : 214} ambient={focused} set="lobby">
           <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "day one" : stand.streak ? `${stand.streak}-day streak` : "day one"} />
         </Stage>
         <Hint id="today" text="One thing to do next, then the road: seven stops to your first paying customer." />

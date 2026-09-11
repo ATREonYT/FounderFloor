@@ -14,7 +14,7 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring, useReducedMotion } from "react-native-reanimated";
+import Animated, { Easing, FadeIn, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withSpring, useReducedMotion } from "react-native-reanimated";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { Sprite, type SpriteId } from "./Sprite";
 import { SpriteCycle } from "./SpriteCycle";
@@ -122,10 +122,10 @@ export function Stage({
     let i = 0;
     setTyped("");
     typer.current = setInterval(() => {
-      i = Math.min(say.length, i + 1);
+      i = Math.min(say.length, i + 2);
       setTyped(say.slice(0, i));
       if (i >= say.length && typer.current) clearInterval(typer.current);
-    }, 16);
+    }, 24);
     return () => {
       if (typer.current) clearInterval(typer.current);
     };
@@ -134,7 +134,6 @@ export function Stage({
   const body = useAnimatedStyle(() => ({ transform: [{ translateY: y.value + jump.value }] }));
   const ids = [0, 1].map((k) => `avatar-outfit${look.outfit % 8}-down-${k}` as SpriteId);
   const keeperW = 20 * scale, keeperH = 28 * scale;
-  const done = typed.length >= (say?.length ?? 0);
   const dark = scheme() === "dark";
   const pad = 16;
 
@@ -156,20 +155,24 @@ export function Stage({
           </Animated.View>
           {heart ? <Heart key={heart} x={keeperW + 2} y={keeperH - 8} /> : null}
         </View>
-        {/* the bubble: what they say, on raised glass */}
+        {/* the bubble: what they say, on raised glass. It is drawn at its final size from the first frame (the whole line laid out invisibly underneath) and the words appear over it, so nothing grows or jumps while they type. A new line fades the bubble in fresh. */}
         {say ? (
           <View style={{ position: "absolute", left: pad, top: pad, right: pad + keeperW + 44 }}>
-            <View style={{ alignSelf: "flex-start", maxWidth: "100%", backgroundColor: alpha.raisedFill(), borderWidth: 1, borderColor: alpha.hairline(), borderRadius: 18, borderBottomLeftRadius: 6, paddingHorizontal: 14, paddingVertical: 10 }}>
+            <Animated.View key={say} entering={FadeIn.duration(180)} style={{ alignSelf: "flex-start", maxWidth: "100%", backgroundColor: alpha.raisedFill(), borderWidth: 1, borderColor: alpha.hairline(), borderRadius: 18, borderBottomLeftRadius: 6, paddingHorizontal: 14, paddingVertical: 10 }}>
               {who ? (
                 <Spec tone="faint" style={{ marginBottom: 2 }}>
                   {who}
                 </Spec>
               ) : null}
-              <Body size="sm" medium>
-                {typed}
-                {!done ? <Body size="sm" tone="accent">▍</Body> : null}
-              </Body>
-            </View>
+              <View>
+                <Body size="sm" medium style={{ opacity: 0 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                  {say}
+                </Body>
+                <Body size="sm" medium style={{ position: "absolute", left: 0, top: 0, right: 0 }}>
+                  {typed}
+                </Body>
+              </View>
+            </Animated.View>
           </View>
         ) : null}
         {children ? <View style={{ position: "absolute", left: pad, bottom: pad + 12 }}>{children}</View> : null}
