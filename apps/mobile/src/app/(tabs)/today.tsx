@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useIsFocused, useRouter, type Href } from "expo-router";
 import { STAGES } from "@founderfloor/shared";
-import { Body, Button, Display, GlyphTile, Plate, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, Check, type Mood } from "@founderfloor/ui";
+import { Body, Button, Display, GlyphTile, Plate, Rise, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, Check, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
@@ -77,15 +77,16 @@ export default function Today() {
         <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood={mood} scale={2} height={L.compact ? 160 : 190} ambient={focused} set="lobby">
           <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "day one" : stand.streak ? `${stand.streak}-day streak` : "day one"} />
         </Stage>
-        <Hint id="today" text="Today is one thing to do next. Under it, the road: seven stops from your idea to your first paying customer, and where you are on it. Tap any stop to go there." />
+        <Hint id="today" text="One thing to do next, then the road: seven stops to your first paying customer." />
 
         {/* the one thing */}
+        <Rise k={0}>
         <TourTarget id="home-next">
           <Tap onPress={() => { if (useTour.getState().active) return; if (!plan) router.push("/welcome" as Href); else if (next) openTask(next.i); else router.push({ pathname: "/review", params: { week: String(wk) } } as Href); }} accessibilityLabel={!plan ? "Make your plan" : next ? `Next up: ${next.text}` : "Read the week back"} scale={0.985}>
             <Plate tone="panel" radius={radius.xxl} padding={0} ring={wash(color, 0.5)}>
               <View style={{ backgroundColor: wash(color, 0.1), borderTopLeftRadius: radius.xxl, borderTopRightRadius: radius.xxl, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <GlyphTile id={plan ? ROOM_GLYPH[room.id] ?? "bolt" : "bolt"} color={color} size={32} scale={1} />
-                <Spec tone="muted" style={{ flex: 1 }}>{!plan ? "First thing" : next ? `Next up · Week ${wk} · ${room.name} room` : `Week ${wk} · All done`}</Spec>
+                <Spec tone="muted" style={{ flex: 1 }}>{!plan ? "First thing" : next ? `Next up, week ${wk}, in the ${room.name} room` : `Week ${wk} is done`}</Spec>
                 {next?.guide?.time ? <Spec tone="faint">{next.guide.time}</Spec> : null}
               </View>
               <View style={{ padding: 16, gap: 14 }}>
@@ -105,22 +106,25 @@ export default function Today() {
                     The desk reads the week back and says what to fix.
                   </Body>
                 )}
-                <Button block arrow onPress={() => { if (useTour.getState().active) return; if (!plan) router.push("/welcome" as Href); else if (next) openTask(next.i); else router.push({ pathname: "/review", params: { week: String(wk) } } as Href); }}>
+                <Button block onPress={() => { if (useTour.getState().active) return; if (!plan) router.push("/welcome" as Href); else if (next) openTask(next.i); else router.push({ pathname: "/review", params: { week: String(wk) } } as Href); }}>
                   {!plan ? "Answer the questions" : next ? "Start" : "Read the week back"}
                 </Button>
               </View>
             </Plate>
           </Tap>
         </TourTarget>
+        </Rise>
 
         {/* the road: seven stops, where you are, what to do now */}
-        <Road />
+        <Rise k={1}>
+          <Road />
+        </Rise>
 
         {/* this week, as a checklist */}
         {week ? (
-          <View style={{ gap: 8 }}>
+          <Rise k={2} style={{ gap: 8 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-              <Body medium>{`This week · ${week.focus.replace(/\.$/, "")}`}</Body>
+              <Body medium>{`This week: ${week.focus.replace(/\.$/, "")}`}</Body>
               <Spec tone="faint">{`${doneCount} of ${week.do.length}`}</Spec>
             </View>
             <Plate tone="panel" radius={radius.xl} padding={6}>
@@ -146,32 +150,31 @@ export default function Today() {
               })}
             </Plate>
             <Pressable onPress={() => router.push("/plan" as Href)} accessibilityRole="button" accessibilityLabel="All four weeks of the plan" style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center", paddingRight: 8 }}>
-              <Spec tone="accent">All four weeks →</Spec>
+              <Spec tone="accent">All four weeks</Spec>
             </Pressable>
-          </View>
+          </Rise>
         ) : null}
 
-        {/* the week's two rituals */}
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Tap onPress={() => router.push("/office" as Href)} accessibilityLabel={weekLogged ? "Week logged. Open the Office" : "Log the week"} style={{ flex: 1 }} scale={0.98}>
-            <Plate tone="panel" radius={radius.xl} padding={14} ring={friday && !weekLogged ? shell.accent : undefined}>
-              <GlyphTile id="coin" color="#5E7C93" size={32} scale={1} />
-              <Body size="sm" medium style={{ marginTop: 10 }}>
-                {weekLogged ? "Week logged ✓" : "Log the week"}
-              </Body>
-              <Spec tone="faint">{weekLogged ? "Five numbers, in" : friday ? "It is Friday. Two minutes." : "Five numbers, Fridays"}</Spec>
-            </Plate>
-          </Tap>
-          <Tap onPress={() => router.push({ pathname: "/review", params: { week: String(wk) } } as Href)} accessibilityLabel="Read the week back" style={{ flex: 1 }} scale={0.98}>
-            <Plate tone="panel" radius={radius.xl} padding={14}>
-              <GlyphTile id="flask" color="#6B4E71" size={32} scale={1} />
-              <Body size="sm" medium style={{ marginTop: 10 }}>
-                {review ? review.verdict : `Week ${wk}, read back`}
-              </Body>
-              <Spec tone="faint">{review ? `${review.score} of 100 · what to fix` : "A score, and what to fix"}</Spec>
-            </Plate>
-          </Tap>
-        </View>
+        {/* the week's two rituals, as two plain rows */}
+        <Rise k={3}>
+          <Plate tone="panel" radius={radius.xl} padding={6}>
+            <Pressable onPress={() => router.push("/office" as Href)} accessibilityRole="button" accessibilityLabel={weekLogged ? "Week logged. Open the Office" : "Log the week"} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, opacity: pressed ? 0.8 : 1 })}>
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <Body size="sm" medium>{weekLogged ? "Week logged" : "Log the week"}</Body>
+                <Spec tone="faint">{weekLogged ? "Five numbers are in" : friday ? "It is Friday. Five numbers, two minutes." : "Five numbers, on Fridays"}</Spec>
+              </View>
+              {friday && !weekLogged ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shell.accent }} /> : null}
+              <Body tone="accent" accessibilityElementsHidden importantForAccessibility="no">›</Body>
+            </Pressable>
+            <Pressable onPress={() => router.push({ pathname: "/review", params: { week: String(wk) } } as Href)} accessibilityRole="button" accessibilityLabel="Read the week back" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderTopWidth: 1, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>
+              <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                <Body size="sm" medium>{review ? review.verdict : `Week ${wk}, read back`}</Body>
+                <Spec tone="faint">{review ? `${review.score} of 100, and what to fix` : "A score, and what to fix"}</Spec>
+              </View>
+              <Body tone="accent" accessibilityElementsHidden importantForAccessibility="no">›</Body>
+            </Pressable>
+          </Plate>
+        </Rise>
       </ScrollView>
     </View>
   );

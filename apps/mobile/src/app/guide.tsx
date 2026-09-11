@@ -42,7 +42,7 @@ export default function Guide() {
   return (
     <View style={{ flex: 1 }}>
       <View style={{ paddingTop: L.insets.top + 12, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 560, alignSelf: "center", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <Spec tone="muted">{`How it works · ${i + 1} of ${PAGES.length}`}</Spec>
+        <Spec tone="muted">{`How it works, ${i + 1} of ${PAGES.length}`}</Spec>
         <Pressable onPress={done} accessibilityRole="button" accessibilityLabel="Skip the guide" hitSlop={8} style={{ minHeight: 44, justifyContent: "center" }}>
           <Spec tone="accent">Skip</Spec>
         </Pressable>
@@ -104,7 +104,7 @@ export default function Guide() {
             <Dot key={k} on={k === i} onPress={() => go(k)} label={`Page ${k + 1}`} />
           ))}
         </View>
-        <Button block arrow onPress={() => (i + 1 < PAGES.length ? go(i + 1) : done())}>
+        <Button block onPress={() => (i + 1 < PAGES.length ? go(i + 1) : done())}>
           {i + 1 < PAGES.length ? "Next" : "Start"}
         </Button>
         {i > 0 ? (

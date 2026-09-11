@@ -36,7 +36,7 @@ export default function Floor() {
         <Hall url={url} />
         <View pointerEvents="none" style={{ position: "absolute", left: 12, bottom: clear + 8 }}>
           <Spec tone="ink" style={{ backgroundColor: "rgba(255,255,255,0.86)", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4 }}>
-            The real hall · walk with the pad, tap a stand to talk
+            The real hall, walk with the pad, tap a stand to talk
           </Spec>
         </View>
       </View>
@@ -46,13 +46,13 @@ export default function Floor() {
             <Chip
               key={h.id}
               grow={false}
-              hint={`${h.here} here · ${h.tagline}`}
+              hint={`${h.here} here, ${h.tagline}`}
               onPress={() => {
                 setHallId(h.id);
                 setPick(false);
               }}
             >
-              {h.id === hallId ? `→ ${h.name}` : h.name}
+              {h.id === hallId ? `● ${h.name}` : h.name}
             </Chip>
           ))}
         </View>
@@ -74,7 +74,7 @@ function Hall({ url }: { url: string }) {
             <Body size="sm" tone="muted">
               In the browser the floor runs as its own page, with the whole canvas and the pad. In the app it is right here in this tab.
             </Body>
-            <Button arrow onPress={open}>
+            <Button onPress={open}>
               Walk the floor
             </Button>
           </View>

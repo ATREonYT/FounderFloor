@@ -123,25 +123,25 @@ export default function Reception() {
         >
           {empty ? (
             <View style={{ gap: 20, paddingBottom: 8 }}>
-              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood="idle" scale={2} height={L.compact ? 200 : 240} ambient={focused} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
+              <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood={mood} scale={2} height={L.compact ? 200 : 240} ambient={focused} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
                 <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
               </Stage>
-              {atDesk ? <Hint id="coach" text="This is the coach. Ask the desk anything about your company, or tap the name at the top to pick one of the four coaches." /> : null}
+              {atDesk ? <Hint id="coach" text="Ask the desk anything about your company, or tap the name at the top to pick a coach." /> : null}
               {week ? (
                 <Pressable onPress={() => router.push("/plans")} accessibilityRole="button" style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: shell.line, borderRadius: radius.full, paddingHorizontal: 12, paddingVertical: 6 }}>
                   <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: week.days <= 2 ? shell.accent : shell.verify }} />
-                  <Spec tone="ink">{week.days <= 2 ? `The whole staff: ${week.days === 1 ? "last day" : "two days left"}. Keep them for $19/month.` : `The whole staff · ${week.days} days left`}</Spec>
+                  <Spec tone="ink">{week.days <= 2 ? `The whole staff: ${week.days === 1 ? "last day" : "two days left"}. Keep them for $19/month.` : `The whole staff, ${week.days} days left`}</Spec>
                 </Pressable>
               ) : null}
               {forgets ? (
                 <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: MINES["coach-memory"].why } })} accessibilityRole="button" accessibilityLabel="The staff remember, on Pro">
                   <Plate tone="paper" radius={radius.lg} padding={12} lineColor={coach.color}>
-                    <Spec tone="muted">{`${coach.name} · ${notes.filter((n) => n.coach === coach.name).length} notes, unread`}</Spec>
+                    <Spec tone="muted">{`${coach.name}, ${notes.filter((n) => n.coach === coach.name).length} notes, unread`}</Spec>
                     <Body size="sm" style={{ marginTop: 4 }}>
                       {`${MINES["coach-memory"].title} ${MINES["coach-memory"].line}`}
                     </Body>
                     <Spec tone="accent" style={{ marginTop: 4 }}>
-                      Keep the notes · Pro →
+                      Keep the notes, on Pro
                     </Spec>
                   </Plate>
                 </Pressable>
@@ -174,14 +174,13 @@ export default function Reception() {
                     </Pressable>
                   ))}
                   <Pressable onPress={() => router.push("/coaches")} accessibilityRole="button" style={{ justifyContent: "center", paddingHorizontal: 8 }}>
-                    <Spec tone="accent">Who they are →</Spec>
+                    <Spec tone="accent">Who they are</Spec>
                   </Pressable>
                 </View>
               </View>
             </View>
           ) : (
             <>
-              <Stage look={coach.look} color={coach.color} mood={mood} scale={2} height={112} radiusPx={20} ambient={false} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"} who={atDesk ? "The desk" : coach.name} say={lastDesk && !lastDesk.streaming ? undefined : undefined} />
               {messages.map((m) => {
                 const { text, door } = m.role === "desk" && !m.streaming ? parseDoor(m.text) : { text: m.text, door: null };
                 return (
@@ -189,7 +188,7 @@ export default function Reception() {
                     <Message role={m.role} text={text} streaming={m.streaming} avatar={m.role === "desk" ? <Keeper look={coach.look} scale={1} speaking={!!m.streaming} color={coach.color} /> : undefined} />
                     {door ? (
                       <View style={{ paddingLeft: 44 }}>
-                        <Button size="sm" arrow onPress={() => router.push(door.route as Href)}>
+                        <Button size="sm" onPress={() => router.push(door.route as Href)}>
                           {door.label}
                         </Button>
                       </View>
@@ -199,7 +198,7 @@ export default function Reception() {
               })}
               {quota ? (
                 <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: quota } })} accessibilityRole="button">
-                  <Chip grow={false} hint="See the plans →">{quota}</Chip>
+                  <Chip grow={false} hint="See the plans">{quota}</Chip>
                 </Pressable>
               ) : null}
               {thinking ? <Thinking label={atDesk ? "At the desk…" : `${coach.name} is looking…`} avatar={<Keeper look={coach.look} scale={1} speaking color={coach.color} />} /> : null}
@@ -240,7 +239,7 @@ export default function Reception() {
                   <Body size="sm" medium>
                     {c.name}
                   </Body>
-                  <Spec tone="faint" numberOfLines={1}>{c.id === "desk" ? "Reception · anything about your company" : `${c.title} · ${c.blurb}`}</Spec>
+                  <Spec tone="faint" numberOfLines={1}>{c.id === "desk" ? "Reception: anything about your company" : c.title}</Spec>
                 </View>
                 {on ? <Spec tone="accent">now</Spec> : null}
               </Pressable>

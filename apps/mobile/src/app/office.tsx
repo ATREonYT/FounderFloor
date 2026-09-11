@@ -7,10 +7,10 @@
  */
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
-import { useIsFocused, useRouter, type Href } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, remembers, readingPreview, MINES, type KpiEntry } from "@founderfloor/shared";
 import { effectivePlan } from "../lib/billing";
-import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Glyph, GlyphTile, Input, Keeper, Mono, Plate, Scene, Spec, Tap, Toast, haptic, radius, shell, useLayout, type GlyphId } from "@founderfloor/ui";
+import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, Keeper, Mono, Plate, Rise, Spec, Tap, Toast, haptic, radius, shell, useLayout } from "@founderfloor/ui";
 import { Back, TopBar } from "../components/TopBar";
 import { COLUMN, setPendingSay } from "../lib/chrome";
 import { isoWeek, useFounder } from "../lib/store";
@@ -25,7 +25,6 @@ import { StopLine } from "../components/Road";
 export default function Office() {
   const L = useLayout();
   const router = useRouter();
-  const focused = useIsFocused();
   const bottom = L.insets.bottom + 24;
   const stand = useStand();
   const gate = useGate();
@@ -74,7 +73,7 @@ export default function Office() {
   };
   const keepUpdate = () => {
     if (!update) return;
-    saveDoc({ kind: "update", title: `Update · ${update.audience} · ${wk}`, body: update.text }, "rehearsal");
+    saveDoc({ kind: "update", title: `Update for ${update.audience}, ${wk}`, body: update.text }, "rehearsal");
     setUpdate(null);
     say("Update saved to the drawer.");
   };
@@ -86,37 +85,42 @@ export default function Office() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar left={<Back />} center={<Spec tone="muted">{`The Office · ${wk}`}</Spec>} />
+      <TopBar left={<Back />} center={<Spec tone="muted">{`The Office, week ${wk.slice(-2)}`}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
         <StopLine id="customer" label="The office" />
-        <Scene set="office" height={L.compact ? 172 : 200} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The Office">
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <GlyphTile id="coin" color="#5E7C93" size={36} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Spec tone="muted">{`Week ${wk.slice(-2)}`}</Spec>
-              <Body medium numberOfLines={1}>{d ? `${fmtMoney(d.latest.revenue, cur)} this month · ${d.revenue}` : "Nothing logged yet"}</Body>
-            </View>
-          </View>
-        </Scene>
-        <Hint id="office" text="Fridays: log five numbers here. Two minutes. The update, the runway and the coaches all read from them." />
-        <View style={{ gap: 4 }}>
+        <Hint id="office" text="Fridays: log five numbers here. Two minutes." />
+        <Rise k={0} style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The Office</Display>
           <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>
-            Log five numbers each Friday. Everything here reads from them.
+            {d ? `${fmtMoney(d.latest.revenue, cur)} this month. Five numbers, every Friday.` : "Five numbers, every Friday. Everything here reads from them."}
           </Body>
-        </View>
+        </Rise>
 
-        {/* rituals */}
-        <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
-          <Ritual title="Monday plan" glyph="bolt" on={weekday === 1} line="Three goals with a number each." onPress={() => {
-              setPendingSay("strategy", "Monday plan");
-              router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href);
-            }} />
-          <Ritual title="Friday review" glyph="star" on={weekday === 5} line="Promised against shipped." onPress={() => {
-              setPendingSay("strategy", "Friday review");
-              router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href);
-            }} />
-        </View>
+        {/* the one thing to do here */}
+        <Rise k={1}>
+          <TourTarget id="office-log">
+            <Button block size="lg" onPress={() => setLog(true)}>{last?.week === wk ? "Change this week's numbers" : "Log this week"}</Button>
+          </TourTarget>
+        </Rise>
+
+        {/* the two rituals with Ines, as two plain rows */}
+        <Rise k={2}>
+          <Plate tone="panel" radius={radius.xl} padding={6}>
+            {[
+              { title: "Monday plan", on: weekday === 1, line: "Three goals with a number each, with Ines.", say: "Monday plan" },
+              { title: "Friday review", on: weekday === 5, line: "Promised against shipped, with Ines.", say: "Friday review" },
+            ].map((r, i) => (
+              <Pressable key={r.title} onPress={() => { setPendingSay("strategy", r.say); router.navigate({ pathname: "/reception", params: { coach: "strategy" } } as Href); }} accessibilityRole="button" accessibilityLabel={r.title} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>
+                <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                  <Body size="sm" medium>{r.title}</Body>
+                  <Spec tone="faint">{r.on ? `Today. ${r.line}` : r.line}</Spec>
+                </View>
+                {r.on ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shell.accent }} /> : null}
+                <Body tone="accent">›</Body>
+              </Pressable>
+            ))}
+          </Plate>
+        </Rise>
 
         {/* the log */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
@@ -145,7 +149,7 @@ export default function Office() {
                     <View style={{ flexDirection: "row", gap: 12 }}>
                       <Keeper look={theo.look} scale={1} color={theo.color} />
                       <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                        <Spec tone="muted">Theo · The reading</Spec>
+                        <Spec tone="muted">Theo reads the week</Spec>
                         <Body size="sm">{readingPreview(d.latest, d.prev, cur)}</Body>
                         <Body size="sm" medium>
                           {MINES["office-reading"].title}
@@ -154,7 +158,7 @@ export default function Office() {
                           {MINES["office-reading"].line}
                         </Body>
                         <Spec tone="accent" style={{ marginTop: 4 }}>
-                          Open the reading · Pro →
+                          Open the reading, on Pro
                         </Spec>
                       </View>
                     </View>
@@ -187,18 +191,13 @@ export default function Office() {
               Revenue, customers, cash, hours with customers, what shipped. Two minutes.
             </Body>
           )}
-          <ButtonRow>
-            <TourTarget id="office-log" style={{ marginTop: 12 }}>
-              <Button onPress={() => setLog(true)}>{last?.week === wk ? "Edit this week" : "Log this week"}</Button>
-            </TourTarget>
-            {kpi.length ? (
-              <View style={{ marginTop: 12 }}>
-                <Button variant="secondary" onPress={() => makeUpdate("investors")}>
-                  Draft the update
-                </Button>
-              </View>
-            ) : null}
-          </ButtonRow>
+          {kpi.length ? (
+            <View style={{ marginTop: 12 }}>
+              <Button size="sm" variant="ghost" onPress={() => makeUpdate("investors")}>
+                Draft the update
+              </Button>
+            </View>
+          ) : null}
         </Plate>
 
         {/* interviews */}
@@ -268,7 +267,7 @@ export default function Office() {
                 <Body medium>Drafts</Body>
                 <Body style={{ marginTop: 4 }}>{docs.length ? `${docs.length} document${docs.length === 1 ? "" : "s"}: ${docs.slice(0, 3).map((x) => x.title).join(", ")}${docs.length > 3 ? "…" : ""}` : "One-pager, interview script, landing copy, pricing sheet, entity comparison, launch checklist — drafted from your stand."}</Body>
               </View>
-              <Body tone="accent">→</Body>
+              <Body tone="accent">›</Body>
             </View>
           </Plate>
         </Pressable>
@@ -299,7 +298,7 @@ export default function Office() {
           <Input label="What shipped" value={entry.shipped ?? ""} onChangeText={(shipped) => setEntry((e) => ({ ...e, shipped }))} placeholder="the pass QR; two new shops" />
           <Spec tone="faint">Anything that reached a customer this week, in a few words.</Spec>
           <Input label="Note (optional)" value={entry.note ?? ""} onChangeText={(note) => setEntry((e) => ({ ...e, note }))} multiline placeholder="What you would tell a friend about the week." />
-          {r.burn ? <Mono size="xs" tone="muted">{`${runwayLine({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }, cur)} · ${fmtMonths(runwayMonths({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }))}`}</Mono> : null}
+          {r.burn ? <Mono size="xs" tone="muted">{`${runwayLine({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }, cur)}, ${fmtMonths(runwayMonths({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }))}`}</Mono> : null}
           <ButtonRow>
             <Button onPress={saveLog}>Log the week</Button>
             <Button variant="ghost" onPress={() => setLog(false)}>
@@ -355,26 +354,5 @@ export default function Office() {
       </Dialogue>
       <Toast text={toast ?? ""} visible={!!toast} />
     </View>
-  );
-}
-
-function Ritual({ title, glyph, on, line, onPress }: { title: string; glyph: GlyphId; on: boolean; line: string; onPress: () => void }) {
-  return (
-    <Tap onPress={onPress} accessibilityLabel={title} style={{ flex: 1 }}>
-      <Plate tone={on ? "plate" : "panel"} radius={radius.xl} padding={16}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <View style={{ width: 36, height: 36, borderRadius: 9, backgroundColor: on ? "rgba(250,253,255,0.15)" : shell.well, alignItems: "center", justifyContent: "center" }}>
-            <Glyph id={glyph} tone={on ? "paper" : "auto"} scale={2} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Body medium tone={on ? "paper" : "ink"}>
-              {title}
-            </Body>
-            <Spec tone={on ? "paperQuiet" : "muted"}>{on ? `Today. ${line}` : line}</Spec>
-          </View>
-          <Body tone={on ? "accentLift" : "accent"}>→</Body>
-        </View>
-      </Plate>
-    </Tap>
   );
 }

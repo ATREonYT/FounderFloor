@@ -321,7 +321,7 @@ export default function Welcome() {
             </Button>
           ) : null}
           <View style={{ flex: 1 }}>
-            <Button arrow onPress={next} disabled={!can || busy}>
+            <Button onPress={next} disabled={!can || busy}>
               {step === "plan" ? "Show me around" : step === "tone" ? "Make my plan" : "Next"}
             </Button>
           </View>

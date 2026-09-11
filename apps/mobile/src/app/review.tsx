@@ -8,7 +8,7 @@
 import { ScrollView, Pressable, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { Body, Button, ButtonRow, Display, Glyph, GlyphTile, Plate, Progress, Ring, Scene, Spec, Thinking, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Display, Glyph, Plate, Progress, Ring, Spec, Thinking, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 import { aiMode } from "../lib/ai";
 import { useWeekReview } from "../lib/review";
@@ -69,9 +69,10 @@ export default function Review() {
           })}
         </View>
 
-        <Scene set="office" height={L.compact ? 130 : 160} radiusPx={radius.xl} color={COLOR} ambient={false} accessibilityLabel={`Week ${wN}`}>
-          <Spec tone="ink">{week.focus.replace(/\.$/, "")}</Spec>
-        </Scene>
+        <View style={{ gap: 2 }}>
+          <Spec tone="muted">{`Week ${wN}`}</Spec>
+          <Display size={L.compact ? "xl" : "3xl"}>{week.focus.replace(/\.$/, "")}</Display>
+        </View>
 
         {review ? (
           <>
@@ -98,17 +99,17 @@ export default function Review() {
 
             <Section k={1} enter={enter} glyph="star" color="#2F6F6A" title="What went well" items={review.well} />
             <Section k={2} enter={enter} glyph="flask" color="#8C3B2E" title="What to fix" items={review.fix} />
-            <Section k={3} enter={enter} glyph="bolt" color="#3B5B92" title="How, this week · tap one to do it" items={review.how} numbered onOpen={(i) => router.push({ pathname: "/did", params: { id: `review-${review.week}-${i}`, text: review.how[i] } } as Href)} />
+            <Section k={3} enter={enter} glyph="bolt" color="#3B5B92" title="How, this week. Tap one to do it." items={review.how} numbered onOpen={(i) => router.push({ pathname: "/did", params: { id: `review-${review.week}-${i}`, text: review.how[i] } } as Href)} />
 
             <ButtonRow>
-              <Button arrow onPress={() => router.replace("/plan" as Href)}>
+              <Button onPress={() => router.replace("/plan" as Href)}>
                 Open the plan
               </Button>
               <Button variant="ghost" onPress={reread} disabled={reading}>
                 {reading ? "Reading…" : "Read it again"}
               </Button>
             </ButtonRow>
-            <Spec tone="faint">{`${review.source === "live" ? "The desk read your notebook" : aiMode() === "rehearsal" ? "Practice mode: the reading is from the numbers only" : lastError ? `Practice mode: ${lastError}` : "From the numbers"} · ${review.at.slice(0, 10)}`}</Spec>
+            <Spec tone="faint">{`${review.source === "live" ? "The desk read your notebook" : aiMode() === "rehearsal" ? "Practice mode: the reading is from the numbers only" : lastError ? `Practice mode: ${lastError}` : "From the numbers"}, ${review.at.slice(0, 10)}`}</Spec>
           </>
         ) : (
           <View style={{ gap: 12 }}>
@@ -123,13 +124,10 @@ export default function Review() {
   );
 }
 
-function Section({ k, enter, glyph, color, title, items, numbered = false, onOpen }: { k: number; enter: (k: number) => ReturnType<typeof FadeInDown.delay>; glyph: GlyphId; color: string; title: string; items: string[]; numbered?: boolean; /** Each item opens its own room to write what happened. */ onOpen?: (i: number) => void }) {
+function Section({ k, enter, color, title, items, numbered = false, onOpen }: { k: number; enter: (k: number) => ReturnType<typeof FadeInDown.delay>; glyph?: GlyphId; color: string; title: string; items: string[]; numbered?: boolean; /** Each item opens its own room to write what happened. */ onOpen?: (i: number) => void }) {
   return (
     <Animated.View entering={enter(k)} style={{ gap: 8 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <GlyphTile id={glyph} color={color} size={26} scale={1} />
-        <Spec tone="muted">{title}</Spec>
-      </View>
+      <Body medium>{title}</Body>
       {items.map((t, i) => (
         <Pressable key={i} onPress={onOpen ? () => onOpen(i) : undefined} disabled={!onOpen} accessibilityRole={onOpen ? "button" : undefined} accessibilityLabel={onOpen ? `${t}. Open it to write what you did` : undefined} style={({ pressed }) => ({ flexDirection: "row", gap: 12, alignItems: "flex-start", backgroundColor: shell.panel, borderRadius: 18, borderWidth: 1, borderColor: shell.line, borderLeftWidth: 4, borderLeftColor: color, padding: 12, opacity: pressed ? 0.8 : 1 })}>
           {numbered ? (
@@ -139,7 +137,7 @@ function Section({ k, enter, glyph, color, title, items, numbered = false, onOpe
           ) : null}
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <Body size="sm">{t}</Body>
-            {onOpen ? <Spec tone="accent">How, and write what you did →</Spec> : null}
+            {onOpen ? <Spec tone="faint">Tap for how, and to write what you did</Spec> : null}
           </View>
           {onOpen ? <Body tone="accent">›</Body> : null}
         </Pressable>

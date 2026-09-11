@@ -94,7 +94,7 @@ export default function Check() {
             <Spec tone="muted">← The doors</Spec>
           </Pressable>
           <Pressable onPress={() => router.replace("/stand")} accessibilityRole="button">
-            <Spec tone="muted">Skip to the stand →</Spec>
+            <Spec tone="muted">Skip to the stand</Spec>
           </Pressable>
         </View>
         <Display size={L.compact ? "3xl" : "4xl"}>Say the idea. We read it back.</Display>
@@ -103,7 +103,7 @@ export default function Check() {
           <View style={{ gap: 12 }}>
             <Input label="The idea, in your words" value={text} onChangeText={setText} multiline placeholder="Small cafés lose hours chasing regulars who pay late. A prepaid pass they top up…" style={{ minHeight: 120 }} />
             <ButtonRow>
-              <Button onPress={run} disabled={busy || text.trim().length < 12} arrow>
+              <Button onPress={run} disabled={busy || text.trim().length < 12}>
                 {busy ? "Reading" : read ? "Read it again" : "Read it back"}
               </Button>
             </ButtonRow>

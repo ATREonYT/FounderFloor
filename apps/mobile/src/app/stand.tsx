@@ -11,7 +11,7 @@ import { useState } from "react";
 import { Linking, Platform, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { STAGES, currentStage, stageProgress, generateDeadlines, runwayLine, runwayEnds, runwayMonths, fmtMoney, fmtMonths, toNextRank, nextRank, builderBrief, type EntityType, type Residence, type Segment } from "@founderfloor/shared";
-import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId, Backdrop, Furniture, wash, scheme, type Hall } from "@founderfloor/ui";
+import { Body, Booth, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, MemberBadge, Mono, Plate, Progress, RankBadge, Ring, Rise, Spec, Sprite, Streak, Tap, TierTag, Toast, art, haptic, radius, shell, swatches, useLayout, type CarpetPattern, type SpriteId, Backdrop, Furniture, wash, scheme, type Hall } from "@founderfloor/ui";
 import { Back, TopBar } from "../components/TopBar";
 import { COLUMN } from "../lib/chrome";
 import { useFounder, useSession } from "../lib/store";
@@ -69,6 +69,7 @@ export default function Stand() {
   const [code, setCode] = useState("");
   const r = stand.record;
   const cur = r.currency;
+  const mrr = Number(r.mrr) || 0;
   const floor = art.floors[(stand.hall as keyof typeof art.floors) ?? "main-hall"] ?? art.floors["main-hall"];
   const say = (t: string) => {
     setToast(t);
@@ -87,7 +88,7 @@ export default function Stand() {
   const rw = { cash: r.cash, burn: r.burn, mrr: r.mrr };
   const months = runwayMonths(rw);
   const ends = runwayEnds(rw);
-  const next = nextRank(r.mrr);
+  const next = nextRank(mrr);
   const deadlines = generateDeadlines({ entity: r.entity, residence: r.residence, formedOn: r.formedOn, yearEnd: r.yearEnd, stockGrant: r.stockGrant });
   const nextFiling = deadlines[0];
   const stage = currentStage(ticks);
@@ -98,26 +99,13 @@ export default function Stand() {
     <View style={{ flex: 1 }}>
       <TopBar
         left={<Back />}
-        center={<Spec tone="muted">{`${hallName(stand.hall)} · ${stand.spot}`}</Spec>}
+        center={<Spec tone="muted">{`${hallName(stand.hall)}, ${stand.spot}`}</Spec>}
         right={<TierTag tier={stand.tier} />}
       />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
         <StopLine id="idea" label="Your company" />
-        {auth ? (
-          <Pressable onPress={() => setAccount(true)} accessibilityRole="button" accessibilityLabel="Your account" style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 8 })}>
-            <Spec tone="ink">{auth.name}</Spec>
-            <Spec tone="faint">{stand.source === "floor" ? "· on the floor" : "· no stand on a floor"}</Spec>
-            <Spec tone="accent">· account</Spec>
-          </Pressable>
-        ) : null}
-        <Hint id="stand" text="Your stand is your company on one card. Tap The numbers to fill it in; the coaches read from here. Share the card when it is worth showing." />
-        {sessionError ? (
-          <Plate tone="paper" radius={radius.md} padding={12}>
-            <Body size="sm" tone="accent">
-              {sessionError}
-            </Body>
-          </Plate>
-        ) : null}
+        <Hint id="stand" text="Your company on one card. Fill in the numbers; the coaches read from here." />
+        {sessionError ? <Spec tone="faint" style={{ paddingHorizontal: 4 }}>{`Offline: ${sessionError}. Everything here is saved on this phone.`}</Spec> : null}
         {!stand.record.oneLiner && stand.source !== "rehearsal" ? (
           <Plate tone="panel" radius={radius.xl} padding={16}>
             <Body medium>No idea on the sign yet</Body>
@@ -147,6 +135,7 @@ export default function Stand() {
           </Plate>
         ) : null}
 
+        <Rise k={0}>
         <Plate tone="panel" radius={radius.xl}>
           <View onLayout={(e) => setHeroW(Math.round(e.nativeEvent.layout.width))} style={{ backgroundColor: wash(swatches[stand.swatch % swatches.length], scheme() === "dark" ? 0.24 : 0.14), alignItems: "center", paddingTop: 24, paddingBottom: 30, overflow: "hidden", position: "relative" }}>
             <Backdrop hall={(stand.hall as Hall) in art.floors ? (stand.hall as Hall) : "main-hall"} floorH={L.compact ? 96 : 130} scale={2} />
@@ -160,26 +149,27 @@ export default function Stand() {
               <MemberBadge tier={stand.tier} founding={stand.founding} />
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginLeft: "auto" }}>
                 <View style={{ width: 8, height: 8, borderRadius: radius.full, backgroundColor: stand.online ? shell.verify : shell.faint }} />
-                <Spec tone="faint">{stand.online ? "at the stand" : "away · receptionist on"}</Spec>
+                <Spec tone="faint">{stand.online ? "at the stand" : "away; the receptionist answers"}</Spec>
               </View>
             </View>
             <Display size={L.compact ? "3xl" : "4xl"}>{stand.name}</Display>
             <Body size="lg" tone="muted">
               {stand.oneLiner}
             </Body>
-            <ButtonRow>
-              <TourTarget id="stand-numbers">
-                <Button onPress={() => { setDraft({ ...stand.record }); setNumbers(true); }}>The numbers</Button>
-              </TourTarget>
-              <Button variant="secondary" onPress={() => setPaint(true)}>
-                Repaint
+            <TourTarget id="stand-numbers">
+              <Button block onPress={() => { setDraft({ ...stand.record }); setNumbers(true); }}>{r.mrr || r.cash || r.burn ? "Update the numbers" : "Fill in the numbers"}</Button>
+            </TourTarget>
+            <View style={{ flexDirection: "row", gap: 4, marginLeft: -6 }}>
+              <Button size="sm" variant="ghost" onPress={() => setPaint(true)}>
+                Repaint the stand
               </Button>
-              <Button variant="ghost" onPress={share}>
+              <Button size="sm" variant="ghost" onPress={share}>
                 Share the card
               </Button>
-            </ButtonRow>
+            </View>
           </View>
         </Plate>
+        </Rise>
 
         {/* this week */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
@@ -243,15 +233,15 @@ export default function Stand() {
           <Plate tone="panel" radius={radius.xl} padding={20} style={{ flex: 1 }}>
             <Spec tone="muted">MRR</Spec>
             <View style={{ marginTop: 8 }}>
-              <CountUp to={r.mrr} prefix={cur === "USD" ? "$" : cur === "GBP" ? "£" : "€"} delay={150} />
+              <CountUp to={mrr} prefix={cur === "USD" ? "$" : cur === "GBP" ? "£" : "€"} delay={150} />
             </View>
             <View style={{ marginTop: 6 }}>
-              <RankBadge monthlyRevenue={r.mrr} />
+              <RankBadge monthlyRevenue={mrr} />
             </View>
-            <Spec tone="faint" style={{ marginTop: 6 }}>{next ? `${fmtMoney(toNextRank(r.mrr), cur)} to ${next.name}` : "top of the hall"}</Spec>
+            <Spec tone="faint" style={{ marginTop: 6 }}>{next ? `${fmtMoney(toNextRank(mrr), cur)} to ${next.name}` : "top of the hall"}</Spec>
             {next ? (
               <View style={{ marginTop: 8 }}>
-                <Progress value={r.mrr / next.minRevenue} color={stand.rank.color} />
+                <Progress value={mrr / next.minRevenue} color={stand.rank.color} />
               </View>
             ) : null}
           </Plate>
@@ -269,7 +259,7 @@ export default function Stand() {
                 </Body>
                 <Spec tone="faint">{nextFiling.due}</Spec>
                 <Pressable onPress={() => Linking.openURL(nextFiling.source)} accessibilityRole="link" style={{ marginTop: 8 }}>
-                  <Spec tone="accent">{`Official source → ${new URL(nextFiling.source).hostname}`}</Spec>
+                  <Spec tone="accent">{`Official source: ${new URL(nextFiling.source).hostname}`}</Spec>
                 </Pressable>
                 <Spec tone="faint" style={{ marginTop: 4 }}>
                   Not tax advice. {deadlines.length > 1 ? `${deadlines.length - 1} more with Theo.` : ""}
@@ -282,7 +272,7 @@ export default function Stand() {
             )}
           </Plate>
           <Plate tone="panel" radius={radius.xl} padding={20} style={{ flex: 1 }}>
-            <Spec tone="muted">The workshop</Spec>
+            <Spec tone="muted">On the map</Spec>
             <Display size="lg" style={{ marginTop: 8 }}>{`${stage.n}. ${stage.name}`}</Display>
             <View style={{ marginTop: 8 }}>
               <Progress value={stageProgress(stage, ticks)} right={`${stage.items.filter((i) => ticks.includes(i.id)).length}/${stage.items.length}`} />
@@ -290,7 +280,7 @@ export default function Stand() {
             <Spec tone="faint" style={{ marginTop: 6 }}>{`${STAGES.filter((s) => stageProgress(s, ticks) >= 1).length} of 6 rooms done`}</Spec>
             <View style={{ marginTop: 10 }}>
               <Button size="sm" variant="ghost" onPress={() => router.navigate("/build")}>
-                Open the workshop
+                Open the map
               </Button>
             </View>
           </Plate>
@@ -325,13 +315,18 @@ export default function Stand() {
                   The stand as a brief for Claude Code, Cursor or Lovable: build first, do not build yet, done means. No copying between apps.
                 </Body>
               </View>
-              <Body tone="accentLift">→</Body>
+              <Body tone="accentLift">›</Body>
             </View>
           </Plate>
         </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 4 }}>
           <Sprite id="logo-mark" scale={1} />
-          <Mono tone="muted" size="xs">{stand.slug ? `founderfloor.net/stand/${stand.slug}` : "No public address until the stand is on a floor."}</Mono>
+          <Mono tone="muted" size="xs" style={{ flex: 1 }}>{stand.slug ? `founderfloor.net/stand/${stand.slug}` : "No public address until the stand is on a floor."}</Mono>
+          {auth ? (
+            <Button size="sm" variant="ghost" onPress={() => setAccount(true)}>
+              Your account
+            </Button>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -449,7 +444,7 @@ export default function Stand() {
             <Plate tone="paper" radius={radius.md} padding={12}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <Body style={{ flex: 1 }}>Settings: reminders, email, the guide</Body>
-                <Body tone="accent">→</Body>
+                <Body tone="accent">›</Body>
               </View>
             </Plate>
           </Pressable>
@@ -482,8 +477,8 @@ export default function Stand() {
             <Pressable onPress={() => { setAccount(false); router.push("/dev/console" as Href); }} accessibilityRole="button" accessibilityLabel="Dev console">
               <Plate tone="plate" radius={radius.md} padding={12}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <Spec tone="paper" style={{ flex: 1 }}>Operator · Dev console</Spec>
-                  <Body tone="accentLift">→</Body>
+                  <Spec tone="paper" style={{ flex: 1 }}>Operator, Dev console</Spec>
+                  <Body tone="accentLift">›</Body>
                 </View>
               </Plate>
             </Pressable>

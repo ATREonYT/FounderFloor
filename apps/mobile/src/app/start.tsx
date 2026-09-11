@@ -57,7 +57,7 @@ export default function Start() {
                     {d.line}
                   </Body>
                 </View>
-                <Body tone="accent">→</Body>
+                <Body tone="accent">›</Body>
               </View>
             </Plate>
           </Tap>

@@ -62,7 +62,7 @@ export default function Memory() {
           </Spec>
           {memoryOn === null ? (
             <Pressable onPress={() => setAsk(true)} accessibilityRole="button" style={{ marginTop: 8 }}>
-              <Spec tone="accent">Read the question →</Spec>
+              <Spec tone="accent">Read the question</Spec>
             </Pressable>
           ) : null}
         </Plate>
@@ -81,7 +81,7 @@ export default function Memory() {
                     <GlyphTile id={KIND_GLYPH[e.kind]} color={NOTEBOOK_COLOR} size={28} scale={1} />
                   </View>
                   <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                    <Spec tone="faint">{`${MEMORY_KINDS[e.kind].label} · ${e.at.slice(11, 16)}`}</Spec>
+                    <Spec tone="faint">{`${MEMORY_KINDS[e.kind].label}, ${e.at.slice(11, 16)}`}</Spec>
                     <Body size="sm">{e.text}</Body>
                   </View>
                 </View>

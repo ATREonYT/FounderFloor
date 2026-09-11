@@ -73,7 +73,7 @@ export function TourOverlay() {
             <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
               <Keeper look={RECEPTIONIST.look} scale={1} color={RECEPTIONIST.color} speaking />
               <View style={{ flex: 1, gap: 4 }}>
-                <Spec tone="muted">{`The tour · ${step + 1} of ${TOUR.length}`}</Spec>
+                <Spec tone="muted">{`The tour, ${step + 1} of ${TOUR.length}`}</Spec>
                 <Body>{cur.say}</Body>
               </View>
               <Pressable onPress={finish} accessibilityRole="button" accessibilityLabel="Leave the tour" hitSlop={8} style={({ pressed }) => ({ width: 30, height: 30, borderRadius: 15, backgroundColor: pressed ? shell.line : shell.well, alignItems: "center", justifyContent: "center" })}>
@@ -82,7 +82,7 @@ export function TourOverlay() {
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               {last || !cur.target ? (
-                <Button size="sm" arrow onPress={last ? finish : next}>
+                <Button size="sm" onPress={last ? finish : next}>
                   {last ? (then ? "Start with the first idea" : "Done") : "Next"}
                 </Button>
               ) : (

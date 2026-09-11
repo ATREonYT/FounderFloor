@@ -63,7 +63,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
               <View style={{ flex: 1, paddingBottom: last ? 0 : 14 }}>
                 <View style={{ backgroundColor: open ? wash(color, 0.1) : shell.panel, borderRadius: 20, borderWidth: 1.5, borderColor: open ? color : shell.line, padding: 12, gap: 8 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                    <Spec tone="muted">{`Week ${w.n} · ${STAGES[roomOfWeek(plan, w.n)].name} room`}</Spec>
+                    <Spec tone="muted">{`Week ${w.n}, ${STAGES[roomOfWeek(plan, w.n)].name} room`}</Spec>
                     {open ? (
                       <View style={{ backgroundColor: color, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 2 }}>
                         <Spec tone="paper">this week</Spec>
@@ -75,8 +75,8 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                   {onReview && w.n <= weekNow ? (
                     <Pressable onPress={() => onReview(w.n)} accessibilityRole="button" accessibilityLabel={`Read week ${w.n} back`} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: wash(color, open ? 0.16 : 0.08), borderRadius: 10, paddingVertical: 7, paddingHorizontal: 10 }}>
                       <Glyph id="coin" tone="auto" scale={1} />
-                      <Spec tone="ink" style={{ flex: 1 }}>{reviews[w.n] ? `${reviews[w.n].verdict} · ${reviews[w.n].score} of 100` : w.n === weekNow ? "How is the week going?" : "Read the week back"}</Spec>
-                      <Spec tone="accent">→</Spec>
+                      <Spec tone="ink" style={{ flex: 1 }}>{reviews[w.n] ? `${reviews[w.n].verdict}, ${reviews[w.n].score} of 100` : w.n === weekNow ? "How is the week going?" : "Read the week back"}</Spec>
+                      <Spec tone="accent">›</Spec>
                     </Pressable>
                   ) : null}
                   <View style={{ gap: 6 }}>

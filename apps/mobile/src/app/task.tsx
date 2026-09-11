@@ -136,7 +136,7 @@ export default function Task() {
   }
 
   const enter = (k: number) => FadeInDown.delay(30 + k * 40).duration(200);
-  const status = t.quota ? t.quota : t.source === "live" ? "Live · the desk knows this task, your plan and your notes" : aiMode() === "rehearsal" ? "Practice mode · the desk answers from the page" : t.lastError ? `Practice mode · ${t.lastError}` : "The desk is open";
+  const status = t.quota ? t.quota : t.source === "live" ? "Live, the desk knows this task, your plan and your notes" : aiMode() === "rehearsal" ? "Practice mode, the desk answers from the page" : t.lastError ? `Practice mode, ${t.lastError}` : "The desk is open";
 
   return (
     <View style={{ flex: 1 }}>
@@ -149,7 +149,7 @@ export default function Task() {
             </Pressable>
             <View style={{ alignItems: "flex-end", gap: 4 }}>
               <StopLine id="week" />
-              <Spec tone="muted">{`Week ${wN}${wN === now ? " · this week" : ""} · Task ${idx + 1} of ${week.do.length}`}</Spec>
+              <Spec tone="muted">{`Week ${wN}${wN === now ? ", this week" : ""}, Task ${idx + 1} of ${week.do.length}`}</Spec>
             </View>
           </View>
 
@@ -173,7 +173,7 @@ export default function Task() {
               {t.guide ? <Tag glyph="bolt" color={room.color} label={t.guide.time} /> : null}
               <Tag glyph="leaf" color={room.color} label={week.focus.replace(/\.$/, "")} />
               <Pressable onPress={() => router.navigate({ pathname: "/build", params: { room: ROOM_ORDER[roomOfWeek(plan, wN)] } } as Href)} accessibilityRole="button" accessibilityLabel="Open this room on the map">
-                <Tag glyph="cube" color={room.color} label={`${STAGES[roomOfWeek(plan, wN)].name} room →`} />
+                <Tag glyph="cube" color={room.color} label={`${STAGES[roomOfWeek(plan, wN)].name} room`} />
               </Pressable>
             </View>
           </View>
@@ -251,7 +251,7 @@ export default function Task() {
                             ) : null}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
                               <Glyph id="chip" tone="auto" scale={1} />
-                              <Spec tone={written[i] ? "ink" : "faint"}>{written[i] ? `${written[i]} ${written[i] === 1 ? "line" : "lines"} written` : "Write what you did →"}</Spec>
+                              <Spec tone={written[i] ? "ink" : "faint"}>{written[i] ? `${written[i]} ${written[i] === 1 ? "line" : "lines"} written` : "Write what you did"}</Spec>
                             </View>
                           </View>
                         </Animated.View>
@@ -299,7 +299,7 @@ export default function Task() {
                         <View key={m.id} style={{ gap: 8 }}>
                           <Message role={m.role} text={text} />
                           {door ? (
-                            <Button size="sm" arrow onPress={() => router.push(door.route as Href)}>
+                            <Button size="sm" onPress={() => router.push(door.route as Href)}>
                               {door.label}
                             </Button>
                           ) : null}
@@ -311,7 +311,7 @@ export default function Task() {
                 {t.thinking ? <Thinking label="At the desk…" /> : null}
                 {t.quota ? (
                   <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: t.quota } } as Href)} accessibilityRole="button">
-                    <Chip grow={false} hint="See the plans →">{t.quota}</Chip>
+                    <Chip grow={false} hint="See the plans">{t.quota}</Chip>
                   </Pressable>
                 ) : null}
                 <Composer value={draft} onChange={setDraft} onSend={() => submit()} busy={t.thinking} placeholder="Ask about this task, or say where you are stuck…" status={status} />
@@ -324,11 +324,11 @@ export default function Task() {
 
               <ButtonRow>
                 {next ? (
-                  <Button arrow onPress={() => router.replace(next)}>
+                  <Button onPress={() => router.replace(next)}>
                     Next task
                   </Button>
                 ) : (
-                  <Button arrow onPress={() => router.replace("/plan" as Href)}>
+                  <Button onPress={() => router.replace("/plan" as Href)}>
                     Back to the plan
                   </Button>
                 )}

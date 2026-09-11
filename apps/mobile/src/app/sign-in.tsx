@@ -69,7 +69,7 @@ export default function SignIn() {
         <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 24, paddingBottom: L.insets.bottom + 24, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 520, alignSelf: "center", gap: 20 }} keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Sprite id="logo-mark" scale={2} />
-            <Spec tone="muted">FounderFloor · the same door as the site</Spec>
+            <Spec tone="muted">FounderFloor, the same door as the site</Spec>
           </View>
           <Display size="3xl">{title}</Display>
           <Body tone="muted">{blurb}</Body>
@@ -90,7 +90,7 @@ export default function SignIn() {
                 </Body>
               ) : null}
               <ButtonRow>
-                <Button onPress={go} disabled={busy || !can} arrow>
+                <Button onPress={go} disabled={busy || !can}>
                   {busy ? "One moment" : cta}
                 </Button>
                 {mode === "verify" ? (

@@ -62,9 +62,9 @@ export default function Drawer() {
                 <GlyphTile id={DOC_GLYPH[d.kind] ?? "star"} size={36} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Body medium>{d.title}</Body>
-                  <Spec tone="faint">{`${d.at.slice(0, 10)} · ${d.source}`}</Spec>
+                  <Spec tone="faint">{`${d.at.slice(0, 10)}, ${d.source}`}</Spec>
                 </View>
-                <Body tone="accent">→</Body>
+                <Body tone="accent">›</Body>
               </Pressable>
             ))}
           </Plate>

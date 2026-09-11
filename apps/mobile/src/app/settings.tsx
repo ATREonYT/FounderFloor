@@ -95,7 +95,7 @@ export default function Settings() {
             {memoryOn !== null ? <Choices value={memoryOn ? "on" : "off"} options={[{ v: "on", label: "Keeps notes" }, { v: "off", label: "Off" }]} onChange={(v) => { setMemoryOn(v === "on"); say(v === "on" ? "The desk keeps notes." : "The desk writes nothing new."); }} /> : null}
             <Pressable onPress={() => router.push("/memory" as Href)} accessibilityRole="button" accessibilityLabel="Open the notebook" style={{ flexDirection: "row", alignItems: "center" }}>
               <Body style={{ flex: 1 }}>Read, copy or burn the notebook</Body>
-              <Body tone="accent">→</Body>
+              <Body tone="accent">›</Body>
             </Pressable>
           </View>
         </Plate>
@@ -105,16 +105,16 @@ export default function Settings() {
           <View style={{ marginTop: 10, gap: 10 }}>
             <Pressable onPress={() => router.push("/guide" as Href)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center" }}>
               <Body style={{ flex: 1 }}>How it works, again</Body>
-              <Body tone="accent">→</Body>
+              <Body tone="accent">›</Body>
             </Pressable>
             <Pressable onPress={() => router.push("/plans" as Href)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center" }}>
               <Body style={{ flex: 1 }}>The plans</Body>
-              <Body tone="accent">→</Body>
+              <Body tone="accent">›</Body>
             </Pressable>
             {me?.admin ? (
               <Pressable onPress={() => router.push("/dev/console" as Href)} accessibilityRole="button" accessibilityLabel="Dev console" style={{ flexDirection: "row", alignItems: "center" }}>
                 <Body style={{ flex: 1 }}>Dev console</Body>
-                <Body tone="accent">→</Body>
+                <Body tone="accent">›</Body>
               </Pressable>
             ) : null}
             <Spec tone="faint">{`AI: ${MODE_LINE[aiMode()]}`}</Spec>

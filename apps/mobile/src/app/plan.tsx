@@ -23,7 +23,7 @@ export default function Plan() {
         </Pressable>
         <StopLine id={plan ? "week" : "plan"} label="Your plan" />
         <Scene set="lobby" height={L.compact ? 140 : 170} radiusPx={radius.xl} accessibilityLabel="Your plan">
-          <Spec tone="muted">{profile ? `${GOALS.find((g) => g.id === profile.goal)?.label ?? ""} · ${profile.horizon === "3m" ? "3 months" : profile.horizon === "6m" ? "6 months" : "a year"}` : "No plan yet"}</Spec>
+          <Spec tone="muted">{profile ? `${GOALS.find((g) => g.id === profile.goal)?.label ?? ""}, ${profile.horizon === "3m" ? "3 months" : profile.horizon === "6m" ? "6 months" : "a year"}` : "No plan yet"}</Spec>
         </Scene>
         {plan ? <Body size="sm" tone="muted">Tap a task to open its page and write your work in its steps. Each week gets read back with a score.</Body> : null}
         {plan ? (

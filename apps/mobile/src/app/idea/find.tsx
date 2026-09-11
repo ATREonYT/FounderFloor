@@ -91,7 +91,7 @@ export default function Find() {
           <Choices label="Money before revenue" value={budget} options={[{ v: "0", label: "None" }, { v: "500", label: "A few hundred" }, { v: "5000", label: "A few thousand" }]} onChange={setBudget} />
           <Input label="What you would enjoy (optional)" value={likes} onChangeText={setLikes} placeholder="talking to people, building tools, writing…" />
           <ButtonRow>
-            <Button onPress={run} disabled={busy || (!skills.trim() && !audiences.trim())} arrow>
+            <Button onPress={run} disabled={busy || (!skills.trim() && !audiences.trim())}>
               {busy ? "Looking" : ideas.length ? "Five more" : "Find me five"}
             </Button>
           </ButtonRow>
@@ -103,7 +103,7 @@ export default function Find() {
         <Plate key={i.id} tone="panel" radius={radius.xl}>
           <View style={{ padding: 16, gap: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-              <Spec tone="muted">{`${n + 1} of ${ideas.length} · ${i.effort} · ${i.segment}`}</Spec>
+              <Spec tone="muted">{`${n + 1} of ${ideas.length}, ${i.effort}, ${i.segment}`}</Spec>
               <Spec tone="faint" style={{ marginLeft: "auto" }}>
                 {source === "live" ? "live" : "rehearsal"}
               </Spec>

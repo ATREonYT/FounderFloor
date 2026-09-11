@@ -58,13 +58,13 @@ export default function Plans() {
           </Plate>
         ) : null}
         <Scene set="cafe" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The staff room">
-          <Spec tone="muted">{week ? `The whole staff · ${week.days} day${week.days === 1 ? "" : "S"} left` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} days of the whole staff, free, at your first value moment`}</Spec>
+          <Spec tone="muted">{week ? `The whole staff, ${week.days} day${week.days === 1 ? "" : "S"} left` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} days of the whole staff, free, at your first value moment`}</Spec>
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>Keep the whole staff.</Display>
         <Body tone="muted" size="lg">
           Free covers the whole loop. Pro adds the coaches' memory, all four of them, and every draft. Founder+ adds the careful model and a better spot on the floor.
         </Body>
-        <Choices value={cycle} options={[{ v: "monthly", label: "Monthly" }, { v: "annual", label: "Yearly · two months free" }]} onChange={setCycle} />
+        <Choices value={cycle} options={[{ v: "monthly", label: "Monthly" }, { v: "annual", label: "Yearly, two months free" }]} onChange={setCycle} />
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
           {(["free", "pro", "founder"] as Plan[]).map((p) => {
             const paid = p !== "free" ? APP_PLANS[p] : null;

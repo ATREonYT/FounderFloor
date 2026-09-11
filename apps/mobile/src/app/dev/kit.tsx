@@ -125,14 +125,14 @@ export default function Kit() {
 
         <Row title="Buttons" note=".btn-press · primary / secondary / ghost / disabled" ref="buttons">
           <ButtonRow>
-            <Button arrow onPress={() => setToast(true)}>Walk the floor</Button>
+            <Button onPress={() => setToast(true)}>Walk the floor</Button>
             <Button variant="secondary" onPress={() => setOpen(true)}>Set up a stand</Button>
             <Button variant="ghost">Close</Button>
             <Button disabled>Redeem</Button>
           </ButtonRow>
           <View style={{ backgroundColor: shell.blackout, padding: 12, borderRadius: radius.md }}>
             <ButtonRow>
-              <Button arrow>Walk the floor</Button>
+              <Button>Walk the floor</Button>
               <Button variant="secondary" onDark>Set up a stand</Button>
             </ButtonRow>
           </View>

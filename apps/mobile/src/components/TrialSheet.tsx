@@ -70,7 +70,7 @@ export function TrialSheet() {
               Sign in
             </Button>
           ) : (
-            <Button arrow onPress={dismiss}>
+            <Button onPress={dismiss}>
               {open.started ? "Back to work" : "Understood"}
             </Button>
           )}

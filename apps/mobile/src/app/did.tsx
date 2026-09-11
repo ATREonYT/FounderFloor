@@ -60,8 +60,8 @@ export default function Did() {
   const item = r.item;
   const color = item.room ? ROOM_COLOR[item.room.id] : "#3B5B92";
   const glyph = item.room ? ROOM_GLYPH[item.room.id] ?? "bolt" : "bolt";
-  const label = item.room ? `${item.room.name} room · Room ${item.room.n} of 6` : "FROM THE WEEK'S READING";
-  const status = r.quota ? r.quota : r.source === "live" ? "Live · kept here, in your notebook, and read by the desk and the Workshop" : aiMode() === "rehearsal" ? "Practice mode · kept here and in your notebook" : r.lastError ? `Practice mode · ${r.lastError}` : "Kept here and in your notebook";
+  const label = item.room ? `${item.room.name} room, Room ${item.room.n} of 6` : "FROM THE WEEK'S READING";
+  const status = r.quota ? r.quota : r.source === "live" ? "Live, kept here, in your notebook, and read by the desk and the Workshop" : aiMode() === "rehearsal" ? "Practice mode, kept here and in your notebook" : r.lastError ? `Practice mode, ${r.lastError}` : "Kept here and in your notebook";
   const avatar = <Keeper look={RECEPTIONIST.look} scale={1} framed color={color} />;
   const mine = r.turns.filter((m) => m.role === "you").length;
 
@@ -113,7 +113,7 @@ export default function Did() {
               <Body>{item.how}</Body>
               {item.door ? (
                 <View style={{ flexDirection: "row", marginTop: 2 }}>
-                  <Button size="sm" arrow onPress={() => router.push(item.door!.route as Href)}>
+                  <Button size="sm" onPress={() => router.push(item.door!.route as Href)}>
                     {item.door.label}
                   </Button>
                 </View>
@@ -130,7 +130,7 @@ export default function Did() {
                 <Message role={m.role} text={text} avatar={m.role === "desk" ? avatar : undefined} />
                 {door ? (
                   <View style={{ paddingLeft: 44 }}>
-                    <Button size="sm" arrow onPress={() => router.push(door.route as Href)}>
+                    <Button size="sm" onPress={() => router.push(door.route as Href)}>
                       {door.label}
                     </Button>
                   </View>
@@ -150,7 +150,7 @@ export default function Did() {
           ) : null}
           {r.quota ? (
             <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: r.quota } } as Href)} accessibilityRole="button">
-              <Chip grow={false} hint="See the plans →">{r.quota}</Chip>
+              <Chip grow={false} hint="See the plans">{r.quota}</Chip>
             </Pressable>
           ) : null}
         </ScrollView>

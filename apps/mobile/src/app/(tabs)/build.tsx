@@ -14,7 +14,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, Keeper, Plate, Progress, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
+import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, Keeper, Plate, Progress, Rise, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
@@ -133,17 +133,18 @@ export default function Build() {
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar center={<Spec tone="muted">{`The map · ${Math.round(walked * 100)}% walked`}</Spec>} />
+      <TopBar center={<Spec tone="muted">{`The map. ${Math.round(walked * 100)}% of the road walked`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
         <View style={{ gap: 6 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
           <Pressable onPress={() => void openRoom(here)} accessibilityRole="button" accessibilityLabel="Open the room you are in" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, opacity: pressed ? 0.7 : 1, alignSelf: "flex-start", minHeight: 32 })}>
             <PixelIcon id="pin" color={shell.accent} size={14} flat />
-            <Body size="sm" tone="muted">{plan ? `Week ${wk} · ${here.name} room · ${tasksIn(hereIndex).filter((t) => t.done).length} of ${tasksIn(hereIndex).length} tasks done` : `${cur.name} room · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
+            <Body size="sm" tone="muted">{plan ? `Week ${wk}, ${here.name} room, ${tasksIn(hereIndex).filter((t) => t.done).length} of ${tasksIn(hereIndex).length} tasks done` : `${cur.name} room, ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
             <Body size="sm" tone="accent">›</Body>
           </Pressable>
         </View>
-        {guided ? <Hint id="map" text={plan ? "The building, floor by floor. Your plan's weeks are spent in these rooms; the windows on a sign are that week's tasks, and tapping one opens it. Tap a room to open it, a coach for a word, or yourself to wave." : "Six rooms, floor by floor. Tap the room you are in to see what to do there and tick what is done. Tap a coach for a word."} /> : null}
+        {guided ? <Hint id="map" text="Tap a room to open it, a coach for a word, or yourself to wave." /> : null}
+        <Rise k={1}>
         <TourTarget id="map" style={{ borderRadius: 22, overflow: "hidden" }}>
           <Building
             rooms={rooms}
@@ -164,11 +165,13 @@ export default function Build() {
             }}
           />
         </TourTarget>
+        </Rise>
         {!opened ? (
           <Spec tone="faint">
             {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
           </Spec>
         ) : null}
+        <Rise k={2}>
         <Plate tone="panel" radius={radius.xl} padding={16}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Body medium>Your trail</Body>
@@ -189,6 +192,7 @@ export default function Build() {
           </View>
           <Calendar active={visits} />
         </Plate>
+        </Rise>
       </ScrollView>
 
       <Dialogue open={!!open} onClose={() => { setOpen(null); closedStep("room"); }} sign={open?.sign ?? ""} keeper={ines.name} blurb={open?.blurb} color={open ? DOOR[open.n - 1] : shell.accent} wide footer="Tap a line for how to do it and to write what you did. Tick what is true, not what you intend.">
@@ -197,7 +201,7 @@ export default function Build() {
             <Stage look={ines.look} color={DOOR[open.n - 1]} scale={2} height={128} radiusPx={16} set="workshop" ambient={false} who={ines.name} say={mood === "cheer" ? "That is the room. Badge is on the stand." : mood === "nod" ? "Written down." : open.blurb} mood={mood} />
             {tasksIn(open.n - 1).length ? (
               <View style={{ gap: 8 }}>
-                <Spec tone="muted">{`Your plan, in this room · ${roomWeeks.filter((x) => x.room === open.n - 1).map((x) => `WEEK ${x.w.n}`).join(" & ")}`}</Spec>
+                <Spec tone="muted">{`Your plan in this room: ${roomWeeks.filter((x) => x.room === open.n - 1).map((x) => `week ${x.w.n}`).join(" and ")}`}</Spec>
                 {tasksIn(open.n - 1).map((t) => (
                   <Tap key={`${t.week}-${t.i}`} onPress={() => { setOpen(null); router.push({ pathname: "/task", params: { week: String(t.week), i: String(t.i) } } as Href); }} accessibilityRole="button" accessibilityLabel={`Open task: ${t.text}`} scale={0.985}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: t.done ? wash(DOOR[open.n - 1], 0.1) : shell.paper, borderRadius: 16, borderWidth: 1, borderColor: t.done ? DOOR[open.n - 1] : shell.line, paddingVertical: 9, paddingHorizontal: 10 }}>
@@ -214,10 +218,10 @@ export default function Build() {
                 {roomWeeks.some((x) => x.room === open.n - 1 && x.w.n <= wk) ? (
                   <Pressable onPress={() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; setOpen(null); router.push({ pathname: "/review", params: { week: String(w) } } as Href); }} accessibilityRole="button" accessibilityLabel="Read the week back" style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6 }}>
                     <Glyph id="coin" tone="auto" scale={1} />
-                    <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}, ${reviews[w].score} of 100 →` : `Read week ${w} back →`; })()}</Spec>
+                    <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}, ${reviews[w].score} of 100` : `Read week ${w} back`; })()}</Spec>
                   </Pressable>
                 ) : null}
-                <Spec tone="muted" style={{ marginTop: 4 }}>The room's own list · Tap A line</Spec>
+                <Spec tone="muted" style={{ marginTop: 4 }}>The room's own list. Tap a line.</Spec>
               </View>
             ) : null}
             <Progress value={stageProgress(open, ticks)} label={open.name} right={`${Math.round(stageProgress(open, ticks) * 100)}%`} color={stageProgress(open, ticks) >= 1 ? shell.verify : shell.accent} />

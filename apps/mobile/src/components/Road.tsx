@@ -73,7 +73,7 @@ export function Road() {
     <Plate tone="panel" radius={radius.xl} padding={0}>
       <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
         <Body medium>The road</Body>
-        <Spec tone="faint">{`Stop ${road.now.n} of 7 · ${road.done} stamped`}</Spec>
+        <Spec tone="faint">{`Stop ${road.now.n} of 7`}</Spec>
       </View>
       <Animated.View layout={LinearTransition.duration(220).easing(OUT)} style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
         {road.stops.map((s, i) => {
@@ -128,9 +128,9 @@ export function RoadStrip() {
             i < road.stops.length - 1 ? <View key={`${s.id}-line`} style={{ flex: 1, height: 0, marginHorizontal: 3, borderTopWidth: 2, borderStyle: "dotted", borderColor: s.state === "done" ? shell.accent : alpha.hairline() }} /> : null,
           ])}
         </View>
-        <Body size="sm" medium style={{ marginTop: 10 }}>{`Stop ${road.now.n} of 7 · ${road.now.title}`}</Body>
+        <Body size="sm" medium style={{ marginTop: 10 }}>{`Stop ${road.now.n} of 7: ${road.now.title}`}</Body>
         <Spec tone="faint" style={{ marginTop: 2 }}>{road.now.child}</Spec>
-        <Spec tone="accent" style={{ marginTop: 6 }}>{`${road.now.go} →`}</Spec>
+        <Spec tone="accent" style={{ marginTop: 6 }}>{`${road.now.go}`}</Spec>
       </Plate>
     </Pressable>
   );
@@ -143,7 +143,7 @@ export function StopLine({ id, label }: { id: StopId; label?: string }) {
   return (
     <Pressable onPress={() => router.push("/today" as Href)} accessibilityRole="button" accessibilityLabel={`Stop ${stop.n} of 7: ${stop.title}. Open the road`} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.7 : 1 })}>
       <PixelIcon id="flag" color={shell.muted} size={12} flat />
-      <Spec tone="muted">{`${label ? `${label} · ` : ""}stop ${stop.n} of 7`}</Spec>
+      <Spec tone="muted">{`${label ? `${label}: ` : ""}stop ${stop.n} of 7`}</Spec>
     </Pressable>
   );
 }

@@ -60,7 +60,7 @@ export default function Step() {
       </View>
     );
   }
-  const status = r.quota ? r.quota : r.source === "live" ? "Live · written to your notebook, read by the desk" : aiMode() === "rehearsal" ? "Practice mode · written to your notebook" : r.lastError ? `Practice mode · ${r.lastError}` : "Written to your notebook";
+  const status = r.quota ? r.quota : r.source === "live" ? "Live, written to your notebook, read by the desk" : aiMode() === "rehearsal" ? "Practice mode, written to your notebook" : r.lastError ? `Practice mode, ${r.lastError}` : "Written to your notebook";
   const avatar = <Keeper look={RECEPTIONIST.look} scale={1} framed color={room.color} />;
 
   return (
@@ -75,7 +75,7 @@ export default function Step() {
               </Pressable>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <GlyphTile id={room.glyph} color={room.color} size={24} scale={1} />
-                <Spec tone="muted">{`${TASK_KINDS[kind].label} · Step ${sIdx + 1} of ${total}`}</Spec>
+                <Spec tone="muted">{`${TASK_KINDS[kind].label}, Step ${sIdx + 1} of ${total}`}</Spec>
               </View>
             </View>
             <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
@@ -117,7 +117,7 @@ export default function Step() {
                 {door ? (
                   <View style={{ paddingLeft: 44 }}>
                     <Pressable onPress={() => router.push(door.route as Href)} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: room.color, borderRadius: radius.full, paddingHorizontal: 14, paddingVertical: 8 }}>
-                      <Spec tone="paper">{`${door.label} →`}</Spec>
+                      <Spec tone="paper">{`${door.label}`}</Spec>
                     </Pressable>
                   </View>
                 ) : null}
@@ -136,7 +136,7 @@ export default function Step() {
           ) : null}
           {r.quota ? (
             <Pressable onPress={() => router.push({ pathname: "/plans", params: { why: r.quota } } as Href)} accessibilityRole="button">
-              <Chip grow={false} hint="See the plans →">{r.quota}</Chip>
+              <Chip grow={false} hint="See the plans">{r.quota}</Chip>
             </Pressable>
           ) : null}
         </ScrollView>
@@ -152,11 +152,11 @@ export default function Step() {
             ) : null}
             {sIdx + 1 < total ? (
               <Pressable onPress={() => goStep(sIdx + 1)} accessibilityRole="button" style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: radius.full, backgroundColor: r.ticked ? room.color : shell.panel, borderWidth: 1, borderColor: r.ticked ? room.color : shell.line }}>
-                <Spec tone={r.ticked ? "paper" : "ink"}>Step {sIdx + 2} →</Spec>
+                <Spec tone={r.ticked ? "paper" : "ink"}>Step {sIdx + 2}</Spec>
               </Pressable>
             ) : (
               <Pressable onPress={back} accessibilityRole="button" style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 8, paddingHorizontal: 12, borderRadius: radius.full, backgroundColor: r.ticked ? room.color : shell.panel, borderWidth: 1, borderColor: r.ticked ? room.color : shell.line }}>
-                <Spec tone={r.ticked ? "paper" : "ink"}>Back to the task →</Spec>
+                <Spec tone={r.ticked ? "paper" : "ink"}>Back to the task</Spec>
               </Pressable>
             )}
           </View>
