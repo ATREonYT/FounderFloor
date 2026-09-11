@@ -142,7 +142,7 @@ export function Stage({
     <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined} accessibilityLabel={who ? `${who}: ${say ?? ""}` : say}>
       <Plate tone="panel" radius={radiusPx} contentStyle={{ height }}>
         <View style={{ height }}>
-        <Glow color={color} x={0.78} y={0.95} r={0.75} />
+        <Glow color={color} x={0.78} y={0.95} r={0.75} strength={0.32} />
         {/* the floor line the keeper stands on: a hairline of light */}
         <View pointerEvents="none" style={{ position: "absolute", left: pad, right: pad, bottom: pad + 6, height: 1, backgroundColor: alpha.hairline() }} />
         {/* the keeper, standing to the right */}

@@ -12,6 +12,7 @@ export { SpriteCycle } from "./SpriteCycle";
 export { Plate, type PlateTone } from "./Plate";
 export { Sheen } from "./Sheen";
 export { PixelIcon, PIXEL_ICON_IDS, type PixelIconId } from "./PixelIcon";
+export { Check, Stamp } from "./Check";
 export { Display, Body, Mono, Spec, Signage, Kbd } from "./Text";
 export { Button, ButtonRow } from "./Button";
 export { Sign, type GlyphId } from "./Sign";

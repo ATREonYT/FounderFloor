@@ -80,9 +80,13 @@ The pixel keepers (20 by 28, at 2x or 3x), the desk, the coaches and the founder
 
 The tiled room scenes and walking crowds of the first world are retired from page headers. They may return inside the map's floors and the stand's own card, where a room is the subject.
 
+## The road
+
+A stamp card. Seven stops down a dotted path in one ink; a stop that is done carries the red seal pictogram, stamped a little askew; the stop you are at has your own keeper standing on it; the stops ahead are empty dotted slots with their number in mono. No colour per stop, no coloured rings, no tinted washes: one ink, one red, and a person.
+
 ## Motion
 
-Product motion: 150 to 250 ms, state only. Enter with a strong ease-out from an already-visible default; move across with ease-in-out; sheets on the iOS sheet curve. Springs only where a finger started it. Reduce Motion drops travel and keeps cross-fades. The one authored moment is the opening: the lights come up, the glass tile breathes once, the keeper arrives, under 1.4 s, skipped under Reduce Motion.
+Product motion: 150 to 250 ms, state only. Enter with a strong ease-out from an already-visible default; move across with ease-in-out; sheets on the iOS sheet curve. Springs settle without a bounce. Nothing moves on a page's own arrival: a tick that is already there is simply there. What does move, and why: a key presses down onto its foot (100 ms) and comes back (140 ms); a tick lands from slightly larger when the founder makes it (a spring, 220 ms); the red seal lands on the road the same way, from above and a little askew; the opened stop on the road unfolds in 220 ms and the rows below make room (a layout transition, never a jump); the keeper breathes 1.5 px every 1.8 s; the tab bar's disc slides in 220 ms; meters draw once. The one authored moment is the opening: the lights come up, the glass tile breathes once, the keeper walks in, under 1.4 s. All of it is a cross-fade or nothing under Reduce Motion.
 
 ## Anti-references
 

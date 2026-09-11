@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { parseDoor } from "@founderfloor/shared";
-import { Body, Button, Chip, Composer, Glyph, GlyphTile, Keeper, Message, Plate, Spec, Tap, Thinking, haptic, radius, shell, useLayout, wash, PixelIcon } from "@founderfloor/ui";
+import { Body, Button, Chip, Composer, Glyph, GlyphTile, Keeper, Message, Plate, Spec, Tap, Thinking, haptic, radius, shell, useLayout, wash, PixelIcon, Check } from "@founderfloor/ui";
 import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
 import { ROOM_COLOR, ROOM_GLYPH } from "../lib/glyphs";
@@ -83,7 +83,8 @@ export default function Did() {
             <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
               <Tap onPress={() => { r.tick(); void haptic(r.ticked ? "light" : "success"); }} accessibilityRole="checkbox" accessibilityLabel={r.ticked ? "Mark the line not done" : "Mark the line done"}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: r.ticked ? color : shell.panel, borderWidth: 2, borderColor: color, alignItems: "center", justifyContent: "center" }}>
-                  {r.ticked ? <PixelIcon id="check" color="#F4F6F8" size={22} flat /> : <Glyph id="chip" tone="auto" scale={1} />}
+                  {r.ticked ? null : <Glyph id="chip" tone="auto" scale={1} />}
+                  <View pointerEvents="none" style={{ position: "absolute" }}><Check on={r.ticked} size={22} /></View>
                 </View>
               </Tap>
               <View style={{ flex: 1, minWidth: 0, gap: 4 }}>

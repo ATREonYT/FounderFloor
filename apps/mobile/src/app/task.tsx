@@ -17,7 +17,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 const TICK_T = { transitionProperty: ["backgroundColor", "borderColor"], transitionDuration: 150, transitionTimingFunction: "ease-out" } as const;
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { TASK_KINDS, type TaskKind } from "@founderfloor/shared";
-import { Body, Button, ButtonRow, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Input, Message, Plate, Ring, Scene, Spec, Sparks, Tap, Thinking, haptic, radius, shell, useLayout, wash, type GlyphId, type SceneSet, PixelIcon } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Chip, Composer, Dialogue, Display, Glyph, GlyphTile, Input, Message, Plate, Ring, Scene, Spec, Sparks, Tap, Thinking, haptic, radius, shell, useLayout, wash, type GlyphId, type SceneSet, PixelIcon, Check } from "@founderfloor/ui";
 import { useFounder, type TaskOutcome } from "../lib/store";
 import { MemoryAsk } from "../components/MemoryAsk";
 import { useGate } from "../lib/gate";
@@ -236,7 +236,8 @@ export default function Task() {
                         <Animated.View style={{ ...TICK_T, flexDirection: "row", gap: 12, backgroundColor: on ? wash(room.color, 0.1) : shell.panel, borderRadius: 20, borderWidth: 1.5, borderColor: on ? room.color : shell.line, padding: 12 }}>
                           <Pressable onPress={() => { t.tick(i); void haptic(on ? "light" : "medium"); }} accessibilityRole="checkbox" accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8}>
                             <Animated.View style={{ ...TICK_T, width: 32, height: 32, borderRadius: 20, backgroundColor: on ? room.color : wash(room.color, 0.14), alignItems: "center", justifyContent: "center" }}>
-                              {on ? <PixelIcon id="check" color="#F4F6F8" size={18} flat /> : <Spec tone="ink">{String(i + 1)}</Spec>}
+                              {on ? null : <Spec tone="ink">{String(i + 1)}</Spec>}
+                              <View pointerEvents="none" style={{ position: "absolute" }}><Check on={on} size={18} /></View>
                             </Animated.View>
                           </Pressable>
                           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>

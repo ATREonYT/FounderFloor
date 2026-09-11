@@ -1,77 +1,121 @@
 /**
- * The road, drawn. Three sizes: the whole road on Today (seven stops
- * down a line, the one to do now opened up with its line and a button),
- * a strip on You (seven dots and where you are), and a line on any page
- * (which stop this page belongs to). All three say the same seven words.
+ * The road, drawn as a stamp card. Seven stops down a dotted path in one
+ * ink; a stop that is done carries a red seal, stamped a little askew the
+ * way a real one lands; the stop you are at has your own keeper standing
+ * on it; the stops ahead are empty slots with their number. No colour per
+ * stop, no coloured rings: one ink, one red, and a person. Three sizes:
+ * the whole road on Today (the stop to do now opened up with its line and
+ * its key), a strip on You, and a line on any page saying which stop it
+ * belongs to. All three say the same seven words.
+ *
+ * Motion: the seal lands on a spring when a stop is done while you watch;
+ * the opened stop unfolds in 220 ms and the rows below make room; the
+ * keeper breathes. Nothing moves on the page's own arrival.
  */
+import { useEffect } from "react";
 import { Pressable, View } from "react-native";
+import Animated, { Easing, FadeIn, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { useRouter, type Href } from "expo-router";
 import { stopOf, type RoadStop, type StopId } from "@founderfloor/shared";
-import { Body, Button, Plate, Sheen, Spec, radius, shell, wash, PixelIcon } from "@founderfloor/ui";
-import { STOP_LOOK, useRoad } from "../lib/road";
+import { Body, Button, Mono, PixelIcon, Plate, Spec, Sprite, Stamp, alpha, radius, shell, type Look, type SpriteId } from "@founderfloor/ui";
+import { useRoad } from "../lib/road";
+import { useStand } from "../lib/stand";
 
-function Disc({ stop, size = 30 }: { stop: RoadStop; size?: number }) {
-  const look = STOP_LOOK[stop.id];
-  const on = stop.state === "now";
-  const done = stop.state === "done";
+const OUT = Easing.bezier(0.23, 1, 0.32, 1);
+
+/** An empty slot on the card: a dotted ring with the stop's number. */
+function Slot({ n, size, strong = false }: { n: number; size: number; strong?: boolean }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: done ? look.color : on ? shell.panel : "transparent", borderWidth: done ? 0 : 2, borderColor: on ? look.color : shell.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-      {done ? <Sheen strength={0.28} reach={0.5} /> : null}
-      {done ? <PixelIcon id="check" color="#F4F6F8" size={Math.round(size * 0.6)} flat /> : on ? <View style={{ width: size * 0.4, height: size * 0.4, borderRadius: size * 0.2, backgroundColor: look.color }} /> : <Spec tone="faint" style={{ fontSize: 11, lineHeight: 13 }}>{String(stop.n)}</Spec>}
+    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 1.5, borderStyle: "dotted", borderColor: strong ? shell.ink : alpha.hairline(), alignItems: "center", justifyContent: "center" }}>
+      <Mono size="xs" tone={strong ? "ink" : "faint"}>{String(n)}</Mono>
     </View>
   );
 }
 
-/** The whole road: Today's map of the journey. */
+/** Your keeper, standing on the stop you are at, breathing. */
+function Here({ look, scale = 1 }: { look: Look; scale?: 1 | 2 }) {
+  const reduced = useReducedMotion();
+  const y = useSharedValue(0);
+  useEffect(() => {
+    if (reduced) return;
+    y.value = withRepeat(withSequence(withTiming(-1.5, { duration: 900, easing: Easing.inOut(Easing.quad) }), withTiming(0, { duration: 900, easing: Easing.inOut(Easing.quad) })), -1, false);
+  }, [reduced, y]);
+  const a = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }));
+  const id = `avatar-outfit${look.outfit % 8}-down-0` as SpriteId;
+  return (
+    <View style={{ width: 20 * scale, height: 28 * scale, alignItems: "center", justifyContent: "flex-end" }}>
+      <View pointerEvents="none" style={{ position: "absolute", left: -3, right: -3, bottom: -2, height: 6, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.35)" }} />
+      <Animated.View style={a}>
+        <Sprite id={id} scale={scale} />
+      </Animated.View>
+    </View>
+  );
+}
+
+/** The mark for one stop: a seal, your keeper, or an empty slot. */
+function Mark({ stop, look, size = 30 }: { stop: RoadStop; look: Look; size?: number }) {
+  if (stop.state === "done") return <Stamp on size={size} />;
+  if (stop.state === "now") return <Here look={look} />;
+  return <Slot n={stop.n} size={size} />;
+}
+
+/** The dotted path between two stops, in ink where it has been walked. */
+function Path({ walked, height, flex = false }: { walked: boolean; height?: number; flex?: boolean }) {
+  return <View style={{ width: 0, height, flex: flex ? 1 : undefined, minHeight: flex ? 6 : undefined, borderLeftWidth: 2, borderStyle: "dotted", borderColor: walked ? shell.accent : alpha.hairline() }} />;
+}
+
+/** The whole road: Today's card. */
 export function Road() {
   const router = useRouter();
   const road = useRoad();
+  const look = useStand().look;
   return (
     <Plate tone="panel" radius={radius.xl} padding={0}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 8, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-        <Spec tone="muted">The road</Spec>
-        <Spec tone="faint">{`Stop ${road.now.n} of 7 · ${road.done} done`}</Spec>
+      <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 6, flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+        <Body medium>The road</Body>
+        <Spec tone="faint">{`Stop ${road.now.n} of 7 · ${road.done} stamped`}</Spec>
       </View>
-      <View style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
+      <Animated.View layout={LinearTransition.duration(220).easing(OUT)} style={{ paddingHorizontal: 12, paddingBottom: 10 }}>
         {road.stops.map((s, i) => {
-          const look = STOP_LOOK[s.id];
           const on = s.state === "now";
+          const last = i === road.stops.length - 1;
           return (
-            <Pressable key={s.id} onPress={() => router.push(s.route as Href)} accessibilityRole="button" accessibilityLabel={`Stop ${s.n}: ${s.title}`} style={({ pressed }) => ({ flexDirection: "row", gap: 12, opacity: pressed ? 0.85 : 1 })}>
-              <View style={{ width: 30, alignItems: "center" }}>
-                <View style={{ width: 2, height: i === 0 ? 6 : 10, backgroundColor: i === 0 ? "transparent" : s.state === "next" ? shell.line : look.color }} />
-                <Disc stop={s} />
-                <View style={{ width: 2, flex: 1, minHeight: 6, backgroundColor: i === road.stops.length - 1 ? "transparent" : s.state === "done" ? look.color : shell.line }} />
-              </View>
-              <View style={{ flex: 1, minWidth: 0, paddingTop: on ? 8 : 10, paddingBottom: on ? 12 : 8 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <Body size={on ? "base" : "sm"} medium tone={s.state === "next" ? "muted" : "ink"} style={{ flex: 1 }}>
-                    {s.title}
-                  </Body>
-                  {s.progress ? <Spec tone="faint">{s.progress}</Spec> : null}
-                  {s.state === "done" ? <Spec tone="faint">Done</Spec> : null}
-                  <Body tone={on ? "accent" : "muted"} accessibilityElementsHidden importantForAccessibility="no">›</Body>
+            <Animated.View key={s.id} layout={LinearTransition.duration(220).easing(OUT)}>
+              <Pressable onPress={() => router.push(s.route as Href)} accessibilityRole="button" accessibilityLabel={`Stop ${s.n}: ${s.title}${s.state === "done" ? ", done" : on ? ", you are here" : ""}`} style={({ pressed }) => ({ flexDirection: "row", gap: 12, opacity: pressed ? 0.85 : 1 })}>
+                <View style={{ width: 32, alignItems: "center" }}>
+                  <Path walked={s.state === "done" || on} height={i === 0 ? 6 : 10} />
+                  <Mark stop={s} look={look} />
+                  <Path walked={s.state === "done"} flex={!last} height={last ? 6 : undefined} />
                 </View>
-                {on ? (
-                  <View style={{ marginTop: 6, gap: 8, backgroundColor: wash(look.color, 0.08), borderRadius: radius.lg, padding: 12, overflow: "hidden" }}>
-                    <Sheen strength={0.35} reach={0.4} />
-                    <Body size="sm">{s.child}</Body>
-                    <Spec tone="muted">{s.why}</Spec>
-                    <Button block arrow onPress={() => router.push(s.route as Href)}>
-                      {s.go}
-                    </Button>
+                <View style={{ flex: 1, minWidth: 0, paddingTop: on ? 8 : 10, paddingBottom: on ? 12 : 8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Body size={on ? "base" : "sm"} medium tone={s.state === "next" ? "muted" : "ink"} style={{ flex: 1 }}>
+                      {s.title}
+                    </Body>
+                    {s.progress ? <Spec tone="faint">{s.progress}</Spec> : null}
+                    {s.state === "done" ? <Spec tone="faint">Done</Spec> : null}
+                    <Body tone={on ? "accent" : "muted"} accessibilityElementsHidden importantForAccessibility="no">›</Body>
                   </View>
-                ) : null}
-              </View>
-            </Pressable>
+                  {on ? (
+                    <Animated.View entering={FadeIn.duration(220).easing(OUT)} style={{ marginTop: 6, gap: 8, backgroundColor: alpha.wellFill(), borderWidth: 1, borderColor: alpha.hairline(), borderRadius: radius.md, padding: 12 }}>
+                      <Body size="sm">{s.child}</Body>
+                      <Spec tone="muted">{s.why}</Spec>
+                      <Button block onPress={() => router.push(s.route as Href)}>
+                        {s.go}
+                      </Button>
+                    </Animated.View>
+                  ) : null}
+                </View>
+              </Pressable>
+            </Animated.View>
           );
         })}
-      </View>
+      </Animated.View>
     </Plate>
   );
 }
 
-/** The strip: seven dots and where you are, for the top of You. */
+/** The strip: seven slots and where you are, for the top of You. */
 export function RoadStrip() {
   const router = useRouter();
   const road = useRoad();
@@ -80,8 +124,8 @@ export function RoadStrip() {
       <Plate tone="panel" radius={radius.xl} padding={14}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {road.stops.map((s, i) => [
-            <Disc key={s.id} stop={s} size={22} />,
-            i < road.stops.length - 1 ? <View key={`${s.id}-line`} style={{ flex: 1, height: 2, marginHorizontal: 3, backgroundColor: s.state === "done" ? STOP_LOOK[s.id].color : shell.line }} /> : null,
+            s.state === "done" ? <Stamp key={s.id} on size={24} /> : <Slot key={s.id} n={s.n} size={24} strong={s.state === "now"} />,
+            i < road.stops.length - 1 ? <View key={`${s.id}-line`} style={{ flex: 1, height: 0, marginHorizontal: 3, borderTopWidth: 2, borderStyle: "dotted", borderColor: s.state === "done" ? shell.accent : alpha.hairline() }} /> : null,
           ])}
         </View>
         <Body size="sm" medium style={{ marginTop: 10 }}>{`Stop ${road.now.n} of 7 · ${road.now.title}`}</Body>
@@ -96,10 +140,9 @@ export function RoadStrip() {
 export function StopLine({ id, label }: { id: StopId; label?: string }) {
   const router = useRouter();
   const stop = stopOf(id);
-  const look = STOP_LOOK[id];
   return (
     <Pressable onPress={() => router.push("/today" as Href)} accessibilityRole="button" accessibilityLabel={`Stop ${stop.n} of 7: ${stop.title}. Open the road`} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 6, opacity: pressed ? 0.7 : 1 })}>
-      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: look.color }} />
+      <PixelIcon id="flag" color={shell.muted} size={12} flat />
       <Spec tone="muted">{`${label ? `${label} · ` : ""}stop ${stop.n} of 7`}</Spec>
     </Pressable>
   );

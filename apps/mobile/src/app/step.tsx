@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { TASK_KINDS, parseDoor } from "@founderfloor/shared";
-import { Body, Chip, Composer, Glyph, GlyphTile, Keeper, Message, Spec, Tap, Thinking, haptic, radius, shell, useLayout, wash, PixelIcon } from "@founderfloor/ui";
+import { Body, Chip, Composer, Glyph, GlyphTile, Keeper, Message, Spec, Tap, Thinking, haptic, radius, shell, useLayout, wash, PixelIcon, Check } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
@@ -81,7 +81,8 @@ export default function Step() {
             <View style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
               <Tap onPress={() => { r.tick(); void haptic(r.ticked ? "light" : "success"); }} accessibilityRole="checkbox" accessibilityLabel={r.ticked ? "Mark the step not done" : "Mark the step done"}>
                 <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: r.ticked ? room.color : shell.panel, borderWidth: 2, borderColor: room.color, alignItems: "center", justifyContent: "center" }}>
-                  {r.ticked ? <PixelIcon id="check" color="#F4F6F8" size={22} flat /> : <Spec tone="ink">{String(sIdx + 1)}</Spec>}
+                  {r.ticked ? null : <Spec tone="ink">{String(sIdx + 1)}</Spec>}
+                  <View pointerEvents="none" style={{ position: "absolute" }}><Check on={r.ticked} size={22} /></View>
                 </View>
               </Tap>
               <View style={{ flex: 1, minWidth: 0, gap: 4 }}>

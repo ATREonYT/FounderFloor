@@ -11,9 +11,9 @@
  */
 import Svg, { Rect } from "react-native-svg";
 
-export type PixelIconId = "bolt" | "leaf" | "coin" | "chip" | "flask" | "rocket" | "heart" | "cube" | "wave" | "star" | "check" | "lock" | "arrow" | "pin";
+export type PixelIconId = "bolt" | "leaf" | "coin" | "chip" | "flask" | "rocket" | "heart" | "cube" | "wave" | "star" | "check" | "lock" | "arrow" | "pin" | "stamp" | "flag";
 
-/** a = body, b = shade, c = light, . = nothing. Sixteen rows of sixteen. */
+/** a = body, b = shade, c = light, w = paper white, . = nothing. Sixteen rows of sixteen. */
 const MAPS: Record<PixelIconId, string[]> = {
   star: [
     ".......a........",
@@ -249,6 +249,42 @@ const MAPS: Record<PixelIconId, string[]> = {
     "................",
     "................",
   ],
+  stamp: [
+    ".....aaaaaa.....",
+    "...aa.aaaa.aa...",
+    "..a.aaaaaaaa.a..",
+    ".aaaaaaaaaaaaaa.",
+    ".aaaaaaaaaaawaa.",
+    "aaaaaaaaaaawwaab",
+    "aaaaaaaaaawwaaab",
+    "aaaawaaaawwaaaab",
+    "aaaawwaawwaaaaab",
+    "aaaaawwwwaaaaaab",
+    ".aaaaawwaaaaaab.",
+    ".aaaaaaaaaaaaab.",
+    "..a.aaaaaaaa.b..",
+    "...ab.aaaa.bb...",
+    ".....bbbbbb.....",
+    "................",
+  ],
+  flag: [
+    "..aa............",
+    "..aacccccaaaa...",
+    "..aaccccaaaaaa..",
+    "..aaccaaaaaaaaa.",
+    "..aaaaaaaaaaaab.",
+    "..aaaaaaaaaaab..",
+    "..aaaaaaaaaab...",
+    "..aaaaaaaaab....",
+    "..aaaaaaaab.....",
+    "..aabbbbbb......",
+    "..aa............",
+    "..aa............",
+    "..aa............",
+    "..aa............",
+    "..bb............",
+    "................",
+  ],
   pin: [
     ".....aaaaaa.....",
     "....acccaaaa....",
@@ -281,12 +317,12 @@ const ROWS = 16;
 export function PixelIcon({ id, color, size = 24, flat = false, accessibilityLabel }: { id: PixelIconId; /** The body colour; the shade and the light are derived. */ color: string; size?: number; /** One tone only, for a label beside text. */ flat?: boolean; accessibilityLabel?: string }) {
   const map = MAPS[id];
   const hex = color.startsWith("#") ? color : "#888888";
-  const tones = { a: color, b: flat ? color : shift(hex, -0.32), c: flat ? color : shift(hex, 0.38) };
-  const rects: { x: number; y: number; t: "a" | "b" | "c" }[] = [];
+  const tones = { a: color, b: flat ? color : shift(hex, -0.32), c: flat ? color : shift(hex, 0.38), w: "#F4F6F8" };
+  const rects: { x: number; y: number; t: "a" | "b" | "c" | "w" }[] = [];
   map.forEach((row, y) => {
     for (let x = 0; x < ROWS; x++) {
       const ch = row[x];
-      if (ch === "a" || ch === "b" || ch === "c") rects.push({ x, y, t: ch });
+      if (ch === "a" || ch === "b" || ch === "c" || ch === "w") rects.push({ x, y, t: ch });
     }
   });
   return (
