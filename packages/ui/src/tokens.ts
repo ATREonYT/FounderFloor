@@ -109,20 +109,20 @@ export const SPRITE = { w: 20, h: 28 } as const;
 // ─── type (tailwind.config.ts fontSize, on the unit) ─────────────────────
 export const type = {
   xs: { size: 13, line: 18 },
-  sm: { size: 15, line: 20 },
-  base: { size: 17, line: 24 },
-  lg: { size: 19, line: 26 },
-  xl: { size: 26, line: 32, tracking: -0.015 * 26 },
-  "3xl": { size: 34, line: 40, tracking: -0.02 * 34 },
-  "4xl": { size: 44, line: 50, tracking: -0.025 * 44 },
+  sm: { size: 15, line: 21 },
+  base: { size: 16, line: 24 },
+  lg: { size: 18, line: 26 },
+  xl: { size: 26, line: 31, tracking: -0.01 * 26 },
+  "3xl": { size: 33, line: 38, tracking: -0.015 * 33 },
+  "4xl": { size: 42, line: 46, tracking: -0.02 * 42 },
 } as const;
 
-/** One family, Inter, at four weights; mono survives for code and pasted text only. */
+/** Archivo carries headlines and controls, Plex Sans the body, Plex Mono code and pasted text. */
 export const fontFamily = {
-  display: "Inter-SemiBold",
-  displayMedium: "Inter-Bold",
-  body: "Inter",
-  bodyMedium: "Inter-Medium",
+  display: "Archivo-SemiBold",
+  displayMedium: "Archivo-Bold",
+  body: "IBMPlexSans",
+  bodyMedium: "IBMPlexSans-Medium",
   mono: "IBMPlexMono",
   monoMedium: "IBMPlexMono-Medium",
 } as const;

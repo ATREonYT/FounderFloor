@@ -9,7 +9,7 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { useIsFocused, useRouter, type Href } from "expo-router";
 import { STAGES } from "@founderfloor/shared";
-import { Body, Button, Display, Glyph, GlyphTile, Plate, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash } from "@founderfloor/ui";
+import { Body, Button, Display, Glyph, GlyphTile, Plate, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, PixelIcon } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
@@ -113,7 +113,7 @@ export default function Today() {
                 return (
                   <Pressable key={key} onPress={() => openTask(i)} accessibilityRole="button" accessibilityLabel={d} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 10, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>
                     <Pressable onPress={() => { toggle(key); void haptic(on ? "light" : "success"); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={10} style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
-                      {on ? <Glyph id="star" tone="paper" scale={1} /> : null}
+                      {on ? <PixelIcon id="check" color="#F4F6F8" size={16} flat /> : null}
                     </Pressable>
                     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                       <Body size="sm" tone={on ? "muted" : "ink"} style={{ textDecorationLine: on ? "line-through" : "none" }}>

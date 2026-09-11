@@ -7,7 +7,7 @@
 import { Pressable, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { stopOf, type RoadStop, type StopId } from "@founderfloor/shared";
-import { Body, Button, Plate, Sheen, Spec, radius, shell, wash } from "@founderfloor/ui";
+import { Body, Button, Plate, Sheen, Spec, radius, shell, wash, PixelIcon } from "@founderfloor/ui";
 import { STOP_LOOK, useRoad } from "../lib/road";
 
 function Disc({ stop, size = 30 }: { stop: RoadStop; size?: number }) {
@@ -17,7 +17,7 @@ function Disc({ stop, size = 30 }: { stop: RoadStop; size?: number }) {
   return (
     <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: done ? look.color : on ? shell.panel : "transparent", borderWidth: done ? 0 : 2, borderColor: on ? look.color : shell.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
       {done ? <Sheen strength={0.28} reach={0.5} /> : null}
-      {done ? <Body tone="paper" medium style={{ fontSize: size * 0.5, lineHeight: size * 0.6 }}>✓</Body> : on ? <View style={{ width: size * 0.4, height: size * 0.4, borderRadius: size * 0.2, backgroundColor: look.color }} /> : <Spec tone="faint" style={{ fontSize: 11, lineHeight: 13 }}>{String(stop.n)}</Spec>}
+      {done ? <PixelIcon id="check" color="#F4F6F8" size={Math.round(size * 0.6)} flat /> : on ? <View style={{ width: size * 0.4, height: size * 0.4, borderRadius: size * 0.2, backgroundColor: look.color }} /> : <Spec tone="faint" style={{ fontSize: 11, lineHeight: 13 }}>{String(stop.n)}</Spec>}
     </View>
   );
 }

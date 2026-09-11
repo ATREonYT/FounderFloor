@@ -28,12 +28,14 @@ import { alpha, scheme } from "./theme";
 
 export type PlateTone = "panel" | "glass" | "plate" | "paperSign" | "paper";
 
-const TONES = (): Record<PlateTone, { fill: string; line: string; blur: number; shadow?: "card" | "float"; gloss: boolean }> => ({
-  panel: { fill: alpha.panelFill(), line: alpha.hairline(), blur: 24, gloss: true },
-  paperSign: { fill: alpha.panelFill(), line: alpha.hairline(), blur: 24, gloss: true },
-  glass: { fill: alpha.glassFill(), line: alpha.hairline(), blur: 40, shadow: "float", gloss: true },
-  paper: { fill: alpha.wellFill(), line: "transparent", blur: 12, gloss: false },
-  plate: { fill: shell.blackout, line: "rgba(255,255,255,0.08)", blur: 0, gloss: true },
+const TONES = (): Record<PlateTone, { fill: string; line: string; blur: number; shadow?: "card" | "float"; gloss: boolean; foot: string }> => ({
+  // the card: a near-solid panel with a hairline and a two-pixel foot, the thing a hand can rest on
+  panel: { fill: alpha.panelFill(), line: alpha.hairline(), blur: 10, gloss: false, foot: alpha.foot() },
+  paperSign: { fill: alpha.panelFill(), line: alpha.hairline(), blur: 10, gloss: false, foot: alpha.foot() },
+  // the bar, the composer, the sheet: real glass, because they float over content
+  glass: { fill: alpha.glassFill(), line: alpha.hairline(), blur: 40, shadow: "float", gloss: true, foot: "transparent" },
+  paper: { fill: alpha.wellFill(), line: "transparent", blur: 0, gloss: false, foot: "transparent" },
+  plate: { fill: shell.blackout, line: "rgba(255,255,255,0.08)", blur: 0, gloss: true, foot: "transparent" },
 });
 
 export function Plate({
@@ -96,7 +98,7 @@ export function Plate({
             style={{ position: "absolute", top: 0, left: 0, right: 0, height: 28, opacity: dark ? 0.5 : 0.9 }}
           />
         ) : null}
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: 1, borderColor: lineColor ?? t.line }]} />
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: 1, borderColor: lineColor ?? t.line, borderBottomWidth: t.foot === "transparent" ? 1 : 2, borderBottomColor: t.foot === "transparent" ? (lineColor ?? t.line) : t.foot }]} />
         {ring ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, borderWidth: 1.5, borderColor: ring }]} /> : null}
         <View style={[{ flexShrink: 1 }, padding !== undefined ? { padding } : null]}>{children}</View>
       </View>

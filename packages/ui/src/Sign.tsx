@@ -11,7 +11,7 @@
  */
 import { View } from "react-native";
 import { Plate } from "./Plate";
-import { Sprite, type SpriteId } from "./Sprite";
+import { PixelIcon } from "./PixelIcon";
 import { Signage, Spec } from "./Text";
 import { radius, shell } from "./tokens";
 
@@ -33,7 +33,6 @@ export function Sign({
   tone?: "plate" | "paper";
 }) {
   const plate = tone === "plate";
-  const glyphId = `glyph-${glyph}-${plate ? "paper" : "ink"}` as SpriteId;
   return (
     <Plate tone={plate ? "plate" : "paperSign"} radius={radius.md}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -48,7 +47,7 @@ export function Sign({
           }}
         >
           {/* 20px glyph = the 8px bitmap at an integer 2x + 2px of air, as the site frames it */}
-          <Sprite id={glyphId} scale={2} />
+          <PixelIcon id={glyph} color={plate ? "#F4F6F8" : shell.ink} size={22} />
         </View>
         <Signage tone={to ? (plate ? "accentLift" : "accent") : plate ? "paper" : "ink"} style={{ flexShrink: 1 }}>
           {to ? "→ " : ""}

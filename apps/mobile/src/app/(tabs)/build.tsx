@@ -14,7 +14,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useIsFocused, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood } from "@founderfloor/ui";
+import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
@@ -184,7 +184,7 @@ export default function Build() {
                   <Tap key={`${t.week}-${t.i}`} onPress={() => { setOpen(null); router.push({ pathname: "/task", params: { week: String(t.week), i: String(t.i) } } as Href); }} accessibilityRole="button" accessibilityLabel={`Open task: ${t.text}`} scale={0.985}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: t.done ? wash(DOOR[open.n - 1], 0.1) : shell.paper, borderRadius: 16, borderWidth: 1, borderColor: t.done ? DOOR[open.n - 1] : shell.line, paddingVertical: 9, paddingHorizontal: 10 }}>
                       <View style={{ width: 22, height: 22, borderRadius: 7, backgroundColor: t.done ? DOOR[open.n - 1] : wash(DOOR[open.n - 1], 0.14), alignItems: "center", justifyContent: "center" }}>
-                        {t.done ? <Glyph id="star" tone="paper" scale={1} /> : <Spec tone="ink">{String(t.i + 1)}</Spec>}
+                        {t.done ? <PixelIcon id="check" color="#F4F6F8" size={14} flat /> : <Spec tone="ink">{String(t.i + 1)}</Spec>}
                       </View>
                       <Body size="sm" tone={t.done ? "muted" : "ink"} style={{ flex: 1, textDecorationLine: t.done ? "line-through" : "none" }}>
                         {t.text}

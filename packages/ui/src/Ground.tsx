@@ -17,13 +17,13 @@ export type Light = { x: number; y: number; r: number; color: string; alpha: num
 export function hallLights(dark: boolean): Light[] {
   return dark
     ? [
-        { x: 0.92, y: 0.02, r: 0.6, color: "#E05B4C", alpha: 0.2 },
-        { x: 0.06, y: 0.16, r: 0.6, color: "#4C7DFF", alpha: 0.18 },
-        { x: 0.5, y: 1.04, r: 0.55, color: "#E4C77A", alpha: 0.10 },
+        { x: 0.92, y: 0.02, r: 0.55, color: "#E05B4C", alpha: 0.13 },
+        { x: 0.06, y: 0.16, r: 0.55, color: "#4C7DFF", alpha: 0.10 },
+        { x: 0.5, y: 1.04, r: 0.5, color: "#E4C77A", alpha: 0.07 },
       ]
     : [
-        { x: 0.92, y: 0.02, r: 0.6, color: "#E8836F", alpha: 0.18 },
-        { x: 0.06, y: 0.16, r: 0.6, color: "#7FA3FF", alpha: 0.22 },
+        { x: 0.92, y: 0.02, r: 0.55, color: "#E8836F", alpha: 0.13 },
+        { x: 0.06, y: 0.16, r: 0.55, color: "#7FA3FF", alpha: 0.14 },
         { x: 0.5, y: 1.04, r: 0.5, color: "#E4C77A", alpha: 0.16 },
       ];
 }

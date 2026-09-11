@@ -10,7 +10,7 @@ import { Pressable, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { GOALS, LIKES, STAGES, type FounderPlan, type Profile } from "@founderfloor/shared";
 import { roomOfWeek } from "../lib/taskDesk";
-import { Body, Display, Glyph, GlyphTile, Plate, Ring, Spec, Tap, haptic, radius, shell, wash, type GlyphId } from "@founderfloor/ui";
+import { Body, Display, Glyph, GlyphTile, Plate, Ring, Spec, Tap, haptic, radius, shell, wash, type GlyphId, PixelIcon } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 
 const GOAL_GLYPH: Record<string, GlyphId> = { "first-customer": "heart", "side-income": "coin", "quit-job": "rocket", raise: "flask", learn: "leaf" };
@@ -56,7 +56,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
             <Animated.View key={w.n} entering={enter(k + 1)} style={{ flexDirection: "row", gap: 12 }}>
               <View style={{ width: 36, alignItems: "center" }}>
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: finished || open ? color : wash(color, 0.14), alignItems: "center", justifyContent: "center" }}>
-                  {finished ? <Glyph id="star" tone="paper" scale={2} /> : <Glyph id={WEEK_GLYPH[k % WEEK_GLYPH.length]} tone={open ? "paper" : "auto"} scale={2} />}
+                  {finished ? <PixelIcon id="check" color="#F4F6F8" size={20} flat /> : <Glyph id={WEEK_GLYPH[k % WEEK_GLYPH.length]} tone={open ? "paper" : "auto"} scale={2} />}
                 </View>
                 {!last ? <View style={{ flex: 1, width: 3, backgroundColor: finished ? color : wash(color, 0.18), marginVertical: 4, borderRadius: 2 }} /> : null}
               </View>
@@ -91,7 +91,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.paper, borderRadius: 16, paddingVertical: 9, paddingHorizontal: 10 }}>
                             <Pressable onPress={onOpen ? tick : undefined} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={8}>
                               <Animated.View style={{ transitionProperty: ["backgroundColor", "borderColor"], transitionDuration: 150, transitionTimingFunction: "ease-out", width: 22, height: 22, borderRadius: 7, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
-                                {on ? <Glyph id="star" tone="paper" scale={1} /> : null}
+                                {on ? <PixelIcon id="check" color="#F4F6F8" size={14} flat /> : null}
                               </Animated.View>
                             </Pressable>
                             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>

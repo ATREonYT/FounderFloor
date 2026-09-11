@@ -68,7 +68,9 @@ export function applyScheme(s: Scheme): void {
 export const alpha = {
   hairline: () => (current === "dark" ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"),
   /** The card: white over the blur. */
-  panelFill: () => (current === "dark" ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.72)"),
+  panelFill: () => (current === "dark" ? "rgba(30,35,41,0.86)" : "rgba(255,255,255,0.86)"),
+  /** The two-pixel foot under a panel: the shade the card casts on the ground it rests on. */
+  foot: () => (current === "dark" ? "rgba(0,0,0,0.42)" : "rgba(16,20,24,0.10)"),
   /** The bar and the composer: a little stronger, so they sit over content. */
   glassFill: () => (current === "dark" ? "rgba(22,26,31,0.72)" : "rgba(255,255,255,0.80)"),
   /** A lit or pressed surface. */

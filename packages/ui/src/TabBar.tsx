@@ -19,7 +19,7 @@ import { Platform, Pressable, StyleSheet, View, type LayoutChangeEvent } from "r
 import { BlurView } from "expo-blur";
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from "react-native-reanimated";
 import { MENU, type MenuEntry } from "./Menu";
-import { Sprite, type SpriteId } from "./Sprite";
+import { PixelIcon } from "./PixelIcon";
 import { Sheen } from "./Sheen";
 import { Spec } from "./Text";
 import { alpha, scheme } from "./theme";
@@ -116,7 +116,7 @@ export function TabBar({
           const on = e.key === active;
           // the sprites are baked colours: by night the "paper" glyph is the dark one on the light disc, and vice versa
           const dark = scheme() === "dark";
-          const glyph = `glyph-${e.glyph}-${on ? (dark ? "ink" : "paper") : dark ? "paper" : "ink"}` as SpriteId;
+          const iconColor = on ? (dark ? "#12171B" : "#F4F6F8") : dark ? "#C9CFD5" : "#4D535A";
           const count = badge?.[e.key];
           return (
             <Pressable
@@ -131,8 +131,8 @@ export function TabBar({
               style={{ flex: 1, height: HEIGHT - 2, alignItems: "center", justifyContent: "center" }}
             >
               <View style={{ position: "relative", opacity: on ? 1 : 0.55, alignItems: "center", gap: 1 }}>
-                <Sprite id={glyph} scale={2} />
-                <Spec tone={on ? (dark ? "ink" : "paper") : "muted"} style={{ fontSize: 9, lineHeight: 11 }}>
+                <PixelIcon id={e.glyph} color={iconColor} size={22} />
+                <Spec tone={on ? (dark ? "ink" : "paper") : "muted"} style={{ fontSize: 10, lineHeight: 12 }}>
                   {e.label}
                 </Spec>
               </View>

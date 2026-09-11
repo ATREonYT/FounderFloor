@@ -12,7 +12,7 @@
  */
 import { Pressable, View } from "react-native";
 import { Plate } from "./Plate";
-import { Sprite, type SpriteId } from "./Sprite";
+import { PixelIcon } from "./PixelIcon";
 import { Spec } from "./Text";
 import { useLayout } from "./Responsive";
 import { radius, shell } from "./tokens";
@@ -36,7 +36,7 @@ export function Menu({ active, onSelect, entries = MENU }: { active: string; onS
       <View style={{ flexDirection: rail ? "column" : "row", paddingHorizontal: rail ? 8 : 4, paddingVertical: rail ? 8 : 4, gap: rail ? 4 : 0 }}>
         {entries.map((e) => {
           const on = e.key === active;
-          const glyph = `glyph-${e.glyph}-${scheme() === "dark" ? "paper" : "ink"}` as SpriteId;
+          const iconColor = scheme() === "dark" ? "#C9CFD5" : "#3D434A";
           return (
             <Pressable
               key={e.key}
@@ -47,7 +47,7 @@ export function Menu({ active, onSelect, entries = MENU }: { active: string; onS
               style={{ flex: rail ? undefined : 1, alignItems: "center", paddingVertical: 8, paddingHorizontal: 6, gap: 4, opacity: on ? 1 : 0.62, borderRadius: radius.md }}
             >
               <View style={{ position: "relative" }}>
-                <Sprite id={glyph} scale={2} />
+                <PixelIcon id={e.glyph} color={iconColor} size={24} />
                 {e.badge ? (
                   <View style={{ position: "absolute", top: -4, right: -8, minWidth: 14, height: 14, borderRadius: radius.full, backgroundColor: shell.accent, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 }}>
                     <Spec tone="paper" style={{ fontSize: 9, lineHeight: 12 }}>

@@ -39,7 +39,7 @@ Every screen ground carries the hall's lights: two or three large, soft radial g
 
 ## Glass
 
-One material, `Plate`, with tones: `panel` (the card), `glass` (the bar and the composer, stronger blur), `paper` (the quiet inset), `plate` (the one opaque dark sign for the stand's name). Anatomy, in order: a real blur of what is behind (expo-blur, 20 to 40), the tint fill, a one-pixel hairline, and a top-edge light (a one-pixel highlight that fades across the first third of the height). Depth comes from the blur and the highlight, not from shadows; the only cast shadow is under the floating tab bar and a sheet.
+One material, `Plate`, with tones: `panel` (the card: near-solid, a light blur under it, a hairline and a two-pixel foot, the thing a hand can rest on), `glass` (the bar, the composer and the sheet: real blur, because they float over content, with the top-edge light), `paper` (the quiet inset), `plate` (the one opaque dark sign for the stand's name). Glass is for what floats; cards are panels. Depth comes from the foot and the hairline, not from shadows or glow; the only cast shadow is under the floating tab bar and a sheet.
 
 Rings, not borders: a card that is lit or done gets a 1.5 px ring in its colour on the same rounded outline.
 
@@ -47,24 +47,28 @@ No clipped corner. No bevel. Nothing square: radii are 10 / 14 / 18 / 22 / 30. P
 
 ## Buttons
 
-The way the apps people already trust draw them. Primary: a rounded rectangle (14), 48 high, the red fill, white 600 text, a specular light across the top half with a hairline of light on the top edge and a little shade at the foot, a soft cast in its own colour; the one action a card is for stretches to the row. Secondary: raised glass with a hairline, ink text. Ghost: red text and nothing else, the plain style for Cancel, Skip and Back. Never a pill, never dark text on the accent, never a gradient that changes hue.
+A key, not a sticker. Primary: flat brand red, corners of 11, 48 high, white Archivo 600 text, a one-pixel light along the top edge and a hard three-pixel foot in a deeper red under it; pressing pushes the key down onto its foot. No gradient, no glow, no cast shadow. The one action a card is for stretches to the row. Secondary: a panel key, the card's fill with a hairline and a foot in the line colour, ink text. Ghost: red text and nothing else, the plain style for Cancel, Skip and Back. Never a pill, never dark text on the accent, never a gradient.
+
+## Pictograms
+
+The icon family is drawn by hand on a 16 by 16 grid in three tones of one colour (body, shade on the lower and right edges, light on the upper left) and rendered as crisp rectangles at 16, 24 or 32 (`packages/ui/src/PixelIcon.tsx`). They are the pixel keepers' world at icon size: hard edges, two-tone shading, nothing thin, nothing outlined. They sit in quiet neutral wells, coloured by their own body colour, never in tinted squares. No emoji, no thin-line icon set, no glyph scaled from the 8 by 8 atlas.
 
 ## Type
 
-One family, Inter, at four weights (400, 500, 600, 700), with tabular figures wherever a number can change. Mono (IBM Plex Mono) survives only for code and pasted text, never for labels.
+The faces the brand always had: Archivo (600, 700) for headlines and controls, IBM Plex Sans (400, 500) for the body and labels, IBM Plex Mono for code and pasted text only. Tabular figures wherever a number can change. Never a system default, never Inter.
 
 | Role | Size / line | Weight | Tracking |
 |---|---|---|---|
-| Display 4xl | 44 / 50 | 700 | -0.025em |
-| Display 3xl | 34 / 40 | 700 | -0.02em |
-| Display xl | 26 / 32 | 600 | -0.015em |
-| Display lg | 20 / 26 | 600 | -0.01em |
-| Body lg | 19 / 26 | 400 | 0 |
-| Body base | 17 / 24 | 400 | 0 |
-| Body sm | 15 / 20 | 400 | 0 |
+| Display 4xl | 42 / 46 | 700 | -0.02em |
+| Display 3xl | 33 / 38 | 700 | -0.015em |
+| Display xl | 26 / 31 | 600 | -0.01em |
+| Display lg | 18 / 26 | 600 | -0.01em |
+| Body lg | 18 / 26 | 400 | 0 |
+| Body base | 16 / 24 | 400 | 0 |
+| Body sm | 15 / 21 | 400 | 0 |
 | Body xs / Spec | 13 / 18 | 500 | +0.01em |
 
-Labels (`Spec`) are Inter 13 medium in the muted or faint step, sentence case. The uppercase section labels of the first world are gone; a section is named by a small heading or not at all.
+Labels (`Spec`) are Plex Sans 13 medium in the muted or faint step, sentence case. The uppercase section labels of the first world are gone; a section is named by a small heading or not at all.
 
 ## Shape and space
 
@@ -82,4 +86,4 @@ Product motion: 150 to 250 ms, state only. Enter with a strong ease-out from an 
 
 ## Anti-references
 
-The first world's badge material, mono labels and awning stripes. Purple-to-blue gradient heroes. Orange-to-coral pills with dark text. Neon on black. Glass as decoration on every element (the composer, the bar and cards are glass; text and buttons are not). Emoji as icons.
+The tells of a generated interface, each of which this world has been caught by once and must not be again: Inter as the default face; purple-to-blue or orange-to-coral gradients; glossy pills with a specular sweep; glass on every card with a glow behind it; tinted icon tiles with a tiny glyph inside; the icon-plus-heading-plus-text card as page structure; uppercase mono labels over every section; emoji or thin-line icons; a bounce on every press. The retro is the answer to all of them: hard edges, a foot, a pixel pictogram, a hand-drawn keeper.

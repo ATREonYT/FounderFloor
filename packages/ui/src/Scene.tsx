@@ -19,6 +19,7 @@ import { View, type LayoutChangeEvent } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, withDelay, useReducedMotion, cancelAnimation } from "react-native-reanimated";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { Sprite, spriteMeta, type SpriteId } from "./Sprite";
+import { PixelIcon } from "./PixelIcon";
 import { SpriteCycle } from "./SpriteCycle";
 import { art, shell } from "./tokens";
 import { scheme } from "./theme";
@@ -260,19 +261,20 @@ function lighten(hex: string): string {
   return `rgb(${c((n >> 16) & 255)},${c((n >> 8) & 255)},${c(n & 255)})`;
 }
 
-/** A pixel glyph from the atlas, at an integer scale, tone-aware. */
-export function Glyph({ id, tone = "ink", scale = 2 }: { id: "bolt" | "leaf" | "coin" | "chip" | "flask" | "rocket" | "heart" | "cube" | "wave" | "star"; tone?: "ink" | "paper" | "accent" | "auto"; scale?: 1 | 2 | 3 | 4 }) {
-  const t = tone === "auto" ? (scheme() === "dark" ? "paper" : "ink") : tone;
-  return <Sprite id={`glyph-${id}-${t}` as SpriteId} scale={scale} />;
+/** A pictogram, 12 px per unit of scale, in the ink, on paper, in the accent, or in a colour of its own. */
+export function Glyph({ id, tone = "ink", scale = 2, color }: { id: "bolt" | "leaf" | "coin" | "chip" | "flask" | "rocket" | "heart" | "cube" | "wave" | "star"; tone?: "ink" | "paper" | "accent" | "auto"; scale?: 1 | 2 | 3 | 4; color?: string }) {
+  const c = color ?? (tone === "paper" ? "#F4F6F8" : tone === "accent" ? shell.accent : shell.ink);
+  return <PixelIcon id={id} color={c} size={12 * scale} />;
 }
 
 /** A glyph in a soft rounded well, the app's icon tile. */
+/** A pictogram in its own colour on a quiet well: the icon reads by its shape and its colour, not by a tinted square. */
 export function GlyphTile({ id, color, size = 40, scale = 2 }: { id: Parameters<typeof Glyph>[0]["id"]; color?: string; size?: number; scale?: 1 | 2 | 3 }) {
   const dark = scheme() === "dark";
-  const bg = color ? washHex(color, dark ? 0.28 : 0.16) : dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)";
+  const c = color ?? (dark ? "#C9CFD5" : "#3D434A");
   return (
-    <View style={{ width: size, height: size, borderRadius: Math.round(size / 3), backgroundColor: bg, borderWidth: 1, borderColor: color ? washHex(color, dark ? 0.35 : 0.22) : dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)", alignItems: "center", justifyContent: "center" }}>
-      <Glyph id={id} tone="auto" scale={scale} />
+    <View style={{ width: size, height: size, borderRadius: Math.round(size / 3.2), backgroundColor: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.045)", borderWidth: 1, borderColor: dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", alignItems: "center", justifyContent: "center" }}>
+      <PixelIcon id={id} color={c} size={size >= 40 ? 32 : size >= 28 ? 16 : 12} />
     </View>
   );
 }

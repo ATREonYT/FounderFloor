@@ -7,12 +7,13 @@
  */
 import { Pressable, View } from "react-native";
 import { Body, Spec } from "./Text";
+import { PixelIcon } from "./PixelIcon";
 import { radius, shell } from "./tokens";
 
 export function Tick({ done, text, proof, onToggle, onOpen, written = 0 }: { done: boolean; text: string; proof?: string; onToggle: () => void; /** Opens the line's room; the box still toggles. */ onOpen?: () => void; /** Lines the founder wrote in the room, shown on the row. */ written?: number }) {
   const box = (
     <View style={{ width: onOpen ? 22 : 16, height: onOpen ? 22 : 16, marginTop: onOpen ? 1 : 4, borderRadius: radius.full, borderWidth: 1.5, borderColor: shell.ink, backgroundColor: done ? shell.ink : "transparent", alignItems: "center", justifyContent: "center" }}>
-      {done ? <Spec tone="paper" style={{ fontSize: 10, lineHeight: 12 }}>✓</Spec> : null}
+      {done ? <PixelIcon id="check" color={shell.paper} size={onOpen ? 14 : 11} flat /> : null}
     </View>
   );
   return (

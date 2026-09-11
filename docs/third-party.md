@@ -20,6 +20,6 @@ Type on generated pages is loaded from Google Fonts (fonts.googleapis.com) with 
 
 `.claude/skills/ui-ux-pro-max` is the whole skill (version 2.13.0, MIT, the licence is in the folder), installed with its own CLI (`npx ui-ux-pro-max-cli init --ai claude`) so a Claude Code session that opens the repo can search its tables: `python3 .claude/skills/ui-ux-pro-max/scripts/search.py "<words>" --design-system -p "<name>"`, or `--domain style|typography|chart|ux|icons`. The studio's own tables above are generated from three of its data files and ship inside the app; the skill folder is for design work on FounderFloor itself and is not bundled into the app. Its recommendations are generic to a product type; FounderFloor's committed world in `packages/ui` and PRODUCT.md win where they differ.
 
-## Inter
+## Archivo and IBM Plex
 
-The app's one type family in the night-hall world, from Google Fonts through `@expo-google-fonts/inter` (SIL Open Font License 1.1). IBM Plex Mono stays for code and pasted text. Archivo and IBM Plex Sans are no longer loaded by the app.
+Archivo (600, 700) from Google Fonts through `@expo-google-fonts/archivo` and IBM Plex Sans and Mono from the app's own font files, all under the SIL Open Font License 1.1. Inter was loaded for one build of the night-hall world and removed: it is the face every generated interface defaults to.
