@@ -86,7 +86,7 @@ export default function Today() {
                     The desk reads the week back and says what to fix.
                   </Body>
                 )}
-                <Button arrow onPress={() => { if (useTour.getState().active) return; if (!plan) router.push("/welcome" as Href); else if (next) openTask(next.i); else router.push({ pathname: "/review", params: { week: String(wk) } } as Href); }}>
+                <Button block arrow onPress={() => { if (useTour.getState().active) return; if (!plan) router.push("/welcome" as Href); else if (next) openTask(next.i); else router.push({ pathname: "/review", params: { week: String(wk) } } as Href); }}>
                   {!plan ? "Answer the questions" : next ? "Start" : "Read the week back"}
                 </Button>
               </View>

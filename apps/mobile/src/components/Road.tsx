@@ -57,11 +57,9 @@ export function Road() {
                     <Sheen strength={0.35} reach={0.4} />
                     <Body size="sm">{s.child}</Body>
                     <Spec tone="muted">{s.why}</Spec>
-                    <View style={{ flexDirection: "row" }}>
-                      <Button size="sm" arrow onPress={() => router.push(s.route as Href)}>
-                        {s.go}
-                      </Button>
-                    </View>
+                    <Button block arrow onPress={() => router.push(s.route as Href)}>
+                      {s.go}
+                    </Button>
                   </View>
                 ) : null}
               </View>

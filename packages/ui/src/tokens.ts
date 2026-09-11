@@ -28,8 +28,8 @@ export const shell: Record<ShellKey, string> = {
   accent: "#BE241B", // tarp — CTAs, live dots (on paper)
   accentLift: "#E05B4C", // tarp-lift — the accent ON DARK grounds only
   accentSoft: "#FBE1DD", // tarp-wash
-  accentFill: "#F2613F", // the accent as a fill: ember, under ink text in both schemes
-  onAccent: "#101418", // the text on an ember fill: ink, never white (6.5:1 by night, 5.8:1 by day)
+  accentFill: "#BE241B", // the accent as a fill under white text: the tarp red by day, a shade deeper by night (5.6:1)
+  onAccent: "#FFFFFF", // the text on the red: white, bold
   gold: "#B18C39", // brass — membership fills/dots/borders only
   goldDeep: "#775800", // brass-deep — membership as TEXT
   fountain: "#207582", // WAYFINDING ONLY — input focus

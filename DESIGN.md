@@ -26,7 +26,7 @@ The palette is a ground, one glass material at three strengths, three text steps
 | ink | #F4F6F8 | #101418 | Primary text. |
 | muted | ink at 64% | #5B626A | Secondary text. 7:1 dark, 5.6:1 light. |
 | faint | ink at 50% | #646B73 | Labels and captions. 4.8:1 dark, 4.9:1 light. Never below. |
-| accent, ember | #FF6B3D | #BE241B as text, #F2613F as fill | The one accent: primary action, current selection, the live dot. Never decoration. Text on an ember fill is ink, not white (6.5:1). |
+| accent, the tarp red | #E8665A as text, #C8281E as fill | #BE241B | The one accent, the brand's red: primary action, current selection, the live dot. Never decoration. Text on the red is white, bold (5.6:1 by night, 6.1:1 by day). |
 | gold | #E4C77A | #B18C39 | Membership only. |
 | verify | #4CD08A | #298646 | Done, online, verified. |
 | fountain | #6FD3E0 | #207582 | Focus only. |
@@ -35,7 +35,7 @@ Room and stop colours (the six rooms on the map, the seven stops on the road) ke
 
 ## Lights
 
-Every screen ground carries the hall's lights: two or three large, soft radial glows (the ember and a cool blue, at low alpha) fixed near the top of the screen, drawn once in the root layout behind every page. They are what the glass refracts; without them glass is grey. They never move except in the opening animation, and they respect Reduce Motion.
+Every screen ground carries the hall's lights: two or three large, soft radial glows (the tarp red, a cool blue and a little brass, at low alpha) fixed near the top of the screen, drawn once in the root layout behind every page. They are what the glass refracts; without them glass is grey. They never move except in the opening animation, and they respect Reduce Motion.
 
 ## Glass
 
@@ -43,7 +43,11 @@ One material, `Plate`, with tones: `panel` (the card), `glass` (the bar and the 
 
 Rings, not borders: a card that is lit or done gets a 1.5 px ring in its colour on the same rounded outline.
 
-No clipped corner. No bevel. Nothing square: radii are 10 / 14 / 18 / 22 / 30 and the pill.
+No clipped corner. No bevel. Nothing square: radii are 10 / 14 / 18 / 22 / 30. Pills are for chips and the tab bar only.
+
+## Buttons
+
+The way the apps people already trust draw them. Primary: a rounded rectangle (14), 48 high, the red fill, white 600 text, a specular light across the top half with a hairline of light on the top edge and a little shade at the foot, a soft cast in its own colour; the one action a card is for stretches to the row. Secondary: raised glass with a hairline, ink text. Ghost: red text and nothing else, the plain style for Cancel, Skip and Back. Never a pill, never dark text on the accent, never a gradient that changes hue.
 
 ## Type
 
@@ -78,4 +82,4 @@ Product motion: 150 to 250 ms, state only. Enter with a strong ease-out from an 
 
 ## Anti-references
 
-The first world's badge material, mono labels and awning stripes. Purple-to-blue gradient heroes. Neon on black. Glass as decoration on every element (the composer, the bar and cards are glass; text and buttons are not). Emoji as icons.
+The first world's badge material, mono labels and awning stripes. Purple-to-blue gradient heroes. Orange-to-coral pills with dark text. Neon on black. Glass as decoration on every element (the composer, the bar and cards are glass; text and buttons are not). Emoji as icons.

@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from "react-native";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
-import { Body, Button, ButtonRow, Display, Glow, GlyphTile, Keeper, Plate, Spec, alpha, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, Display, Glow, GlyphTile, Keeper, Plate, Spec, alpha, radius, shell, useLayout } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
 import { PAGES } from "../lib/guidePages";
 import { RECEPTIONIST } from "../lib/mock";
@@ -104,16 +104,16 @@ export default function Guide() {
             <Dot key={k} on={k === i} onPress={() => go(k)} label={`Page ${k + 1}`} />
           ))}
         </View>
-        <ButtonRow>
-          <Button arrow onPress={() => (i + 1 < PAGES.length ? go(i + 1) : done())}>
-            {i + 1 < PAGES.length ? "Next" : "Start"}
-          </Button>
-          {i > 0 ? (
+        <Button block arrow onPress={() => (i + 1 < PAGES.length ? go(i + 1) : done())}>
+          {i + 1 < PAGES.length ? "Next" : "Start"}
+        </Button>
+        {i > 0 ? (
+          <View style={{ alignItems: "center" }}>
             <Button variant="ghost" onPress={() => go(i - 1)}>
               Back
             </Button>
-          ) : null}
-        </ButtonRow>
+          </View>
+        ) : null}
       </View>
     </View>
   );
