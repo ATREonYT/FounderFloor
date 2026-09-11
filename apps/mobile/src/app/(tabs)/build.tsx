@@ -30,6 +30,8 @@ import { askGuide, whereAmI } from "@founderfloor/shared";
 import { COACHES } from "../../lib/mock";
 
 const DOOR = STAGES.map((s) => ROOM_COLOR[s.id]);
+/** Who works where: Ines in Idea, Jonah with the first customers, Theo in Money, Margot at Raise. */
+const STAFF = [{ floor: 0, id: "strategy" }, { floor: 3, id: "sales" }, { floor: 4, id: "finance" }, { floor: 5, id: "investor" }].map((s) => { const c = COACHES.find((x) => x.id === s.id)!; return { floor: s.floor, look: c.look, name: c.name }; });
 
 export default function Build() {
   const L = useLayout();
@@ -141,16 +143,14 @@ export default function Build() {
         </Scene>
         <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
         {guided ? <Hint id="map" text={plan ? "The building, floor by floor. Your plan's weeks are spent in these rooms; the windows on a sign are that week's tasks. Tap a room to open it." : "Six rooms, floor by floor. Tap the room you are in to see what to do there and tick what is done."} /> : null}
-        <Plate tone="panel" radius={radius.xxl} padding={12}>
-          <TourTarget id="map" style={{ borderRadius: 20, overflow: "hidden" }}>
-            <Building rooms={rooms} here={hereIndex} look={stand.look} onPress={(i) => void openRoom(STAGES[i])} />
-          </TourTarget>
-          {!opened ? (
-            <Spec tone="faint" style={{ marginTop: 4 }}>
-              {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
-            </Spec>
-          ) : null}
-        </Plate>
+        <TourTarget id="map" style={{ borderRadius: 22, overflow: "hidden" }}>
+          <Building rooms={rooms} here={hereIndex} look={stand.look} staff={STAFF} onPress={(i) => void openRoom(STAGES[i])} />
+        </TourTarget>
+        {!opened ? (
+          <Spec tone="faint">
+            {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
+          </Spec>
+        ) : null}
         <Plate tone="panel" radius={radius.xl} padding={16}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Body medium>Your trail</Body>

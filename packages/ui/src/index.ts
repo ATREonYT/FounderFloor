@@ -42,7 +42,7 @@ export { Door } from "./Door";
 export { Stage, Glow, wash, type Mood } from "./Stage";
 export { Ground, hallLights, type Light } from "./Ground";
 export { Sparks } from "./Sparks";
-export { Building, type BuildingRoom } from "./Building";
+export { Building, type BuildingRoom, type BuildingStaff } from "./Building";
 export { Calendar } from "./Calendar";
 export { Scene, Backdrop, Furniture, Glyph, GlyphTile, SCENE_SETS, type SceneSet, type SceneProp, type Hall } from "./Scene";
 export { applyScheme, scheme, alpha, LIGHT, DARK, type Scheme } from "./theme";

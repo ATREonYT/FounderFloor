@@ -78,7 +78,7 @@ The unit is 4. Cards pad 16 or 20; sections breathe 24; the page gutter is 20 on
 
 The pixel keepers (20 by 28, at 2x or 3x), the desk, the coaches and the founder's own keeper stay exactly as drawn. They stand on glass, never on tiled floors: a keeper appears in a `Stage` (a glass card with a soft glow in the keeper's colour, the figure at 3x, a clean speech bubble) or as a `Keeper` chip beside a message. The pixel glyphs stay as the icon set (they are drawn in one stroke and read at 12 and 24); they sit in `GlyphTile` wells tinted with their colour.
 
-The tiled room scenes and walking crowds of the first world are retired from page headers. They may return inside the map's floors and the stand's own card, where a room is the subject.
+The tiled room scenes and walking crowds of the first world are retired from page headers. The map is the exception and the hero: the building as a cross-section, six rooms as floors under a rooftop sign, each with its wall in the room's colour, its tiled floor, furniture, a sign hung on chains with a pictogram and one window per task, a stair to the next floor, the founder's keeper in the room they are in, the coaches in the rooms they own, a warm lamp breathing in the current room, and a street underneath. It is the one place the app is a picture, and it is drawn entirely in the pixel world.
 
 ## The road
 
