@@ -12,9 +12,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
-import { useIsFocused, useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useGate } from "../../lib/gate";
-import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, GlyphTile, Keeper, Plate, Progress, Scene, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
+import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, Keeper, Plate, Progress, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
 import { effectivePlan } from "../../lib/billing";
 import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
 import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
@@ -30,8 +30,13 @@ import { askGuide, whereAmI } from "@founderfloor/shared";
 import { COACHES } from "../../lib/mock";
 
 const DOOR = STAGES.map((s) => ROOM_COLOR[s.id]);
-/** Who works where: Ines in Idea, Jonah with the first customers, Theo in Money, Margot at Raise. */
-const STAFF = [{ floor: 0, id: "strategy" }, { floor: 3, id: "sales" }, { floor: 4, id: "finance" }, { floor: 5, id: "investor" }].map((s) => { const c = COACHES.find((x) => x.id === s.id)!; return { floor: s.floor, look: c.look, name: c.name }; });
+/** Who works where, and the one line each says when tapped: Ines in Idea, Jonah with the first customers, Theo in Money, Margot at Raise. */
+const STAFF = [
+  { floor: 0, id: "strategy", line: "Start with who pays, and why they would." },
+  { floor: 3, id: "sales", line: "Five conversations before one more feature." },
+  { floor: 4, id: "finance", line: "Know your number for the month. Just the one." },
+  { floor: 5, id: "investor", line: "A pitch is a story with a number at the end." },
+].map((s) => { const c = COACHES.find((x) => x.id === s.id)!; return { floor: s.floor, look: c.look, name: c.name, line: s.line, id: c.id }; });
 
 export default function Build() {
   const L = useLayout();
@@ -51,7 +56,6 @@ export default function Build() {
   const profile = useFounder((s) => s.profile);
   const planDone = useFounder((s) => s.planDone);
   const reviews = useFounder((s) => s.reviews);
-  const focused = useIsFocused();
   const { tour, then, room } = useLocalSearchParams<{ tour?: string; then?: string; room?: string }>();
   const startTour = useTour((s) => s.start);
   const closedStep = useTour((s) => s.closed);
@@ -131,20 +135,34 @@ export default function Build() {
     <View style={{ flex: 1 }}>
       <TopBar center={<Spec tone="muted">{`The map · ${Math.round(walked * 100)}% walked`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
-        <Scene set="workshop" height={L.compact ? 150 : 180} radiusPx={radius.xl} ambient={focused} accessibilityLabel="The map">
-          <Pressable onPress={() => void openRoom(here)} accessibilityRole="button" accessibilityLabel="Open the room you are in" style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <GlyphTile id={ROOM_GLYPH[here.id] ?? "bolt"} color={DOOR[hereIndex]} size={36} />
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Spec tone="muted">{plan ? `You are in · Week ${wk}` : "YOU ARE IN"}</Spec>
-              <Body medium numberOfLines={1}>{plan ? `${here.name} · ${tasksIn(hereIndex).filter((t) => t.done).length} of ${tasksIn(hereIndex).length} tasks done` : `${cur.name} · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
-            </View>
-            <Body tone="accent">›</Body>
+        <View style={{ gap: 6 }}>
+          <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
+          <Pressable onPress={() => void openRoom(here)} accessibilityRole="button" accessibilityLabel="Open the room you are in" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 8, opacity: pressed ? 0.7 : 1, alignSelf: "flex-start", minHeight: 32 })}>
+            <PixelIcon id="pin" color={shell.accent} size={14} flat />
+            <Body size="sm" tone="muted">{plan ? `Week ${wk} · ${here.name} room · ${tasksIn(hereIndex).filter((t) => t.done).length} of ${tasksIn(hereIndex).length} tasks done` : `${cur.name} room · ${cur.items.filter((x) => ticks.includes(x.id)).length} of ${cur.items.length} done`}</Body>
+            <Body size="sm" tone="accent">›</Body>
           </Pressable>
-        </Scene>
-        <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
-        {guided ? <Hint id="map" text={plan ? "The building, floor by floor. Your plan's weeks are spent in these rooms; the windows on a sign are that week's tasks. Tap a room to open it." : "Six rooms, floor by floor. Tap the room you are in to see what to do there and tick what is done."} /> : null}
+        </View>
+        {guided ? <Hint id="map" text={plan ? "The building, floor by floor. Your plan's weeks are spent in these rooms; the windows on a sign are that week's tasks, and tapping one opens it. Tap a room to open it, a coach for a word, or yourself to wave." : "Six rooms, floor by floor. Tap the room you are in to see what to do there and tick what is done. Tap a coach for a word."} /> : null}
         <TourTarget id="map" style={{ borderRadius: 22, overflow: "hidden" }}>
-          <Building rooms={rooms} here={hereIndex} look={stand.look} staff={STAFF} onPress={(i) => void openRoom(STAGES[i])} />
+          <Building
+            rooms={rooms}
+            here={hereIndex}
+            look={stand.look}
+            staff={STAFF}
+            youSay={plan ? `That's you: week ${wk}, in the ${here.name} room.` : `That's you, in the ${cur.name} room.`}
+            onPress={(i) => void openRoom(STAGES[i])}
+            onTask={(i, k) => {
+              const t = tasksIn(i)[k];
+              if (!t) return void openRoom(STAGES[i]);
+              void haptic("light");
+              router.push({ pathname: "/task", params: { week: String(t.week), i: String(t.i) } } as Href);
+            }}
+            onStaff={(s) => {
+              void haptic("light");
+              router.navigate({ pathname: "/reception", params: { coach: STAFF.find((x) => x.name === s.name)?.id ?? "desk" } } as Href);
+            }}
+          />
         </TourTarget>
         {!opened ? (
           <Spec tone="faint">

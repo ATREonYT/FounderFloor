@@ -11,6 +11,7 @@ import { View } from "react-native";
 import { Menu, TabBar, shell, useLayout } from "@founderfloor/ui";
 import { BAR } from "../../lib/chrome";
 import { TourTarget } from "../../components/TourTarget";
+import { useInbox } from "../../lib/store";
 
 export default function TabsLayout() {
   const L = useLayout();
@@ -19,11 +20,14 @@ export default function TabsLayout() {
   const active = path.split("/").filter(Boolean)[0] ?? "today";
   const rail = !L.compact;
   const go = (k: string) => router.navigate(`/${k}` as Href);
+  /** Notes left at the stand put a count on You. */
+  const unread = useInbox((s) => s.items.filter((x) => x.unread).length);
+  const badge = { you: unread };
   return (
     <View style={{ flex: 1, flexDirection: rail ? "row" : "column" }}>
       {rail ? (
         <View style={{ paddingLeft: 12, paddingTop: L.insets.top + 12, paddingBottom: L.insets.bottom + 12, justifyContent: "center" }}>
-          <Menu active={active} onSelect={go} />
+          <Menu active={active} onSelect={go} badge={badge} />
         </View>
       ) : null}
       <View style={{ flex: 1 }}>
@@ -36,7 +40,7 @@ export default function TabsLayout() {
         {!rail ? (
           <View pointerEvents="box-none" style={{ position: "absolute", left: BAR.inset + 4, right: BAR.inset + 4, bottom: L.insets.bottom + BAR.inset }}>
             <TourTarget id="tabs">
-              <TabBar active={active} onSelect={go} />
+              <TabBar active={active} onSelect={go} badge={badge} />
             </TourTarget>
           </View>
         ) : null}

@@ -28,13 +28,14 @@ export const MENU: MenuEntry[] = [
   { key: "you", label: "You", glyph: "wave" },
 ];
 
-export function Menu({ active, onSelect, entries = MENU }: { active: string; onSelect: (key: string) => void; entries?: MenuEntry[] }) {
+export function Menu({ active, onSelect, entries = MENU, badge }: { active: string; onSelect: (key: string) => void; entries?: MenuEntry[]; /** Counts by entry key; a missing or zero count draws nothing. */ badge?: Partial<Record<string, number>> }) {
   const L = useLayout();
   const rail = !L.compact;
   return (
     <Plate tone="glass" radius={radius.lg} style={rail ? { width: 88 } : undefined}>
       <View style={{ flexDirection: rail ? "column" : "row", paddingHorizontal: rail ? 8 : 4, paddingVertical: rail ? 8 : 4, gap: rail ? 4 : 0 }}>
-        {entries.map((e) => {
+        {entries.map((raw) => {
+          const e = badge?.[raw.key] ? { ...raw, badge: badge[raw.key] } : raw;
           const on = e.key === active;
           const iconColor = scheme() === "dark" ? "#C9CFD5" : "#3D434A";
           return (

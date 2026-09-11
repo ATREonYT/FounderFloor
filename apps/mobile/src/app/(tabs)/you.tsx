@@ -49,9 +49,9 @@ export default function You() {
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
         {/* who you are */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-          <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: shell.well, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={() => router.push("/stand" as Href)} accessibilityRole="button" accessibilityLabel="Your stand and your look" style={({ pressed }) => ({ width: 72, height: 72, borderRadius: 36, backgroundColor: shell.well, alignItems: "center", justifyContent: "center", transform: [{ scale: pressed ? 0.96 : 1 }] })}>
             <Keeper look={stand.look} scale={2} framed={false} />
-          </View>
+          </Pressable>
           <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
             <Display size="xl">{auth ? auth.name || stand.founder || "You" : stand.founder || "You"}</Display>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>

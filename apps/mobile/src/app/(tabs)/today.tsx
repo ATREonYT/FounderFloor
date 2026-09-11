@@ -6,10 +6,11 @@
  * nothing to configure. The keeper says one line. Everything else in the
  * building is behind the bar below, and this page never tries to be it.
  */
+import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useIsFocused, useRouter, type Href } from "expo-router";
 import { STAGES } from "@founderfloor/shared";
-import { Body, Button, Display, Glyph, GlyphTile, Plate, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, PixelIcon, Check } from "@founderfloor/ui";
+import { Body, Button, Display, GlyphTile, Plate, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, Check, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
@@ -47,7 +48,25 @@ export default function Today() {
   const friday = new Date().getDay() === 5;
   const review = reviews[wk];
   const openTask = (i: number) => router.push({ pathname: "/task", params: { week: String(wk), i: String(i) } } as Href);
-  const say = !plan ? "Eight questions and you have a plan. Start there." : next ? `${greeting(stand.founder || profile?.name || undefined)} One thing today: ${next.text.replace(/\.$/, "").toLowerCase()}.` : `${greeting(stand.founder || profile?.name || undefined)} Week ${wk} is done. Read it back, or open the map.`;
+  /** The desk reacts to a tick: a nod and a word, a cheer when the week is done. */
+  const [mood, setMood] = useState<Mood>("idle");
+  const [word, setWord] = useState<string | null>(null);
+  const wordTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const react = (m: Mood, w: string) => {
+    setMood(m);
+    setWord(w);
+    if (wordTimer.current) clearTimeout(wordTimer.current);
+    wordTimer.current = setTimeout(() => { setMood("idle"); setWord(null); }, m === "cheer" ? 3200 : 2200);
+  };
+  const tickWeek = (key: string, on: boolean) => {
+    toggle(key);
+    void haptic(on ? "light" : "success");
+    if (on) return;
+    const left = week ? week.do.filter((_, j) => taskKey(wk, j) !== key && !planDone.includes(taskKey(wk, j))).length : 0;
+    if (left === 0) react("cheer", `That's week ${wk}. Read it back when you like.`);
+    else react("nod", left === 1 ? "Ticked. One more and the week is done." : `Ticked. ${left} more this week.`);
+  };
+  const say = word ?? (!plan ? "Eight questions and you have a plan. Start there." : next ? `${greeting(stand.founder || profile?.name || undefined)} One thing today: ${next.text.replace(/\.$/, "").toLowerCase()}.` : `${greeting(stand.founder || profile?.name || undefined)} Week ${wk} is done. Read it back, or open the map.`);
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
   const today = new Date();
 
@@ -55,7 +74,7 @@ export default function Today() {
     <View style={{ flex: 1 }}>
       <TopBar center={<Spec tone="muted">{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood="idle" scale={2} height={L.compact ? 160 : 190} ambient={focused} set="lobby">
+        <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood={mood} scale={2} height={L.compact ? 160 : 190} ambient={focused} set="lobby">
           <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "day one" : stand.streak ? `${stand.streak}-day streak` : "day one"} />
         </Stage>
         <Hint id="today" text="Today is one thing to do next. Under it, the road: seven stops from your idea to your first paying customer, and where you are on it. Tap any stop to go there." />
@@ -112,7 +131,7 @@ export default function Today() {
                 const ticked = steps ? Math.min(steps, (tasks[key]?.ticks ?? []).filter((x) => x < steps).length) : 0;
                 return (
                   <Pressable key={key} onPress={() => openTask(i)} accessibilityRole="button" accessibilityLabel={d} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 10, borderTopWidth: i ? 1 : 0, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>
-                    <Pressable onPress={() => { toggle(key); void haptic(on ? "light" : "success"); }} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={10} style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
+                    <Pressable onPress={() => tickWeek(key, on)} accessibilityRole="checkbox" accessibilityState={{ checked: on }} accessibilityLabel={on ? "Mark not done" : "Mark done"} hitSlop={10} style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 2, borderColor: on ? color : shell.line, backgroundColor: on ? color : "transparent", alignItems: "center", justifyContent: "center" }}>
                       <Check on={on} size={16} />
                     </Pressable>
                     <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
