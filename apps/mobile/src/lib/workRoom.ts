@@ -10,6 +10,7 @@ import { founderLog, scriptedWork, standBlock, workBlock, workContext, workItem,
 import { AiError, aiMode, askModel } from "./ai";
 import { useStand } from "./stand";
 import { useFounder, type TaskTurn } from "./store";
+import { pastLists, pastLog, type Past } from "./consent";
 
 let seq = 0;
 const nid = () => `w${Date.now().toString(36)}${(seq++).toString(36)}`;
@@ -58,7 +59,8 @@ export function useWorkRoom(id: string, text?: string) {
       }
       const history = [...turns, { id: "x", role: "you" as const, text: t }].slice(-10).map((m) => ({ role: (m.role === "you" ? "user" : "assistant") as "user" | "assistant", content: m.text }));
       const others = Object.fromEntries(Object.entries(lists).filter(([k]) => k !== id));
-      const ctx = workContext(item, turns, { ticked, stand: standBlock(stand.record, { sample: stand.source === "rehearsal" }), lists: workBlock(others), log: founderLog(memory, memoryOn === true) });
+      const past: Past = { memoryOn, memory, planId: useFounder.getState().planId };
+      const ctx = workContext(item, turns, { ticked, stand: standBlock(stand.record, { sample: stand.source === "rehearsal" }), lists: pastLists(past, others), log: pastLog(past) });
       void askModel({
         fn: "coach-chat",
         body: { coach: "desk", message: t, turns: history.slice(0, -1), line: { id, text: item.text, how: item.how, ticked } },

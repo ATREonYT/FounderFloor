@@ -19,7 +19,7 @@ import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { AWAY_DAYS, daysAway, isoWeekKey, FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, type Mockup, withEntry } from "@founderfloor/shared";
+import { AWAY_DAYS, daysAway, isoWeekKey, weekFromVisits, FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, type Mockup, withEntry } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -337,13 +337,20 @@ interface FounderState {
   /** Every day the building was opened, ISO dates, for the calendar. */
   visits: string[];
   /**
-   * A week away costs nothing. The plan's weeks advance by weeks WORKED,
-   * so the building keeps three things: the real date each plan week
-   * began, the calendar weeks the founder said life happened in, and
-   * whether they have just come back from a gap.
+   * A week away costs nothing, and neither does a week off. The week the
+   * founder is ON is stored here and moved only by them: finishing the
+   * week's tasks, or saying to move on. Not by the calendar, not by
+   * opening the app, not by pausing. It never goes backwards.
    */
+  weekAt: number;
+  /** The real date each plan week began, so a week's reading covers the days it was really worked. */
   weekStarts: Record<number, string>;
+  /** Calendar weeks the founder said life happened in. A record, and nothing else reads it to move anything. */
   paused: string[];
+  /** This plan's id. Task keys are "week-index" and a remade plan reuses them, so notes carry this to tell them apart. */
+  planId: string | null;
+  /** Plans made before this one, whole: their tasks, ticks, readings and weeks. Nothing is thrown away when a plan is remade. */
+  plans: ArchivedPlan[];
   /** Set once, the moment a founder returns after a week or more. Cleared when the desk has said welcome back. */
   away: { days: number; on: string } | null;
   /** Local reminders, as chosen in Settings. */
@@ -366,6 +373,8 @@ interface FounderState {
   touchStreak(): void;
   /** Remember the day this plan week really began. Called once per week, never overwritten. */
   openWeek(n: number): void;
+  /** Move to the next week of the plan. The only thing that moves it, besides finishing every task in the week. */
+  goToWeek(n: number): void;
   /** Life happened: this calendar week does not advance the plan, and nothing is held against it. */
   pauseWeek(): void;
   /** The founder logged the week after all, so it was never a pause. */
@@ -382,6 +391,20 @@ interface FounderState {
   removeInterview(id: string): void;
   count(kind: "ideaRuns" | "ideaChecks" | "coachTurnsToday" | "draftsThisMonth" | "handoffsThisMonth"): void;
   setPlan(p: PlanState): void;
+}
+
+/** A plan the founder has finished with, kept whole so nothing they wrote under it is lost. */
+export interface ArchivedPlan {
+  id: string;
+  /** When it was put away. */
+  at: string;
+  headline: string;
+  roadmap: FounderPlan;
+  tasks: Record<string, TaskWork>;
+  planDone: string[];
+  reviews: Record<number, WeekReview>;
+  weekStarts: Record<number, string>;
+  weekAt: number;
 }
 
 export type TaskTurn = { id: string; role: "you" | "desk"; text: string };
@@ -435,9 +458,45 @@ export const useFounder = create<FounderState>()(
       profile: null,
       roadmap: null,
       hints: [],
-      setProfile: (profile, roadmap) => set({ profile, roadmap, planDone: [], tasks: {}, reviews: {} }),
+      /**
+       * A new plan does not erase the old one. Everything written under
+       * the old plan (its task pages, the founder's notes and step
+       * conversations, its ticks and its readings) is put away whole in
+       * `plans`, and the notebook's entries are stamped with the plan
+       * they belong to so the new week one does not inherit the old week
+       * one's notes. The founder can read an old plan any time.
+       */
+      setProfile: (profile, roadmap) => {
+        const old = get();
+        const had = old.roadmap;
+        const oldId = old.planId ?? `p${Date.now().toString(36)}`;
+        const archived: ArchivedPlan[] = had
+          ? [...old.plans, { id: oldId, at: new Date().toISOString(), headline: had.headline, roadmap: had, tasks: old.tasks, planDone: old.planDone, reviews: old.reviews, weekStarts: old.weekStarts, weekAt: old.weekAt }].slice(-20)
+          : old.plans;
+        set({
+          profile,
+          roadmap,
+          plans: archived,
+          planId: `p${Date.now().toString(36)}`,
+          // the notebook keeps every line; the ones written under the old plan are marked as its
+          memory: had ? old.memory.map((e) => (e.plan ? e : { ...e, plan: oldId })) : old.memory,
+          planDone: [],
+          tasks: {},
+          reviews: {},
+          weekAt: 1,
+          weekStarts: {},
+        });
+      },
       planDone: [],
-      togglePlanStep: (key) => set({ planDone: get().planDone.includes(key) ? get().planDone.filter((k) => k !== key) : [...get().planDone, key] }),
+      togglePlanStep: (key) => {
+        const was = get().planDone;
+        const planDone = was.includes(key) ? was.filter((k) => k !== key) : [...was, key];
+        set({ planDone });
+        // the week's last task ticked is the founder saying the week is done: the plan moves on with them
+        const s = get();
+        const week = s.roadmap?.weeks.find((w) => w.n === s.weekAt);
+        if (week && week.do.every((_, i) => planDone.includes(`${s.weekAt}-${i}`))) s.goToWeek(s.weekAt + 1);
+      },
       tasks: {},
       setTaskGuide: (key, guide) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), guide } } }),
       toggleTaskStep: (key, i) => {
@@ -445,15 +504,16 @@ export const useFounder = create<FounderState>()(
         set({ tasks: { ...get().tasks, [key]: { ...t, ticks: t.ticks.includes(i) ? t.ticks.filter((k) => k !== i) : [...t.ticks, i] } } });
       },
       setTaskNotes: (key, notes) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), notes } } }),
-      setTaskChat: (key, chat) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), chat: chat.slice(-24) } } }),
+      // every turn is kept; what the model is sent is trimmed at the call, not here
+      setTaskChat: (key, chat) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), chat } } }),
       setTaskOutcome: (key, outcome) => set({ tasks: { ...get().tasks, [key]: { ...(get().tasks[key] ?? EMPTY_TASK), outcome } } }),
       addStepTurn: (key, step, turn) => {
         const t = get().tasks[key] ?? EMPTY_TASK;
-        const work = { ...(t.work ?? {}), [step]: [...(t.work?.[step] ?? []), turn].slice(-40) };
+        const work = { ...(t.work ?? {}), [step]: [...(t.work?.[step] ?? []), turn] };
         set({ tasks: { ...get().tasks, [key]: { ...t, work } } });
       },
       work: {},
-      addWorkTurn: (id, turn) => set({ work: { ...get().work, [id]: [...(get().work[id] ?? []), turn].slice(-40) } }),
+      addWorkTurn: (id, turn) => set({ work: { ...get().work, [id]: [...(get().work[id] ?? []), turn] } }),
       reviews: {},
       setReview: (r) => set({ reviews: { ...get().reviews, [r.week]: r } }),
       mockup: null,
@@ -466,13 +526,16 @@ export const useFounder = create<FounderState>()(
       // a founder who said no is not written about, whatever the screen thought
       addMemory: (kind, text, task) => {
         if (get().memoryOn === false) return;
-        set({ memory: withEntry(get().memory, { id: `n${Date.now().toString(36)}${(memSeq++).toString(36)}`, at: new Date().toISOString(), kind, text, task }) });
+        set({ memory: withEntry(get().memory, { id: `n${Date.now().toString(36)}${(memSeq++).toString(36)}`, at: new Date().toISOString(), kind, text, task, ...(get().planId ? { plan: get().planId as string } : null) }) });
       },
       forgetMemory: () => set({ memory: [] }),
       dismissHint: (id) => set({ hints: get().hints.includes(id) ? get().hints : [...get().hints, id] }),
       visits: [],
+      weekAt: 1,
       weekStarts: {},
       paused: [],
+      planId: null,
+      plans: [],
       away: null,
       reminders: DEFAULT_REMINDERS,
       guided: false,
@@ -486,7 +549,7 @@ export const useFounder = create<FounderState>()(
       addRead: (text, read) => set({ reads: [...get().reads, { text, read, at: new Date().toISOString() }].slice(-20) }),
       saveDoc: (d, source) => {
         const doc: SavedDoc = { ...d, id: `doc${Date.now().toString(36)}`, at: new Date().toISOString(), source };
-        set({ docs: [doc, ...get().docs].slice(0, 60) });
+        set({ docs: [doc, ...get().docs] });
         return doc;
       },
       removeDoc: (id) => set({ docs: get().docs.filter((d) => d.id !== id) }),
@@ -523,6 +586,14 @@ export const useFounder = create<FounderState>()(
         const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
         set({ streak: { days: s.last === yesterday ? s.days + 1 : 1, last: today } });
       },
+      goToWeek: (n) => {
+        const at = get().weekAt;
+        const max = get().roadmap?.weeks.length ?? 4;
+        const next = Math.min(max, Math.max(1, Math.floor(n)));
+        // forward only, ever
+        if (next <= at) return;
+        set({ weekAt: next });
+      },
       openWeek: (n) => {
         const starts = get().weekStarts;
         if (starts[n]) return;
@@ -543,8 +614,14 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 11,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, weekStarts: {}, paused: [], away: null, ...(persisted as object) }) as unknown as FounderState,
+      version: 12,
+      migrate: (persisted) => {
+        const p = { notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, weekStarts: {}, paused: [], away: null, plans: [], planId: null, weekAt: 0, ...(persisted as object) } as unknown as FounderState;
+        // a phone from before the week was stored: seed it from the weeks it has seen, never below one
+        if (!p.weekAt) p.weekAt = weekFromVisits(p.visits ?? [], p.roadmap?.weeks.length ?? 4);
+        if (!p.planId && p.roadmap) p.planId = "p0";
+        return p;
+      },
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

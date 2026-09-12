@@ -8,8 +8,9 @@
  * page, and the status line says so.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { asTaskGuide, founderLog, localTaskGuide, planWeekNow, stepOpener, taskContext, workBlock, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
+import { asTaskGuide, founderLog, localTaskGuide, planWeekNow, weekFromVisits, stepOpener, taskContext, workBlock, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
+import { pastLists, pastLog, type Past } from "./consent";
 import { EMPTY_TASK, useFounder, type TaskOutcome, type TaskTurn } from "./store";
 
 let seq = 0;
@@ -29,8 +30,9 @@ export function useTask(key: string, text: string, week: PlanWeek | null) {
   const memoryOn = useFounder((s) => s.memoryOn);
   const lists = useFounder((s) => s.work);
   /** The notebook as the model reads it: nothing until the founder said yes. */
-  const log = () => founderLog(memory, memoryOn === true);
-  const listsBlock = () => workBlock(lists);
+  const past = (): Past => ({ memoryOn, memory, planId: useFounder.getState().planId });
+  const log = () => pastLog(past());
+  const listsBlock = () => pastLists(past(), lists);
   const [writing, setWriting] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [source, setSource] = useState<"live" | "rehearsal">(work.guide?.source ?? "rehearsal");
@@ -190,23 +192,16 @@ function firstLines(s: string): string {
 export const taskKey = (week: number, i: number) => `${week}-${i}`;
 
 /**
- * Which week of the plan it is. Not the calendar week: the week the
- * founder is ON. Weeks advance by weeks worked, so a fortnight away is a
- * fortnight the plan waited, and a week the founder marked "life
- * happened" does not move it either.
+ * The week of the plan the founder is on.
  *
- * The old rule (calendar weeks since the profile was made) is kept for
- * one case only: a founder whose phone has no record of visits, from
- * before the building kept them. Even then it can only be as forgiving,
- * never harsher, because the smaller of the two is taken.
+ * It is a decision the founder made, not a clock. The building stores it
+ * and moves it forward only when they finish the week's tasks or say to
+ * move on. Being away, pausing a week, or simply opening the app move
+ * nothing, and it can never go backwards.
  */
-export function weekNow(profile: { at: string } | null, plan: FounderPlan | null, visits: string[] = [], paused: string[] = []): number {
+export function weekNow(stored: number | null | undefined, plan: FounderPlan | null, visits: string[] = []): number {
   const max = plan?.weeks.length ?? 4;
-  if (!visits.length) {
-    const n = profile ? Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1 : 1;
-    return Math.min(max, Math.max(1, n));
-  }
-  return planWeekNow(visits, paused, max);
+  return planWeekNow(stored, max, visits.length ? weekFromVisits(visits, max) : undefined);
 }
 
 /**
@@ -216,12 +211,11 @@ export function weekNow(profile: { at: string } | null, plan: FounderPlan | null
  * absence still counts everything written in it.
  */
 export function useWeekNow(): number {
-  const profile = useFounder((s) => s.profile);
   const plan = useFounder((s) => s.roadmap);
+  const weekAt = useFounder((s) => s.weekAt);
   const visits = useFounder((s) => s.visits);
-  const paused = useFounder((s) => s.paused);
   const openWeek = useFounder((s) => s.openWeek);
-  const n = weekNow(profile, plan, visits, paused);
+  const n = weekNow(weekAt, plan, visits);
   useEffect(() => {
     if (plan) openWeek(n);
   }, [n, plan, openWeek]);
@@ -284,7 +278,8 @@ export function useStepRoom(key: string, text: string, week: PlanWeek | null, st
         return;
       }
       const history = [...turns, { id: "x", role: "you" as const, text: t }].slice(-10).map((m) => ({ role: (m.role === "you" ? "user" : "assistant") as "user" | "assistant", content: m.text }));
-      const ctx = taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, lists: workBlock(lists), log: founderLog(memory, memoryOn === true) }) + `\nThe step open now: ${step + 1}. ${st.do} Tip on the page: ${st.tip}`;
+      const past: Past = { memoryOn, memory, planId: useFounder.getState().planId };
+      const ctx = taskContext(text, { profile, week, plan, guide, notes: work.notes, ticked: work.ticks, lists: pastLists(past, lists), log: pastLog(past) }) + `\nThe step open now: ${step + 1}. ${st.do} Tip on the page: ${st.tip}`;
       void askModel({
         fn: "coach-chat",
         body: { coach: "desk", message: t, turns: history.slice(0, -1), task: { text, guide, step, notes: work.notes, ticks: work.ticks } },

@@ -9,12 +9,13 @@
  * anything else while it is.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { COACHES, RECEPTIONIST, HALLS, type Coach } from "./mock";
+import { COACHES, RECEPTIONIST, type Coach } from "./mock";
 import { useFounder } from "./store";
 import { useStand } from "./stand";
 import { coachReply, whereAmI, fmtMoney, runwayLine, COACH_PROMPTS, DESK_PROMPT, standBlock, memoryBlock, founderLog, workBlock, remembers, toneLine, type CoachId } from "@founderfloor/shared";
 import { effectivePlan } from "./billing";
 import { valueMoment } from "./trial";
+import { pastLists, pastLog } from "./consent";
 import { askModel, aiMode, AiError } from "./ai";
 
 export type Turn = { id: string; role: "you" | "desk"; text: string; streaming?: boolean };
@@ -56,19 +57,17 @@ export function useReceptionist(coachId?: string) {
     const r = s.record;
     const p = prompt.toLowerCase();
     if (/mock.?up|prototype|wireframe|design (my|the|an) app|build (it|my app|the app)|screens|landing page/.test(p)) return `The Workshop does that: three screens of your product, tappable, designed from your sign and what customers told you, with a picture to show people and a brief to build it from. It is behind You.\n\n[[go:/workshop|Open the Workshop]]`;
-    if (/one.?liner|draft|redraft|copy|pitch|sign|tagline|write/.test(p)) return `That is the Sign Painter's counter on the floor, and Jonah's here. For the sign: three tries, plain words, no adjective that needs defending. 1. ${r.oneLiner || "Say what changes hands."} 2. ${r.name || "Your company"}: who pays, and what they get. 3. The same, for the person who has never heard of you.\n\nWant Jonah to draft the message that goes with it?`;
-    if (/stand|booth|visitors|week|changed/.test(p)) return `${s.name}${s.hall ? `, ${s.spot} in the ${s.hall.replace(/-/g, " ")}` : ", no spot on a floor yet"}. Rank ${s.rank.name}${r.mrr ? ` at ${fmtMoney(r.mrr, r.currency)} a month` : ""}. ${s.online ? "Your stand is showing you online." : "Your stand shows you away; the receptionist is answering."} ${f.ticks.length ? `${f.ticks.length} workshop items ticked.` : "Nothing ticked in the workshop yet."}\n\nWant the honest version from Ines: where are you really?`;
+    if (/one.?liner|draft|redraft|copy|pitch|sign|tagline|write/.test(p)) return `Three tries at the sign, plain words, no adjective that needs defending. 1. ${r.oneLiner || "Say what changes hands."} 2. ${r.name || "Your company"}: who pays, and what they get. 3. The same, for someone who has never heard of you.\n\nJonah is at the counter for the message that goes with it.`;
+    if (/stand|booth|visitors|week|changed/.test(p)) return `${s.name}${s.hall ? `, ${s.spot} in the ${s.hall.replace(/-/g, " ")}` : ", no spot on a floor yet"}. Rank ${s.rank.name}${r.mrr ? ` at ${fmtMoney(r.mrr, r.currency)} a month` : ""}. ${f.ticks.length ? `${f.ticks.length} things ticked on the rooms' lists.` : "Nothing ticked on the rooms' lists yet."} Nobody has visited the stand, because the floor is not open yet.`;
     if (/who|row|floor|here|tonight|people|online|hall/.test(p)) {
-      const row = HALLS.find((h) => h.id === "cofounder-row")!;
-      const main = HALLS.find((h) => h.id === "main-hall")!;
-      return `${main.here} people are on the floor. Co-founder Row has ${row.here}. Ramen District is quiet until the evening. The Floor tab drops you in; the counts up top are live.\n\nWant me to open the Row?`;
+      return "Nobody, yet. The floor of other founders' stands is built but it is not open, and it will not be until there are founders standing on it worth walking past. Your sign goes up the day it opens. Until then the people to talk to are outside the building: the five you are meant to ask.";
     }
-    if (/code|redeem|promo|product ?hunt/.test(p)) return "Codes are redeemed at the Ticket Booth on the floor, under Membership. PRODUCTHUNT is live: three months of Founder+, one per account, until 3 December.\n\nWant the Floor tab open at the booth?";
-    if (/runway|money|cash|burn/.test(p)) return r.burn ? `${runwayLine({ cash: r.cash, burn: r.burn, mrr: r.mrr }, r.currency)}. Theo has the salary scenarios and the filing calendar.\n\nOpen Finance?` : "Burn and cash are not on the stand yet, so nobody here can tell you the runway. Open the stand and put the three numbers in.\n\nShall I open it?";
+    if (/code|redeem|promo|product ?hunt/.test(p)) return "Codes are redeemed on the floor, and the floor is not open yet. When it is, the booth takes them.";
+    if (/runway|money|cash|burn/.test(p)) return r.burn ? `${runwayLine({ cash: r.cash, burn: r.burn, mrr: r.mrr }, r.currency)}. Theo has the salary scenarios and the filing calendar.` : "Burn and cash are not on the stand yet, so nobody here can tell you the runway. They go in on your stand, under the numbers.";
     if (/where am i|honest|really/.test(p)) return whereAmI(r, f.ticks);
-    if (/^(hi|hello|hey|evening|morning|yo)\b/.test(p)) return "Evening. What do you need: your stand, the floor, or one of the coaches?";
+    if (/^(hi|hello|hey|evening|morning|yo)\b/.test(p)) return "The desk is open. Ask about your company, or say which coach you want.";
     if (/thank/.test(p)) return "Any time. The desk is open whenever the hall is.";
-    return "I can do three things from the desk: tell you about your stand, tell you who is in the building, or hand you to a coach: Ines for the plan, Jonah for sales, Margot for the pitch, Theo for the money.\n\nWhich?";
+    return "From the desk I can tell you where your company stands, or hand you to a coach: Ines for the plan, Jonah for sales, Margot for the pitch, Theo for the money.";
   };
 
   /** What the coach is told beyond the stand: the log, the book, the notes — on a plan that remembers. */
@@ -76,7 +75,8 @@ export function useReceptionist(coachId?: string) {
     const { founder: f } = ctx.current;
     const who = f.profile ? `\nFounder: ${f.profile.name}. ${toneLine(f.profile.tone)}${f.roadmap ? ` Their plan this month: ${f.roadmap.weeks.map((w) => `week ${w.n} ${w.focus}`).join("; ")}.` : ""}` : "";
     // the notebook is the founder's and goes with every question they said yes to; the staff's own notes between visits stay Pro
-    return who + (f.memoryOn === true ? workBlock(f.work) : "") + founderLog(f.memory, f.memoryOn === true) + memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
+    const past = { memoryOn: f.memoryOn, memory: f.memory, planId: f.planId };
+    return who + pastLists(past, f.work) + pastLog(past) + memoryBlock({ kpi: f.kpi, interviews: f.interviews, notes: f.notes.filter((n) => n.coach === coach.name) }, remembers(effectivePlan()));
   };
   /** A note for next time, and the value moment on a coach's first real reply. */
   const remember = (asked: string, said: string) => {

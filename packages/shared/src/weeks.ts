@@ -49,24 +49,51 @@ export function weeksVisited(visits: string[]): string[] {
 }
 
 /**
- * Weeks worked: every week the founder was here, less the ones they
- * paused. Never falls: pausing a week stops it counting forward, it does
- * not take a week away.
+ * Weeks in the building: every calendar week the founder showed up in.
+ * This is the number the app shows, and it only ever goes up. Pausing a
+ * week does not subtract from it, because a week you were here for is a
+ * week you were here for.
  */
-export function weeksWorked(visits: string[], paused: string[] = []): number {
-  const p = new Set(paused);
-  return weeksVisited(visits).filter((k) => !p.has(k)).length;
+export function weeksWorked(visits: string[]): number {
+  return weeksVisited(visits).length;
 }
 
 /**
- * Which week of the plan the founder is on. One-based, never past the
- * end of the plan, never before the start. With no record of visits (an
- * install from before this was kept) it is week one, which is forgiving
- * rather than punishing.
+ * Which week of the plan the founder is on.
+ *
+ * It is a decision, not a clock. The building stores the week the founder
+ * is on and moves it forward only when they finish the week's work or say
+ * to move on. Nothing else touches it: not the calendar, not opening the
+ * app, not being away, not pausing a week. It can never go backwards.
+ *
+ * A review in September 2026 found the previous version, which counted
+ * weeks present minus weeks paused, could move a founder BACK a week when
+ * they said life happened, and forward a week just for opening the app
+ * after a gap. Both were the opposite of what the card on Today promises.
+ *
+ * `stored` is what the building remembers. `derived` is the old
+ * presence-based guess, used only for a phone that has no stored week
+ * yet, and only as a floor, never to push anyone on.
  */
-export function planWeekNow(visits: string[], paused: string[], planWeeks: number): number {
-  const worked = weeksWorked(visits, paused);
-  return Math.min(Math.max(1, planWeeks || 1), Math.max(1, worked));
+export function planWeekNow(stored: number | null | undefined, planWeeks: number, derived?: number): number {
+  const max = Math.max(1, planWeeks || 1);
+  const known = Math.max(1, Math.floor(stored ?? 0) || 0);
+  const floor = stored == null && derived ? Math.max(1, derived) : 1;
+  return Math.min(max, Math.max(known, floor));
+}
+
+/**
+ * The week a phone with no stored week should start on: the weeks it has
+ * seen, so an existing founder is not sent back to week one. Only ever
+ * used once, to seed the stored week.
+ */
+export function weekFromVisits(visits: string[], planWeeks: number): number {
+  return Math.min(Math.max(1, planWeeks || 1), Math.max(1, weeksVisited(visits).length));
+}
+
+/** The next week, when the founder finishes one or says to move on. Never past the plan's end. */
+export function nextWeek(current: number, planWeeks: number): number {
+  return Math.min(Math.max(1, planWeeks || 1), Math.max(1, current) + 1);
 }
 
 /** Is this calendar week one the founder paused? */

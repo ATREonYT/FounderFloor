@@ -16,6 +16,7 @@ import { briefComplete, briefContext, BRIEF_PROMPT, builderPrompt, designContext
 import { aiMode, askModel } from "./ai";
 import { useStand } from "./stand";
 import { useFounder } from "./store";
+import { mayShare, pastLog, pastNotes, pastWorkLines, sourceLine, type Past } from "./consent";
 
 export function useWorkshop() {
   const stand = useStand();
@@ -40,10 +41,16 @@ export function useWorkshop() {
   }, []);
   const r = stand.record;
   const mine = stand.source !== "rehearsal" && !!r.oneLiner;
-  /** What customers said, for the mock-up and the brief: interviews first, then notebook lines in their words. */
-  const said = [...interviews.slice(0, 8).map((i) => `${i.who}: ${i.said}`), ...memory.filter((e) => e.kind === "note" || e.kind === "outcome").slice(-6).map((e) => e.text)];
-  /** What the founder wrote on the lists and into tasks, for the brief: what they actually did, in their words. */
-  const work = [...workLines(lists), ...memory.filter((e) => e.kind === "work" || e.kind === "decision").slice(-10).map((e) => e.text)].slice(-24);
+  const planId = useFounder((s) => s.planId);
+  const past: Past = { memoryOn, memory, planId };
+  /**
+   * What customers said, and what the founder wrote, for the mock-up and
+   * the brief. Both are things they wrote earlier, so both travel only
+   * with the notebook's leave; without it the studio draws from the sign,
+   * the audience and the price alone, and the page says so.
+   */
+  const said = mayShare(memoryOn) ? [...interviews.slice(0, 8).map((i) => `${i.who}: ${i.said}`), ...pastNotes(past, ["note", "outcome"], 6)] : [];
+  const work = mayShare(memoryOn) ? [...pastWorkLines(past, lists), ...pastNotes(past, ["work", "decision"], 10)].slice(-24) : [];
   const input = mine ? { name: r.name, oneLiner: r.oneLiner, audience: profile?.audiences, price: r.publicPricing, said, segment: r.segment } : {};
   const seedNow = localMockup(input, profile).seed;
 
@@ -78,7 +85,7 @@ export function useWorkshop() {
       setLastError(null);
       try {
         const plan = studio?.system ?? studioDesign(local, { said, segment: r.segment, pitch: r.pitch, seed: keep.studioSeed ?? 0, chosen: keep.studioType }).system;
-        const ctx = briefContext({ record: r, profile, said, work, log: founderLog(memory, memoryOn === true), fresh, plan });
+        const ctx = briefContext({ record: r, profile, said, work, log: pastLog(past), fresh, plan });
         setStage("Writing the brief…");
         const reply = await askModel({ fn: "guide", body: { question: "brief", content: ctx }, direct: { system: BRIEF_PROMPT, turns: [{ role: "user", content: ctx }], maxTokens: 7000, model: "careful" } });
         if (!alive.current) return;
@@ -103,7 +110,7 @@ export function useWorkshop() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mine, r.name, r.oneLiner, r.publicPricing, profile, memory, memoryOn, setMockup, studio?.system],
+    [mine, r.name, r.oneLiner, r.publicPricing, profile, memory, memoryOn, planId, setMockup, studio?.system],
   );
 
   /** The model designs and writes the whole app to the brief; asked again, to a direction drawn at random instead. Live only. */
@@ -181,6 +188,8 @@ export function useWorkshop() {
     /** The founder says what it is, over the reading. */
     setType: (studioType: string | undefined) => setMockup({ ...m, studioType, studioSeed: 0 }),
     canDesign: mine && aiMode() !== "rehearsal",
+    /** One line for the page: what the studio was allowed to read. */
+    from: sourceLine(past),
     redesign: () => void design(Math.floor(Math.random() * 100000)),
     lastError,
     /** The big prompt: the model's brief, or the studio's own with its plan as the design system. */

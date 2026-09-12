@@ -668,6 +668,13 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
  * Functions can trust `sub` (the floor account id) without a second user
  * table. Unset secret = the route answers "not configured" and nothing
  * else changes.
+ *
+ * The token also carries the account's live tier, because the Edge
+ * Functions gate on it and must not take it from the request body. It is
+ * read through entitlementOf, so a lapsed trial mints "free". The token
+ * lasts an hour, which is the longest a just-cancelled account keeps the
+ * coaches; short enough, and the alternative is a database read on every
+ * turn.
  */
 const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || "";
 const SUPABASE_JWT_TTL_S = 60 * 60;
@@ -684,6 +691,7 @@ function mintSupabaseJwt(acct, now = Date.now()) {
       iat,
       exp: iat + SUPABASE_JWT_TTL_S,
       ...(acct.email ? { email: acct.email } : {}),
+      tier: entitlementOf(acct)?.tier === "founder" ? "founder" : entitlementOf(acct)?.tier === "pro" ? "pro" : "free",
       app_metadata: { provider: "founderfloor" },
       user_metadata: { name: acct.name },
     }),

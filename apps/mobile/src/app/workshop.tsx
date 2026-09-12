@@ -90,7 +90,8 @@ export default function Workshop() {
         </View>
         <Rise k={0} style={{ gap: 6 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>{m.source === "sample" ? "Your start-up, mocked up" : `${m.name}, mocked up`}</Display>
-          <Body tone="muted">{m.source === "sample" ? "A sample, until your sign is written. Tap around inside the phone." : w.designed ? "Designed for you from everything you wrote. Tap around inside the phone; every word can be changed." : "Drawn from everything you wrote. Tap around inside the phone; every word can be changed."}</Body>
+          <Body tone="muted">{m.source === "sample" ? "A sample, until your sign is written. Tap around inside the phone." : "Tap around inside the phone; every word can be changed."}</Body>
+          <Spec tone="faint">{w.from}</Spec>
         </Rise>
         <Hint id="workshop" text="The buttons inside the phone work. When it looks right, tap Build it." />
         {m.source === "sample" ? (

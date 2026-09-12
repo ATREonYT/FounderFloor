@@ -14,8 +14,9 @@ test("the notebook does not write the same line twice, and a task keeps one note
   assert.equal(l.filter((x) => x.kind === "note").length, 1);
   assert.equal(l.at(-1).text, "Maria, Kostas, Andreas");
   assert.equal(withEntry(l, e("did", "   ", "1-0")).length, l.length);
+  // nothing written is lost: five hundred entries are five hundred entries
   const many = Array.from({ length: 500 }, (_, i) => e("did", `step ${i}`, "9-9"));
-  assert.equal(many.reduce((acc, x) => withEntry(acc, x), []).length, 400);
+  assert.equal(many.reduce((acc, x) => withEntry(acc, x), []).length, 500);
 });
 
 test("the log is empty without consent and dated with consent", () => {

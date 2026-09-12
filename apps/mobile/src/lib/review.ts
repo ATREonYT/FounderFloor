@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { asReview, founderLog, localReview, reviewContext, weekFacts, REVIEW_PROMPT, type PlanWeek, type WeekFacts, type WeekReview } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
 import { useFounder } from "./store";
+import { pastLog } from "./consent";
 
 export function useWeekReview(week: PlanWeek | null) {
   const profile = useFounder((s) => s.profile);
@@ -17,6 +18,7 @@ export function useWeekReview(week: PlanWeek | null) {
   const memory = useFounder((s) => s.memory);
   const memoryOn = useFounder((s) => s.memoryOn);
   const weekStarts = useFounder((s) => s.weekStarts);
+  const planId = useFounder((s) => s.planId);
   const stored = useFounder((s) => (week ? s.reviews[week.n] : undefined));
   const setReview = useFounder((s) => s.setReview);
   const [reading, setReading] = useState(false);
@@ -42,10 +44,12 @@ export function useWeekReview(week: PlanWeek | null) {
       setReading(true);
       setLastError(null);
       try {
+        // one context for both doors: the phone builds it, having already decided what of the notebook may travel
+        const content = reviewContext(facts, { profile, plan, week, log: pastLog({ memoryOn, memory, planId }) });
         const reply = await askModel({
           fn: "guide",
-          body: { question: "review", week: week.n, facts, force },
-          direct: { system: REVIEW_PROMPT, turns: [{ role: "user", content: reviewContext(facts, { profile, plan, week, log: founderLog(memory, memoryOn === true) }) }], maxTokens: 700 },
+          body: { question: "review", week: week.n, content },
+          direct: { system: REVIEW_PROMPT, turns: [{ role: "user", content }], maxTokens: 700 },
         });
         const r = asReview(parseJson(reply), facts);
         if (!alive.current) return;

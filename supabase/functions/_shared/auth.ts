@@ -6,6 +6,8 @@
  */
 export interface Caller {
   sub: string;
+  /** The account's plan, from the signed token, never from the request body. Absent means free. */
+  tier?: "free" | "pro" | "founder";
   email?: string;
   role: string;
 }
@@ -21,7 +23,7 @@ export async function verifyJwt(token: string, secret = Deno.env.get("SUPABASE_J
   if (parts.length !== 3) return null;
   const [h, p, s] = parts;
   let header: { alg?: string };
-  let claims: { sub?: string; role?: string; exp?: number; email?: string };
+  let claims: { sub?: string; role?: string; exp?: number; email?: string; tier?: string };
   try {
     header = JSON.parse(new TextDecoder().decode(b64url(h)));
     claims = JSON.parse(new TextDecoder().decode(b64url(p)));
@@ -34,7 +36,8 @@ export async function verifyJwt(token: string, secret = Deno.env.get("SUPABASE_J
   if (!ok) return null;
   if (typeof claims.exp !== "number" || claims.exp * 1000 < Date.now()) return null;
   if (!claims.sub || claims.role !== "authenticated") return null;
-  return { sub: claims.sub, email: claims.email, role: claims.role };
+  const tier = claims.tier === "pro" || claims.tier === "founder" ? claims.tier : "free";
+  return { sub: claims.sub, email: claims.email, role: claims.role, tier };
 }
 
 /** The founder behind a request, or null. Reads the Authorization header. */

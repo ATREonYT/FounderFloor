@@ -83,7 +83,7 @@ export default function Settings() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.well, borderRadius: radius.md, paddingLeft: 12, paddingRight: 4, paddingVertical: 8 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Body size="sm" medium>{keyTail(own)}</Body>
-                    <Spec tone="faint">Your key, in this phone's keychain only</Spec>
+                    <Spec tone="faint">{staffUnlocked() ? "In this phone's keychain. Your account pays for the words." : "In this phone's keychain. It pays for the words once Pro turns the staff on."}</Spec>
                   </View>
                   <Button size="sm" variant="ghost" onPress={async () => { await forgetKey(); say("Key removed. The building answers again."); }}>
                     Remove
@@ -93,7 +93,7 @@ export default function Settings() {
                 <Pressable onPress={() => { setVerdict(null); setKeyOpen(true); }} accessibilityRole="button" accessibilityLabel="Use my own Claude key" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 44, opacity: pressed ? 0.7 : 1 })}>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Body size="sm">Use my own Claude key</Body>
-                    <Spec tone="faint">For founders who already have one</Spec>
+                    <Spec tone="faint">{staffUnlocked() ? "Your account pays for the words instead of ours" : "For founders who already have one. It pays for the words once Pro is on."}</Spec>
                   </View>
                   <Body tone="accent">›</Body>
                 </Pressable>
@@ -199,7 +199,7 @@ export default function Settings() {
         ) : null}
       </ScrollView>
       {/* one field, tested the moment it is pasted, answered in plain words */}
-      <Dialogue open={keyOpen} onClose={() => { setKeyOpen(false); setVerdict(null); }} sign="YOUR OWN KEY" keeper="The desk" blurb="Paste a Claude key and the staff answer on your account instead of ours." color="#5E7C93" footer="The key stays in this phone's keychain. It never reaches our server and never goes in the notebook.">
+      <Dialogue open={keyOpen} onClose={() => { setKeyOpen(false); setVerdict(null); }} sign="YOUR OWN KEY" keeper="The desk" blurb="Paste a Claude key and the words come off your account instead of ours. It does not turn the staff on; Pro does that." color="#5E7C93" footer="The key stays in this phone's keychain. It never reaches our server and never goes in the notebook.">
         <View style={{ gap: 12 }}>
           <Input label="The key" value={draftKey} onChangeText={(v) => { setDraftKey(v); setVerdict(null); }} placeholder="sk-ant-..." autoCapitalize="none" autoCorrect={false} mono multiline style={{ minHeight: 66, textAlignVertical: "top" }} />
           {verdict ? (

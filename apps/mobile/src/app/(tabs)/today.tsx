@@ -90,7 +90,7 @@ export default function Today() {
                 <Display size="lg">Good to see you</Display>
                 <Body size="sm" tone="muted">
                   {plan
-                    ? `Nothing was lost while you were away. Your plan, your notes and your numbers are all here, and week ${wk} is exactly where you left it.`
+                    ? `Nothing was lost while you were away. Your plan, your notes and your numbers are all here, and the plan did not move: you are still on week ${wk}, with the same tasks.`
                     : "Nothing was lost while you were away. Everything you wrote is still here."}
                 </Body>
                 {plan && next ? <Body size="sm" medium>{`Next: ${(next.guide?.title ?? next.text).replace(/\.$/, "").toLowerCase()}.`}</Body> : null}

@@ -2,8 +2,12 @@
  * The one door to a model, with four keys, in the order they are tried.
  *
  *   own        The founder put their own Anthropic key in Settings
- *              (lib/key.ts). Their account pays for the words. It changes
- *              who pays, never what the plan allows.
+ *              (lib/key.ts) AND the plan already lets the staff speak.
+ *              Their account pays for the words instead of ours. It
+ *              changes who pays and nothing else: a key does not buy Pro,
+ *              which is both the honest reading of the sentence on the
+ *              settings page and what Apple's rule 3.1.1 requires of a
+ *              key that would otherwise unlock a feature.
  *   edge       Pro, Founder+ or the free week is running AND
  *              EXPO_PUBLIC_SUPABASE_URL is set: POST to the Edge Function
  *              with the floor token; the function holds the Anthropic key,
@@ -41,7 +45,7 @@ const MODEL_CAREFUL = process.env.EXPO_PUBLIC_ANTHROPIC_MODEL_CAREFUL ?? "claude
 const isRelease = !__DEV__;
 
 export function aiMode(): AiMode {
-  if (ownKey()) return "own";
+  if (ownKey() && staffUnlocked()) return "own";
   if (SUPABASE_URL && staffUnlocked()) return "edge";
   if (DEV_KEY && !isRelease) return "dev";
   return "rehearsal";
