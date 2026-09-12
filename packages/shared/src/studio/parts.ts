@@ -4,9 +4,11 @@
  * header, a row, a stat, a tab bar), styled through the CSS variables
  * the plan sets, so the same part looks like a different studio's work
  * under a different plan. Icons are drawn inline, one stroke width, in
- * currentColor. Pictures are drawn with gradients and shapes, never a
- * grey box with the word "image" in it.
+ * currentColor. Pictures are drawn: where the subject is known they are
+ * a drawing of that subject (scenes.ts), and otherwise shapes in the
+ * plan's colours. Never a grey box with the word "image" in it.
  */
+import { scene, sceneFor } from "./scenes.ts";
 
 export const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -169,8 +171,17 @@ export function chips(items: string[], on = 0): string {
 /** A section title with an optional trailing link. */
 export const section = (title: string, link?: string): string => `<div class="sec"><span>${esc(title)}</span>${link ? `<a>${esc(link)}</a>` : ""}</div>`;
 
-/** A drawn picture: gradients and shapes in the plan's colours, in one of six manners. */
-export function pic(manner: string, seed: number, cls = ""): string {
+/**
+ * A picture.
+ *
+ * Given a subject it draws that subject (see scenes.ts); without one it
+ * falls back to the manner's shapes, which is what every picture used to
+ * be. The fallback is kept because an unfamiliar noun is common and a
+ * quiet abstract is better than a wrong drawing.
+ */
+export function pic(manner: string, seed: number, cls = "", subject?: string): string {
+  const kind = subject ? sceneFor(subject) : "abstract";
+  if (kind !== "abstract") return `<div class="pic ${manner}${cls ? ` ${cls}` : ""}">${scene(kind, seed)}</div>`;
   const a = (seed * 37) % 100;
   const b = (seed * 53) % 100;
   const inner =
@@ -296,13 +307,13 @@ export function option(icon: string, title: string, meta: string, price: string,
 }
 
 /** A promo banner (stores): a picture, a line, a button. */
-export function promo(manner: string, seed: number, eyebrow: string, title: string, cta: string, go?: number): string {
-  return `<div class="promo"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(manner, seed, "promo-pic")}<div class="promo-t"><div class="eyebrow">${esc(eyebrow)}</div><b>${esc(title)}</b><span class="btn p sm" style="width:auto;display:inline-flex;margin-top:10px">${esc(cta)}</span></div></div>`;
+export function promo(manner: string, seed: number, eyebrow: string, title: string, cta: string, go?: number, subject?: string): string {
+  return `<div class="promo"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(manner, seed, "promo-pic", subject)}<div class="promo-t"><div class="eyebrow">${esc(eyebrow)}</div><b>${esc(title)}</b><span class="btn p sm" style="width:auto;display:inline-flex;margin-top:10px">${esc(cta)}</span></div></div>`;
 }
 
 /** A product tile with a round add button and a rating (stores). */
-export function productTile(manner: string, seed: number, title: string, meta: string, price: string, stars: string, go?: number): string {
-  return `<div class="tile prod"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(manner, seed, "tile")}<span class="add">${ic("plus", 18)}</span><b>${esc(title)}</b><span>${esc(meta)}</span><div class="spread mt8"><span class="price">${esc(price)}</span>${rating(stars)}</div></div>`;
+export function productTile(manner: string, seed: number, title: string, meta: string, price: string, stars: string, go?: number, subject?: string): string {
+  return `<div class="tile prod"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(manner, seed, "tile", subject)}<span class="add">${ic("plus", 18)}</span><b>${esc(title)}</b><span>${esc(meta)}</span><div class="spread mt8"><span class="price">${esc(price)}</span>${rating(stars)}</div></div>`;
 }
 
 /** A sticky bar with a count and a total and one action (stores). */

@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     if ((caller.tier ?? "free") === "free") return reply(req, 402, { error: "The studio draws your app on Pro. On Free the building draws it here on the phone, from your own words." });
     if (typeof body.content !== "string" || !body.content.trim()) return reply(req, 400, { error: "nothing to work from" });
     const brief = body.question === "brief";
-    return respond(req, anthropicClient().stream({ model: MODELS.careful, system: brief ? BRIEF_PROMPT : DESIGN_PROMPT, cached: "", turns: [{ role: "user", content: body.content.slice(0, 120000) }], maxTokens: brief ? 7000 : 16000 }));
+    return respond(req, anthropicClient().stream({ model: brief ? MODELS.careful : MODELS.design, system: brief ? BRIEF_PROMPT : DESIGN_PROMPT, cached: "", turns: [{ role: "user", content: body.content.slice(0, 120000) }], maxTokens: brief ? 7000 : 16000 }));
   }
   if (body.question === "plan" || body.question === "review") {
     if (typeof body.content !== "string" || !body.content.trim()) return reply(req, 400, { error: "nothing to work from" });

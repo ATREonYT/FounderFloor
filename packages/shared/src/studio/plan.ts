@@ -10,6 +10,7 @@
  */
 import { FONTS, PRODUCTS, type FontRow, type Palette, type ProductRow } from "./tables.ts";
 import { referenceLine } from "./references.ts";
+import { SCENE_CSS } from "./scenes.ts";
 
 export type Archetype = "ledger" | "feed" | "listings" | "bookings" | "tracker" | "learn" | "inbox" | "map" | "dashboard" | "store";
 export type Landing = "hero" | "features" | "minimal" | "proof" | "story" | "demo" | "search" | "trust";
@@ -485,6 +486,7 @@ h3{font:700 17px/1.3 var(--fh);${heading}}
 .sec a{font-size:14px;font-weight:600;color:var(--p)}
 .pic{position:relative;overflow:hidden;border-radius:var(--rm);background:${c.dark ? mix(c.card, c.fg, 0.06) : mix(c.bg, c.fg, 0.05)};min-height:120px}
 .pic i{position:absolute;display:block}
+${SCENE_CSS}
 .pic.thumb{width:64px;height:64px;min-height:0;border-radius:var(--rs);flex:none}
 .pic.tile{height:120px;margin:-12px -12px 10px;border-radius:var(--rm) var(--rm) 0 0}
 .pic.hero{height:210px;margin:0 0 18px;border-radius:var(--rl)}

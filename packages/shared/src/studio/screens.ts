@@ -140,7 +140,7 @@ export function landing(c: Content, p: StudioPlan, n: Nav): Screen {
       break;
     case "story":
       top = `<div class="hero ${h === "block" || h === "dark" ? h : "mesh"}">${heroInner()}</div>`;
-      below = `${pic(p.treatment.pic, c.seed, "hero")}<div class="steps">${[c.bullets[0] ?? `Say what you need: ${c.thing}`, c.activity[0] ?? `${person(c, 0)} answers the same day`, c.bullets[1] ?? `Pay ${money(c.price)} ${c.price?.per ?? ""}`.trim()].map((s, i) => `<div class="step"><i>${i + 1}</i><div><b>${esc(cap(s.replace(/^"|"$/g, "")))}</b></div></div>`).join("")}</div><div class="mt24">${button(c.cta, { go, icon: "arrow" })}</div>${proof}${priceLine}`;
+      below = `${pic(p.treatment.pic, c.seed, "hero", c.unit)}<div class="steps">${[c.bullets[0] ?? `Say what you need: ${c.thing}`, c.activity[0] ?? `${person(c, 0)} answers the same day`, c.bullets[1] ?? `Pay ${money(c.price)} ${c.price?.per ?? ""}`.trim()].map((s, i) => `<div class="step"><i>${i + 1}</i><div><b>${esc(cap(s.replace(/^"|"$/g, "")))}</b></div></div>`).join("")}</div><div class="mt24">${button(c.cta, { go, icon: "arrow" })}</div>${proof}${priceLine}`;
       break;
     case "demo":
       top = `<div class="hero ${h}">${h === "card" ? `<div class="in">${heroInner()}</div>` : heroInner()}</div>`;
@@ -186,12 +186,12 @@ function demoCard(c: Content, p: StudioPlan): string {
 }
 
 function tile(c: Content, p: StudioPlan, i: number, go?: number): string {
-  return `<div class="tile"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(p.treatment.pic, c.seed + i * 7, "tile")}<b>${esc(item(c, i))}</b><span>${esc(place(c, i))}</span><span class="price">${money(c.price, [1, 1.5, 0.75, 2, 1.25, 0.5][i % 6])}${p.archetype === "listings" && c.price?.per ? ` <span class="small muted" style="display:inline">${esc(c.price.per)}</span>` : ""}</span></div>`;
+  return `<div class="tile"${go !== undefined ? ` data-go="${go}"` : ""}>${pic(p.treatment.pic, c.seed + i * 7, "tile", c.unit)}<b>${esc(item(c, i))}</b><span>${esc(place(c, i))}</span><span class="price">${money(c.price, [1, 1.5, 0.75, 2, 1.25, 0.5][i % 6])}${p.archetype === "listings" && c.price?.per ? ` <span class="small muted" style="display:inline">${esc(c.price.per)}</span>` : ""}</span></div>`;
 }
 
 function post(c: Content, i: number, p?: StudioPlan): string {
   const who = person(c, i);
-  const picture = p && i % 3 === 1 ? pic(p.treatment.pic, c.seed + i * 11, "hero").replace('class="pic', 'style="height:160px;margin:10px 0 4px" class="pic') : "";
+  const picture = p && i % 3 === 1 ? pic(p.treatment.pic, c.seed + i * 11, "hero", c.unit).replace('class="pic', 'style="height:160px;margin:10px 0 4px" class="pic') : "";
   return `<div class="post"><div class="ph">${avatar(who, 36, i)}<div><b>${esc(who)}</b><span>${esc(DATES[i % DATES.length])}</span></div></div><p>${esc(cap(postLine(c, i).replace(/^"|"$/g, "")))}</p>${picture}<div class="acts"><span>${ic("heart", 16)}${12 + ((i * 7 + c.seed) % 40)}</span><span>${ic("message", 16)}${1 + ((i * 3) % 9)}</span><span>${ic("share", 16)}</span></div></div>`;
 }
 
@@ -224,7 +224,7 @@ export function main(c: Content, p: StudioPlan, n: Nav): Screen {
       // Airbnb: one search pill, categories, picture-led cards, a map pill
       const searchPill = `<div class="srch" style="height:54px;border-radius:999px;box-shadow:var(--sh);background:var(--cardbg);border:var(--bd)">${ic("search", 20)}<span style="display:flex;flex-direction:column;line-height:1.2"><b style="color:var(--fg);font-size:14px">Find a ${esc(c.unit)}</b><span style="font-size:12px">${esc(place(c, 0))} · Any day · For you</span></span></div>`;
       const cats = categoryRow([{ icon: "grid", label: "All" }, { icon: "star", label: "Top rated" }, { icon: "pin", label: "Near me" }, { icon: "clock", label: "Today" }, { icon: "heart", label: "Saved" }]);
-      const card = (i: number) => `<div class="tile" data-go="${n.detail}">${pic(manner, c.seed + i * 7, "tile").replace("tile", "tile").replace('class="pic', 'style="height:170px" class="pic')}<span class="heart">${ic("heart", 16)}</span><div class="spread"><b>${esc(item(c, i))}</b>${rating(["4.9", "4.8", "4.7", "5.0", "4.6", "4.9"][i])}</div><span>${esc(place(c, i))}</span><span class="price">${money(c.price, [1, 1.5, 0.75, 2, 1.25, 0.5][i])} <span class="small muted" style="display:inline;font-weight:500">${esc(c.price?.per || "per " + c.unit)}</span></span></div>`;
+      const card = (i: number) => `<div class="tile" data-go="${n.detail}">${pic(manner, c.seed + i * 7, "tile", c.unit).replace("tile", "tile").replace('class="pic', 'style="height:170px" class="pic')}<span class="heart">${ic("heart", 16)}</span><div class="spread"><b>${esc(item(c, i))}</b>${rating(["4.9", "4.8", "4.7", "5.0", "4.6", "4.9"][i])}</div><span>${esc(place(c, i))}</span><span class="price">${money(c.price, [1, 1.5, 0.75, 2, 1.25, 0.5][i])} <span class="small muted" style="display:inline;font-weight:500">${esc(c.price?.per || "per " + c.unit)}</span></span></div>`;
       const body = `${searchPill}<div class="mt12">${cats}</div><div class="gap12">${[0, 1, 2, 3, 4, 5].map(card).join("")}</div>`;
       return { title: "Explore", html: frame(p, { body, tabs, fab: `<div class="mappill" data-go="${n.detail}">${ic("pin", 18)}Map</div>` }) };
     }
@@ -270,8 +270,8 @@ export function main(c: Content, p: StudioPlan, n: Nav): Screen {
     }
     case "store": {
       // Amazon, Shop, Glovo: the search, the promo, the categories, the tiles, the cart
-      const tiles = [1, 2, 3, 4].map((i) => productTile(manner, c.seed + i * 5, item(c, i), place(c, i), money(c.price, [1.5, 0.75, 2, 1.25][i - 1]), ["4.8", "4.6", "4.9", "4.7"][i - 1], n.detail)).join("");
-      const body = `${search(`Search ${plural(c.unit)}`)}${promo(manner, c.seed, "This week", `${cap(item(c, 0))}, fresh today`, "Order now", n.detail)}${chips(["All", "Popular", "New", ...c.places.slice(0, 2)])}${section("Popular", "See all")}<div class="tiles">${tiles}</div>`;
+      const tiles = [1, 2, 3, 4].map((i) => productTile(manner, c.seed + i * 5, item(c, i), place(c, i), money(c.price, [1.5, 0.75, 2, 1.25][i - 1]), ["4.8", "4.6", "4.9", "4.7"][i - 1], n.detail, c.unit)).join("");
+      const body = `${search(`Search ${plural(c.unit)}`)}${promo(manner, c.seed, "This week", `${cap(item(c, 0))}, fresh today`, "Order now", n.detail, c.unit)}${chips(["All", "Popular", "New", ...c.places.slice(0, 2)])}${section("Popular", "See all")}<div class="tiles">${tiles}</div>`;
       return { title: "Shop", html: frame(p, { head: header({ title: c.name, eyebrow: `Delivering to ${place(c, 1)}`, right: `<span style="position:relative">${iconButton("cart")}<span class="unread" style="position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;font-size:11px">2</span></span>` }), body, tabs, fab: cartBar("2", money(c.price, 2.5), "View cart", n.detail) }) };
     }
     default: {
@@ -300,7 +300,7 @@ export function detail(c: Content, p: StudioPlan, n: Nav): Screen {
     }
     case "listings": {
       const amen = c.bullets.filter(unquoted).slice(0, 3).map((b) => b.replace(/^what you get:\s*/i, ""));
-      const body = `${pic(manner, c.seed + 3, "hero").replace('class="pic', 'style="height:240px;margin:0 -20px 16px;border-radius:0" class="pic')}<div class="spread"><h2>${esc(item(c, 0))}</h2>${rating("4.9", "38")}</div><p class="sub mt8">${esc(place(c, 0))} · for ${esc(c.audience)}</p><div class="badges">${[...amen, `Cancel any time`].slice(0, 3).map((b) => `<span>${ic("check", 14)}${esc(cap(b))}</span>`).join("")}</div><p style="font-size:15px;line-height:1.5">${esc(c.sign)}.${c.quotes[0] ? ` ${esc(c.quotes[0].who)} says: “${esc(c.quotes[0].said)}”` : ""}</p>${section("Listed by")}${row({ lead: avatar(who, 44, 0), title: who, meta: "Responds within an hour", trail: iconButton("message") })}<div class="card spread mt16"><div><div style="font:700 24px/1 var(--fh)">${money(c.price)}</div><div class="small muted mt8">${esc(c.price?.per || "per booking")}</div></div><span class="btn p" style="width:auto" data-go="${n.price}">${esc(c.cta)}</span></div>`;
+      const body = `${pic(manner, c.seed + 3, "hero", c.unit).replace('class="pic', 'style="height:240px;margin:0 -20px 16px;border-radius:0" class="pic')}<div class="spread"><h2>${esc(item(c, 0))}</h2>${rating("4.9", "38")}</div><p class="sub mt8">${esc(place(c, 0))} · for ${esc(c.audience)}</p><div class="badges">${[...amen, `Cancel any time`].slice(0, 3).map((b) => `<span>${ic("check", 14)}${esc(cap(b))}</span>`).join("")}</div><p style="font-size:15px;line-height:1.5">${esc(c.sign)}.${c.quotes[0] ? ` ${esc(c.quotes[0].who)} says: “${esc(c.quotes[0].said)}”` : ""}</p>${section("Listed by")}${row({ lead: avatar(who, 44, 0), title: who, meta: "Responds within an hour", trail: iconButton("message") })}<div class="card spread mt16"><div><div style="font:700 24px/1 var(--fh)">${money(c.price)}</div><div class="small muted mt8">${esc(c.price?.per || "per booking")}</div></div><span class="btn p" style="width:auto" data-go="${n.price}">${esc(c.cta)}</span></div>`;
       return { title: detailTitle("listings", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: `${iconButton("heart")}${iconButton("share")}` })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "bookings": {
@@ -313,7 +313,7 @@ export function detail(c: Content, p: StudioPlan, n: Nav): Screen {
       return { title: detailTitle("tracker", c.unit), html: `${statusBar()}${header({ title: cap(c.unit), left: back, right: iconButton("share") })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "learn": {
-      const body = `${pic(manner, c.seed + 5, "hero")}<div class="spread"><div class="eyebrow">Lesson 3 · 12 min</div><span class="pl soft">${ic("bolt", 14)} +20 XP</span></div><h2 class="mt8">${esc(cap(c.thing))}: the basics</h2><p class="sub mt8">${esc(c.sign)}</p><div class="steps mt16">${[`What a ${c.unit} is`, `Try a ${c.unit} yourself`, "Check what you learned"].map((t, i) => `<div class="step"><i>${i + 1}</i><div><b>${esc(t)}</b><span>${i === 0 ? "Read, 3 min" : i === 1 ? "Try it, 5 min" : "Check, 2 min"}</span></div></div>`).join("")}</div><div class="mt24">${button("Start the lesson", { go: n.main, icon: "play" })}</div>`;
+      const body = `${pic(manner, c.seed + 5, "hero", c.unit)}<div class="spread"><div class="eyebrow">Lesson 3 · 12 min</div><span class="pl soft">${ic("bolt", 14)} +20 XP</span></div><h2 class="mt8">${esc(cap(c.thing))}: the basics</h2><p class="sub mt8">${esc(c.sign)}</p><div class="steps mt16">${[`What a ${c.unit} is`, `Try a ${c.unit} yourself`, "Check what you learned"].map((t, i) => `<div class="step"><i>${i + 1}</i><div><b>${esc(t)}</b><span>${i === 0 ? "Read, 3 min" : i === 1 ? "Try it, 5 min" : "Check, 2 min"}</span></div></div>`).join("")}</div><div class="mt24">${button("Start the lesson", { go: n.main, icon: "play" })}</div>`;
       return { title: "A lesson", html: `${statusBar()}${header({ title: "", left: back, right: iconButton("bookmark") })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "inbox": {
@@ -327,7 +327,7 @@ export function detail(c: Content, p: StudioPlan, n: Nav): Screen {
       return { title: "A trip", html: `${statusBar()}${header({ title: "Your trip", left: back })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     case "store": {
-      const body = `${pic(manner, c.seed + 2, "hero").replace('class="pic', 'style="height:250px;margin:0 -20px 12px;border-radius:0" class="pic')}<div class="center mb12">${dots(1, 4).replace('class="dots"', 'class="dots" style="display:inline-grid;grid-template-columns:repeat(4,8px);gap:6px;margin:0"').replace(/<i/g, '<i style="width:8px;height:8px;border-width:1px"')}</div><div class="spread"><h2>${esc(item(c, 0))}</h2><span style="font:700 22px/1 var(--fh)" class="mono">${money(c.price)}</span></div><div class="mt8">${rating("4.8", "126")}</div><p class="sub mt8">${esc(c.sign)}</p>${section("Options")}${chips(["Regular", "Large", "Bundle of 3"])}${section("How many")}<div class="spread">${stepper(1)}${button(`Add to cart · ${money(c.price)}`, { go: n.main, icon: "cart", full: false })}</div>${section("What people say")}${c.quotes[0] ? quote(c.quotes[0].who, c.quotes[0].said, 0) : `<p class="muted">Nothing written down yet.</p>`}`;
+      const body = `${pic(manner, c.seed + 2, "hero", c.unit).replace('class="pic', 'style="height:250px;margin:0 -20px 12px;border-radius:0" class="pic')}<div class="center mb12">${dots(1, 4).replace('class="dots"', 'class="dots" style="display:inline-grid;grid-template-columns:repeat(4,8px);gap:6px;margin:0"').replace(/<i/g, '<i style="width:8px;height:8px;border-width:1px"')}</div><div class="spread"><h2>${esc(item(c, 0))}</h2><span style="font:700 22px/1 var(--fh)" class="mono">${money(c.price)}</span></div><div class="mt8">${rating("4.8", "126")}</div><p class="sub mt8">${esc(c.sign)}</p>${section("Options")}${chips(["Regular", "Large", "Bundle of 3"])}${section("How many")}<div class="spread">${stepper(1)}${button(`Add to cart · ${money(c.price)}`, { go: n.main, icon: "cart", full: false })}</div>${section("What people say")}${c.quotes[0] ? quote(c.quotes[0].who, c.quotes[0].said, 0) : `<p class="muted">Nothing written down yet.</p>`}`;
       return { title: detailTitle("store", c.unit), html: `${statusBar()}${header({ title: "", left: back, right: `${iconButton("heart")}${iconButton("share")}` })}<div class="body">${body}<div class="end"></div></div>${homeBar()}` };
     }
     default: {

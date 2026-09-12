@@ -129,7 +129,7 @@ export function useWorkshop() {
         const reply = await askModel({
           fn: "guide",
           body: { question: "design", content: ctx },
-          direct: { system: DESIGN_PROMPT, turns: [{ role: "user", content: ctx }], maxTokens: 16000, model: "careful" },
+          direct: { system: DESIGN_PROMPT, turns: [{ role: "user", content: ctx }], maxTokens: 16000, model: "design" },
         });
         if (!alive.current) return;
         const html = extractHtml(reply);

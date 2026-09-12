@@ -4,8 +4,10 @@
  * scripted reply when ANTHROPIC_API_KEY is unset so the functions can be
  * tested without spending a token.
  *
- * Models: Haiku for coaches, receptionist and guide; Sonnet for pitch
- * scoring on Founder+. Ids are read from env so a model bump is a config
+ * Models: Haiku for coaches, receptionist and guide; Sonnet for the
+ * brief and pitch scoring; Opus for designing a founder's app, which is
+ * the one job worth the best model and the one the builder tools put
+ * their best on. Ids are read from env so a model bump is a config
  * change, not a deploy.
  */
 import { cors } from "./auth.ts";
@@ -13,6 +15,7 @@ import { cors } from "./auth.ts";
 export const MODELS = {
   fast: Deno.env.get("ANTHROPIC_MODEL_FAST") ?? "claude-haiku-4-5-20251001",
   careful: Deno.env.get("ANTHROPIC_MODEL_CAREFUL") ?? "claude-sonnet-5",
+  design: Deno.env.get("ANTHROPIC_MODEL_DESIGN") ?? "claude-opus-5",
 } as const;
 
 export interface Turn {

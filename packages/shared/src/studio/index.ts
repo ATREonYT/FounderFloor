@@ -15,6 +15,7 @@ import { ADJECTIVES, detail, landing, main, price, signIn, type Content, type Mo
 import { unitOf } from "./nouns.ts";
 
 export * from "./plan.ts";
+export { scene, sceneFor, type SceneKind } from "./scenes.ts";
 export { PRODUCTS, FONTS } from "./tables.ts";
 
 const NAMES = ["Maria K.", "Kostas A.", "Eleni L.", "Andreas P.", "Nikos S.", "Despina C.", "Yiannis T.", "Sofia G.", "Petros M.", "Anna R.", "Marios D.", "Christina V."];

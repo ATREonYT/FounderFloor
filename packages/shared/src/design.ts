@@ -102,17 +102,26 @@ THE DOCUMENT
 - A drawn status bar on every screen (9:41, signal, wifi, battery) and a home indicator at the bottom, in that screen's ink.
 - Under 40,000 characters. Put the palette, type scale and radius in :root variables; reuse classes across screens; no repeated inline styles.
 
+ONE DESIGN SYSTEM, AND NOTHING OUTSIDE IT
+This is the discipline the builder tools run on, and it is what separates a page that looks designed from a page that looks assembled. Decide the system once at the top of the stylesheet, then build only out of it.
+- Every colour, radius, shadow, gap and type size is a named variable in :root: --bg, --fg, --card, --muted, --line, --p (primary), --on-p, --a (accent), --ok, --bad, and a type scale. Name them for their job, never for their look: --p, not --blue.
+- Below :root, no literal colour appears anywhere. Not #fff, not black, not rgba for a shadow, not a hex in an inline style, not an SVG fill. If something needs a colour that is not in the system, the answer is to add it to the system, not to write it in place.
+- One class per component, reused on every screen: .btn, .card, .row, .field, .tag, .stat. A special case is a second class beside it (.btn.ghost, .card.flat), never a pile of inline overrides on one element.
+- Set the system's ambition high and then keep to it: if the cards have a soft shadow and a 14 px radius, every card does, on all four screens. Consistency across screens is most of what "finished" looks like.
+- Contrast is part of the system: whatever ground a colour sits on, there is a paired text variable that passes on it.
+
 THE STANDARD
 - The brief's design system is the law: its hex values, its type scale, its radius, its component descriptions, its navigation pattern, light or dark as it says. Where the brief is silent, decide the way that studio would and stay consistent across screens.
 - Real components, not boxes with text: a header with a title and one or two actions; inputs with labels, placeholders and a visible focus ring; list rows with a leading mark (an initials avatar, an icon or a drawn thumbnail), a title, a second line and a trailing value or chevron; cards with a drawn image area; stat tiles with a big number, a label and a change; badges; a segmented control or filter chips where a list needs them; a tab bar with 3 to 5 items and inline SVG icons with the active one marked; a primary button that looks pressable: solid fill, 600 weight, 48 to 52 px high.
-- Inline SVG icons drawn by you, 20 to 24 px, one stroke width throughout, stroke currentColor. Never emoji as icons. Never the words "image", "photo" or "placeholder" in a grey box: draw the picture with gradients, shapes or a pattern that means something in this product.
+- Inline SVG icons drawn by you, 20 to 24 px, one stroke width throughout, stroke currentColor. Never emoji as icons.
+- Every picture is a picture OF SOMETHING. This is the single thing that most often makes a first version look unfinished: a bakery whose breads are grey boxes, a room to rent shown as a gradient. You cannot load a photograph, so draw the subject as flat inline SVG in the system's colours — a loaf, a cup, a room with a window, a person, a van, a parcel, a plant. Simple and clearly the thing beats elaborate and clearly nothing. Give it a ground, one light from the top left and a soft shadow underneath so it sits on the page. Where the same kind of thing is listed several times, vary each one (size, angle, which colour is the body) so a shelf of six does not read as one sticker repeated. Never the words "image", "photo" or "placeholder" in a grey box, and never an abstract blur where a real object belongs.
 - Data that feels alive: the main screen shows six to ten real-looking rows or items using the customers' first names and the nouns from the brief, with sensible times, amounts and counts. Show the empty state the brief describes on the screen it belongs to, or not at all.
 - A hierarchy you can read at arm's length: one display-size line per screen, then titles, body, labels. Spacing on a 4 pt grid, 16 to 20 px side margins, the same gaps everywhere. Touch targets at least 44 px. Text contrast at least 4.5:1 against its ground.
 - The front door sells: the sign as the headline, the line under it, one primary action, proof in the customers' own words with their names, the price said plainly. The pricing screen is honest: the one price, what it includes, how to stop, one line of trust.
 - The founder's exact words are used exactly. Never invent customers, numbers or testimonials the brief does not contain. Never lorem ipsum. Never "Get started", "Unlock", "Empower", "Seamless", "Supercharge".
 - Not a template: no purple-to-blue gradient hero, not everything centred, not a rounded card around every element, no identical three-card grid, no generic SaaS dashboard. The look must be traceable to this brief's audience and market, never to a UI kit.
 
-Before you write, decide: light or dark; the one accent and the one or two places it appears on each screen; the header pattern; the navigation pattern; the picture that stands in for photography. Then write the whole document in one pass, and check every data-go before you finish.
+Before you write, decide: light or dark; the variables and their values; the one accent and the one or two places it appears on each screen; the header pattern; the navigation pattern; and what the pictures are pictures of. Then write the whole document in one pass, and check every data-go before you finish.
 
 ${DESIGN_CRAFT}`;
 

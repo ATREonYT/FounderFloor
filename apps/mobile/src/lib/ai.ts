@@ -40,8 +40,16 @@ const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const DEV_KEY = process.env.EXPO_PUBLIC_DEV_ANTHROPIC_KEY ?? "";
 const MODEL_FAST = process.env.EXPO_PUBLIC_ANTHROPIC_MODEL_FAST ?? "claude-haiku-4-5-20251001";
-/** The careful model writes the brief and designs the app; everything else is fast. */
+/** The careful model writes the brief and answers the coaches. */
 const MODEL_CAREFUL = process.env.EXPO_PUBLIC_ANTHROPIC_MODEL_CAREFUL ?? "claude-sonnet-5";
+/**
+ * Drawing the founder's whole app is the one job in the building worth
+ * the best model there is, and it is the job the builder tools put their
+ * best on: Lovable ships whatever Opus is current as its core model and
+ * says so. One page, once, on demand — so the cost is bounded and the
+ * thing the founder judges us by is made by the strongest hand.
+ */
+const MODEL_DESIGN = process.env.EXPO_PUBLIC_ANTHROPIC_MODEL_DESIGN ?? "claude-opus-5";
 const isRelease = !__DEV__;
 
 export function aiMode(): AiMode {
@@ -60,7 +68,7 @@ export interface Ask {
   /** Body for the Edge Function. */
   body: Record<string, unknown>;
   /** For the dev path: the same call, spelled out. */
-  direct: { system: string; cached?: string; turns: { role: "user" | "assistant"; content: string }[]; maxTokens?: number; model?: "fast" | "careful" };
+  direct: { system: string; cached?: string; turns: { role: "user" | "assistant"; content: string }[]; maxTokens?: number; model?: "fast" | "careful" | "design" };
 }
 
 export class AiError extends Error {
@@ -99,7 +107,7 @@ export async function askModel(a: Ask): Promise<string> {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", ...(Platform.OS === "web" ? { "anthropic-dangerous-direct-browser-access": "true" } : {}) },
       body: JSON.stringify({
-        model: a.direct.model === "careful" ? MODEL_CAREFUL : MODEL_FAST,
+        model: a.direct.model === "design" ? MODEL_DESIGN : a.direct.model === "careful" ? MODEL_CAREFUL : MODEL_FAST,
         max_tokens: a.direct.maxTokens ?? 500,
         system: a.direct.cached ? [{ type: "text", text: a.direct.system }, { type: "text", text: a.direct.cached, cache_control: { type: "ephemeral" } }] : a.direct.system,
         messages: a.direct.turns,
