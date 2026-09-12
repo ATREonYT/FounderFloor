@@ -151,6 +151,12 @@ export function lovableHandoff({ m, brief, plan, unit = "item" }: HandoffInput):
             `- A large title near 34px with \`tracking-tight\`, 17px body, 13px captions.`,
             `- A translucent bottom bar over a hairline (\`backdrop-blur\`), 10px labels, the active item in the accent.`,
             ``,
+            `And keep the finish technical, or it reads as a consumer app from several years ago:`,
+            `- Every surface carries a hairline (\`border border-border\`) and no shadow. Corners 10 to 12px — \`rounded-xl\`, not \`rounded-2xl\`; nothing is a full pill except a real toggle.`,
+            `- Money, counts, times and percentages go in \`font-mono tabular-nums\`, tight. Prose never does.`,
+            `- The caption above a value is small, letterspaced capitals in that same mono. A state is an outlined tag in capitals (\`Badge variant="outline"\`), never a pastel lozenge.`,
+            `- Initials sit on a neutral ground in the page's own ink, not a different pastel disc per person.`,
+            ``,
           ]
         : []),
       `Then the rules that keep it a system:`,

@@ -299,6 +299,15 @@ export function rankFonts(product: ProductRow, treatment: Treatment): FontRow[] 
  * here would be the single loudest tell that this is a web page wearing
  * an app's clothes.
  */
+/**
+ * The technical face, for figures and instrument labels.
+ *
+ * Every phone and desktop already has one, and it is the face the
+ * products founders admire set their numbers in. Using it only for data
+ * — never for prose — is what makes a column of money read as data.
+ */
+export const MONO = `ui-monospace,"SF Mono",SFMono-Regular,"Roboto Mono","Segoe UI Mono",Menlo,monospace`;
+
 export const SYSTEM_FONTS: Fonts = {
   name: "System",
   heading: "the system face",
@@ -777,95 +786,126 @@ ${t.id === "native" ? nativeCss(c) : ""}
  *   The bar at the bottom is translucent and separated by a hairline,
  *   not a solid block with a border.
  */
+/**
+ * THE TECHNICAL FINISH.
+ *
+ * The platform chassis fixed what was wrong — brand-coloured body text,
+ * rows lying bare on the ground — and left something soft in its place:
+ * puffy radii, pastel jellybean pills, cards floating on grey with no
+ * edge, and numbers set in the same face as the prose. That reads as a
+ * friendly consumer app from several years ago, not as software.
+ *
+ * What the products founders admire have in common is not a style, it is
+ * precision:
+ *
+ *   Surfaces have an edge. A hairline says where a thing begins; a soft
+ *   shadow with no edge says it is floating and slightly out of focus.
+ *
+ *   Corners are small. 14 px and up reads soft; 10 to 12 reads built.
+ *
+ *   Figures are set as figures. Money, counts, times and stats go in a
+ *   technical face with tabular widths, so a column of numbers lines up
+ *   and reads as data rather than as writing.
+ *
+ *   Labels are instruments, not stickers. A small letterspaced cap above
+ *   a value, a dot and a word for a state — not a pastel lozenge.
+ *
+ * None of it is decoration and none of it touches the layout, so the
+ * measurements from the last pass all still hold.
+ */
 function nativeCss(c: Colours): string {
   // The ground is nearly neutral, whatever the brand is. A bakery app is
   // not an amber screen with brown text on it — it is a grey-white screen
-  // with amber buttons, the way every app on the phone is. Keeping a
-  // trace of the brand hue in the grey stops it feeling borrowed; letting
-  // the brand own the whole page is what makes a mock-up read as a
-  // themed website rather than an app.
-  const ground = c.dark ? "#000000" : mix(c.bg, "#F2F2F7", 0.84);
-  const sep = rgba(c.fg, c.dark ? 0.18 : 0.13);
-  const fill = c.dark ? rgba(c.fg, 0.12) : rgba(c.fg, 0.06);
+  // with amber buttons, the way every app on the phone is.
+  const ground = c.dark ? "#000000" : mix(c.bg, "#F4F5F7", 0.92);
+  const surface = c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75);
+  const edge = rgba(c.fg, c.dark ? 0.16 : 0.1);
+  const sep = rgba(c.fg, c.dark ? 0.14 : 0.09);
+  const fill = c.dark ? rgba(c.fg, 0.1) : rgba(c.fg, 0.045);
   return `
-body{background:${ground}}
-.screen{background:${ground}}
+body,.screen{background:${ground}}
+
+/* type: the platform's sizes, set tight */
 h1{font-size:34px;line-height:1.08;letter-spacing:-.024em;font-weight:700}
 h2{font-size:26px;line-height:1.15;letter-spacing:-.02em}
 h3{font-size:18px;letter-spacing:-.01em}
 .title{letter-spacing:-.015em}
 .sub{font-size:17px;line-height:1.41;letter-spacing:-.01em}
 .small,.rm{font-size:13px;letter-spacing:-.005em}
-.eyebrow{letter-spacing:.04em;font-size:13px}
-.sec span{font-size:20px;letter-spacing:-.018em}
-.card,.stat,.tile,.quote{background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)};border:0;box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.06)}}
-/*
- * A run of rows is one white group on the grey ground, rounded at the
- * ends and square in the middle — the inset-grouped list every settings,
- * health and banking screen on the phone is built from. Rows lying bare
- * on the ground with a hairline between them is a web table, and it was
- * the last structural thing making these read as pages rather than apps.
- *
- * :has() finds the ends of a run without the markup having to know it is
- * in one. Where it is unsupported every row rounds on its own, which is
- * a card list: different, still deliberate.
- */
-.row{position:relative;border-bottom:0;background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)};padding-left:14px;padding-right:14px;border-radius:14px}
-.row + .row{border-top-left-radius:0;border-top-right-radius:0}
+.sec{gap:12px}
+.sec span{flex:1;min-width:0;font-size:20px;letter-spacing:-.018em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{letter-spacing:-.01em}
+
+/* figures are figures: one technical face, tabular widths, so a column of
+   money lines up and reads as data rather than as writing */
+.bal .bv,.stat .sv,.trio b,.rc b,.price,.cartbar .tot,.rr,.sdot,.pl,.dh span:last-child{font-family:${MONO};font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* and a label is an instrument's label: small, letterspaced, in caps */
+.eyebrow,.stat .sl,.bal .bl,.dh span:first-child{font-family:${MONO};font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+
+/* surfaces have an edge. A soft shadow with no edge says a thing is
+   floating and slightly out of focus; a hairline says where it begins */
+.card,.stat,.tile,.quote,.promo{background:${surface};border:1px solid ${edge};border-radius:12px;box-shadow:none}
+.pic.tile{border-radius:11px 11px 0 0;margin:-13px -13px 10px}
+
+/* a run of rows is one boxed group: a row that follows a row drops its
+   top edge, and only the last of a run carries the bottom one. The
+   hairline inside starts where the text starts. */
+.row{position:relative;background:${surface};padding-left:14px;padding-right:14px;border:1px solid ${edge};border-bottom:0;border-radius:12px}
+.row + .row{border-top:0;border-top-left-radius:0;border-top-right-radius:0}
 .row:has(+ .row){border-bottom-left-radius:0;border-bottom-right-radius:0}
+.row:not(:has(+ .row)){border-bottom:1px solid ${edge}}
 .row::after{content:"";position:absolute;left:66px;right:0;bottom:0;height:1px;background:${sep}}
-.row:last-child::after,.row:not(:has(+ .row))::after{display:none}
-/* rows already inside a card are part of that card, not a group of their own */
-.card .row{background:transparent;padding-left:0;padding-right:0;border-radius:0}
+.row:not(:has(+ .row))::after,.row.card::after,.card .row:last-child::after{display:none}
+.card .row{background:transparent;border:0;padding-left:0;padding-right:0;border-radius:0}
 .card .row::after{left:52px}
-.row.card{background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)}}
-.row.card::after{display:none}
+.row.card{background:${surface};border:1px solid ${edge}}
 .body{padding-bottom:10px}
-/* text that must never wrap: a trailing value, a "see all", the link on
-   a price card. Each is a short fixed phrase beside something long, and
-   when it breaks it collides with what it sits next to */
-.sec a,.rr,.dh span:last-child,.spread > .strong{white-space:nowrap}
+
+/* controls: small corners, one hairline, the brand only where it acts */
+.btn.p{height:48px;border-radius:10px;font-weight:600;box-shadow:none}
+.btn.s,.btn.q{height:48px;border-radius:10px;background:transparent;border:1px solid ${edge};color:var(--fg);font-weight:600}
+.fi{background:${fill};border:1px solid ${edge};height:44px;border-radius:10px;font-size:16px}
+.srch{background:${fill};border:1px solid ${edge};height:38px;border-radius:10px;font-size:16px}
+.chip{background:transparent;border:1px solid ${edge};height:32px;border-radius:8px;font-size:14px;font-weight:600}
+.chip.on{background:var(--p);color:var(--op);border-color:var(--p)}
+.seg{background:${fill};border:1px solid ${edge};padding:2px;border-radius:9px}
+.seg span{height:30px;line-height:30px;border-radius:7px;font-size:13px;font-weight:600}
+.seg span.on{background:${surface};box-shadow:0 1px 2px ${rgba(c.fg, 0.12)}}
+.icb{background:transparent;border:1px solid ${edge};width:36px;height:36px;border-radius:10px;position:relative}
+.icb::after{content:"";position:absolute;inset:-4px}
+.qa .q i{background:${surface};border:1px solid ${edge};border-radius:12px;box-shadow:none}
+.qa .q:first-child i{background:var(--p);color:var(--op);border-color:var(--p)}
+.qa .q b{font-size:12px;font-weight:500;color:var(--mf)}
+
+/* a state is an outlined tag in caps, never a pastel lozenge */
+.pl{background:transparent;border:1px solid ${edge};color:var(--mf);height:24px;padding:0 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.pl.ok,.pl.warn,.pl.line{background:transparent}
+.pl.ok{color:var(--ok);border-color:${rgba(c.dark ? "#4ADE80" : "#15803D", 0.4)}}
+.pl.warn{color:var(--warn);border-color:${rgba(c.dark ? "#FBBF24" : "#B45309", 0.4)}}
+.pl.brand{background:var(--p);color:var(--op);border-color:var(--p)}
+.pl.soft{background:${fill};color:var(--fg);border-color:${edge}}
+
+/* initials go monochrome: a pastel disc per person is the oldest tell there is */
+.av{background:${fill} !important;color:var(--fg) !important;font-family:${MONO};font-weight:600;font-size:13px;letter-spacing:.02em;border-radius:10px;box-shadow:inset 0 0 0 1px ${edge}}
+
 /* a tappable card says so with a chevron, not with words competing for
    the width its own title needs */
 .disc{flex:none;color:${rgba(c.fg, 0.28)};display:inline-flex;align-items:center}
+.spread{gap:12px}
+/* short fixed phrases beside something long: they collide when they wrap */
+.sec a,.rr,.dh span:last-child,.spread > .strong{white-space:nowrap}
+
 /* the floating bars are the brand's, not the ink's: with a near-neutral
-   ink they would otherwise come out as a black slab across the screen */
+   ink they would otherwise lay a black slab across the screen */
 .cartbar{background:var(--p);color:var(--op);box-shadow:0 8px 24px ${rgba(c.p, 0.32)}}
 .cartbar .cnt{background:${rgba("#FFFFFF", 0.2)}}
 .mappill{background:var(--p);color:var(--op);box-shadow:0 8px 24px ${rgba(c.p, 0.32)}}
-/* a section header and its link share one line and neither may be cut */
-.sec{gap:12px}
-.sec span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* a tinted outline round a banner or a tile is the brand colour doing
-   a job that belongs to the card's own edge */
-.promo,.tile,.quote,.fi,.chip{border:0}
-.promo{box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.08)}}
-.spread{gap:12px}
-.btn{letter-spacing:-.01em}
-.btn.p{height:50px;border-radius:14px;font-weight:600;box-shadow:none}
-.btn.s,.btn.q{height:50px;border-radius:14px;background:${fill};border:0;color:var(--p);font-weight:600}
-.fi{background:${fill};border:0;height:46px;border-radius:12px;font-size:17px}
-.srch{background:${fill};height:38px;border-radius:11px;font-size:17px}
-.chip{background:${fill};border:0;height:34px;border-radius:999px;font-size:15px;font-weight:500}
-.chip.on{background:var(--p);color:var(--op)}
-.seg{background:${fill};padding:2px;border-radius:9px}
-.seg span{height:32px;line-height:32px;border-radius:7px;font-size:14px;font-weight:600}
-.seg span.on{background:var(--card);box-shadow:0 1px 3px ${rgba(c.fg, 0.16)},0 0 0 .5px ${rgba(c.fg, 0.04)}}
-/* The disc stays small because a big grey circle in a header looks
-   heavy, but a thumb needs 44. The target is grown past the disc, which
-   is what the platform does and what the hand-off tells a builder. */
-.icb{background:${fill};border:0;width:36px;height:36px;border-radius:50%;position:relative}
-.icb::after{content:"";position:absolute;inset:-4px;border-radius:50%}
-/* a tinted border round a white tile is a brand colour doing a job that
-   belongs to fill and shadow; on the phone these are plain tiles */
-.qa .q i{border:0;background:${c.dark ? rgba(c.fg, 0.1) : "#FFFFFF"};box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.08)};border-radius:16px}
-.qa .q:first-child i{background:var(--p);color:var(--op);box-shadow:none}
-.qa .q b{font-size:12px;font-weight:500;color:var(--mf)}
-/* one soft lift, not a coloured glow under everything */
-.bal{box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.1)}}
+.bal{box-shadow:none;border-radius:12px}
+.promo{border-radius:12px}
+.hero.card .in,.hero.block,.hero.dark{border-radius:12px}
 .fab{box-shadow:0 4px 14px ${rgba(c.fg, 0.22)}}
-.pl{border-radius:999px;font-size:13px;font-weight:600}
-/* the bar at the bottom: translucent, one hairline, nothing else */
+
+/* the bar at the bottom: translucent over a hairline, nothing else */
 .tab{height:83px;background:${rgba(c.card, 0.82)};border-top:.5px solid ${sep};backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);padding:6px 4px 0}
 .tab a{font-size:10px;font-weight:500;letter-spacing:.01em;gap:3px}
 .hero.type{padding:12px 0 20px;background:transparent;color:var(--fg)}

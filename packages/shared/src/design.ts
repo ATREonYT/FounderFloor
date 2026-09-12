@@ -117,7 +117,15 @@ This is where a generated screen most often gives itself away: the words, the la
 - Separators start where the text starts, not at the edge of the screen. A hairline running the full width is the commonest tell of a web list.
 - Type at the platform's sizes: a large title near 34 px with negative letter-spacing, 17 px body, 13 px captions, and the system stack unless the brief names faces. A web page's 16/24/40 sits a size off and the eye notices without knowing why.
 - The bar at the bottom is translucent over a hairline, 10 to 11 px labels, the active item in the accent. Not a solid block with a border.
-- Controls are the platform's: a segmented control rather than tabs-as-buttons, a filled rounded search field, rows with a chevron, a full-width primary button about 50 px high.
+- Controls are the platform's: a segmented control rather than tabs-as-buttons, a filled rounded search field, rows with a chevron, a full-width primary button about 48 px high.
+
+AND IT IS SOFTWARE, NOT A BROCHURE
+Everything above can be right and the screen still reads as a friendly consumer app from several years ago. What the products founders admire have in common is not a style, it is precision, and it comes down to four habits:
+- Surfaces have an edge. A hairline says where a thing begins; a soft shadow with no edge says it is floating and slightly out of focus. One hairline beats one shadow, and both together beat neither only rarely.
+- Corners are small. 14 px and up reads soft; 10 to 12 reads built. Nothing is a full pill except a genuine toggle.
+- Figures are set as figures. Money, counts, times, stats and percentages go in a monospaced face with tabular widths — ui-monospace, "SF Mono", Menlo — so a column of numbers lines up and reads as data rather than as writing. Prose never goes in it.
+- Labels are instruments, not stickers. The caption above a value is small, letterspaced and in capitals, in that same monospaced face. A state is an outlined tag in capitals, or a dot and a word — never a pastel lozenge.
+Initials stand in for faces on a neutral ground with the page's own ink, not on a different pastel disc per person, which is the oldest tell there is.
 
 THE STANDARD
 - The brief's design system is the law: its hex values, its type scale, its radius, its component descriptions, its navigation pattern, light or dark as it says. Where the brief is silent, decide the way that studio would and stay consistent across screens.
