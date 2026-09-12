@@ -277,7 +277,7 @@ export default function Workshop() {
           <Pressable onPress={() => void send("lovable")} accessibilityRole="button" accessibilityLabel="I do not code. Send the brief to Lovable, Base44, Bolt or v0" style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>
             <Plate tone="panel" radius={radius.lg} padding={14}>
               <Body medium>I do not code</Body>
-              <Spec tone="faint" style={{ marginTop: 2 }}>Sends the brief as one prompt to paste into Lovable, Base44, Bolt or v0. You get a live app.</Spec>
+              <Spec tone="faint" style={{ marginTop: 2 }}>One prompt to paste into Lovable, Base44, Bolt or v0. It carries this app's exact colours, type and corners, so what you get back looks like what you are looking at.</Spec>
             </Plate>
           </Pressable>
           <Pressable onPress={() => void send("claude")} accessibilityRole="button" accessibilityLabel="I code, or I have Claude Code. Send the brief" style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1 })}>

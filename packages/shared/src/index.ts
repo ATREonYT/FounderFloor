@@ -19,6 +19,8 @@ export * from "./memory.ts";
 export * from "./review.ts";
 export * from "./weeks.ts";
 export * from "./backup.ts";
+export * from "./handoff.ts";
+export * from "./headline.ts";
 export * from "./workshop.ts";
 export * from "./mockup-html.ts";
 export * from "./design.ts";

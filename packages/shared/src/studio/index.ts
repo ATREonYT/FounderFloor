@@ -79,6 +79,8 @@ export interface StudioResult {
   screens: { id: string; title: string }[];
   /** The plan as the design-system section of a brief. */
   system: string;
+  /** The one noun the product deals in, so the hand-off can say what the pictures are of. */
+  unit: string;
 }
 
 /** The plan for a mock-up. */
@@ -96,5 +98,5 @@ export function studioDesign(m: Mockup, opts: StudioOptions = {}): StudioResult 
   const list: Screen[] = [landing(c, plan, nav), ...(withSignIn ? [signIn(c, plan, nav)] : []), main(c, plan, nav), detail(c, plan, nav), price(c, plan, nav)];
   const sections = list.map((s, i) => `<section class="screen${i === 0 ? " on" : ""}" id="s${i}" data-title="${esc(s.title)}">${s.html}</section>`).join("\n");
   const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390,initial-scale=1"><title>${esc(m.name)}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${plan.fonts.link}"><style>${planCss(plan)}</style></head><body>\n${sections}\n</body></html>`;
-  return { html, plan, screens: list.map((s, i) => ({ id: `s${i}`, title: s.title })), system: planText(plan) };
+  return { html, plan, screens: list.map((s, i) => ({ id: `s${i}`, title: s.title })), system: planText(plan), unit: c.unit };
 }

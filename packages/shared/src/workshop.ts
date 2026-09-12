@@ -10,6 +10,8 @@
  */
 import { HOUSE_RULES } from "./prompts/index.ts";
 import { singular, unitOf } from "./studio/nouns.ts";
+import type { StudioPlan } from "./studio/plan.ts";
+import { lovableHandoff } from "./handoff.ts";
 import type { StandRecord } from "./types.ts";
 import type { Profile } from "./profile.ts";
 
@@ -224,10 +226,20 @@ export function buildBrief(m: Mockup, opts?: { record?: Partial<StandRecord> | n
 
 export type Builder = "lovable" | "claude";
 
-/** The prompt to paste: the brief is the prompt. A short frame for a builder that makes a site from words, or for Claude Code in a repo. */
-export function builderPrompt(kind: Builder, m: Mockup, brief: string): string {
+/**
+ * The prompt to paste.
+ *
+ * For a builder tool the brief alone is not enough: without the design
+ * system in the form the tool writes files in, it starts from its own
+ * default theme and the founder's mock-up turns out to have been
+ * decoration. `lovableHandoff` does that properly, and takes the plan;
+ * this signature keeps the plain version for when there is no plan to
+ * hand over. For Claude Code in a repo the brief is the spec and the
+ * repo is the design system.
+ */
+export function builderPrompt(kind: Builder, m: Mockup, brief: string, extra?: { plan?: StudioPlan | null; unit?: string }): string {
   if (kind === "lovable") {
-    return `Build the first version of ${m.name}: ${m.oneLiner}. It is for ${m.audience}.\n\nThe brief below is the whole spec. Read all of it before you build. Build exactly the screens under "The screens", in that order, with the exact copy; apply "The design system" as written (its hex values, type scale, radius and components); keep everything under "Not in this version" out. Mobile first: it must look right at 390 px wide before anything else. Email sign-in by magic link, Stripe Checkout with one plan. Use the words in the brief; do not improve them. When a screen is done, show it before moving on.\n\n---\n\n${brief}`;
+    return lovableHandoff({ m, brief, plan: extra?.plan ?? null, unit: extra?.unit });
   }
   return `You are building the first version of ${m.name} in this repo. Read BRIEF.md first; it is the whole spec, including the design system.\n\nStack: Next.js (app router), TypeScript, Tailwind, one Postgres table per noun under "What it keeps", magic-link email sign-in, Stripe Checkout with one plan. Deploy target: Vercel.\n\nBuild only the screens in the brief, in order, with the exact words, styled to its design system (put its hex values and type scale in the Tailwind theme first). One path through the product; nothing under "Not in this version". Mobile first. When a screen is done, run it and tell me what to look at. Do not add features the brief does not name; if something is missing from the brief, ask one question and stop.\n\n---\n\n${brief}`;
 }

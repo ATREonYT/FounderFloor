@@ -194,7 +194,7 @@ export function useWorkshop() {
     lastError,
     /** The big prompt: the model's brief, or the studio's own with its plan as the design system. */
     brief,
-    prompt: (kind: Builder) => builderPrompt(kind, m, brief),
+    prompt: (kind: Builder) => builderPrompt(kind, m, brief, { plan: studio?.plan ?? null, unit: studio?.unit }),
     rewrite: () => void write(true),
     editScreen: (i: number, patch: Partial<MockScreen>) => setMockup({ ...m, edited: true, screens: m.screens.map((sc, k) => (k === i ? { ...sc, ...patch } : sc)) }),
     setKind: (kind: Mockup["kind"]) => setMockup({ ...m, kind }),

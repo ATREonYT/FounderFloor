@@ -34,8 +34,12 @@ test("the brief and the prompts carry the exact words", () => {
   assert.match(b, /Maria: I do the till by hand/);
   assert.match(b, /Stripe Checkout/);
   const lov = builderPrompt("lovable", m, b);
-  assert.match(lov, /The brief below is the whole spec/);
+  // the hand-off carries the words and the brief whole, and tells the builder
+  // to use them as written rather than improve them
+  assert.match(lov, /do not improve them/);
   assert.match(lov, /"Weekly numbers for one-person shops"/);
+  assert.match(lov, /## The brief/);
+  assert.ok(lov.includes(b), "the whole brief must travel with the prompt");
   const cc = builderPrompt("claude", m, b);
   assert.match(cc, /Read BRIEF\.md first/);
   assert.match(cc, /# Tally/);
@@ -147,7 +151,7 @@ test("the brief is the big prompt: every section, the founder's words, a spec in
   assert.match(lb, /## Rules/);
   assert.ok(lb.indexOf("## The design system") < lb.indexOf("## Rules"));
   const lov = builderPrompt("lovable", m, lb);
-  assert.match(lov, /The brief below is the whole spec/);
+  assert.match(lov, /## The brief/);
   assert.match(lov, /## The design system/);
   assert.match(lov, /Not in this version/);
   assert.match(builderPrompt("claude", m, lb), /Tailwind theme first/);

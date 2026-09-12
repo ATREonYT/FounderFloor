@@ -6,6 +6,7 @@
  * that read as a product in use rather than a wireframe.
  */
 import type { StudioPlan } from "./plan.ts";
+import { asHeadline } from "../headline.ts";
 import { detailTitle } from "./nouns.ts";
 import { agenda, avatar, balanceCard, bars, button, cartBar, categoryRow, chips, dayHeader, dots, esc, feature, field, header, homeBar, ic, iconButton, included, lessonPath, lineChart, map, option, pic, pill, productTile, progress, promo, quickActions, quote, rating, ring, ringTrio, row, search, section, segmented, sheet, stat, statSpark, statTrio, statusBar, statusDot, stepper, stories, tabBar, ticks, timeline, unitBanner, unread } from "./parts.ts";
 
@@ -124,7 +125,11 @@ export function landing(c: Content, p: StudioPlan, n: Nav): Screen {
   const faces = `<div class="faces">${c.people.slice(0, 4).map((x, i) => avatar(x, 28, i)).join("")}<span>Used by ${esc(c.audience)}</span></div>`;
   let top = "";
   let below = "";
-  const heroInner = (extra = "") => `${mark(c)}<h1>${esc(c.sign)}</h1><p class="sub mt12">For ${esc(c.audience)}.</p>${extra}`;
+  // The sign explains; a front door promises. asHeadline cuts the
+  // explaining frame off the founder's own words and changes nothing
+  // else, so the first line the eye lands on is what the product does.
+  // Everywhere below this the whole sign is still used as written.
+  const heroInner = (extra = "") => `${mark(c)}<h1>${esc(asHeadline(c.sign))}</h1><p class="sub mt12">For ${esc(c.audience)}.</p>${extra}`;
   switch (p.landing) {
     case "minimal":
       top = `<div class="hero type">${heroInner(`${button(c.cta, { go, icon: "arrow" })}`)}</div>`;
