@@ -142,6 +142,17 @@ export function lovableHandoff({ m, brief, plan, unit = "item" }: HandoffInput):
       ``,
       `Type: **${plan.fonts.heading}** for headings and **${plan.fonts.body}** for everything else, loaded from Google Fonts and set as \`font-heading\` and \`font-sans\` in the Tailwind theme. Headings ${plan.treatment.heading === "upper" ? "in capitals with wide letter-spacing" : plan.treatment.heading === "tight" ? "set tight, large, and heavy" : "at a clear scale, semibold"}. Corners ${plan.treatment.r[1]}px. Borders: ${plan.treatment.border === "none" ? "none — separate things with space and ground colour" : plan.treatment.border === "thick" ? "thick and deliberate" : "one hairline in --border"}. Shadows: ${plan.treatment.shadow === "none" ? "none" : plan.treatment.shadow}.`,
       ``,
+      ...(plan.treatment.id === "native"
+        ? [
+            `This app is drawn to the platform's own look, so keep these habits or it will read as a website made narrow:`,
+            `- A near-neutral ground (\`bg-background\`) with content in white \`Card\`s on top. Depth is that one step, not a shadow on everything.`,
+            `- The brand owns the controls, not the page. No full-width saturated colour field across the top; the front door leads with a large title.`,
+            `- Separators start where the text starts, not at the screen edge.`,
+            `- A large title near 34px with \`tracking-tight\`, 17px body, 13px captions.`,
+            `- A translucent bottom bar over a hairline (\`backdrop-blur\`), 10px labels, the active item in the accent.`,
+            ``,
+          ]
+        : []),
       `Then the rules that keep it a system:`,
       `- No literal colour anywhere below \`:root\`. Not \`text-white\`, not \`bg-black\`, not a hex in a component, not a raw rgba shadow. Only the tokens: \`bg-background\`, \`text-foreground\`, \`bg-primary\`, \`text-muted-foreground\`, \`border-border\`.`,
       `- Customise the shadcn components themselves so they carry this design, and add variants for special cases. Never override one in place with utility classes.`,

@@ -97,6 +97,6 @@ export function studioDesign(m: Mockup, opts: StudioOptions = {}): StudioResult 
   const nav: Nav = withSignIn ? { landing: 0, signin: 1, main: 2, detail: 3, price: 4 } : { landing: 0, main: 1, detail: 2, price: 3 };
   const list: Screen[] = [landing(c, plan, nav), ...(withSignIn ? [signIn(c, plan, nav)] : []), main(c, plan, nav), detail(c, plan, nav), price(c, plan, nav)];
   const sections = list.map((s, i) => `<section class="screen${i === 0 ? " on" : ""}" id="s${i}" data-title="${esc(s.title)}">${s.html}</section>`).join("\n");
-  const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390,initial-scale=1"><title>${esc(m.name)}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${plan.fonts.link}"><style>${planCss(plan)}</style></head><body>\n${sections}\n</body></html>`;
+  const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390,initial-scale=1"><title>${esc(m.name)}</title>${plan.fonts.link ? `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${plan.fonts.link}">` : ""}<style>${planCss(plan)}</style></head><body>\n${sections}\n</body></html>`;
   return { html, plan, screens: list.map((s, i) => ({ id: `s${i}`, title: s.title })), system: planText(plan), unit: c.unit };
 }

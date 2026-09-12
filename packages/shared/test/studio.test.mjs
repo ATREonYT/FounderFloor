@@ -62,7 +62,10 @@ test("a business's product gets a business's screen; styles map to treatments", 
   assert.equal(archetypeOf(cafe, "saas", true), "ledger");
   assert.equal(treatmentOf("Glassmorphism + Flat Design"), "glass");
   assert.equal(treatmentOf("Neubrutalism"), "brutal");
-  assert.equal(treatmentOf("Something unknown"), "flat");
+  assert.equal(treatmentOf("Flat Design"), "flat");
+  // a product with no style worth the name gets the platform's own look,
+  // because what is being drawn is a phone app
+  assert.equal(treatmentOf("Something unknown"), "native");
   assert.ok(contrast("#000000", "#FFFFFF") > 20);
 });
 
@@ -71,7 +74,15 @@ test("the plan is steady for a seed and different for another, and reads as a de
   const a = designPlan(input, 0), b = designPlan(input, 0), c = designPlan(input, 1);
   assert.deepEqual([a.colours.p, a.fonts.name, a.treatment.id], [b.colours.p, b.fonts.name, b.treatment.id]);
   assert.ok(a.fonts.name !== c.fonts.name || a.treatment.id !== c.treatment.id || a.colours.p !== c.colours.p);
-  assert.match(a.fonts.link, /^https:\/\/fonts\.googleapis\.com\/css2\?family=/);
+  // the first take is the platform's chassis, and the platform's type is
+  // already on the phone: no stylesheet to fetch
+  assert.equal(a.treatment.id, "native");
+  assert.equal(a.fonts.link, "");
+  assert.match(a.fonts.hStack, /-apple-system/);
+  // a later take turns to the market's own style, with its own two faces
+  const market = designPlan(input, 1);
+  assert.notEqual(market.treatment.id, "native");
+  assert.match(market.fonts.link, /^https:\/\/fonts\.googleapis\.com\/css2\?family=/);
   assert.match(planText(a), /- Colour: background #/);
   assert.match(planText(a), /- Navigation: /);
   assert.equal(a.archetype, "bookings");

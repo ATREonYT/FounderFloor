@@ -118,9 +118,17 @@ const P = "var(--p)";
 const A = "var(--a)";
 const S = "var(--s)";
 
-/** The ground every scene sits on: the palette's secondary, washed out, with the light from the top left. */
+/**
+ * The ground every scene sits on.
+ *
+ * Held well back on purpose. A picture in an app stands in for a
+ * photograph, and a photograph is not a slab of the brand colour — when
+ * the ground is saturated the whole screen reads as a themed website
+ * rather than an app with pictures in it. So: a light wash with the
+ * brand's hue in it, and the subject carries the colour.
+ */
 const ground = (seed: number): string =>
-  `<defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${S}" stop-opacity=".55"/><stop offset="1" stop-color="${P}" stop-opacity=".22"/></linearGradient></defs><rect width="100" height="100" fill="url(#g${seed})"/>`;
+  `<defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${S}" stop-opacity=".26"/><stop offset="1" stop-color="${P}" stop-opacity=".10"/></linearGradient></defs><rect width="100" height="100" fill="url(#g${seed})"/>`;
 
 /** The soft shadow under a subject, so it sits on the ground instead of floating on it. */
 const shadow = (cx: number, cy: number, rx: number): string => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${(rx * 0.22).toFixed(1)}" fill="#000" opacity=".13"/>`;

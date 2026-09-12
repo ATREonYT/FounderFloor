@@ -14,7 +14,7 @@ import { SCENE_CSS } from "./scenes.ts";
 
 export type Archetype = "ledger" | "feed" | "listings" | "bookings" | "tracker" | "learn" | "inbox" | "map" | "dashboard" | "store";
 export type Landing = "hero" | "features" | "minimal" | "proof" | "story" | "demo" | "search" | "trust";
-export type TreatmentId = "swiss" | "flat" | "glass" | "soft" | "clay" | "organic" | "block" | "dark" | "hud" | "brutal" | "aurora" | "editorial" | "paper";
+export type TreatmentId = "native" | "swiss" | "flat" | "glass" | "soft" | "clay" | "organic" | "block" | "dark" | "hud" | "brutal" | "aurora" | "editorial" | "paper";
 
 export interface Treatment {
   id: TreatmentId;
@@ -32,6 +32,12 @@ export interface Treatment {
 }
 
 const T: Record<TreatmentId, Treatment> = {
+  // The house style of a phone app. Grey ground, white groups, hairline
+  // separators that start where the text starts, a large title instead
+  // of a colour field, and the accent kept for the things you can press.
+  // This is the default, because what the Workshop draws is a phone app
+  // and a phone app that does not look native looks unfinished.
+  native: { id: "native", name: "Native", r: [10, 14, 18, 14], border: "hair", shadow: "soft", surface: "raised", hero: "type", nav: "tabs", pic: "photo", heading: "tight" },
   swiss: { id: "swiss", name: "Swiss", r: [2, 4, 6, 4], border: "hair", shadow: "none", surface: "flat", hero: "type", nav: "top", pic: "grid", heading: "tight" },
   flat: { id: "flat", name: "Flat", r: [8, 12, 16, 12], border: "none", shadow: "none", surface: "flat", hero: "block", nav: "tabs", pic: "blocks", heading: "normal" },
   glass: { id: "glass", name: "Glass", r: [12, 18, 24, 999], border: "hair", shadow: "soft", surface: "glass", hero: "mesh", nav: "pill", pic: "mesh", heading: "normal" },
@@ -62,7 +68,9 @@ export function treatmentOf(style: string): TreatmentId {
   if (/aurora|parallax|gradient mesh/.test(s)) return "aurora";
   if (/editorial|magazine/.test(s)) return "editorial";
   if (/e-ink|paper|sketch|hand-drawn|vintage|analog|pixel/.test(s)) return "paper";
-  return "flat";
+  if (/flat design|material/.test(s)) return "flat";
+  // The default is the platform's own look, not a flat colour block.
+  return "native";
 }
 
 const STOP = new Set("the a an and or for to of in on with by at from is are that this it its their who we you your my our people app apps platform tool service services business businesses help helps make makes get new one way best easy every all can so not no yes more less them they us me i be will would could should have has had do does did into over under out up down about than then there here where when what which how why let lets allow allows each other others life bring come back without any aged ten minute hour day month year quick fast easy simple better best personal trusted busy own real free first last next like just also very really thing things idea ideas dream dreams side tomorrow tonight today".split(" "));
@@ -282,6 +290,24 @@ export function rankFonts(product: ProductRow, treatment: Treatment): FontRow[] 
   return scored.map((s) => s.f);
 }
 
+/**
+ * The platform's own type, for the native treatment.
+ *
+ * SF Pro cannot be downloaded and does not need to be: on the phone the
+ * mock-up is shown on, `-apple-system` IS SF Pro, and on anything else
+ * the stack falls through to that system's equivalent. A Google font
+ * here would be the single loudest tell that this is a web page wearing
+ * an app's clothes.
+ */
+export const SYSTEM_FONTS: Fonts = {
+  name: "System",
+  heading: "the system face",
+  body: "the system face",
+  hStack: `-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable","Segoe UI",Roboto,system-ui,sans-serif`,
+  bStack: `-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable","Segoe UI",Roboto,system-ui,sans-serif`,
+  link: "",
+};
+
 export function fontsOf(row: FontRow): Fonts {
   const [hc, bc] = row.cat.split("+").map((x) => x.trim());
   const fam = (name: string) => `family=${name.replace(/ /g, "+")}${ONE_WEIGHT.has(name) ? "" : ":wght@400;700"}`;
@@ -369,10 +395,23 @@ export function designPlan(input: PlanInput, seed = 0, chosen?: string): StudioP
   const s = Math.abs(seed);
   const paletteFrom = chosen ? product : (readings[s % 3]?.product ?? product);
   const styles = [...new Set((product.s.length ? product.s : ["Flat Design"]).map(treatmentOf))];
-  const treatment = T[styles[s % styles.length]];
+  // The first take is the platform's chassis and the product's own
+  // palette — which is what an app on a phone actually looks like, and
+  // what a founder means when they say it should feel like a real app.
+  // Every other seed turns to the market's own styles, so "design it
+  // again" still gives the bold, the editorial and the clay takes.
+  //
+  // Two categories keep their own style even first time out: the ones
+  // whose look is a deliberate departure from a phone (print, terminal,
+  // anti-polish) and the ones that are dark by nature, because a light
+  // grey chassis would be the wrong answer for a gym at six in the
+  // morning.
+  const own = T[styles[0]];
+  const keepsOwn = !PLATFORM_LOOK.has(own.id) || own.forceDark === true;
+  const treatment = s === 0 && !keepsOwn ? T.native : T[styles[s % styles.length]];
   const colours = coloursOf(paletteFrom.c, treatment);
   const ranked = rankFonts(product, treatment);
-  const fonts = fontsOf(ranked[s % Math.min(4, ranked.length)]);
+  const fonts = treatment.id === "native" ? SYSTEM_FONTS : fontsOf(ranked[s % Math.min(4, ranked.length)]);
   const b2b = input.segment === "b2b-saas" || /\b(owners?|businesses|shops?|clinics?|agencies|studios?|teams?|managers?|salons?|restaurants?|landlords?)\b/i.test(input.audience ?? "");
   const archetype = archetypeOf(product, input.kind, b2b);
   const landing = landingOf(product, archetype);
@@ -681,6 +720,136 @@ ${t.id === "brutal" ? ".card,.stat,.tile,.quote,.icb,.chip,.fi{box-shadow:4px 4p
 ${t.id === "hud" ? ".card,.stat,.tile{border:1px solid " + rgba(c.p, 0.4) + ";box-shadow:inset 0 0 0 1px " + rgba(c.p, 0.08) + "}.eyebrow,.stat .sl{color:" + c.p + "}" : ""}
 ${t.id === "clay" ? ".card,.stat,.tile,.quote,.btn.p{box-shadow:inset 0 -6px 12px " + rgba(c.fg, 0.08) + ",inset 0 4px 8px rgba(255,255,255,.45),0 12px 24px " + rgba(c.fg, 0.1) + "}" : ""}
 ${t.id === "editorial" ? ".row{border-bottom:1px solid var(--fg)}.sec span{font-style:italic}" : ""}
+${PLATFORM_LOOK.has(t.id) ? platformCss(c, t) : ""}
+${t.id === "native" ? nativeCss(c) : ""}
 [data-go]{cursor:pointer}
+`;
+}
+
+/**
+ * THE PLATFORM'S OWN LOOK.
+ *
+ * A generated screen can have the right words, the right layout and the
+ * right colours and still read as a web page in a phone frame. What
+ * separates it from a real app is a short list of habits, and all of
+ * them are about restraint rather than decoration:
+ *
+ *   The ground is grey and the content is white. Depth comes from that
+ *   one step, not from shadows on everything.
+ *
+ *   Colour belongs to the things you can press. A native screen is
+ *   mostly black text on white with one accent; a big saturated field
+ *   across the top is a website's move, so the hero is type.
+ *
+ *   Separators start where the text starts. A rule running the full
+ *   width of the screen is the commonest giveaway.
+ *
+ *   The type is the system's, at the system's sizes: a 34 px large
+ *   title with negative tracking, 17 px body, 13 px captions. Anything
+ *   else feels a size off without the eye knowing why.
+ *
+ *   The bar at the bottom is translucent and separated by a hairline,
+ *   not a solid block with a border.
+ */
+function nativeCss(c: Colours): string {
+  // The ground is nearly neutral, whatever the brand is. A bakery app is
+  // not an amber screen with brown text on it — it is a grey-white screen
+  // with amber buttons, the way every app on the phone is. Keeping a
+  // trace of the brand hue in the grey stops it feeling borrowed; letting
+  // the brand own the whole page is what makes a mock-up read as a
+  // themed website rather than an app.
+  const ground = c.dark ? "#000000" : mix(c.bg, "#F2F2F7", 0.84);
+  const sep = rgba(c.fg, c.dark ? 0.18 : 0.13);
+  const fill = c.dark ? rgba(c.fg, 0.12) : rgba(c.fg, 0.06);
+  return `
+body{background:${ground}}
+.screen{background:${ground}}
+h1{font-size:34px;line-height:1.08;letter-spacing:-.024em;font-weight:700}
+h2{font-size:26px;line-height:1.15;letter-spacing:-.02em}
+h3{font-size:18px;letter-spacing:-.01em}
+.title{letter-spacing:-.015em}
+.sub{font-size:17px;line-height:1.41;letter-spacing:-.01em}
+.small,.rm{font-size:13px;letter-spacing:-.005em}
+.eyebrow{letter-spacing:.04em;font-size:13px}
+.sec span{font-size:20px;letter-spacing:-.018em}
+.card,.stat,.tile,.quote{background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)};border:0;box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.06)}}
+/* a group of rows is one white block, and the hairlines inside it start where the text does */
+.card .row,.list .row{border-bottom:1px solid ${sep};margin-left:0}
+.row{border-bottom:1px solid ${sep};position:relative;border-color:transparent}
+.row::after{content:"";position:absolute;left:52px;right:0;bottom:0;height:1px;background:${sep}}
+.row:last-child::after{display:none}
+.row.card::after{display:none}
+.btn{letter-spacing:-.01em}
+.btn.p{height:50px;border-radius:14px;font-weight:600;box-shadow:none}
+.btn.s,.btn.q{height:50px;border-radius:14px;background:${fill};border:0;color:var(--p);font-weight:600}
+.fi{background:${fill};border:0;height:46px;border-radius:12px;font-size:17px}
+.srch{background:${fill};height:38px;border-radius:11px;font-size:17px}
+.chip{background:${fill};border:0;height:34px;border-radius:999px;font-size:15px;font-weight:500}
+.chip.on{background:var(--p);color:var(--op)}
+.seg{background:${fill};padding:2px;border-radius:9px}
+.seg span{height:32px;line-height:32px;border-radius:7px;font-size:14px;font-weight:600}
+.seg span.on{background:var(--card);box-shadow:0 1px 3px ${rgba(c.fg, 0.16)},0 0 0 .5px ${rgba(c.fg, 0.04)}}
+.icb{background:${fill};border:0;width:36px;height:36px;border-radius:50%}
+.pl{border-radius:999px;font-size:13px;font-weight:600}
+/* the bar at the bottom: translucent, one hairline, nothing else */
+.tab{height:83px;background:${rgba(c.card, 0.82)};border-top:.5px solid ${sep};backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);padding:6px 4px 0}
+.tab a{font-size:10px;font-weight:500;letter-spacing:.01em;gap:3px}
+.hero.type{padding:12px 0 20px;background:transparent;color:var(--fg)}
+.hero.type h1,.hero.type .sub{color:inherit}
+`;
+}
+
+/**
+ * Treatments that live on a phone and should carry the platform's
+ * habits. The ones left out are deliberately not phone-shaped: Swiss
+ * and Editorial are print, Brutal is anti-polish on purpose, HUD is a
+ * terminal, Paper is paper. Forcing native manners on those would erase
+ * the point of having them.
+ */
+const PLATFORM_LOOK = new Set<TreatmentId>(["native", "flat", "glass", "soft", "clay", "organic", "block", "dark", "aurora"]);
+
+/**
+ * THE HABITS THAT READ AS AN APP.
+ *
+ * A screen can have the right words, the right layout and the right
+ * colours and still read as a web page in a phone frame. The difference
+ * is a handful of habits that have nothing to do with style, so a bold
+ * fitness app and a soft learning app can both keep their character and
+ * still feel like software on a phone:
+ *
+ *   The type scale is the platform's. A 34 px title with negative
+ *   tracking, 17 px body, 13 px captions. Web defaults sit a size or two
+ *   off and the eye notices without knowing why.
+ *
+ *   Separators start where the text starts. A hairline running the full
+ *   width of the screen is the commonest giveaway of a web list.
+ *
+ *   The bar at the bottom is translucent over a hairline, not a solid
+ *   block with a border.
+ *
+ *   Depth is one step, not a pile. A soft single-pixel lift on a card
+ *   beats a heavy drop shadow.
+ */
+function platformCss(c: Colours, t: Treatment): string {
+  const sep = rgba(c.fg, c.dark ? 0.16 : 0.11);
+  return `
+h1{font-size:34px;line-height:1.08;letter-spacing:-.024em}
+h2{font-size:26px;line-height:1.16;letter-spacing:-.02em}
+h3{font-size:18px;letter-spacing:-.012em}
+.title{letter-spacing:-.016em}
+.sub{font-size:17px;line-height:1.41;letter-spacing:-.01em}
+.rn{font-size:17px;letter-spacing:-.012em}
+.rm,.small{font-size:13px;letter-spacing:-.004em}
+.sec span{font-size:20px;letter-spacing:-.018em}
+.btn{letter-spacing:-.01em}
+.stat .sv{letter-spacing:-.028em}
+/* the hairline starts where the text does */
+.row{border-bottom:0;position:relative}
+.row::after{content:"";position:absolute;left:${t.id === "swiss" ? 0 : 52}px;right:0;bottom:0;height:1px;background:${sep}}
+.row:last-child::after,.row.card::after{display:none}
+.tab{height:83px;padding:6px 4px 0;border-top:.5px solid ${sep};background:${rgba(c.card, 0.84)};backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px)}
+.tab a{font-size:10px;font-weight:500;gap:3px}
+.tab.pillbar{height:64px;padding:0 8px}
+.tab.pillbar a{font-size:12px}
 `;
 }

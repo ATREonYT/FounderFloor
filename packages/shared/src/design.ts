@@ -110,6 +110,15 @@ This is the discipline the builder tools run on, and it is what separates a page
 - Set the system's ambition high and then keep to it: if the cards have a soft shadow and a 14 px radius, every card does, on all four screens. Consistency across screens is most of what "finished" looks like.
 - Contrast is part of the system: whatever ground a colour sits on, there is a paired text variable that passes on it.
 
+IT IS AN APP, NOT A WEB PAGE IN A PHONE
+This is where a generated screen most often gives itself away: the words, the layout and the colours can all be right and it still reads as a website that has been made narrow. The difference is a handful of platform habits, and they are about restraint.
+- Depth is one step: a quiet ground, content in groups on top of it. A near-neutral ground with white (or, in dark, near-black) groups, not a shadow on everything.
+- The brand owns the controls, not the page. A screen is mostly text on a quiet ground with one accent on the things you can press. A full-width saturated colour field across the top is a website's move; the front door leads with a large title instead.
+- Separators start where the text starts, not at the edge of the screen. A hairline running the full width is the commonest tell of a web list.
+- Type at the platform's sizes: a large title near 34 px with negative letter-spacing, 17 px body, 13 px captions, and the system stack unless the brief names faces. A web page's 16/24/40 sits a size off and the eye notices without knowing why.
+- The bar at the bottom is translucent over a hairline, 10 to 11 px labels, the active item in the accent. Not a solid block with a border.
+- Controls are the platform's: a segmented control rather than tabs-as-buttons, a filled rounded search field, rows with a chevron, a full-width primary button about 50 px high.
+
 THE STANDARD
 - The brief's design system is the law: its hex values, its type scale, its radius, its component descriptions, its navigation pattern, light or dark as it says. Where the brief is silent, decide the way that studio would and stay consistent across screens.
 - Real components, not boxes with text: a header with a title and one or two actions; inputs with labels, placeholders and a visible focus ring; list rows with a leading mark (an initials avatar, an icon or a drawn thumbnail), a title, a second line and a trailing value or chevron; cards with a drawn image area; stat tiles with a big number, a label and a change; badges; a segmented control or filter chips where a list needs them; a tab bar with 3 to 5 items and inline SVG icons with the active one marked; a primary button that looks pressable: solid fill, 600 weight, 48 to 52 px high.
