@@ -29,12 +29,15 @@ test("the score is the app's opinion and cannot be flattered", () => {
   const f = { week: 1, focus: "x", tasks: 3, tasksDone: 3, steps: 12, stepsTicked: 12, written: 6, tasksWritten: 3, daysActive: 5, did: 3, partly: 0, stuck: 0, over: true };
   assert.equal(weekScore(f), 100);
   assert.equal(weekScore({ ...f, stepsTicked: 0, tasksDone: 0, tasksWritten: 0, written: 0, daysActive: 0 }), 0);
-  assert.equal(weekScore({ ...f, stepsTicked: 6, tasksWritten: 1, daysActive: 2 }), Math.round((0.55 * 0.5 + 0.25 / 3 + 0.2 * 0.5) * 100));
+  assert.equal(weekScore({ ...f, stepsTicked: 6, tasksWritten: 1, daysActive: 2 }), Math.round((0.65 * 0.5 + 0.35 / 3) * 100));
   assert.equal(verdictFor(90), "Strong week");
   assert.equal(verdictFor(50), "Half a week");
   assert.equal(verdictFor(0), "Not started");
   const flattered = asReview({ score: 100, verdict: "Amazing", line: "Wow.", well: ["a"], fix: ["b"], how: ["c", "d", "e"] }, { ...f, stepsTicked: 0, tasksWritten: 0, daysActive: 0 });
   assert.equal(flattered.score, 0);
+  // a week away may never cost a point: the same work, seen on one day or on five, scores the same
+  for (const days of [0, 1, 2, 5, 7]) assert.equal(weekScore({ ...f, daysActive: days }), 100, "attendance is not in the score");
+  assert.equal(weekScore({ ...f, stepsTicked: 6, tasksWritten: 1, daysActive: 0 }), weekScore({ ...f, stepsTicked: 6, tasksWritten: 1, daysActive: 7 }));
   assert.equal(asReview({ verdict: "x", line: "y", well: [], fix: ["b"], how: ["c", "d"] }, f), null);
 });
 
@@ -44,13 +47,16 @@ test("the local reading is specific to the numbers, and the context carries them
   assert.equal(r.score, weekScore(f));
   assert.match(r.well[0], /6 of 9 steps/);
   assert.ok(r.fix.some((x) => /3 steps are still open/.test(x)));
-  assert.ok(r.fix.some((x) => /Only 2 days/.test(x)));
+  assert.ok(!r.fix.some((x) => /day|days|showing up|hobby/i.test(x)), "the reading never scolds an absence");
+  assert.ok(!r.how.some((x) => /evening|calendar/i.test(x)));
   assert.equal(r.how.length, 3);
   assert.match(r.line, /^Alex,/);
   const c = reviewContext(f, { profile: P, plan: null, week: { n: 1, focus: "Find the problem.", do: ["a", "b", "c"] }, log: "" });
   assert.match(c, /score \d+ of 100/);
   assert.match(c, /notebook is empty/);
   assert.match(REVIEW_PROMPT, /do not change it/);
+  assert.match(REVIEW_PROMPT, /Never mention days missed/);
+  assert.ok(!c.includes("Days active"), "the model is not told how often they came in, so it cannot scold for it");
   assert.match(stepOpener("talk", { do: "Ask five people", tip: "" }), /Who did you talk to/);
   assert.match(STEP_DESK_PROMPT, /one step of one task/);
 });

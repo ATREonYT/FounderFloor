@@ -175,7 +175,7 @@ export default function Stand() {
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Spec tone="muted">This week</Spec>
-            <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "1 day" : stand.streak ? `${stand.streak} days` : "day one"} />
+            <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.weeksIn === 1 ? "week one" : `${stand.weeksIn} weeks in`} />
           </View>
           {r.weeklyGoal ? (
             <View style={{ marginTop: 12, flexDirection: "row", gap: 16, alignItems: "center" }}>

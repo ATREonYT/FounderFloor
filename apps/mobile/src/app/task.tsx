@@ -22,7 +22,7 @@ import { useFounder, type TaskOutcome } from "../lib/store";
 import { MemoryAsk } from "../components/MemoryAsk";
 import { useGate } from "../lib/gate";
 import { aiMode } from "../lib/ai";
-import { ROOM_ORDER, roomOfWeek, taskKey, useTask, weekNow } from "../lib/taskDesk";
+import { ROOM_ORDER, roomOfWeek, taskKey, useTask, useWeekNow } from "../lib/taskDesk";
 import { STAGES, parseDoor } from "@founderfloor/shared";
 import { StopLine } from "../components/Road";
 
@@ -66,7 +66,7 @@ export default function Task() {
   const total = t.guide?.steps.length ?? 0;
   const ticked = t.guide ? t.ticks.filter((i) => i < total).length : 0;
   const allTicked = total > 0 && ticked === total;
-  const now = weekNow(profile, plan);
+  const now = useWeekNow();
 
   // every step ticked: the task marks itself done on the plan, once, with a small celebration, and asks how it went
   useEffect(() => {

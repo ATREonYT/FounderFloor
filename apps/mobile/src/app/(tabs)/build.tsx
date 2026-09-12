@@ -11,7 +11,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
+import { STAGES, stageProgress, currentStage, pathProgress, weeksWorked, DOC_KINDS, draftDocument, type BuildStage } from "@founderfloor/shared";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useGate } from "../../lib/gate";
 import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, Keeper, Plate, Progress, Rise, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
@@ -24,7 +24,7 @@ import { useTour } from "../../lib/tour";
 import { TopBar } from "../../components/TopBar";
 import { COLUMN, useBottomChrome } from "../../lib/chrome";
 import { useFounder } from "../../lib/store";
-import { roomOfWeek, taskKey, weekNow } from "../../lib/taskDesk";
+import { roomOfWeek, taskKey, useWeekNow } from "../../lib/taskDesk";
 import { useStand } from "../../lib/stand";
 import { askGuide, whereAmI } from "@founderfloor/shared";
 import { COACHES } from "../../lib/mock";
@@ -50,7 +50,6 @@ export default function Build() {
   const kpi = useFounder((s) => s.kpi);
   const interviews = useFounder((s) => s.interviews);
   const visits = useFounder((s) => s.visits);
-  const streak = useFounder((s) => s.streak);
   const guided = useFounder((s) => s.guided);
   const plan = useFounder((s) => s.roadmap);
   const profile = useFounder((s) => s.profile);
@@ -81,7 +80,7 @@ export default function Build() {
   const [mood, setMood] = useState<Mood>("idle");
   const [opening, setOpening] = useState<string | null>(null);
   const cur = currentStage(ticks);
-  const wk = weekNow(profile, plan);
+  const wk = useWeekNow();
   /** Which room each week of the plan is spent in, and the plan's tasks by room. */
   const roomWeeks = useMemo(() => (plan ? plan.weeks.map((w) => ({ w, room: roomOfWeek(plan, w.n) })) : []), [plan]);
   const tasksIn = (i: number) => roomWeeks.filter((x) => x.room === i).flatMap((x) => x.w.do.map((text, k) => ({ text, week: x.w.n, i: k, done: planDone.includes(taskKey(x.w.n, k)) })));
@@ -169,7 +168,7 @@ export default function Build() {
         <Plate tone="panel" radius={radius.xl} padding={16}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Body medium>Your trail</Body>
-            <Spec tone="faint">{streak.days ? `${streak.days}-day streak` : "day one"}</Spec>
+            <Spec tone="faint">{weeksWorked(visits) <= 1 ? "week one" : `${weeksWorked(visits)} weeks in`}</Spec>
           </View>
           <View style={{ flexDirection: "row", marginTop: 12, marginBottom: 12 }}>
             {[

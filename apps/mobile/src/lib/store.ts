@@ -19,7 +19,7 @@ import { DEFAULT_REMINDERS, type ReminderPrefs } from "./reminders";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
-import { FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, type Mockup, withEntry } from "@founderfloor/shared";
+import { AWAY_DAYS, daysAway, isoWeekKey, FloorApi, isErr, type PitchScore, type Draft, type FloorAuth, type FloorStandEntry, type FloorStateReply, type Idea, type IdeaBrief, type IdeaRead, type KpiEntry, type Plan, type StandRecord, type Usage, type FloorMe, type CoachNote, type Profile, type FounderPlan, type TaskGuide, type MemoryEntry, type MemoryKind, type WeekReview, type Mockup, withEntry } from "@founderfloor/shared";
 
 export const FLOOR_URL = process.env.EXPO_PUBLIC_FLOOR_URL ?? "https://floor.founderfloor.net";
 export const api = new FloorApi(FLOOR_URL);
@@ -336,6 +336,16 @@ interface FounderState {
   dismissHint(id: string): void;
   /** Every day the building was opened, ISO dates, for the calendar. */
   visits: string[];
+  /**
+   * A week away costs nothing. The plan's weeks advance by weeks WORKED,
+   * so the building keeps three things: the real date each plan week
+   * began, the calendar weeks the founder said life happened in, and
+   * whether they have just come back from a gap.
+   */
+  weekStarts: Record<number, string>;
+  paused: string[];
+  /** Set once, the moment a founder returns after a week or more. Cleared when the desk has said welcome back. */
+  away: { days: number; on: string } | null;
   /** Local reminders, as chosen in Settings. */
   reminders: ReminderPrefs;
   /** The guide has been read once, or skipped. */
@@ -354,6 +364,14 @@ interface FounderState {
   setQuota(target: number): void;
   countSent(n?: number): void;
   touchStreak(): void;
+  /** Remember the day this plan week really began. Called once per week, never overwritten. */
+  openWeek(n: number): void;
+  /** Life happened: this calendar week does not advance the plan, and nothing is held against it. */
+  pauseWeek(): void;
+  /** The founder logged the week after all, so it was never a pause. */
+  unpauseWeek(): void;
+  /** The desk has said welcome back. */
+  clearAway(): void;
   setDoor(d: DoorT): void;
   setIdeas(brief: IdeaBrief, ideas: Idea[]): void;
   addRead(text: string, read: IdeaRead): void;
@@ -453,6 +471,9 @@ export const useFounder = create<FounderState>()(
       forgetMemory: () => set({ memory: [] }),
       dismissHint: (id) => set({ hints: get().hints.includes(id) ? get().hints : [...get().hints, id] }),
       visits: [],
+      weekStarts: {},
+      paused: [],
+      away: null,
       reminders: DEFAULT_REMINDERS,
       guided: false,
       setReminders: (reminders) => set({ reminders }),
@@ -493,17 +514,37 @@ export const useFounder = create<FounderState>()(
       touchStreak: () => {
         const today = new Date().toISOString().slice(0, 10);
         const s = get().streak;
-        if (!get().visits.includes(today)) set({ visits: [...get().visits, today].slice(-400) });
+        if (!get().visits.includes(today)) {
+          // the gap is measured before today is written in, and only ever on the day of return
+          const gap = daysAway(get().visits, today);
+          set({ visits: [...get().visits, today].slice(-400), ...(gap >= AWAY_DAYS ? { away: { days: gap, on: today } } : null) });
+        }
         if (s.last === today) return;
         const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
         set({ streak: { days: s.last === yesterday ? s.days + 1 : 1, last: today } });
       },
+      openWeek: (n) => {
+        const starts = get().weekStarts;
+        if (starts[n]) return;
+        set({ weekStarts: { ...starts, [n]: new Date().toISOString().slice(0, 10) } });
+      },
+      pauseWeek: () => {
+        const k = isoWeekKey(Date.now());
+        if (!k || get().paused.includes(k)) return;
+        set({ paused: [...get().paused, k].slice(-104) });
+      },
+      unpauseWeek: () => {
+        const k = isoWeekKey(Date.now());
+        if (!k || !get().paused.includes(k)) return;
+        set({ paused: get().paused.filter((x) => x !== k) });
+      },
+      clearAway: () => set({ away: null }),
     }),
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 10,
-      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, ...(persisted as object) }) as unknown as FounderState,
+      version: 11,
+      migrate: (persisted) => ({ notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, weekStarts: {}, paused: [], away: null, ...(persisted as object) }) as unknown as FounderState,
       // the streak is touched only once the stored one is in, or today's touch would be overwritten by it
       onRehydrateStorage: () => (s) => s?.touchStreak(),
     },

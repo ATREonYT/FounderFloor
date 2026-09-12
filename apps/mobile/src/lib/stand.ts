@@ -4,7 +4,7 @@
  * the rehearsal stand when both are empty so nothing is ever blank.
  */
 import { useMemo } from "react";
-import { rankFor, type StandRecord } from "@founderfloor/shared";
+import { rankFor, weeksWorked, type StandRecord } from "@founderfloor/shared";
 import { swatches, type CarpetPattern, type Look } from "@founderfloor/ui";
 import { useFounder, useSession } from "./store";
 import { STAND as REHEARSAL, YOU } from "./mock";
@@ -25,7 +25,14 @@ export interface StandView {
   founder: string;
   record: StandRecord;
   rank: ReturnType<typeof rankFor>;
+  /** Consecutive days, as the site still counts them. Not shown in the app. */
   streak: number;
+  /**
+   * Weeks in the building. It only ever goes up: an absence does not
+   * touch it, and there is nothing to protect by opening the app. This is
+   * the number the app shows (docs/research/what-people-want.md).
+   */
+  weeksIn: number;
   tier: "free" | "pro" | "founder";
   founding: boolean;
 }
@@ -57,6 +64,8 @@ export function useStand(): StandView {
   const record = useFounder((s) => s.record);
   const profileName = useFounder((s) => s.profile?.name ?? "");
   const streakLocal = useFounder((s) => s.streak.days);
+  const visits = useFounder((s) => s.visits);
+  const weeksIn = Math.max(1, weeksWorked(visits));
   return useMemo(() => {
     const st = floor?.state ?? null;
     const su = st?.myStartup ?? entry?.startup ?? null;
@@ -80,6 +89,7 @@ export function useStand(): StandView {
         record: { ...record, name: su.name, oneLiner: su.oneLiner, pitch: su.pitch, mrr },
         rank: rankFor(mrr),
         streak: st?.visitStreak ?? streakLocal,
+        weeksIn,
         tier: floor?.paid?.tier ?? st?.sub ?? "free",
         founding: (st?.badges ?? []).includes("founding"),
       };
@@ -102,6 +112,7 @@ export function useStand(): StandView {
         record,
         rank: rankFor(record.mrr),
         streak: streakLocal,
+        weeksIn,
         tier: floor?.paid?.tier ?? "free",
         founding: false,
       };
@@ -124,8 +135,9 @@ export function useStand(): StandView {
       record: r,
       rank: rankFor(r.mrr),
       streak: streakLocal || 4,
+      weeksIn,
       tier: YOU.tier,
       founding: YOU.founding,
     };
-  }, [floor, entry, auth, record, streakLocal]);
+  }, [floor, entry, auth, record, streakLocal, weeksIn]);
 }

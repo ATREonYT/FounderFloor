@@ -8,7 +8,7 @@
  * page, and the status line says so.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { asTaskGuide, founderLog, localTaskGuide, stepOpener, taskContext, workBlock, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
+import { asTaskGuide, founderLog, localTaskGuide, planWeekNow, stepOpener, taskContext, workBlock, STEP_DESK_PROMPT, TASK_DESK_PROMPT, TASK_PROMPT, type FounderPlan, type PlanWeek, type TaskGuide } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
 import { EMPTY_TASK, useFounder, type TaskOutcome, type TaskTurn } from "./store";
 
@@ -189,10 +189,43 @@ function firstLines(s: string): string {
 /** The key PlanView and planDone use for a step. */
 export const taskKey = (week: number, i: number) => `${week}-${i}`;
 
-/** Which week of the plan it is, from when the profile was made. */
-export function weekNow(profile: { at: string } | null, plan: FounderPlan | null): number {
-  const n = profile ? Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1 : 1;
-  return Math.min(plan?.weeks.length ?? 4, Math.max(1, n));
+/**
+ * Which week of the plan it is. Not the calendar week: the week the
+ * founder is ON. Weeks advance by weeks worked, so a fortnight away is a
+ * fortnight the plan waited, and a week the founder marked "life
+ * happened" does not move it either.
+ *
+ * The old rule (calendar weeks since the profile was made) is kept for
+ * one case only: a founder whose phone has no record of visits, from
+ * before the building kept them. Even then it can only be as forgiving,
+ * never harsher, because the smaller of the two is taken.
+ */
+export function weekNow(profile: { at: string } | null, plan: FounderPlan | null, visits: string[] = [], paused: string[] = []): number {
+  const max = plan?.weeks.length ?? 4;
+  if (!visits.length) {
+    const n = profile ? Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1 : 1;
+    return Math.min(max, Math.max(1, n));
+  }
+  return planWeekNow(visits, paused, max);
+}
+
+/**
+ * The week the founder is on, read from the building, and the moment it
+ * is read the building remembers the day it began. That date is what the
+ * week's own reading is measured over, so a week stretched across an
+ * absence still counts everything written in it.
+ */
+export function useWeekNow(): number {
+  const profile = useFounder((s) => s.profile);
+  const plan = useFounder((s) => s.roadmap);
+  const visits = useFounder((s) => s.visits);
+  const paused = useFounder((s) => s.paused);
+  const openWeek = useFounder((s) => s.openWeek);
+  const n = weekNow(profile, plan, visits, paused);
+  useEffect(() => {
+    if (plan) openWeek(n);
+  }, [n, plan, openWeek]);
+  return n;
 }
 
 /**

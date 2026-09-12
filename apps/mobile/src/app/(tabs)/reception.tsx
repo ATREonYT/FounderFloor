@@ -23,7 +23,7 @@ import { trialLeft } from "../../lib/trial";
 import { useFounder, isoWeek } from "../../lib/store";
 import { remembers, parseDoor, MINES, STAGES, currentStage, stageProgress } from "@founderfloor/shared";
 import { ROOM_GLYPH } from "../../lib/glyphs";
-import { roomOfWeek } from "../../lib/taskDesk";
+import { roomOfWeek, useWeekNow } from "../../lib/taskDesk";
 import { Hint } from "../../components/Hint";
 
 export default function Reception() {
@@ -44,11 +44,12 @@ export default function Reception() {
   const mood: Mood = thinking || streaming ? "talk" : "idle";
   const lastDesk = [...messages].reverse().find((m) => m.role === "desk");
   const streak = stand.streak;
+  const weeksIn = stand.weeksIn;
   const notes = useFounder((s) => s.notes);
   const ticks = useFounder((s) => s.ticks);
   const roadmap = useFounder((s) => s.roadmap);
   const profile = useFounder((s) => s.profile);
-  const weekNow = profile ? Math.min(4, Math.max(1, Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1)) : 1;
+  const weekNow = useWeekNow();
   const focus = roadmap?.weeks.find((w) => w.n === weekNow)?.focus;
   const planDone = useFounder((s) => s.planDone);
   // the first task of this week not yet done, so Home can open it in one tap
@@ -124,7 +125,7 @@ export default function Reception() {
           {empty ? (
             <View style={{ gap: 20, paddingBottom: 8 }}>
               <Stage look={coach.look} color={coach.color} who={atDesk ? "The desk" : coach.name} say={atDesk ? `${greeting(stand.founder || undefined)} ${stand.record.weeklyGoal ? `This week: ${stand.record.weeklyGoal}.` : "The desk is open."}` : coach.greeting} mood={mood} scale={2} height={L.compact ? 200 : 240} ambient={focused} set={atDesk ? "lobby" : COACH_SET[coach.id as keyof typeof COACH_SET] ?? "lobby"}>
-                <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={streak === 1 ? "day one" : streak ? `${streak}-day streak` : "day one"} />
+                <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, streak))} label={weeksIn === 1 ? "week one in the building" : `${weeksIn} weeks in the building`} />
               </Stage>
               {atDesk ? <Hint id="coach" text="Ask the desk anything about your company, or tap the name at the top to pick a coach." /> : null}
               {week ? (

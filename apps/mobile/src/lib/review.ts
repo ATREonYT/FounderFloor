@@ -16,6 +16,7 @@ export function useWeekReview(week: PlanWeek | null) {
   const tasks = useFounder((s) => s.tasks);
   const memory = useFounder((s) => s.memory);
   const memoryOn = useFounder((s) => s.memoryOn);
+  const weekStarts = useFounder((s) => s.weekStarts);
   const stored = useFounder((s) => (week ? s.reviews[week.n] : undefined));
   const setReview = useFounder((s) => s.setReview);
   const [reading, setReading] = useState(false);
@@ -27,7 +28,8 @@ export function useWeekReview(week: PlanWeek | null) {
       alive.current = false;
     };
   }, []);
-  const facts: WeekFacts | null = week ? weekFacts(week, { profile, planDone, tasks, memory }) : null;
+  // the week's real window, so a week stretched over an absence still counts everything written in it
+  const facts: WeekFacts | null = week ? weekFacts(week, { profile, planDone, tasks, memory, weekStarts }) : null;
 
   const read = useCallback(
     async (force = false) => {

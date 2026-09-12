@@ -9,8 +9,8 @@
 import { useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useIsFocused, useRouter, type Href } from "expo-router";
-import { STAGES } from "@founderfloor/shared";
-import { Body, Button, Display, GlyphTile, Plate, Rise, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, Check, type Mood } from "@founderfloor/ui";
+import { STAGES, isPaused, weeksWorked } from "@founderfloor/shared";
+import { Body, Button, Display, GlyphTile, Keeper, Plate, Rise, Spec, Stage, Streak, Tap, haptic, radius, shell, useLayout, wash, Check, type Mood } from "@founderfloor/ui";
 import { TopBar } from "../../components/TopBar";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
@@ -20,7 +20,7 @@ import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
 import { RECEPTIONIST, greeting } from "../../lib/mock";
 import { useStand } from "../../lib/stand";
 import { isoWeek, useFounder } from "../../lib/store";
-import { roomOfWeek, taskKey, weekNow } from "../../lib/taskDesk";
+import { roomOfWeek, taskKey, useWeekNow } from "../../lib/taskDesk";
 import { useTour } from "../../lib/tour";
 
 export default function Today() {
@@ -36,7 +36,11 @@ export default function Today() {
   const tasks = useFounder((s) => s.tasks);
   const kpi = useFounder((s) => s.kpi);
   const reviews = useFounder((s) => s.reviews);
-  const wk = weekNow(profile, plan);
+  const visits = useFounder((s) => s.visits);
+  const paused = useFounder((s) => s.paused);
+  const away = useFounder((s) => s.away);
+  const clearAway = useFounder((s) => s.clearAway);
+  const wk = useWeekNow();
   const week = plan?.weeks.find((w) => w.n === wk) ?? null;
   const roomIdx = plan ? roomOfWeek(plan, wk) : 0;
   const room = STAGES[roomIdx];
@@ -45,7 +49,10 @@ export default function Today() {
   const next = week && nextI >= 0 ? { i: nextI, text: week.do[nextI], guide: tasks[taskKey(wk, nextI)]?.guide ?? null } : null;
   const doneCount = week ? week.do.filter((_, i) => planDone.includes(taskKey(wk, i))).length : 0;
   const weekLogged = kpi.some((e) => e.week === isoWeek());
+  const weekPaused = isPaused(paused);
   const friday = new Date().getDay() === 5;
+  /** Weeks in the building. It only ever goes up, and an absence does not touch it. */
+  const weeksIn = Math.max(1, weeksWorked(visits));
   const review = reviews[wk];
   const openTask = (i: number) => router.push({ pathname: "/task", params: { week: String(wk), i: String(i) } } as Href);
   /** The desk reacts to a tick: a nod and a word, a cheer when the week is done. */
@@ -74,9 +81,32 @@ export default function Today() {
     <View style={{ flex: 1 }}>
       <TopBar center={<Spec tone="muted">{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</Spec>} />
       <ScrollView contentContainerStyle={[column, { paddingBottom: bottom, gap: 16 }]}>
-        <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood={mood} scale={2} height={L.compact ? 200 : 214} ambient={focused} set="lobby">
-          <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={stand.streak === 1 ? "day one" : stand.streak ? `${stand.streak}-day streak` : "day one"} />
-        </Stage>
+        {away ? (
+          /* back after a week or more: the desk says the only thing worth saying, and nothing counts the days */
+          <Plate tone="panel" radius={radius.xxl} padding={20}>
+            <View style={{ flexDirection: "row", gap: 14, alignItems: "flex-start" }}>
+              <Keeper look={RECEPTIONIST.look} scale={2} color={RECEPTIONIST.color} framed={false} />
+              <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
+                <Display size="lg">Good to see you</Display>
+                <Body size="sm" tone="muted">
+                  {plan
+                    ? `Nothing was lost while you were away. Your plan, your notes and your numbers are all here, and week ${wk} is exactly where you left it.`
+                    : "Nothing was lost while you were away. Everything you wrote is still here."}
+                </Body>
+                {plan && next ? <Body size="sm" medium>{`Next: ${(next.guide?.title ?? next.text).replace(/\.$/, "").toLowerCase()}.`}</Body> : null}
+              </View>
+            </View>
+            <View style={{ marginTop: 14 }}>
+              <Button block onPress={() => { clearAway(); if (plan && next) openTask(next.i); }}>
+                {plan && next ? "Pick it up" : "Have a look round"}
+              </Button>
+            </View>
+          </Plate>
+        ) : (
+          <Stage look={RECEPTIONIST.look} color={RECEPTIONIST.color} who="The desk" say={say} mood={mood} scale={2} height={L.compact ? 200 : 214} ambient={focused} set="lobby">
+            <Streak days={Array.from({ length: 7 }, (_, i) => i >= 7 - Math.min(7, stand.streak))} label={weeksIn === 1 ? "week one in the building" : `${weeksIn} weeks in the building`} />
+          </Stage>
+        )}
         <Hint id="today" text="One thing to do next, then the road: seven stops to your first paying customer." />
 
         {/* the one thing */}
@@ -160,10 +190,10 @@ export default function Today() {
           <Plate tone="panel" radius={radius.xl} padding={6}>
             <Pressable onPress={() => router.push("/office" as Href)} accessibilityRole="button" accessibilityLabel={weekLogged ? "Week logged. Open the Office" : "Log the week"} style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, opacity: pressed ? 0.8 : 1 })}>
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                <Body size="sm" medium>{weekLogged ? "Week logged" : "Log the week"}</Body>
-                <Spec tone="faint">{weekLogged ? "Five numbers are in" : friday ? "It is Friday. Five numbers, two minutes." : "Five numbers, on Fridays"}</Spec>
+                <Body size="sm" medium>{weekPaused ? "This week is paused" : weekLogged ? "Week logged" : "Log the week"}</Body>
+                <Spec tone="faint">{weekPaused ? "Life happened. Nothing is counted against it." : weekLogged ? "Five numbers are in" : friday ? "It is Friday. Five numbers, two minutes." : "Five numbers, on Fridays"}</Spec>
               </View>
-              {friday && !weekLogged ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shell.accent }} /> : null}
+              {friday && !weekLogged && !weekPaused ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: shell.accent }} /> : null}
               <Body tone="accent" accessibilityElementsHidden importantForAccessibility="no">›</Body>
             </Pressable>
             <Pressable onPress={() => router.push({ pathname: "/review", params: { week: String(wk) } } as Href)} accessibilityRole="button" accessibilityLabel="Read the week back" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderTopWidth: 1, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>

@@ -12,7 +12,7 @@ import { Body, Button, ButtonRow, Display, Glyph, Plate, Progress, Ring, Spec, T
 import { useFounder } from "../lib/store";
 import { aiMode } from "../lib/ai";
 import { useWeekReview } from "../lib/review";
-import { weekNow } from "../lib/taskDesk";
+import { useWeekNow } from "../lib/taskDesk";
 import { StopLine } from "../components/Road";
 
 const WEEK_GLYPH: GlyphId[] = ["bolt", "wave", "coin", "star"];
@@ -23,7 +23,7 @@ export default function Review() {
   const router = useRouter();
   const { week: weekParam } = useLocalSearchParams<{ week?: string }>();
   const { roadmap: plan, profile } = useFounder();
-  const now = weekNow(profile, plan);
+  const now = useWeekNow();
   const wN = Number(weekParam) || now;
   const week = plan?.weeks.find((w) => w.n === wN) ?? null;
   const { review, facts, reading, lastError, reread } = useWeekReview(week);
@@ -91,9 +91,8 @@ export default function Review() {
                 <View style={{ gap: 10, marginTop: 16 }}>
                   <Progress value={facts.steps ? facts.stepsTicked / facts.steps : 0} label="Done" right={`${facts.stepsTicked} of ${facts.steps} steps`} color={tone} />
                   <Progress value={facts.tasks ? facts.tasksWritten / facts.tasks : 0} label="Written down" right={`${facts.tasksWritten} of ${facts.tasks} tasks`} color={tone} />
-                  <Progress value={Math.min(1, facts.daysActive / 4)} label="Showed up" right={`${facts.daysActive} of 7 days`} color={tone} />
                 </View>
-                <Spec tone="faint" style={{ marginTop: 10 }}>Done counts for most, then what you wrote, then days in the building. The score is the app's, not the AI's.</Spec>
+                <Spec tone="faint" style={{ marginTop: 10 }}>The score counts what you did and what you wrote down about it. Days away count for nothing against you. It is the app's number, not the AI's.</Spec>
               </Plate>
             </Animated.View>
 

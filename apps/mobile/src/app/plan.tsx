@@ -7,6 +7,7 @@ import { useRouter, type Href } from "expo-router";
 import { GOALS } from "@founderfloor/shared";
 import { Body, Button, ButtonRow, Display, Scene, Spec, radius, shell, useLayout } from "@founderfloor/ui";
 import { useFounder } from "../lib/store";
+import { useWeekNow } from "../lib/taskDesk";
 import { PlanView } from "../components/PlanView";
 import { StopLine } from "../components/Road";
 
@@ -14,7 +15,7 @@ export default function Plan() {
   const L = useLayout();
   const router = useRouter();
   const { roadmap: plan, profile } = useFounder();
-  const weekNow = profile ? Math.min(4, Math.max(1, Math.floor((Date.now() - new Date(profile.at).getTime()) / (7 * 86_400_000)) + 1)) : 1;
+  const weekNow = useWeekNow();
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingTop: L.insets.top + 8, paddingBottom: L.insets.bottom + 32, paddingHorizontal: L.shell.paddingHorizontal, width: "100%", maxWidth: 640, alignSelf: "center", gap: 16 }}>

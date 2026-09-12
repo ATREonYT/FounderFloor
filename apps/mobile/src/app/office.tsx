@@ -8,7 +8,7 @@
 import { useState } from "react";
 import { Linking, Pressable, ScrollView, Share, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { deltas, draftUpdate, generateDeadlines, fmtMoney, runwayLine, runwayMonths, fmtMonths, remembers, readingPreview, MINES, type KpiEntry } from "@founderfloor/shared";
+import { deltas, draftUpdate, generateDeadlines, fmtMoney, isPaused, runwayLine, runwayMonths, fmtMonths, remembers, readingPreview, MINES, type KpiEntry } from "@founderfloor/shared";
 import { effectivePlan } from "../lib/billing";
 import { Bars, Body, Button, ButtonRow, Choices, CountUp, Dialogue, Display, Input, Keeper, Mono, Plate, Rise, Spec, Tap, Toast, haptic, radius, shell, useLayout } from "@founderfloor/ui";
 import { Back, TopBar } from "../components/TopBar";
@@ -29,6 +29,10 @@ export default function Office() {
   const stand = useStand();
   const gate = useGate();
   const { kpi, logWeek, interviews, addInterview, removeInterview, docs, saveDoc, setRecord } = useFounder();
+  const paused = useFounder((s) => s.paused);
+  const pauseWeek = useFounder((s) => s.pauseWeek);
+  const unpauseWeek = useFounder((s) => s.unpauseWeek);
+  const weekPaused = isPaused(paused);
   const r = stand.record;
   const cur = r.currency;
   const [log, setLog] = useState(false);
@@ -55,12 +59,24 @@ export default function Office() {
 
   const saveLog = () => {
     void haptic("success");
+    // a week that gets logged was never a pause
+    unpauseWeek();
     logWeek({ ...entry, week: wk });
     // the log is the truth for MRR and cash; the stand follows it
     setRecord({ mrr: entry.revenue, cash: entry.cash });
     setLog(false);
     say("Week logged — the coaches read it now.");
     void valueMoment("log");
+  };
+  /**
+   * Life happened. The week is kept as a pause: the plan does not move on
+   * without the founder, nothing is counted against them, and no keeper
+   * has anything to say about it.
+   */
+  const pause = () => {
+    pauseWeek();
+    setLog(false);
+    say("Noted. The week is paused and your plan waits where it is.");
   };
   const makeUpdate = (audience: "investors" | "myself" | "partner") => {
     if (!canRead) {
@@ -92,14 +108,14 @@ export default function Office() {
         <Rise k={0} style={{ gap: 4 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The Office</Display>
           <Body tone="muted" size="lg" style={{ maxWidth: 560 }}>
-            {d ? `${fmtMoney(d.latest.revenue, cur)} this month. Five numbers, every Friday.` : "Five numbers, every Friday. Everything here reads from them."}
+            {weekPaused ? "This week is paused. Nothing is counted against it, and your plan is waiting where you left it." : d ? `${fmtMoney(d.latest.revenue, cur)} this month. Five numbers, every Friday.` : "Five numbers, every Friday. Everything here reads from them."}
           </Body>
         </Rise>
 
         {/* the one thing to do here */}
         <Rise k={1}>
           <TourTarget id="office-log">
-            <Button block size="lg" onPress={() => setLog(true)}>{last?.week === wk ? "Change this week's numbers" : "Log this week"}</Button>
+            <Button block size="lg" onPress={() => setLog(true)}>{weekPaused ? "Log this week after all" : last?.week === wk ? "Change this week's numbers" : "Log this week"}</Button>
           </TourTarget>
         </Rise>
 
@@ -125,8 +141,8 @@ export default function Office() {
         {/* the log */}
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Body medium>This week's numbers</Body>
-            <Spec tone="faint">{kpi.length ? `${kpi.length} week${kpi.length === 1 ? "" : "s"}` : "nothing yet"}</Spec>
+            <Body medium>{weekPaused ? "This week is paused" : "This week's numbers"}</Body>
+            <Spec tone="faint">{weekPaused ? "life happened" : kpi.length ? `${kpi.length} week${kpi.length === 1 ? "" : "s"}` : "nothing yet"}</Spec>
           </View>
           {d && !canRead ? (
             <View style={{ marginTop: 12, gap: 12 }}>
@@ -188,7 +204,7 @@ export default function Office() {
             </View>
           ) : (
             <Body size="sm" tone="muted" style={{ marginTop: 10 }}>
-              Revenue, customers, cash, hours with customers, what shipped. Two minutes.
+              {weekPaused ? "Nothing is counted against a paused week, and no one will mention it. If the week turns out to have something in it after all, log it." : "Revenue, customers, cash, hours with customers, what shipped. Two minutes."}
             </Body>
           )}
           {kpi.length ? (
@@ -299,6 +315,12 @@ export default function Office() {
           <Spec tone="faint">Anything that reached a customer this week, in a few words.</Spec>
           <Input label="Note (optional)" value={entry.note ?? ""} onChangeText={(note) => setEntry((e) => ({ ...e, note }))} multiline placeholder="What you would tell a friend about the week." />
           {r.burn ? <Mono size="xs" tone="muted">{`${runwayLine({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }, cur)}, ${fmtMonths(runwayMonths({ cash: entry.cash, burn: r.burn, mrr: entry.revenue }))}`}</Mono> : null}
+          <View style={{ borderTopWidth: 1, borderTopColor: shell.line, paddingTop: 12, gap: 6 }}>
+            <Button block variant="secondary" onPress={pause}>
+              Life happened this week
+            </Button>
+            <Spec tone="faint">The week is kept as a pause. Your plan waits, the score is untouched, and nobody mentions it again.</Spec>
+          </View>
           <ButtonRow>
             <Button onPress={saveLog}>Log the week</Button>
             <Button variant="ghost" onPress={() => setLog(false)}>

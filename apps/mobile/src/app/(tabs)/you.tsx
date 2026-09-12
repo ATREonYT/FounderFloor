@@ -57,7 +57,7 @@ export default function You() {
             <Display size="xl">{auth ? auth.name || stand.founder || "You" : stand.founder || "You"}</Display>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               <TierTag tier={tier} />
-              <Spec tone="muted">{stand.streak ? `${stand.streak}-day streak` : "day one"}</Spec>
+              <Spec tone="muted">{stand.weeksIn === 1 ? "week one" : `${stand.weeksIn} weeks in`}</Spec>
             </View>
           </View>
           {!auth ? (
