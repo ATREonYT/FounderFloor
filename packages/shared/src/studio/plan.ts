@@ -502,7 +502,9 @@ h3{font:700 17px/1.3 var(--fh);${heading}}
 .hdr{display:flex;align-items:center;gap:12px;padding:8px 20px 12px;flex:none}
 .hdr .ht{flex:1;min-width:0}
 .hdr .hr{display:flex;gap:8px;align-items:center;min-width:40px;justify-content:flex-end}
-.icb{width:40px;height:40px;border-radius:${rb >= 999 ? "50%" : "var(--rm)"};display:inline-flex;align-items:center;justify-content:center;background:var(--cardbg);border:var(--bd);${glass}}
+.icb{width:40px;height:40px;border-radius:${rb >= 999 ? "50%" : "var(--rm)"};display:inline-flex;align-items:center;justify-content:center;background:var(--cardbg);border:var(--bd);position:relative;${glass}}
+/* a small control keeps its size and grows its target past it: 44 for a thumb */
+.icb::after{content:"";position:absolute;inset:-2px}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;height:52px;padding:0 20px;border-radius:var(--rb);font:600 16px/1 var(--fb);white-space:nowrap}
 .btn.full{width:100%}
 .btn.sm{height:40px;font-size:14px;padding:0 16px}
@@ -535,7 +537,7 @@ h3{font:700 17px/1.3 var(--fh);${heading}}
 .stat .sd{font-size:12px;font-weight:600;color:var(--ok)}.stat .sd.warn{color:var(--warn)}.stat .sd.mute{color:var(--mf)}
 .stats{display:flex;gap:10px}
 .seg{display:flex;background:${c.dark ? rgba(c.fg, 0.08) : mix(c.bg, c.fg, 0.06)};border-radius:${rb >= 999 ? "999px" : "var(--rm)"};padding:3px;gap:2px;margin:4px 0 12px}
-.seg span{flex:1;text-align:center;height:34px;line-height:34px;border-radius:${rb >= 999 ? "999px" : "var(--rs)"};font-size:14px;font-weight:600;color:var(--mf)}
+.seg span{flex:1;min-width:0;text-align:center;height:34px;line-height:34px;border-radius:${rb >= 999 ? "999px" : "var(--rs)"};font-size:14px;font-weight:600;color:var(--mf)}
 .seg span.on{background:var(--card);color:var(--fg);box-shadow:0 1px 3px ${rgba(c.fg, 0.14)}}
 .chips{display:flex;gap:8px;overflow:hidden;margin:2px 0 12px;flex-wrap:nowrap}
 .chip{flex:none;height:34px;padding:0 14px;border-radius:${rb >= 999 ? "999px" : "var(--rs)"};display:inline-flex;align-items:center;font-size:14px;font-weight:600;color:var(--fg);background:var(--cardbg);border:${t.border === "none" ? `1px solid ${rgba(c.fg, 0.1)}` : "var(--bd)"}}
@@ -550,7 +552,8 @@ ${SCENE_CSS}
 .pic.tile{height:120px;margin:-12px -12px 10px;border-radius:var(--rm) var(--rm) 0 0}
 .pic.hero{height:210px;margin:0 0 18px;border-radius:var(--rl)}
 .tab{height:82px;flex:none;background:${t.surface === "glass" ? rgba(c.card, 0.8) : c.card};border-top:${t.border === "thick" ? "2px solid var(--fg)" : `1px solid ${c.b}`};display:flex;padding:8px 10px 0;${glass}}
-.tab a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--mf)}
+.tab a{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--mf)}
+.tab a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tab a.on{color:${contrast(c.p, c.card) >= 2 ? "var(--p)" : "var(--fg)"}}
 .tab.pillbar{position:absolute;left:16px;right:16px;bottom:22px;height:64px;border-radius:999px;border:var(--bd);box-shadow:0 12px 32px ${rgba(c.fg, c.dark ? 0.5 : 0.18)};padding:0 8px;align-items:center}
 .tab.pillbar a{flex-direction:row;gap:6px;justify-content:center;height:48px;border-radius:999px;font-size:12px}
@@ -568,8 +571,9 @@ ${SCENE_CSS}
 .bar span{font-size:11px;color:var(--mf);font-weight:600}
 .ring{position:relative;display:inline-flex;align-items:center;justify-content:center}
 .ring svg{display:block}
-.rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.rc b{font:700 28px/1 var(--fh)}.rc span{font-size:12px;color:var(--mf);margin-top:4px}
+.rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform:translateY(calc((var(--rl,12px) + 3px) / 2))}
+.rc b{font:700 var(--rn,28px)/1 var(--fh);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.rc span{font-size:var(--rl,12px);line-height:1;color:var(--mf);margin-top:3px}
 .prog{height:8px;border-radius:999px;background:${c.dark ? rgba(c.fg, 0.12) : mix(c.bg, c.fg, 0.08)};overflow:hidden}
 .prog i{display:block;height:100%;background:var(--p);border-radius:999px}
 .quote{display:flex;gap:12px;align-items:flex-start;padding:14px;background:var(--cardbg);border:var(--bd);border-radius:var(--rl);box-shadow:var(--sh);${glass}}
@@ -713,11 +717,12 @@ ${SCENE_CSS}
 .stepper span{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:${c.dark ? rgba(c.fg, 0.1) : mix(c.bg, c.fg, 0.06)}}
 .stepper b{min-width:16px;text-align:center;font-variant-numeric:tabular-nums}
 .rings{display:flex;justify-content:space-between;gap:8px}
-.rings .rg{flex:1;display:flex;justify-content:center}
+.rings .rg{flex:1;min-width:0;display:flex;justify-content:center}
 .ring.c1 circle:last-child{stroke:var(--a)}.ring.c2 circle:last-child{stroke:var(--s)}
 .trio{display:flex;border-top:1px solid ${c.b};border-bottom:1px solid ${c.b};padding:12px 0;margin:14px 0}
-.trio div{flex:1;text-align:center;border-left:1px solid ${c.b}}.trio div:first-child{border-left:0}
-.trio b{display:block;font:700 22px/1.1 var(--fh);font-variant-numeric:tabular-nums}.trio span{font-size:12px;color:var(--mf);font-weight:600}
+.trio div{flex:1;min-width:0;text-align:center;border-left:1px solid ${c.b}}.trio div:first-child{border-left:0}
+.trio b{display:block;font:700 22px/1.1 var(--fh);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.trio span{display:block;font-size:12px;color:var(--mf);font-weight:600;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spark{display:block;flex:none}
 .unread{min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--p);color:var(--op);font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
 .ticks{display:inline-flex;color:var(--mf)}.ticks .ic+.ic{margin-left:-8px}.ticks.read{color:var(--p)}
@@ -846,7 +851,11 @@ h3{font-size:18px;letter-spacing:-.01em}
 .seg{background:${fill};padding:2px;border-radius:9px}
 .seg span{height:32px;line-height:32px;border-radius:7px;font-size:14px;font-weight:600}
 .seg span.on{background:var(--card);box-shadow:0 1px 3px ${rgba(c.fg, 0.16)},0 0 0 .5px ${rgba(c.fg, 0.04)}}
-.icb{background:${fill};border:0;width:36px;height:36px;border-radius:50%}
+/* The disc stays small because a big grey circle in a header looks
+   heavy, but a thumb needs 44. The target is grown past the disc, which
+   is what the platform does and what the hand-off tells a builder. */
+.icb{background:${fill};border:0;width:36px;height:36px;border-radius:50%;position:relative}
+.icb::after{content:"";position:absolute;inset:-4px;border-radius:50%}
 /* a tinted border round a white tile is a brand colour doing a job that
    belongs to fill and shadow; on the phone these are plain tiles */
 .qa .q i{border:0;background:${c.dark ? rgba(c.fg, 0.1) : "#FFFFFF"};box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.08)};border-radius:16px}

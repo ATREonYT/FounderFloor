@@ -221,10 +221,31 @@ export function bars(values: number[], labels: string[]): string {
 }
 
 /** A progress ring with a number in it. */
+/**
+ * A percentage in a ring.
+ *
+ * Two things have to be right or it reads as almost-right, which is
+ * worse than plainly wrong.
+ *
+ * The number sits on the centre, not the column. Centring the number and
+ * its caption as a group puts the number above the middle by half the
+ * caption's height — geometrically correct, optically off, and the eye
+ * catches it every time. So the group is nudged down by exactly that
+ * much and the caption hangs below, which is what a ring on a watch or
+ * in a fitness app does.
+ *
+ * The type scales with the ring. A 28 px number set inside a 92 px ring
+ * crowds the stroke; the size is taken from the ring instead, so a trio
+ * of small rings and one large one are the same design.
+ */
 export function ring(pct: number, label: string, size = 120): string {
-  const r = (size - 14) / 2;
+  const stroke = Math.max(7, Math.round(size * 0.085));
+  const r = (size - stroke - 4) / 2;
   const c = 2 * Math.PI * r;
-  return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" stroke="var(--line)" stroke-width="10" fill="none"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" stroke="var(--p)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - pct / 100)).toFixed(1)}" transform="rotate(-90 ${size / 2} ${size / 2})"/></svg><div class="rc"><b>${Math.round(pct)}%</b><span>${esc(label)}</span></div></div>`;
+  const num = Math.round(size * 0.25);
+  const cap = Math.max(10, Math.round(size * 0.11));
+  const mid = size / 2;
+  return `<div class="ring" style="width:${size}px;height:${size}px"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${mid}" cy="${mid}" r="${r}" stroke="var(--line)" stroke-width="${stroke}" fill="none"/><circle cx="${mid}" cy="${mid}" r="${r}" stroke="var(--p)" stroke-width="${stroke}" fill="none" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - Math.max(0, Math.min(100, pct)) / 100)).toFixed(1)}" transform="rotate(-90 ${mid} ${mid})"/></svg><div class="rc" style="--rn:${num}px;--rl:${cap}px"><b>${Math.round(pct)}%</b><span>${esc(label)}</span></div></div>`;
 }
 
 /** A progress bar. */
