@@ -111,12 +111,17 @@ export function sceneFor(subject: string | null | undefined): SceneKind {
 const vary = (seed: number, n: number, lo: number, hi: number): number => lo + ((Math.abs(Math.imul(seed + 1, 2654435761 + n * 40503)) >>> 8) % (hi - lo + 1));
 
 /**
- * The colours a drawing uses. Always the plan's own, never a literal:
- * a picture must move with the palette or it is a sticker on the page.
+ * The colours a drawing uses.
+ *
+ * Not the palette directly but three slots, filled per picture by the
+ * element that uses it. That is what lets one definition of a loaf be
+ * drawn six times, each in its own size, lean and colour order, for the
+ * cost of one line each — and the picture still moves with the palette,
+ * because the slots are filled from it.
  */
-const P = "var(--p)";
-const A = "var(--a)";
-const S = "var(--s)";
+const P = "var(--a1)";
+const A = "var(--a2)";
+const S = "var(--a3)";
 
 /**
  * The ground every scene sits on.
@@ -127,8 +132,7 @@ const S = "var(--s)";
  * rather than an app with pictures in it. So: a light wash with the
  * brand's hue in it, and the subject carries the colour.
  */
-const ground = (seed: number): string =>
-  `<defs><linearGradient id="g${seed}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${S}" stop-opacity=".26"/><stop offset="1" stop-color="${P}" stop-opacity=".10"/></linearGradient></defs><rect width="100" height="100" fill="url(#g${seed})"/>`;
+const ground = `<rect width="100" height="100" fill="url(#scg)"/>`;
 
 /** The soft shadow under a subject, so it sits on the ground instead of floating on it. */
 const shadow = (cx: number, cy: number, rx: number): string => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${(rx * 0.22).toFixed(1)}" fill="#000" opacity=".13"/>`;
@@ -136,8 +140,8 @@ const shadow = (cx: number, cy: number, rx: number): string => `<ellipse cx="${c
 /** The one highlight, top left, that tells the eye where the light is. */
 const shine = (d: string): string => `<path d="${d}" fill="#fff" opacity=".3"/>`;
 
-function art(kind: SceneKind, seed: number): string {
-  const v = (n: number, lo: number, hi: number) => vary(seed, n, lo, hi);
+function art(kind: SceneKind): string {
+  const v = (_n: number, lo: number, hi: number) => Math.round((lo + hi) / 2);
   switch (kind) {
     case "bread": {
       const slash = v(1, 3, 5);
@@ -197,7 +201,7 @@ function art(kind: SceneKind, seed: number): string {
     case "sound": {
       const bars = 9;
       return `${Array.from({ length: bars }, (_, i) => {
-        const h = vary(seed, i, 14, 56);
+        const h = 14 + ((i * 37) % 43);
         return `<rect x="${13 + i * 8.6}" y="${(100 - h) / 2}" width="5" height="${h}" rx="2.5" fill="${i % 3 === 1 ? A : P}" opacity="${i % 2 ? 0.75 : 1}"/>`;
       }).join("")}`;
     }
@@ -221,7 +225,7 @@ function art(kind: SceneKind, seed: number): string {
  * in the middle third of the square so neither crop loses it.
  */
 export function scene(subject: string | SceneKind, seed = 0): string {
-  const kind = (WORDS.some(([k]) => k === subject) || subject === "abstract" ? subject : sceneFor(String(subject))) as SceneKind;
+  const kind = sceneKind(subject);
   // Two things to get right at once.
   //
   // The crop: the same drawing has to sit in a 64 px thumbnail, a 170 px
@@ -233,14 +237,39 @@ export function scene(subject: string | SceneKind, seed = 0): string {
   // The variety: six of one thing in a grid must not be six identical
   // drawings, or the screen reads as one sticker repeated. Each gets its
   // own size, lean and offset, and every third swaps the body and detail
-  // colours, so a shelf of bread looks like a shelf of bread.
+  // colours — which is now a pair of custom properties on the instance
+  // rather than a second copy of the drawing.
   const k = vary(seed, 3, 66, 80) / 100;
   const dx = vary(seed, 4, -7, 7);
   const dy = vary(seed, 5, -4, 4);
   const lean = vary(seed, 6, -5, 5);
   const swap = vary(seed, 7, 0, 2) === 0;
-  const body = swap ? art(kind, seed).replace(/var\(--p\)/g, "§").replace(/var\(--a\)/g, "var(--p)").replace(/§/g, "var(--a)") : art(kind, seed);
-  return `<svg class="art" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${ground(seed)}<g transform="translate(${dx} ${dy}) rotate(${lean} 50 52) scale(${k}) translate(${(50 * (1 - k)) / k} ${(52 * (1 - k)) / k})">${body}</g></svg>`;
+  const ink = swap ? "--a1:var(--a);--a2:var(--p)" : "--a1:var(--p);--a2:var(--a)";
+  return `<svg class="art" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="${ink};--a3:var(--s)">${ground}<g transform="translate(${dx} ${dy}) rotate(${lean} 50 52) scale(${k}) translate(${((50 * (1 - k)) / k).toFixed(1)} ${((52 * (1 - k)) / k).toFixed(1)})"><use href="#sc-${kind}"/></g></svg>`;
+}
+
+/** The subject, resolved to a drawing, whether it came in as a noun or a kind. */
+function sceneKind(subject: string | SceneKind): SceneKind {
+  return (WORDS.some(([k]) => k === subject) || subject === "abstract" ? subject : sceneFor(String(subject))) as SceneKind;
+}
+
+/**
+ * The drawings a document needs, defined once at the top of it.
+ *
+ * Inlining the whole of a loaf at every one of a dozen breads on a shop
+ * screen is most of a page's weight for no benefit: the drawing is the
+ * same drawing. So each kind is defined once here and every picture is
+ * one `<use>` with its own transform and its own two colours.
+ */
+export function sceneDefs(subjects: (string | SceneKind)[]): string {
+  const kinds = [...new Set([...subjects.map(sceneKind), "abstract" as SceneKind])];
+  // The slots are given the palette's own values here as well as on each
+  // picture. A gradient resolves a custom property against ITS OWN place
+  // in the tree, not the element that references it, so the shared ground
+  // gradient would otherwise draw with nothing in its stops and come out
+  // grey. The per-picture values still win for the drawing itself, which
+  // is what lets one instance swap its two colours.
+  return `<svg width="0" height="0" style="position:absolute;--a1:var(--p);--a2:var(--a);--a3:var(--s)" aria-hidden="true"><defs><linearGradient id="scg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--a3)" stop-opacity=".26"/><stop offset="1" stop-color="var(--a1)" stop-opacity=".10"/></linearGradient>${kinds.map((k) => `<g id="sc-${k}">${art(k)}</g>`).join("")}</defs></svg>`;
 }
 
 /** The one rule the drawings need from the page's stylesheet. */

@@ -263,6 +263,10 @@ export function balanceCard(label: string, value: string, line: string, tail = "
 
 /** A row of round quick actions (Revolut, banking apps): four at most. */
 export function quickActions(items: { icon: string; label: string; go?: number }[]): string {
+  // A tile is 72 px wide and its label is one line. Left to wrap, a long
+  // noun ("New prepaid pass") turns into three lines and drags the whole
+  // row out of alignment, which is the kind of break that makes a screen
+  // look unfinished no matter how good everything above it is.
   return `<div class="qa">${items.slice(0, 4).map((x) => `<span class="q"${x.go !== undefined ? ` data-go="${x.go}"` : ""}><i>${ic(x.icon, 22)}</i><b>${esc(x.label)}</b></span>`).join("")}</div>`;
 }
 

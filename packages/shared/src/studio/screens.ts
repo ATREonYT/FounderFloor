@@ -7,7 +7,7 @@
  */
 import type { StudioPlan } from "./plan.ts";
 import { asHeadline } from "../headline.ts";
-import { detailTitle } from "./nouns.ts";
+import { detailTitle, shortUnit } from "./nouns.ts";
 import { agenda, avatar, balanceCard, bars, button, cartBar, categoryRow, chips, dayHeader, dots, esc, feature, field, header, homeBar, ic, iconButton, included, lessonPath, lineChart, map, option, pic, pill, productTile, progress, promo, quickActions, quote, rating, ring, ringTrio, row, search, section, segmented, sheet, stat, statSpark, statTrio, statusBar, statusDot, stepper, stories, tabBar, ticks, timeline, unitBanner, unread } from "./parts.ts";
 
 export interface Money {
@@ -118,10 +118,19 @@ export function landing(c: Content, p: StudioPlan, n: Nav): Screen {
   const trustLine = c.bullets.find((b) => /free|no card|cancel|this week/i.test(b) && !/^what you get/i.test(b)) ?? "The first week is free. No card until you decide.";
   const email = `<div class="gap8 mt16">${field("Your email", "you@example.com", "mail")}${button(c.cta, { go, icon: "arrow" })}</div><p class="small muted mt8">${esc(cap(trustLine.replace(/^"|"$/g, "")))}</p>`;
   const proof = c.quotes.length ? `<div class="gap12 mt16">${c.quotes.slice(0, 2).map((q, i) => quote(q.who, q.said, i)).join("")}</div>` : "";
-  const priceLine = `<div class="card spread mt16" data-go="${n.price}"><div><div style="font:700 22px/1 var(--fh)">${esc(c.price ? `${money(c.price)} ${c.price.per}`.trim() : c.pricing.headline)}</div><div class="small muted mt8">${esc(c.pricing.sub)}</div></div><span class="strong" style="color:var(--p);font-size:14px">See the price ${ic("chevron", 16)}</span></div>`;
+  const priceLine = `<div class="card spread mt16" data-go="${n.price}"><div><div style="font:700 22px/1 var(--fh)">${esc(c.price ? `${money(c.price)} ${c.price.per}`.trim() : c.pricing.headline)}</div><div class="small muted mt8">${esc(c.pricing.sub)}</div></div><span class="disc">${ic("chevron", 18)}</span></div>`;
   const plain = c.bullets.filter(unquoted).map((b) => b.replace(/^what you get:\s*/i, ""));
-  const featureLines = [plain[0] ?? c.thing, plain[1] ?? `For ${c.audience}`, plain[2] ?? (c.price ? `${money(c.price)} ${c.price.per}, cancel any time`.replace(/\s+,/, ",") : "One price, said plainly")];
-  const features = `<div class="mt8">${featureLines.map((b, i) => feature(["bolt", "users", "shield"][i], cap(b), "")).join("")}</div>`;
+  // A feature line that says the headline again is a wasted line and the
+  // eye catches the repeat immediately. Compare on words, not characters,
+  // so a trimmed or recased version of the sign is still caught.
+  const bare = (x: string) => x.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  const headWords = bare(asHeadline(c.sign));
+  const saysTheHeadline = (line: string) => {
+    const b = bare(line);
+    return !!b && (headWords.includes(b) || b.includes(headWords));
+  };
+  const featureLines = [plain[0] ?? c.thing, plain[1] ?? `For ${c.audience}`, plain[2] ?? (c.price ? `${money(c.price)} ${c.price.per}, cancel any time`.replace(/\s+,/, ",") : "One price, said plainly")].filter((b, i, a) => !saysTheHeadline(b) && a.findIndex((x) => bare(x) === bare(b)) === i);
+  const features = featureLines.length ? `<div class="mt8">${featureLines.map((b, i) => feature(["bolt", "users", "shield"][i] ?? "bolt", cap(b), "")).join("")}</div>` : "";
   const faces = `<div class="faces">${c.people.slice(0, 4).map((x, i) => avatar(x, 28, i)).join("")}<span>Used by ${esc(c.audience)}</span></div>`;
   let top = "";
   let below = "";
@@ -137,7 +146,7 @@ export function landing(c: Content, p: StudioPlan, n: Nav): Screen {
       break;
     case "proof":
       top = `<div class="hero ${h === "card" ? "mesh" : h}">${h === "card" ? heroInner() : heroInner()}</div>`;
-      below = `${proof || `<div class="card">${feature("users", `For ${c.audience}`, c.bullets[0] ?? "")}</div>`}${faces}<div class="mt16">${button(c.cta, { go, icon: "arrow" })}</div>${priceLine}`;
+      below = `${proof || `<div class="card">${feature("users", `For ${c.audience}`, c.bullets[0] ?? "")}</div>`}${faces}${features}<div class="mt16">${button(c.cta, { go, icon: "arrow" })}</div>${priceLine}`;
       break;
     case "trust":
       top = `<div class="hero ${h}">${h === "card" ? `<div class="in">${heroInner(email)}</div>` : heroInner(email)}</div>`;
@@ -216,7 +225,7 @@ export function main(c: Content, p: StudioPlan, n: Nav): Screen {
     case "ledger": {
       // Revolut, Stripe: the balance, four actions, the days
       const tx = (i: number, k: number, due = false) => g(i, { lead: avatar(person(c, i), 40, i), meta: `${cap(c.unit)} #${1040 + i}`, trail: `<span class="mono">${due ? "" : "+"}${money(c.price, k)}</span>${due ? pill("Due", "warn") : pill("Paid", "ok")}` });
-      const body = `${balanceCard("Paid this week", money(c.price, 7), `${7} ${plural(c.unit)} · ${c.people.length} clients`)}${quickActions([{ icon: "plus", label: `New ${c.unit}`, go: n.detail }, { icon: "send", label: "Send" }, { icon: "bell", label: "Remind" }, { icon: "more", label: "More" }])}${segmented(["All", "Paid", "Due"])}${dayHeader("Today", `+${money(c.price, 3.5)}`)}${tx(0, 1)}${tx(1, 2.5, true)}${tx(2, 1)}${dayHeader("Yesterday", `+${money(c.price, 2)}`)}${tx(3, 1.5)}${tx(4, 0.5, true)}${dayHeader("Monday", `+${money(c.price, 3)}`)}${tx(5, 2)}${tx(6, 1)}`;
+      const body = `${balanceCard("Paid this week", money(c.price, 7), `${7} ${plural(c.unit)} · ${c.people.length} clients`)}${quickActions([{ icon: "plus", label: `New ${shortUnit(c.unit)}`, go: n.detail }, { icon: "send", label: "Send" }, { icon: "bell", label: "Remind" }, { icon: "more", label: "More" }])}${segmented(["All", "Paid", "Due"])}${dayHeader("Today", `+${money(c.price, 3.5)}`)}${tx(0, 1)}${tx(1, 2.5, true)}${tx(2, 1)}${dayHeader("Yesterday", `+${money(c.price, 2)}`)}${tx(3, 1.5)}${tx(4, 0.5, true)}${dayHeader("Monday", `+${money(c.price, 3)}`)}${tx(5, 2)}${tx(6, 1)}`;
       return { title: "Today", html: frame(p, { head: header({ title: "Today", eyebrow: "Tuesday 9 September", right: you, big: true }), body, tabs }) };
     }
     case "feed": {

@@ -99,3 +99,17 @@ export function detailTitle(archetype: Archetype, unit: string): string {
       return an(unit);
   }
 }
+
+/**
+ * The unit in one word, for a place that has room for one word.
+ *
+ * A quick-action tile, a chip, a small button: "New prepaid pass" does
+ * not fit and wrapping it breaks the row. The head noun is the last
+ * word, and it is still the founder's own word — "prepaid pass" becomes
+ * "pass", "weekly number" becomes "number".
+ */
+export function shortUnit(unit: string): string {
+  const words = unit.trim().split(/\s+/).filter(Boolean);
+  const last = words[words.length - 1] ?? unit;
+  return last.length > 12 ? last.slice(0, 12) : last;
+}

@@ -356,6 +356,26 @@ export function coloursOf(p: Palette, treatment: Treatment): Colours {
     c = { ...c, bg: "#0B0F14", fg: "#F1F5F9", card: "#141A22", cf: "#F1F5F9", m: "#1B222C", mf: "#94A3B8", b: "#273241" };
   }
   const dark = luminance(c.bg) < 0.25;
+  // THE INK IS INK.
+  //
+  // The palette tables give a brand-tinted foreground — brown text for a
+  // bakery, purple for a community — and on a web page that reads as
+  // considered. On a phone it reads as cheap, because no app on the phone
+  // does it: labels and body are near-black, and the brand appears on the
+  // things you can press. A brown list of customers' names was the single
+  // loudest reason these screens did not look premium.
+  //
+  // A trace of the brand hue stays in the ink so it does not feel bolted
+  // on, and the secondary label goes fully neutral, which is what makes
+  // the primary line read as primary.
+  if (treatment.id === "native") {
+    c = {
+      ...c,
+      fg: dark ? mix("#F2F2F7", c.fg, 0.06) : mix("#1C1C1E", c.fg, 0.08),
+      cf: dark ? mix("#F2F2F7", c.fg, 0.06) : mix("#1C1C1E", c.fg, 0.08),
+      mf: dark ? mix("#98989F", c.fg, 0.04) : mix("#8A8A8E", c.fg, 0.04),
+    };
+  }
   const tintBase = c.card;
   const tints: [string, string][] = [c.p, c.a, c.s, mix(c.p, c.a, 0.5)].map((x) => [mix(tintBase, x, dark ? 0.35 : 0.16), dark ? mix(x, "#FFFFFF", 0.5) : mix(x, "#000000", 0.35)] as [string, string]);
   return { ...c, dark, tints };
@@ -636,7 +656,8 @@ ${SCENE_CSS}
 .bal .bv{font:700 38px/1.05 var(--fh);letter-spacing:-.02em;margin:8px 0 14px;font-variant-numeric:tabular-nums}
 .bal .bf{display:flex;justify-content:space-between;font-size:13px;opacity:.85}
 .qa{display:flex;justify-content:space-between;margin:16px 0 6px}
-.qa .q{display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;font-size:12px;font-weight:600;color:var(--fg)}
+.qa .q{display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;font-size:12px;font-weight:600;color:var(--fg);min-width:0}
+.qa .q b{display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .qa .q i{width:52px;height:52px;border-radius:${rb >= 999 ? "50%" : "var(--rm)"};display:inline-flex;align-items:center;justify-content:center;background:var(--cardbg);border:var(--bd);box-shadow:var(--sh);color:var(--fg);${glass}}
 .qa .q:first-child i{background:var(--p);color:var(--op);border-color:var(--p)}
 .dayh{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--mf);${t.heading === "upper" ? "text-transform:uppercase;letter-spacing:.06em;" : ""}margin:18px 0 2px}
@@ -773,12 +794,48 @@ h3{font-size:18px;letter-spacing:-.01em}
 .eyebrow{letter-spacing:.04em;font-size:13px}
 .sec span{font-size:20px;letter-spacing:-.018em}
 .card,.stat,.tile,.quote{background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)};border:0;box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.06)}}
-/* a group of rows is one white block, and the hairlines inside it start where the text does */
-.card .row,.list .row{border-bottom:1px solid ${sep};margin-left:0}
-.row{border-bottom:1px solid ${sep};position:relative;border-color:transparent}
-.row::after{content:"";position:absolute;left:52px;right:0;bottom:0;height:1px;background:${sep}}
-.row:last-child::after{display:none}
+/*
+ * A run of rows is one white group on the grey ground, rounded at the
+ * ends and square in the middle — the inset-grouped list every settings,
+ * health and banking screen on the phone is built from. Rows lying bare
+ * on the ground with a hairline between them is a web table, and it was
+ * the last structural thing making these read as pages rather than apps.
+ *
+ * :has() finds the ends of a run without the markup having to know it is
+ * in one. Where it is unsupported every row rounds on its own, which is
+ * a card list: different, still deliberate.
+ */
+.row{position:relative;border-bottom:0;background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)};padding-left:14px;padding-right:14px;border-radius:14px}
+.row + .row{border-top-left-radius:0;border-top-right-radius:0}
+.row:has(+ .row){border-bottom-left-radius:0;border-bottom-right-radius:0}
+.row::after{content:"";position:absolute;left:66px;right:0;bottom:0;height:1px;background:${sep}}
+.row:last-child::after,.row:not(:has(+ .row))::after{display:none}
+/* rows already inside a card are part of that card, not a group of their own */
+.card .row{background:transparent;padding-left:0;padding-right:0;border-radius:0}
+.card .row::after{left:52px}
+.row.card{background:${c.dark ? c.card : mix(c.card, "#FFFFFF", 0.75)}}
 .row.card::after{display:none}
+.body{padding-bottom:10px}
+/* text that must never wrap: a trailing value, a "see all", the link on
+   a price card. Each is a short fixed phrase beside something long, and
+   when it breaks it collides with what it sits next to */
+.sec a,.rr,.dh span:last-child,.spread > .strong{white-space:nowrap}
+/* a tappable card says so with a chevron, not with words competing for
+   the width its own title needs */
+.disc{flex:none;color:${rgba(c.fg, 0.28)};display:inline-flex;align-items:center}
+/* the floating bars are the brand's, not the ink's: with a near-neutral
+   ink they would otherwise come out as a black slab across the screen */
+.cartbar{background:var(--p);color:var(--op);box-shadow:0 8px 24px ${rgba(c.p, 0.32)}}
+.cartbar .cnt{background:${rgba("#FFFFFF", 0.2)}}
+.mappill{background:var(--p);color:var(--op);box-shadow:0 8px 24px ${rgba(c.p, 0.32)}}
+/* a section header and its link share one line and neither may be cut */
+.sec{gap:12px}
+.sec span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* a tinted outline round a banner or a tile is the brand colour doing
+   a job that belongs to the card's own edge */
+.promo,.tile,.quote,.fi,.chip{border:0}
+.promo{box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.08)}}
+.spread{gap:12px}
 .btn{letter-spacing:-.01em}
 .btn.p{height:50px;border-radius:14px;font-weight:600;box-shadow:none}
 .btn.s,.btn.q{height:50px;border-radius:14px;background:${fill};border:0;color:var(--p);font-weight:600}
@@ -790,6 +847,14 @@ h3{font-size:18px;letter-spacing:-.01em}
 .seg span{height:32px;line-height:32px;border-radius:7px;font-size:14px;font-weight:600}
 .seg span.on{background:var(--card);box-shadow:0 1px 3px ${rgba(c.fg, 0.16)},0 0 0 .5px ${rgba(c.fg, 0.04)}}
 .icb{background:${fill};border:0;width:36px;height:36px;border-radius:50%}
+/* a tinted border round a white tile is a brand colour doing a job that
+   belongs to fill and shadow; on the phone these are plain tiles */
+.qa .q i{border:0;background:${c.dark ? rgba(c.fg, 0.1) : "#FFFFFF"};box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.08)};border-radius:16px}
+.qa .q:first-child i{background:var(--p);color:var(--op);box-shadow:none}
+.qa .q b{font-size:12px;font-weight:500;color:var(--mf)}
+/* one soft lift, not a coloured glow under everything */
+.bal{box-shadow:0 1px 2px ${rgba(c.fg, c.dark ? 0.5 : 0.1)}}
+.fab{box-shadow:0 4px 14px ${rgba(c.fg, 0.22)}}
 .pl{border-radius:999px;font-size:13px;font-weight:600}
 /* the bar at the bottom: translucent, one hairline, nothing else */
 .tab{height:83px;background:${rgba(c.card, 0.82)};border-top:.5px solid ${sep};backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);padding:6px 4px 0}

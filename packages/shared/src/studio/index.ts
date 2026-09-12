@@ -13,9 +13,10 @@ import { designPlan, planCss, planText, type StudioPlan, type PlanInput } from "
 import { esc } from "./parts.ts";
 import { ADJECTIVES, detail, landing, main, price, signIn, type Content, type Money, type Nav, type Screen } from "./screens.ts";
 import { unitOf } from "./nouns.ts";
+import { sceneDefs } from "./scenes.ts";
 
 export * from "./plan.ts";
-export { scene, sceneFor, type SceneKind } from "./scenes.ts";
+export { scene, sceneDefs, sceneFor, type SceneKind } from "./scenes.ts";
 export { PRODUCTS, FONTS } from "./tables.ts";
 
 const NAMES = ["Maria K.", "Kostas A.", "Eleni L.", "Andreas P.", "Nikos S.", "Despina C.", "Yiannis T.", "Sofia G.", "Petros M.", "Anna R.", "Marios D.", "Christina V."];
@@ -97,6 +98,6 @@ export function studioDesign(m: Mockup, opts: StudioOptions = {}): StudioResult 
   const nav: Nav = withSignIn ? { landing: 0, signin: 1, main: 2, detail: 3, price: 4 } : { landing: 0, main: 1, detail: 2, price: 3 };
   const list: Screen[] = [landing(c, plan, nav), ...(withSignIn ? [signIn(c, plan, nav)] : []), main(c, plan, nav), detail(c, plan, nav), price(c, plan, nav)];
   const sections = list.map((s, i) => `<section class="screen${i === 0 ? " on" : ""}" id="s${i}" data-title="${esc(s.title)}">${s.html}</section>`).join("\n");
-  const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390,initial-scale=1"><title>${esc(m.name)}</title>${plan.fonts.link ? `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${plan.fonts.link}">` : ""}<style>${planCss(plan)}</style></head><body>\n${sections}\n</body></html>`;
+  const html = `<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=390,initial-scale=1"><title>${esc(m.name)}</title>${plan.fonts.link ? `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${plan.fonts.link}">` : ""}<style>${planCss(plan)}</style></head><body>\n${sceneDefs([c.unit])}\n${sections}\n</body></html>`;
   return { html, plan, screens: list.map((s, i) => ({ id: `s${i}`, title: s.title })), system: planText(plan), unit: c.unit };
 }
