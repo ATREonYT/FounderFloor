@@ -174,8 +174,22 @@ Finished: the road and the seven stops, the six rooms and the plan, task pages
 with steps, the small rooms where the founder writes what happened, the
 notebook, the Workshop (it draws the founder's app as tappable screens and
 writes a build brief for Lovable, Bolt, v0, Base44 or Claude Code), the Friday
-log and the week read back, the pixel building on the map, and the whole
-practice mode.
+log and the week read back, the pixel building on the map, the whole practice
+mode, and a copy of everything the founder can take out and put back.
+
+The most recent work is all in the Workshop's studio. Three things worth
+knowing before reading it. Pictures are asked for by subject, not by shape:
+\`studio/scenes.ts\` holds seventeen drawings and the product's own noun picks
+one, so a bakery shows bread rather than brown rectangles. The first take is
+drawn to the platform's own chassis — a near-neutral ground, content in boxed
+groups, the brand on the controls rather than the page, the system type at the
+system's sizes — with the product's own palette and category layout on top; the
+market's own looks are a seed away. And the finish is deliberately technical:
+hairlines instead of shadows, 10 to 12px corners, figures in a monospaced face
+at tabular widths, captions as small letterspaced capitals, states as outlined
+tags. \`handoff.ts\` hands all of that to a builder tool in the form it writes
+files in, so what comes back out of Lovable is the app the founder was looking
+at rather than a different one with the same words.
 
 Not finished, and known: billing is not wired (purchases are a sandbox
 stub, RevenueCat is planned), the floor of other founders is built but shut
@@ -199,6 +213,12 @@ a labelled sample, and that labelling is deliberate.
   time away.
 - Whether the interface reads as machine-generated. That is the standing
   worry; \`DESIGN.md\` lists the tells that have already been removed.
+- Whether the generated mock-ups in \`packages/shared/src/studio\` look like
+  software or like a website made narrow. \`scripts/measure-mockups.mjs\` opens
+  every screen of nine sample products in a browser and checks the things the
+  eye is bad at — columns meant to be equal, a number centred in its ring,
+  nothing off the screen or under 44px to press — and passes; what it cannot
+  check is whether the result has any taste.
 - Accessibility: labels, roles, 44pt targets, Dynamic Type, and both
   appearances.
 
