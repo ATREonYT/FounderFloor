@@ -42,7 +42,7 @@ export default function You() {
     { glyph: "rocket", color: "#8C3B2E", title: "The floor", line: "Other founders, and what they are building", to: "/floor", soon: true },
     { glyph: "star", color: "#A28457", title: tier === "free" ? "Plans and Pro" : "Your plan with us", line: tier === "free" ? "Free does a lot. Pro remembers." : `${tier[0].toUpperCase()}${tier.slice(1)}, manage`, to: "/plans" },
     { glyph: "leaf", color: "#4E6E4E", title: "How it works", line: "The road, the rooms, the desk: the whole guide", to: "/guide" },
-    { glyph: "leaf", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook switch", to: "/settings" },
+    { glyph: "leaf", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook, a copy of everything", to: "/settings" },
   ];
   return (
     <View style={{ flex: 1 }}>
