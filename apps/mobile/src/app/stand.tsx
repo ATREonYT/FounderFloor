@@ -438,7 +438,7 @@ export default function Stand() {
         <View style={{ gap: 12 }}>
           <Spec tone="muted">{`Account ${auth?.id ?? ""}`}</Spec>
           <Body size="sm" tone="muted">
-            {stand.source === "floor" ? "The same stand as the site." : "No stand on a floor yet. The Floor tab has vacant plinths."}
+            {stand.source === "floor" ? "The same stand as the site." : "No stand on a floor yet. The floor opens later, and your sign goes up with it."}
           </Body>
           <Pressable onPress={() => { setAccount(false); router.push("/settings" as Href); }} accessibilityRole="button" accessibilityLabel="Settings">
             <Plate tone="paper" radius={radius.md} padding={12}>

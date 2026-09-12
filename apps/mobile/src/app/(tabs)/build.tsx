@@ -15,8 +15,8 @@ import { STAGES, stageProgress, currentStage, pathProgress, DOC_KINDS, draftDocu
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useGate } from "../../lib/gate";
 import { Body, Building, Button, ButtonRow, Calendar, Dialogue, Display, Glyph, Keeper, Plate, Progress, Rise, Spec, Stage, Tap, Tick, Toast, haptic, radius, shell, useLayout, wash, type Mood, PixelIcon } from "@founderfloor/ui";
-import { effectivePlan } from "../../lib/billing";
-import { roomGate, trialLeft, FREE_ROOMS } from "../../lib/trial";
+
+import { roomGate } from "../../lib/trial";
 import { ROOM_COLOR, ROOM_GLYPH } from "../../lib/glyphs";
 import { Hint } from "../../components/Hint";
 import { TourTarget } from "../../components/TourTarget";
@@ -66,7 +66,6 @@ export default function Build() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tour]);
-  const opened = effectivePlan() !== "free" || !!trialLeft();
   useEffect(() => {
     const st = room ? STAGES.find((x) => x.id === room) : null;
     if (st) {
@@ -124,16 +123,16 @@ export default function Build() {
       STAGES.map((s, i) => {
         const p = stageProgress(s, ticks);
         const weeks = roomWeeks.filter((x) => x.room === i).map((x) => x.w.n);
-        return { id: s.id, name: s.name, color: DOOR[i], glyph: ROOM_GLYPH[s.id] ?? "bolt", tasks: tasksIn(i).map((t) => ({ text: t.text, done: t.done })), week: weeks.length ? `Week ${weeks.join(" & ")}` : undefined, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length} on the list`, progress: p, done: p >= 1, locked: s.n > FREE_ROOMS && !opened };
+        return { id: s.id, name: s.name, color: DOOR[i], glyph: ROOM_GLYPH[s.id] ?? "bolt", tasks: tasksIn(i).map((t) => ({ text: t.text, done: t.done })), week: weeks.length ? `Week ${weeks.join(" & ")}` : undefined, meta: `${s.items.filter((x) => ticks.includes(x.id)).length} of ${s.items.length} on the list`, progress: p, done: p >= 1, locked: false };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ticks, roomWeeks, planDone, opened],
+    [ticks, roomWeeks, planDone],
   );
   const walked = plan ? planDone.length / Math.max(1, plan.weeks.reduce((n, w) => n + w.do.length, 0)) : pathProgress(ticks);
 
   return (
     <View style={{ flex: 1 }}>
-      <TopBar center={<Spec tone="muted">{`The map. ${Math.round(walked * 100)}% of the road walked`}</Spec>} />
+      <TopBar center={<Spec tone="muted">{`${Math.round(walked * 100)}% of the road walked`}</Spec>} />
       <ScrollView contentContainerStyle={{ width: "100%", maxWidth: COLUMN + 120, alignSelf: "center", paddingHorizontal: L.shell.paddingHorizontal, paddingBottom: bottom, gap: 16 }}>
         <View style={{ gap: 6 }}>
           <Display size={L.compact ? "3xl" : "4xl"}>The map</Display>
@@ -166,11 +165,6 @@ export default function Build() {
           />
         </TourTarget>
         </Rise>
-        {!opened ? (
-          <Spec tone="faint">
-            {`Rooms 1 to ${FREE_ROOMS} are every founder's. The last three open with your free week with the whole staff.`}
-          </Spec>
-        ) : null}
         <Rise k={2}>
         <Plate tone="panel" radius={radius.xl} padding={16}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>

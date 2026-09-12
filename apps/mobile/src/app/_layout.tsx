@@ -15,6 +15,7 @@ import { Platform, View, useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { FONT_MAP, Ground, PIXELATED_CSS, shell, applyScheme } from "@founderfloor/ui";
+import { useKey } from "../lib/key";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -26,6 +27,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) void SplashScreen.hideAsync();
   }, [loaded]);
+  // the founder's own key, if there is one, out of the keychain before the first question is asked
+  useEffect(() => {
+    void useKey.getState().load();
+  }, []);
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     const s = document.createElement("style");

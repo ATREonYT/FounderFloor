@@ -60,9 +60,9 @@ export default function Plans() {
         <Scene set="cafe" height={L.compact ? 172 : 200} radiusPx={radius.xl} accessibilityLabel="The staff room">
           <Spec tone="muted">{week ? `The whole staff, ${week.days} day${week.days === 1 ? "" : "S"} left` : trialUsed ? "YOUR FREE WEEK HAS BEEN HAD" : `${APP_PLANS.pro.trialDays} days of the whole staff, free, at your first value moment`}</Spec>
         </Scene>
-        <Display size={L.compact ? "3xl" : "4xl"}>Keep the whole staff.</Display>
+        <Display size={L.compact ? "3xl" : "4xl"}>Turn the staff on.</Display>
         <Body tone="muted" size="lg">
-          Free covers the whole loop. Pro adds the coaches' memory, all four of them, and every draft. Founder+ adds the careful model and a better spot on the floor.
+          Free covers the whole road, with the building writing every page from your own words. Pro is what turns the staff on: the desk and all four coaches answer for real, they keep notes, and we pay for the words.
         </Body>
         <Choices value={cycle} options={[{ v: "monthly", label: "Monthly" }, { v: "annual", label: "Yearly, two months free" }]} onChange={setCycle} />
         <View style={{ flexDirection: L.compact ? "column" : "row", gap: 12 }}>
@@ -127,7 +127,7 @@ export default function Plans() {
           </Plate>
         ) : null}
         <Spec tone="faint">
-          {planState.sandbox ? `Sandbox plan on this device${planState.trialEnds ? `, trial to ${planState.trialEnds.slice(0, 10)}` : ""}. Real purchases arrive with the store build.` : "Cancel any time in the store. Your stand and the floor stay free forever."}
+          {planState.sandbox ? `Sandbox plan on this device${planState.trialEnds ? `, trial to ${planState.trialEnds.slice(0, 10)}` : ""}. Real purchases arrive with the store build.` : "Cancel any time in the store. Your stand, your plan and everything you write stay yours, free, always."}
         </Spec>
         <Pressable onPress={() => restore().then(() => say("Nothing to restore yet."))} accessibilityRole="button">
           <Spec tone="muted">Restore a purchase</Spec>

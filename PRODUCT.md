@@ -32,9 +32,9 @@ The road: seven stops (say your idea, make your plan, ask five people, do this w
 - Weekly rituals: Monday plan, three tasks a week, Friday log of five numbers in the Office, the week read back with a score out of 100.
 - Each plan task opens a page with steps; each step, each line on a room's list and each thing the week's reading says to do opens a room where the founder writes what happened. The desk answers there.
 - The Workshop shows the product mocked up as three to six tappable screens, a poster to show people, and a build brief plus a prompt to paste into a builder tool.
-- Two running modes: with an AI key the model writes plans, pages, briefs and answers; without one (practice mode) every page is written by local rules and the desk answers from the page. Both must be complete and honest about which is running.
-- The stand is public on the web at a slug URL with an open-graph image and an embeddable badge; the hall shows other founders' stands.
-- Pricing tiers exist in code (Free, Pro, Founder+) with a reverse trial of a week with the whole staff; the paywall stands where the staff's memory would have spoken. These are product facts in `packages/shared/src/plans.ts`, not evidence of revenue.
+- Two running modes. On Free the building writes every plan, page, brief and reply itself from the founder's own words, whole and labelled as practice. Pro (and the free week of the whole staff) turns the staff on: the desk and the four coaches answer live and FounderFloor pays for the words. A founder who already has a Claude key can put it in Settings; that changes who pays, not what the plan allows, and nothing asks for a key before the founder has said their idea. Both modes must be complete and honest about which is running.
+- The stand is public on the web at a slug URL with an open-graph image and an embeddable badge. The floor (a hall of other founders' stands, walkable) is built but not open in the app: it shows a coming-soon sign until there are founders standing on it, behind `FLOOR_OPEN` in `apps/mobile/src/app/floor.tsx`.
+- Pricing tiers exist in code (Free, Pro, Founder+) with a reverse trial of a week with the whole staff; the paywall stands where the staff's live voice would have spoken, never across the road itself. Every one of the six rooms, every task page and every small writing room is free on every plan. These are product facts in `packages/shared/src/plans.ts`, not evidence of revenue.
 
 ## Capabilities and Constraints
 
@@ -57,7 +57,7 @@ The road: seven stops (say your idea, make your plan, ask five people, do this w
 
 None yet. No paying customers, no testimonials, no press, no real founders on the floor as of 2026-09-10 (confirmed by the founder). The stands in the hall and the Lantern mock-up are samples and are labelled as samples wherever they appear; that labelling must stay. Future work must not fabricate customers, quotes, numbers, logos or press.
 
-Real assets: the pixel atlas and scenes in `packages/ui`, the studio's rendered example sheets in `docs/design/studio/`, the design docs in `docs/design/` and `docs/*.md`.
+Real assets: the pixel atlas and scenes in `packages/ui`, the studio's rendered example sheets in `docs/design/studio/`, the design docs in `docs/design/` and `docs/*.md`, and the user research in `docs/research/what-people-want.md` (537 sources, September 2026) which is evidence about apps in general, not about FounderFloor.
 
 ## Product Principles
 

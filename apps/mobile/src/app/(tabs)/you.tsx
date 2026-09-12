@@ -30,7 +30,7 @@ export default function You() {
   const tier = effectivePlan();
   const r = stand.record;
   const column = { width: "100%" as const, maxWidth: COLUMN, alignSelf: "center" as const, paddingHorizontal: L.shell.paddingHorizontal };
-  type Row = { glyph: GlyphId; color: string; title: string; line: string; to: string; badge?: number };
+  type Row = { glyph: GlyphId; color: string; title: string; line: string; to: string; badge?: number; soon?: boolean };
   const rows: Row[] = [
     { glyph: "cube", color: "#A28457", title: "The Workshop", line: "See your app, and send the brief to build it (stops 5 and 6)", to: "/workshop" },
     { glyph: "coin", color: "#5E7C93", title: "The Office", line: kpi.length ? `${kpi.length} ${kpi.length === 1 ? "week" : "weeks"} logged, your numbers, what people said` : "Your numbers, what people said (stops 2 and 7)", to: "/office" },
@@ -39,7 +39,7 @@ export default function You() {
     { glyph: "chip", color: "#3B5B92", title: "The drawer", line: docs.length ? `${docs.length} ${docs.length === 1 ? "draft" : "drafts"} the coaches wrote` : "Drafts the coaches write for you", to: "/drawer" },
     { glyph: "wave", color: "#B4762E", title: "Inbox", line: unread ? `${unread} unread` : "Notes left at your stand", to: "/inbox", badge: unread },
     { glyph: "heart", color: "#2F6F6A", title: "The coaches", line: "Four people to ask: plan, sales, pitch, money", to: "/coaches" },
-    { glyph: "rocket", color: "#8C3B2E", title: "The floor", line: "Other founders, and what they are building", to: "/floor" },
+    { glyph: "rocket", color: "#8C3B2E", title: "The floor", line: "Other founders, and what they are building", to: "/floor", soon: true },
     { glyph: "star", color: "#A28457", title: tier === "free" ? "Plans and Pro" : "Your plan with us", line: tier === "free" ? "Free does a lot. Pro remembers." : `${tier[0].toUpperCase()}${tier.slice(1)}, manage`, to: "/plans" },
     { glyph: "leaf", color: "#4E6E4E", title: "How it works", line: "The road, the rooms, the desk: the whole guide", to: "/guide" },
     { glyph: "leaf", color: "#4E6E4E", title: "Settings", line: "Reminders, email, the notebook switch", to: "/settings" },
@@ -122,6 +122,11 @@ export default function You() {
                   {row.badge ? (
                     <View style={{ minWidth: 20, height: 20, borderRadius: 10, backgroundColor: shell.accent, alignItems: "center", justifyContent: "center", paddingHorizontal: 6 }}>
                       <Spec tone="paper">{String(row.badge)}</Spec>
+                    </View>
+                  ) : null}
+                  {row.soon ? (
+                    <View style={{ height: 20, borderRadius: 6, borderWidth: 1, borderColor: shell.line, alignItems: "center", justifyContent: "center", paddingHorizontal: 7 }}>
+                      <Spec tone="faint">soon</Spec>
                     </View>
                   ) : null}
                   <Body tone="accent">›</Body>

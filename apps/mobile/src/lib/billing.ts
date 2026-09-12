@@ -30,6 +30,19 @@ export function offerings(): Offering[] {
   return out;
 }
 
+/**
+ * Does the staff answer for real, with FounderFloor paying for the words?
+ * Pro, Founder+, or the free week with the whole staff. On Free the
+ * building answers from its own rules instead, and says so. The founder's
+ * own key is a separate door (lib/key.ts): it changes who pays, not the
+ * plan.
+ */
+export function staffUnlocked(): boolean {
+  if (effectivePlan() !== "free") return true;
+  const until = useSession.getState().floor?.paid?.until;
+  return typeof until === "number" && until > Date.now();
+}
+
 /** The plan the gates use: the app's own, or the site's membership, whichever is higher. */
 export function effectivePlan(): Plan {
   const p = useFounder.getState().plan;

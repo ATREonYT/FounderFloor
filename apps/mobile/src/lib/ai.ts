@@ -1,9 +1,14 @@
 /**
- * The one door to a model, with three keys.
+ * The one door to a model, with four keys, in the order they are tried.
  *
- *   edge       EXPO_PUBLIC_SUPABASE_URL is set: POST to the Edge Function
+ *   own        The founder put their own Anthropic key in Settings
+ *              (lib/key.ts). Their account pays for the words. It changes
+ *              who pays, never what the plan allows.
+ *   edge       Pro, Founder+ or the free week is running AND
+ *              EXPO_PUBLIC_SUPABASE_URL is set: POST to the Edge Function
  *              with the floor token; the function holds the Anthropic key,
- *              caches the stand block, gates Free, logs usage. Production.
+ *              caches the stand block, logs usage, and FounderFloor pays.
+ *              This is what Pro buys.
  *   dev        EXPO_PUBLIC_DEV_ANTHROPIC_KEY is set and the build is not a
  *              release: call Anthropic directly so Alex can try the live
  *              coaches in the Simulator today. EXPO_PUBLIC_* values are
@@ -12,16 +17,20 @@
  *              must never be in the environment of a release build; the
  *              __DEV__ check stops use, not inclusion. Rotate it before the
  *              first store build.
- *   rehearsal  neither: the caller falls back to the scripted generator in
- *              @founderfloor/shared and the status line says so.
+ *   rehearsal  none of the above, which includes every founder on Free:
+ *              the caller falls back to the generator in
+ *              @founderfloor/shared, every page is still whole, and the
+ *              status line says the building wrote it.
  *
  * Every call returns whole text; the screens "stream" it locally, word by
  * word, so the feel is the same whichever key is in the door.
  */
 import { Platform } from "react-native";
 import { useSession } from "./store";
+import { staffUnlocked } from "./billing";
+import { ownKey } from "./key";
 
-export type AiMode = "edge" | "dev" | "rehearsal";
+export type AiMode = "own" | "edge" | "dev" | "rehearsal";
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -32,10 +41,14 @@ const MODEL_CAREFUL = process.env.EXPO_PUBLIC_ANTHROPIC_MODEL_CAREFUL ?? "claude
 const isRelease = !__DEV__;
 
 export function aiMode(): AiMode {
-  if (SUPABASE_URL) return "edge";
+  if (ownKey()) return "own";
+  if (SUPABASE_URL && staffUnlocked()) return "edge";
   if (DEV_KEY && !isRelease) return "dev";
   return "rehearsal";
 }
+
+/** The model the desk asks for on the direct paths; the key page tests against it. */
+export const FAST_MODEL = MODEL_FAST;
 
 export interface Ask {
   /** Edge Function name: coach-chat, guide, idea, receptionist. */
@@ -76,10 +89,11 @@ export async function askModel(a: Ask): Promise<string> {
     }
     return ((await res.json()) as { text: string }).text;
   }
-  if (mode === "dev") {
+  if (mode === "dev" || mode === "own") {
+    const key = mode === "own" ? (ownKey() ?? "") : DEV_KEY;
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": DEV_KEY, "anthropic-version": "2023-06-01", ...(Platform.OS === "web" ? { "anthropic-dangerous-direct-browser-access": "true" } : {}) },
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", ...(Platform.OS === "web" ? { "anthropic-dangerous-direct-browser-access": "true" } : {}) },
       body: JSON.stringify({
         model: a.direct.model === "careful" ? MODEL_CAREFUL : MODEL_FAST,
         max_tokens: a.direct.maxTokens ?? 500,
@@ -92,7 +106,7 @@ export async function askModel(a: Ask): Promise<string> {
       try {
         detail = ((await res.json()) as { error?: { message?: string } }).error?.message ?? "";
       } catch {}
-      const why = res.status === 401 ? "the key was refused (revoked or mistyped)" : res.status === 400 && /credit|billing/i.test(detail) ? "the Anthropic account has no credit yet" : res.status === 404 ? "the model name is not available to this key" : res.status === 429 ? "rate limited, try again in a moment" : detail || `error ${res.status}`;
+      const why = res.status === 401 ? "the key was refused; make a new one in Settings" : res.status === 400 && /credit|billing|balance/i.test(detail) ? "the account behind your key has no credit left" : res.status === 404 ? "your key cannot use that model yet" : res.status === 429 ? "rate limited, try again in a moment" : detail || `error ${res.status}`;
       throw new AiError(`The model did not answer: ${why}.`, res.status);
     }
     const j = (await res.json()) as { content: { type: string; text?: string }[] };
@@ -113,7 +127,8 @@ export function parseJson<T>(text: string): T | null {
 }
 
 export const MODE_LINE: Record<AiMode, string> = {
-  edge: "Live · the desk answers through your project",
-  dev: "Live · dev key on this device only",
-  rehearsal: "Practice mode · answers use your numbers, no AI yet",
+  own: "Live, on your own key. You pay for the words.",
+  edge: "Live. The staff answer for real.",
+  dev: "Live, dev key on this device only.",
+  rehearsal: "Practice mode. The building writes this from your own words.",
 };

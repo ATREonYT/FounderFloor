@@ -4,13 +4,17 @@
  * The shape follows what the subscription data actually shows (docs/
  * reboot-plan.md, "The mine"): a free core loop that is never taken away,
  * one week of the whole staff started at the first moment the app pays
- * something back (a reverse trial, server-side, once per account), and a
- * single capability that Pro adds which compounds with use — the staff
- * REMEMBER. On Free every coach starts fresh each visit and the Office
- * shows this week's numbers; on Pro the coaches carry the log, the
- * interview book and the last conversations, and Theo reads week against
- * week. The paywall fires where that memory would have spoken: the second
- * weekly log, the second visit to a coach — after value, never before it.
+ * something back (a reverse trial, server-side, once per account), and
+ * what Pro adds: the staff ANSWER FOR REAL, and remember. On Free the
+ * building writes every page and every reply itself from the founder's
+ * own words, whole and labelled; on Pro the desk and the four coaches
+ * answer live with FounderFloor paying for the words, they carry the log,
+ * the interview book and the last conversations, and Theo reads week
+ * against week. The paywall fires where that voice would have spoken:
+ * the second weekly log, the second visit to a coach — after value,
+ * never before it. A founder who already has a Claude key can put it in
+ * Settings; that changes who pays for the words, not what the plan
+ * allows (apps/mobile/src/lib/key.ts).
  *
  * Prices from the September 2026 field: Foundra $39/mo, AI Co-Founder
  * $25/mo, PainMap $29–49/mo, Preuve $19/mo. The site's live membership
@@ -96,9 +100,9 @@ export const MINES: Record<MineId, { title: string; line: string; why: string }>
     why: "Two weeks in the log. Theo reads them against each other on Pro: the movement, the runway trend, the update drafted from your own numbers.",
   },
   "coach-memory": {
-    title: "I start fresh each visit on Free.",
-    line: "Pro, and I keep the notes: what you said last time, what you promised, what the log says since.",
-    why: "The coaches keep notes between visits on Pro: the log, the interview book, and your last conversations. On Free every visit starts from the stand alone.",
+    title: "On Free I answer from the building's rules.",
+    line: "Pro, and I answer for real and keep the notes: what you said last time, what you promised, what the log says since.",
+    why: "On Pro the coaches answer live and keep notes between visits: the log, the interview book, and your last conversations. On Free the building writes the answer from your own words, and says so.",
   },
   "update-from-log": {
     title: "The update writes itself from the log.",
@@ -128,7 +132,7 @@ export function trialTimeline(days = TRIAL_DAYS, startedAt?: number): { day: num
 }
 
 export const PLAN_COPY: Record<Plan, { name: string; line: string; buys: string[] }> = {
-  free: { name: "Free", line: "Enough to build the thing.", buys: ["Your stand and the floor, forever", "The workshop, all six rooms", "The weekly log, every week", "Ines at the counter, ten turns a day", "Three idea runs, two second opinions", "Three drafts a month", "The staff start fresh each visit"] },
-  pro: { name: "Pro", line: "The staff remember.", buys: ["Every coach keeps notes between visits", "Theo reads the log week against week", "All four coaches, unlimited turns", "Every draft in the drawer", "The update drafted from your log", "The idea finder and second opinions, open"] },
-  founder: { name: "Founder+", line: "Pro, with the careful model and a better address.", buys: ["Everything in Pro", "Pitch reviews by the careful model", "Verified revenue badge when Stripe is connected", "Priority placement on the floor", "A seat in a stage-matched circle", "Founding member price, kept"] },
+  free: { name: "Free", line: "The whole road, written by the building.", buys: ["Your stand, your plan and your notebook, forever", "All six rooms and every task page", "The weekly log and the week read back", "The Workshop draws your app and writes the brief", "The desk and the coaches answer from the building's own rules", "Everything you write stays yours, and copies out"] },
+  pro: { name: "Pro", line: "The staff answer for real.", buys: ["The desk and all four coaches answer live, and we pay for the words", "They keep notes between visits", "Theo reads the log week against week", "Every draft in the drawer", "The update drafted from your own numbers", "The idea finder and second opinions, open"] },
+  founder: { name: "Founder+", line: "Pro, with the careful model.", buys: ["Everything in Pro", "The careful model writes the brief and designs your app", "Pitch reviews by the careful model", "Verified revenue badge when Stripe is connected", "A better address on the floor when it opens", "Founding member price, kept"] },
 };

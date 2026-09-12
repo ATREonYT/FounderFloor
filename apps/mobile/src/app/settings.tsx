@@ -5,12 +5,14 @@
  * decision the app makes for the founder.
  */
 import { useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Linking, Pressable, ScrollView, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
-import { Body, Button, ButtonRow, Choices, Display, Input, Plate, Scene, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
+import { Body, Button, ButtonRow, Choices, Dialogue, Display, Input, Plate, Rise, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
 import { useFounder, useSession } from "../lib/store";
 import { applyReminders, type DailyTime } from "../lib/reminders";
-import { aiMode, MODE_LINE } from "../lib/ai";
+import { aiMode, FAST_MODEL, MODE_LINE } from "../lib/ai";
+import { staffUnlocked } from "../lib/billing";
+import { keyTail, testKey, useKey, type KeyVerdict } from "../lib/key";
 
 export default function Settings() {
   const L = useLayout();
@@ -19,6 +21,27 @@ export default function Settings() {
   const { reminders, setReminders, memory, memoryOn, setMemoryOn } = useFounder();
   const [code, setCode] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const own = useKey((k) => k.key);
+  const keepKey = useKey((k) => k.keep);
+  const forgetKey = useKey((k) => k.forget);
+  const [keyOpen, setKeyOpen] = useState(false);
+  const [draftKey, setDraftKey] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [verdict, setVerdict] = useState<KeyVerdict | null>(null);
+  const mode = aiMode();
+  const live = mode !== "rehearsal";
+  const tryKey = async () => {
+    setTesting(true);
+    setVerdict(null);
+    const v = await testKey(draftKey, FAST_MODEL);
+    setVerdict(v);
+    setTesting(false);
+    if (v.ok) {
+      await keepKey(draftKey.trim());
+      setDraftKey("");
+      setTimeout(() => { setKeyOpen(false); setVerdict(null); say("The staff answer on your key now."); }, 1400);
+    }
+  };
   const say = (t: string) => {
     setToast(t);
     setTimeout(() => setToast(null), 2600);
@@ -34,10 +57,50 @@ export default function Settings() {
         <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace("/today"))} accessibilityRole="button" style={{ alignSelf: "flex-start", backgroundColor: shell.well, borderRadius: radius.full, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
           <Spec tone="ink">← Back</Spec>
         </Pressable>
-        <Scene set="office" height={L.compact ? 132 : 160} radiusPx={radius.xl} ambient={false} accessibilityLabel="Settings">
-          <Spec tone="muted">{auth ? auth.email || auth.name : "Not signed in"}</Spec>
-        </Scene>
-        <Display size={L.compact ? "3xl" : "4xl"}>Settings</Display>
+        <Rise k={0} style={{ gap: 4 }}>
+          <Display size={L.compact ? "3xl" : "4xl"}>Settings</Display>
+          <Body tone="muted">{auth ? auth.email || auth.name : "Not signed in on this phone."}</Body>
+        </Rise>
+
+        {/* who is answering, and what turns the staff on */}
+        <Rise k={1}>
+          <Plate tone="panel" radius={radius.xl} padding={20}>
+            <Body medium>The desk's voice</Body>
+            <View style={{ marginTop: 10, gap: 12 }}>
+              <Body size="sm" tone="muted">
+                {mode === "own"
+                  ? "The desk and the coaches answer for real, on your own Claude account. You pay for the words."
+                  : mode === "rehearsal"
+                    ? "The building writes every page itself, from your own words. Nothing is missing and nothing is invented. Pro turns the staff on, and we pay for the words."
+                    : "The desk and the coaches answer for real. Pro covers the words."}
+              </Body>
+              {!live && !staffUnlocked() ? (
+                <Button block onPress={() => router.push("/plans" as Href)}>
+                  Turn the staff on with Pro
+                </Button>
+              ) : null}
+              {own ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: shell.well, borderRadius: radius.md, paddingLeft: 12, paddingRight: 4, paddingVertical: 8 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Body size="sm" medium>{keyTail(own)}</Body>
+                    <Spec tone="faint">Your key, in this phone's keychain only</Spec>
+                  </View>
+                  <Button size="sm" variant="ghost" onPress={async () => { await forgetKey(); say("Key removed. The building answers again."); }}>
+                    Remove
+                  </Button>
+                </View>
+              ) : (
+                <Pressable onPress={() => { setVerdict(null); setKeyOpen(true); }} accessibilityRole="button" accessibilityLabel="Use my own Claude key" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", minHeight: 44, opacity: pressed ? 0.7 : 1 })}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Body size="sm">Use my own Claude key</Body>
+                    <Spec tone="faint">For founders who already have one</Spec>
+                  </View>
+                  <Body tone="accent">›</Body>
+                </Pressable>
+              )}
+            </View>
+          </Plate>
+        </Rise>
 
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <Body medium>Reminders</Body>
@@ -117,7 +180,7 @@ export default function Settings() {
                 <Body tone="accent">›</Body>
               </Pressable>
             ) : null}
-            <Spec tone="faint">{`AI: ${MODE_LINE[aiMode()]}`}</Spec>
+            <Spec tone="faint">{MODE_LINE[mode]}</Spec>
           </View>
         </Plate>
 
@@ -135,6 +198,32 @@ export default function Settings() {
           </ButtonRow>
         ) : null}
       </ScrollView>
+      {/* one field, tested the moment it is pasted, answered in plain words */}
+      <Dialogue open={keyOpen} onClose={() => { setKeyOpen(false); setVerdict(null); }} sign="YOUR OWN KEY" keeper="The desk" blurb="Paste a Claude key and the staff answer on your account instead of ours." color="#5E7C93" footer="The key stays in this phone's keychain. It never reaches our server and never goes in the notebook.">
+        <View style={{ gap: 12 }}>
+          <Input label="The key" value={draftKey} onChangeText={(v) => { setDraftKey(v); setVerdict(null); }} placeholder="sk-ant-..." autoCapitalize="none" autoCorrect={false} mono multiline style={{ minHeight: 66, textAlignVertical: "top" }} />
+          {verdict ? (
+            <View style={{ gap: 6 }}>
+              <Body size="sm" tone={verdict.ok ? "verify" : "accent"}>{verdict.say}</Body>
+              {verdict.door ? (
+                <Pressable onPress={() => void Linking.openURL(verdict.door!.url)} accessibilityRole="link" style={{ minHeight: 36, justifyContent: "center" }}>
+                  <Spec tone="accent">{verdict.door.label}</Spec>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : (
+            <Spec tone="faint">A key is a long line starting with sk-ant, made at console.anthropic.com. It is not your Claude or ChatGPT login, and the account it belongs to needs a few dollars on it.</Spec>
+          )}
+          <ButtonRow>
+            <Button onPress={() => void tryKey()} disabled={testing || !draftKey.trim()}>
+              {testing ? "Trying it..." : "Test it and keep it"}
+            </Button>
+            <Button variant="ghost" onPress={() => { setKeyOpen(false); setVerdict(null); }}>
+              Not now
+            </Button>
+          </ButtonRow>
+        </View>
+      </Dialogue>
       <Toast text={toast ?? ""} visible={!!toast} />
     </View>
   );

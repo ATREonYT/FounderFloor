@@ -79,7 +79,7 @@ export default function Inbox() {
             </Pressable>
           ))}
         </Plate>
-        <Spec tone="faint">Sample messages for now. Real ones arrive once your stand is on the floor.</Spec>
+        <Spec tone="faint">Sample messages for now. Real ones arrive when the floor opens and your stand is on it.</Spec>
       </ScrollView>
 
       <Dialogue open={!!open} onClose={() => setOpenId(null)} sign={open?.who ?? ""} keeper={open ? KIND[open.kind].label : ""} blurb={open?.stand} color={open ? KIND[open.kind].color : shell.accent} footer={null}>
