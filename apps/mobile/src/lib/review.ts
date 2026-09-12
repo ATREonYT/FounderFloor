@@ -5,7 +5,7 @@
  * rewritten when the notebook has grown since, or on request.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { asReview, founderLog, localReview, reviewContext, weekFacts, REVIEW_PROMPT, type PlanWeek, type WeekFacts, type WeekReview } from "@founderfloor/shared";
+import { asReview, isoWeekKey, localReview, reviewContext, weekFacts, REVIEW_PROMPT, type PlanWeek, type WeekFacts, type WeekReview } from "@founderfloor/shared";
 import { AiError, aiMode, askModel, parseJson } from "./ai";
 import { useFounder } from "./store";
 import { pastLog } from "./consent";
@@ -19,6 +19,8 @@ export function useWeekReview(week: PlanWeek | null) {
   const memoryOn = useFounder((s) => s.memoryOn);
   const weekStarts = useFounder((s) => s.weekStarts);
   const planId = useFounder((s) => s.planId);
+  const interviews = useFounder((s) => s.interviews);
+  const kpi = useFounder((s) => s.kpi);
   const stored = useFounder((s) => (week ? s.reviews[week.n] : undefined));
   const setReview = useFounder((s) => s.setReview);
   const [reading, setReading] = useState(false);
@@ -31,7 +33,7 @@ export function useWeekReview(week: PlanWeek | null) {
     };
   }, []);
   // the week's real window, so a week stretched over an absence still counts everything written in it
-  const facts: WeekFacts | null = week ? weekFacts(week, { profile, planDone, tasks, memory, weekStarts }) : null;
+  const facts: WeekFacts | null = week ? weekFacts(week, { profile, planDone, tasks, memory, weekStarts, interviews, kpi, logWeek: weekStarts[week.n] ? isoWeekKey(weekStarts[week.n]) : undefined }) : null;
 
   const read = useCallback(
     async (force = false) => {

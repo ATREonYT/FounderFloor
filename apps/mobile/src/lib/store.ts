@@ -61,6 +61,37 @@ const secure = {
 
 type Persisted = { state: { auth?: FloorAuth | null; [k: string]: unknown }; version?: number };
 
+/** The founder store's schema version. A copy the founder takes records it. */
+export const STORE_VERSION = 12;
+
+/**
+ * WHETHER THE WRITING REACHED THE DISK.
+ *
+ * Zustand's persistence is fire and forget: if the phone refuses a write
+ * (no space, a locked keychain, a corrupt store) the founder types on and
+ * nothing says the last hour is only in memory. A review in September
+ * 2026 asked for save failures to be visible, and it is right: the one
+ * unforgivable bug here is losing what someone wrote.
+ *
+ * So every write reports. `useSave` holds the time of the last write that
+ * landed and the last one that did not, and the building shows both in
+ * plain words. It is deliberately not persisted: it describes this run.
+ */
+interface SaveState {
+  /** ISO time of the last write that reached the disk. */
+  at: string | null;
+  /** What went wrong on the last failed write, if one has failed since the app opened. */
+  failed: string | null;
+  ok(at: string): void;
+  broke(why: string): void;
+}
+export const useSave = create<SaveState>()((set) => ({
+  at: null,
+  failed: null,
+  ok: (at) => set({ at, failed: null }),
+  broke: (why) => set({ failed: why }),
+}));
+
 const splitStorage: StateStorage = {
   async getItem(name) {
     const [rest, token] = await Promise.all([AsyncStorage.getItem(name), secure.get(`${name}.token`)]);
@@ -77,7 +108,14 @@ const splitStorage: StateStorage = {
     const o = JSON.parse(value) as Persisted;
     const token = o.state?.auth?.token ?? "";
     if (o.state?.auth) o.state.auth = { ...o.state.auth, token: "" };
-    await Promise.all([AsyncStorage.setItem(name, JSON.stringify(o)), token ? secure.set(`${name}.token`, token) : secure.del(`${name}.token`)]);
+    try {
+      await Promise.all([AsyncStorage.setItem(name, JSON.stringify(o)), token ? secure.set(`${name}.token`, token) : secure.del(`${name}.token`)]);
+      useSave.getState().ok(new Date().toISOString());
+    } catch (e) {
+      // never swallowed: the founder is told, and the words stay in memory so a later write can still land
+      useSave.getState().broke(e instanceof Error ? e.message : "the phone would not save");
+      throw e;
+    }
   },
   async removeItem(name) {
     await Promise.all([AsyncStorage.removeItem(name), secure.del(`${name}.token`)]);
@@ -317,6 +355,13 @@ interface FounderState {
   /** The notes on any line the building told the founder to do (a room's list, the week's reading), by the line's id: their words and the desk's answers. */
   work: Record<string, TaskTurn[]>;
   addWorkTurn(id: string, turn: TaskTurn): void;
+  /**
+   * Half-written lines, by the place they were being written. A founder
+   * who backs out of a room mid-sentence and comes back finds the
+   * sentence. Cleared when it is kept.
+   */
+  drafts: Record<string, string>;
+  setDraftText(id: string, text: string): void;
   /** Each week read back, by week number. */
   reviews: Record<number, WeekReview>;
   setReview(r: WeekReview): void;
@@ -513,6 +558,17 @@ export const useFounder = create<FounderState>()(
         set({ tasks: { ...get().tasks, [key]: { ...t, work } } });
       },
       work: {},
+      drafts: {},
+      setDraftText: (id, text) => {
+        const d = get().drafts;
+        if (!text) {
+          if (!(id in d)) return;
+          const { [id]: _gone, ...rest } = d;
+          set({ drafts: rest });
+          return;
+        }
+        set({ drafts: { ...d, [id]: text } });
+      },
       addWorkTurn: (id, turn) => set({ work: { ...get().work, [id]: [...(get().work[id] ?? []), turn] } }),
       reviews: {},
       setReview: (r) => set({ reviews: { ...get().reviews, [r.week]: r } }),
@@ -614,9 +670,9 @@ export const useFounder = create<FounderState>()(
     {
       name: "ff.founder",
       storage: createJSONStorage(() => AsyncStorage),
-      version: 12,
+      version: STORE_VERSION,
       migrate: (persisted) => {
-        const p = { notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, weekStarts: {}, paused: [], away: null, plans: [], planId: null, weekAt: 0, ...(persisted as object) } as unknown as FounderState;
+        const p = { notes: [], offered: null, visits: [], reminders: DEFAULT_REMINDERS, guided: false, profile: null, roadmap: null, hints: [], planDone: [], tasks: {}, memory: [], memoryOn: null, reviews: {}, mockup: null, handedOff: false, work: {}, drafts: {}, weekStarts: {}, paused: [], away: null, plans: [], planId: null, weekAt: 0, ...(persisted as object) } as unknown as FounderState;
         // a phone from before the week was stored: seed it from the weeks it has seen, never below one
         if (!p.weekAt) p.weekAt = weekFromVisits(p.visits ?? [], p.roadmap?.weeks.length ?? 4);
         if (!p.planId && p.roadmap) p.planId = "p0";

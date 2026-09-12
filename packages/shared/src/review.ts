@@ -30,6 +30,18 @@ export interface WeekFacts {
   did: number;
   partly: number;
   stuck: number;
+  /**
+   * The half that is not activity. People asked by name, what they said
+   * about paying, and money actually in. A week can be full of ticks and
+   * empty of these; the reading says so rather than scoring it away.
+   */
+  people: number;
+  /** Of those, how many were asked the money question at all, and how many said yes. */
+  asked: number;
+  wouldPay: number;
+  /** From the week's own log: money in, and customers. Null means never logged, which is not zero. */
+  moneyIn: number | null;
+  customers: number | null;
   /** Whether the week's seven days have passed. */
   over: boolean;
 }
@@ -76,7 +88,20 @@ export function weekWindow(profile: { at: string } | null, week: number, starts?
 
 export function weekFacts(
   week: PlanWeek,
-  s: { profile: Profile | null; planDone: string[]; tasks: Record<string, { guide?: { steps: unknown[] } | null; ticks: number[]; outcome?: { how: "did" | "partly" | "stuck" } } | undefined>; memory: MemoryEntry[]; /** The date each plan week really began, kept by the building. */ weekStarts?: Record<number, string> },
+  s: {
+    profile: Profile | null;
+    planDone: string[];
+    tasks: Record<string, { guide?: { steps: unknown[] } | null; ticks: number[]; outcome?: { how: "did" | "partly" | "stuck" } } | undefined>;
+    memory: MemoryEntry[];
+    /** The date each plan week really began, kept by the building. */
+    weekStarts?: Record<number, string>;
+    /** People the founder wrote down, with what they said about paying. */
+    interviews?: { at: string; who: string; said: string; paysToday?: string }[];
+    /** The weeks logged on Friday, for the money half. */
+    kpi?: { week: string; revenue: number; customers: number }[];
+    /** The ISO week key of this plan week, when it is known, to find its log. */
+    logWeek?: string;
+  },
   now = Date.now(),
 ): WeekFacts {
   const keys = week.do.map((_, i) => `${week.n}-${i}`);
@@ -95,7 +120,31 @@ export function weekFacts(
     if (lines.some((e) => e.task === k)) tasksWritten++;
   }
   const days = new Set(s.memory.filter((e) => { const at = new Date(e.at).getTime(); return at >= from && at < to; }).map((e) => e.at.slice(0, 10)));
-  return { week: week.n, focus: week.focus, tasks: keys.length, tasksDone: keys.filter((k) => s.planDone.includes(k)).length, steps, stepsTicked, written: lines.length, tasksWritten, daysActive: days.size, did, partly, stuck, over: now >= to };
+  // the real-world half: people written down inside this week, and the week's own log
+  const met = (s.interviews ?? []).filter((i) => { const at = new Date(i.at).getTime(); return at >= from && at < to; });
+  const asked = met.filter((i) => (i.paysToday ?? "").trim().length > 0);
+  const yes = asked.filter((i) => /^(y|yes|paid|would|sure|ok)/i.test((i.paysToday ?? "").trim()));
+  const log = s.logWeek ? (s.kpi ?? []).find((k) => k.week === s.logWeek) : undefined;
+  return {
+    week: week.n,
+    focus: week.focus,
+    tasks: keys.length,
+    tasksDone: keys.filter((k) => s.planDone.includes(k)).length,
+    steps,
+    stepsTicked,
+    written: lines.length,
+    tasksWritten,
+    daysActive: days.size,
+    did,
+    partly,
+    stuck,
+    people: met.length,
+    asked: asked.length,
+    wouldPay: yes.length,
+    moneyIn: log ? log.revenue : null,
+    customers: log ? log.customers : null,
+    over: now >= to,
+  };
 }
 
 /**
@@ -111,32 +160,57 @@ export function weekScore(f: WeekFacts): number {
   return Math.round((0.65 * done + 0.35 * written) * 100);
 }
 
-export function verdictFor(score: number): string {
-  return score >= 85 ? "Strong week" : score >= 65 ? "Good week" : score >= 40 ? "Half a week" : score >= 15 ? "Thin week" : "Not started";
+/**
+ * What the week actually produced, in words, from the things that cannot
+ * be faked by tapping. Not a grade: a founder who talked to nobody is not
+ * a "thin week", they are a week with no conversations in it, and saying
+ * which is more use than saying how it scored.
+ */
+export function verdictFor(f: WeekFacts): string {
+  if (f.moneyIn && f.moneyIn > 0) return "Money in";
+  if (f.wouldPay) return f.wouldPay === 1 ? "One yes" : `${f.wouldPay} said yes`;
+  if (f.asked) return "Price put to people";
+  if (f.people) return f.people === 1 ? "One conversation" : `${f.people} conversations`;
+  if (f.stepsTicked) return "Work done, nobody asked";
+  return "Nothing on the record yet";
+}
+
+/** The evidence, as one plain line, with unknowns left as unknowns. */
+export function groundLine(f: WeekFacts): string {
+  const bits: string[] = [];
+  bits.push(f.people ? `${f.people} ${f.people === 1 ? "person" : "people"} talked to` : "Nobody talked to yet");
+  bits.push(f.asked ? `${f.wouldPay} of ${f.asked} said they would pay` : "price still untested");
+  bits.push(f.moneyIn === null ? "the week is not logged, so money is unknown" : f.moneyIn > 0 ? `${f.moneyIn} in` : "no money in");
+  return `${bits.join(", ")}.`;
 }
 
 /** The reading without a model. Same score, plainer words, still specific to the numbers. */
 export function localReview(f: WeekFacts, profile: Profile | null): WeekReview {
   const score = weekScore(f);
   const name = profile?.name || "You";
+  const ground = groundLine(f);
   const well: string[] = [];
   const fix: string[] = [];
   const how: string[] = [];
+  if (f.people) well.push(`${f.people} ${f.people === 1 ? "person" : "people"} written down this week${f.wouldPay ? `, ${f.wouldPay} of them said they would pay` : ""}.`);
+  if (f.moneyIn && f.moneyIn > 0) well.push(`Money in: ${f.moneyIn}${f.customers ? `, from ${f.customers} ${f.customers === 1 ? "customer" : "customers"}` : ""}.`);
   if (f.stepsTicked) well.push(`${f.stepsTicked} of ${f.steps} steps ticked${f.tasksDone ? `, ${f.tasksDone} ${f.tasksDone === 1 ? "task" : "tasks"} finished` : ""}.`);
   if (f.tasksWritten) well.push(`You wrote down what happened on ${f.tasksWritten} of ${f.tasks} tasks. That is what the desk builds on.`);
   if (f.daysActive >= 4) well.push(`You were in the building ${f.daysActive} days this week, and wrote on each.`);
   if (f.did) well.push(`${f.did} ${f.did === 1 ? "task" : "tasks"} you said you did outright.`);
-  if (!well.length) well.push("Nothing on the record yet, so nothing to praise. That changes with one step.");
+  if (!well.length) well.push("Nothing on the record yet, so nothing to praise. That changes with one conversation.");
+  if (!f.people) fix.push("Nobody was written down this week. Ticks are not evidence; a name and what they said is.");
+  else if (!f.asked) fix.push(`${f.people} ${f.people === 1 ? "person" : "people"} talked to and none of them asked about money. The price is still a guess.`);
   if (f.stepsTicked < f.steps) fix.push(`${f.steps - f.stepsTicked} ${f.steps - f.stepsTicked === 1 ? "step is" : "steps are"} still open on "${f.focus.replace(/\.$/, "")}".`);
   if (f.tasksWritten < f.tasks) fix.push(`${f.tasks - f.tasksWritten} ${f.tasks - f.tasksWritten === 1 ? "task has" : "tasks have"} nothing written on them. Ticks without words do not help next week.`);
   if (f.did && f.tasksWritten < f.did) fix.push(`${f.did} ${f.did === 1 ? "task is" : "tasks are"} marked done with nothing written under them. What happened is the part that lasts.`);
   if (f.stuck) fix.push(`You said you were stuck on ${f.stuck} ${f.stuck === 1 ? "task" : "tasks"} and it is still marked stuck.`);
   if (!fix.length) fix.push("Nothing to fix on the numbers. Read the notes and ask whether the yeses were real.");
-  how.push(f.stepsTicked < f.steps ? "Open the first task with an open step and do only that step today. Twenty minutes." : "Open next week's first task and read its steps before you start anything.");
+  how.push(!f.people ? "Pick one person you could ask this week, and write their name down before you close the app." : !f.asked ? "Go back to one of them and ask what they would pay. Write the number they say." : f.stepsTicked < f.steps ? "Open the first task with an open step and do only that step today. Twenty minutes." : "Open next week's first task and read its steps before you start anything.");
   how.push(f.tasksWritten < f.tasks ? "On each task you ticked, tap a step and write one line: who, what they said, a number." : "Reread your notes and turn the best quote into the line on your sign.");
   how.push(f.tasksDone < f.tasks ? "Pick the one task here that puts you in front of a person, and do that one first." : "Say a price out loud to one person before Friday and write down their face.");
-  const line = score >= 85 ? `${name}, this is what a working week looks like. Keep the shape.` : score >= 65 ? `${name}, a real week. The open steps are the whole gap.` : score >= 40 ? `${name}, half a week. The plan was three tasks; you touched ${Math.max(1, f.tasksDone + f.tasksWritten)}.` : score >= 15 ? `${name}, a thin week. Nothing is lost; the open steps are still open.` : `${name}, the week has not started. One step today is a different week.`;
-  return { week: f.week, score, verdict: verdictFor(score), line, well: well.slice(0, 3), fix: fix.slice(0, 3), how: how.slice(0, 3), source: "rehearsal", at: new Date().toISOString(), seen: 0 };
+  const line = f.moneyIn && f.moneyIn > 0 ? `${name}, somebody paid. That is the week; everything else is detail.` : f.wouldPay ? `${name}, ${f.wouldPay} said they would pay. Go back and ask for the money.` : f.asked ? `${name}, you put a price to ${f.asked} ${f.asked === 1 ? "person" : "people"}. Their answer is worth more than the ticks.` : f.people ? `${name}, ${f.people} ${f.people === 1 ? "conversation" : "conversations"} and no money question yet. That is the next one.` : `${name}, ${ground.toLowerCase()} The work is only worth what it puts in front of a person.`;
+  return { week: f.week, score, verdict: verdictFor(f), line, well: well.slice(0, 3), fix: fix.slice(0, 3), how: how.slice(0, 3), source: "rehearsal", at: new Date().toISOString(), seen: 0 };
 }
 
 export const REVIEW_PROMPT = `${HOUSE_RULES}
@@ -149,7 +223,8 @@ export function reviewContext(f: WeekFacts, opts: { profile: Profile | null; pla
     p ? `Founder: ${p.name || "unnamed"}. Goal: ${p.goal}. Pace: ${p.pace}. Tone asked for: ${p.tone}. Audience: ${p.audiences || "not given"}.` : "Founder: no profile.",
     opts.plan ? `Plan: ${opts.plan.headline} This week's goal: ${opts.plan.weeklyGoal}.` : "",
     `Week ${f.week}: ${f.focus}. Tasks: ${opts.week.do.map((d, i) => `${i + 1}. ${d}`).join(" ")}`,
-    `The numbers: score ${weekScore(f)} of 100. Steps ticked ${f.stepsTicked} of ${f.steps}. Tasks finished ${f.tasksDone} of ${f.tasks}. Tasks with something written ${f.tasksWritten} of ${f.tasks} (${f.written} lines). Said did it ${f.did}, partly ${f.partly}, stuck ${f.stuck}. The week is ${f.over ? "over" : "still running"}.`,
+    `The ground: ${groundLine(f)}`,
+    `The work (this is activity, not evidence; never call it progress on its own): score ${weekScore(f)} of 100. Steps ticked ${f.stepsTicked} of ${f.steps}. Tasks finished ${f.tasksDone} of ${f.tasks}. Tasks with something written ${f.tasksWritten} of ${f.tasks} (${f.written} lines). Said did it ${f.did}, partly ${f.partly}, stuck ${f.stuck}. The week is ${f.over ? "over" : "still running"}.`,
     opts.log || "The notebook is empty or closed to you.",
   ]
     .filter(Boolean)

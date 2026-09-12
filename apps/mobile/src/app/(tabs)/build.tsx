@@ -211,7 +211,7 @@ export default function Build() {
                 {roomWeeks.some((x) => x.room === open.n - 1 && x.w.n <= wk) ? (
                   <Pressable onPress={() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; setOpen(null); router.push({ pathname: "/review", params: { week: String(w) } } as Href); }} accessibilityRole="button" accessibilityLabel="Read the week back" style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6 }}>
                     <Glyph id="coin" tone="auto" scale={1} />
-                    <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}, ${reviews[w].score} of 100` : `Read week ${w} back`; })()}</Spec>
+                    <Spec tone="accent">{(() => { const w = roomWeeks.find((x) => x.room === open.n - 1 && x.w.n <= wk)!.w.n; return reviews[w] ? `Week ${w}: ${reviews[w].verdict}` : `Read week ${w} back`; })()}</Spec>
                   </Pressable>
                 ) : null}
                 <Spec tone="muted" style={{ marginTop: 4 }}>The room's own list. Tap a line.</Spec>

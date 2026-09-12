@@ -75,7 +75,7 @@ export function PlanView({ plan, profile, color = "#4F6E6B", weekNow = 1, animat
                   {onReview && w.n <= weekNow ? (
                     <Pressable onPress={() => onReview(w.n)} accessibilityRole="button" accessibilityLabel={`Read week ${w.n} back`} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: wash(color, open ? 0.16 : 0.08), borderRadius: 10, paddingVertical: 7, paddingHorizontal: 10 }}>
                       <Glyph id="coin" tone="auto" scale={1} />
-                      <Spec tone="ink" style={{ flex: 1 }}>{reviews[w.n] ? `${reviews[w.n].verdict}, ${reviews[w.n].score} of 100` : w.n === weekNow ? "How is the week going?" : "Read the week back"}</Spec>
+                      <Spec tone="ink" style={{ flex: 1 }}>{reviews[w.n] ? reviews[w.n].verdict : w.n === weekNow ? "How is the week going?" : "Read the week back"}</Spec>
                       <Spec tone="accent">›</Spec>
                     </Pressable>
                   ) : null}

@@ -9,6 +9,7 @@ import { ScrollView, Pressable, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { Body, Button, ButtonRow, Display, Glyph, Plate, Progress, Ring, Spec, Thinking, radius, shell, useLayout, wash, type GlyphId } from "@founderfloor/ui";
+import { groundLine } from "@founderfloor/shared";
 import { useFounder } from "../lib/store";
 import { aiMode } from "../lib/ai";
 import { useWeekReview } from "../lib/review";
@@ -79,20 +80,26 @@ export default function Review() {
             {/* the score */}
             <Animated.View entering={enter(0)}>
               <Plate tone="panel" radius={radius.xl} padding={16}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-                  <Ring value={score / 100} size={88} stroke={10} label={String(score)} sub="of 100" color={tone} />
-                  <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
-                    <Display size="xl">{review.verdict}</Display>
-                    <Body size="sm" tone="muted">
-                      {review.line}
-                    </Body>
+                {/* what the week put in front of a person: the half that cannot be faked by tapping */}
+                <View style={{ gap: 6 }}>
+                  <Display size="xl">{review.verdict}</Display>
+                  <Body size="sm">{groundLine(facts)}</Body>
+                  <Body size="sm" tone="muted">
+                    {review.line}
+                  </Body>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 16, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: shell.line }}>
+                  <Ring value={score / 100} size={72} stroke={9} label={String(score)} sub="of 100" color={tone} />
+                  <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+                    <Body size="sm" medium>The work you did</Body>
+                    <Spec tone="muted">Steps ticked and tasks written up. It measures effort, not whether the thing is working.</Spec>
                   </View>
                 </View>
                 <View style={{ gap: 10, marginTop: 16 }}>
                   <Progress value={facts.steps ? facts.stepsTicked / facts.steps : 0} label="Done" right={`${facts.stepsTicked} of ${facts.steps} steps`} color={tone} />
                   <Progress value={facts.tasks ? facts.tasksWritten / facts.tasks : 0} label="Written down" right={`${facts.tasksWritten} of ${facts.tasks} tasks`} color={tone} />
                 </View>
-                <Spec tone="faint" style={{ marginTop: 10 }}>The score counts what you did and what you wrote down about it. Days away count for nothing against you. It is the app's number, not the AI's.</Spec>
+                <Spec tone="faint" style={{ marginTop: 10 }}>The number counts what you did and wrote down. Days away count for nothing against you, and a full week of ticks with nobody asked is still a week with nobody asked. It is the app's number, not the AI's.</Spec>
               </Plate>
             </Animated.View>
 

@@ -199,7 +199,7 @@ export default function Today() {
             <Pressable onPress={() => router.push({ pathname: "/review", params: { week: String(wk) } } as Href)} accessibilityRole="button" accessibilityLabel="Read the week back" style={({ pressed }) => ({ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 12, borderTopWidth: 1, borderTopColor: shell.line, opacity: pressed ? 0.8 : 1 })}>
               <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
                 <Body size="sm" medium>{review ? review.verdict : `Week ${wk}, read back`}</Body>
-                <Spec tone="faint">{review ? `${review.score} of 100, and what to fix` : "A score, and what to fix"}</Spec>
+                <Spec tone="faint">{review ? "What the week produced, and what to fix" : "What the week produced, and what to fix"}</Spec>
               </View>
               <Body tone="accent" accessibilityElementsHidden importantForAccessibility="no">›</Body>
             </Pressable>

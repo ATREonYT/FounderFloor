@@ -8,11 +8,13 @@ import { useState } from "react";
 import { Linking, Pressable, ScrollView, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { Body, Button, ButtonRow, Choices, Dialogue, Display, Input, Plate, Rise, Spec, Toast, radius, shell, useLayout } from "@founderfloor/ui";
-import { useFounder, useSession } from "../lib/store";
+import { STORE_VERSION, useFounder, useSave, useSession } from "../lib/store";
 import { applyReminders, type DailyTime } from "../lib/reminders";
 import { aiMode, FAST_MODEL, MODE_LINE } from "../lib/ai";
 import { staffUnlocked } from "../lib/billing";
 import { keyTail, testKey, useKey, type KeyVerdict } from "../lib/key";
+import { backupLine, makeBackup, readBackup, type Backup } from "@founderfloor/shared";
+import { Platform, Share } from "react-native";
 
 export default function Settings() {
   const L = useLayout();
@@ -28,6 +30,44 @@ export default function Settings() {
   const [draftKey, setDraftKey] = useState("");
   const [testing, setTesting] = useState(false);
   const [verdict, setVerdict] = useState<KeyVerdict | null>(null);
+  const savedAt = useSave((s) => s.at);
+  const saveFailed = useSave((s) => s.failed);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [pasted, setPasted] = useState("");
+  const [found, setFound] = useState<Backup | null>(null);
+  const [why, setWhy] = useState<string | null>(null);
+  /** A copy of everything, as a file the founder keeps. Nothing leaves the phone unless they send it. */
+  const takeCopy = async () => {
+    const text = makeBackup(useFounder.getState() as unknown as Record<string, unknown>, STORE_VERSION);
+    try {
+      if (Platform.OS === "web") {
+        const nav = (globalThis as { navigator?: { clipboard?: { writeText: (s: string) => Promise<void> } } }).navigator;
+        await nav?.clipboard?.writeText(text);
+        say("Copy taken. It is on your clipboard: paste it somewhere safe.");
+        return;
+      }
+      await Share.share({ message: text, title: "FounderFloor, a copy of everything" });
+    } catch {
+      say("Could not open the share sheet.");
+    }
+  };
+  const look = (text: string) => {
+    setPasted(text);
+    setFound(null);
+    setWhy(null);
+    if (!text.trim()) return;
+    const r = readBackup(text);
+    if (r.ok) setFound(r.backup);
+    else setWhy(r.why);
+  };
+  const putBack = () => {
+    if (!found) return;
+    useFounder.setState(found.state as never);
+    setRestoreOpen(false);
+    setPasted("");
+    setFound(null);
+    say("Put back. Everything in that copy is on this phone again.");
+  };
   const mode = aiMode();
   const live = mode !== "rehearsal";
   const tryKey = async () => {
@@ -163,6 +203,32 @@ export default function Settings() {
           </View>
         </Plate>
 
+        {/* a copy the founder can hold, and the truth about whether the writing reached the disk */}
+        <Plate tone="panel" radius={radius.xl} padding={20}>
+          <Body medium>Your copy</Body>
+          <View style={{ marginTop: 10, gap: 12 }}>
+            <Body size="sm" tone="muted">
+              Everything you write lives on this phone. Take a copy and it lives somewhere else too, which is the difference between a lost phone and a lost year.
+            </Body>
+            {saveFailed ? (
+              <Plate tone="paper" radius={radius.md} padding={12} lineColor={shell.accent}>
+                <Body size="sm" tone="accent">This phone refused the last save.</Body>
+                <Spec tone="muted" style={{ marginTop: 4 }}>{`What it said: ${saveFailed}. Your words are still on the screen. Take a copy now, before you close the app.`}</Spec>
+              </Plate>
+            ) : (
+              <Spec tone="faint">{savedAt ? `Saved on this phone at ${savedAt.slice(11, 16)}.` : "Nothing new to save yet."}</Spec>
+            )}
+            <ButtonRow>
+              <Button size="sm" onPress={() => void takeCopy()}>
+                Take a copy
+              </Button>
+              <Button size="sm" variant="ghost" onPress={() => { setPasted(""); setFound(null); setWhy(null); setRestoreOpen(true); }}>
+                Put a copy back
+              </Button>
+            </ButtonRow>
+          </View>
+        </Plate>
+
         <Plate tone="panel" radius={radius.xl} padding={20}>
           <Body medium>More</Body>
           <View style={{ marginTop: 10, gap: 10 }}>
@@ -198,6 +264,29 @@ export default function Settings() {
           </ButtonRow>
         ) : null}
       </ScrollView>
+      {/* putting a copy back: what is in it, said first, and a plain warning about what it replaces */}
+      <Dialogue open={restoreOpen} onClose={() => setRestoreOpen(false)} sign="PUT A COPY BACK" keeper="The desk" blurb="Paste a copy you took before. The building tells you what is in it before anything changes." color="#5E7C93" footer="Putting a copy back replaces what is on this phone now. Take a copy of this first if you are not sure.">
+        <View style={{ gap: 12 }}>
+          <Input label="The copy" value={pasted} onChangeText={look} placeholder="Paste the whole thing here" autoCapitalize="none" autoCorrect={false} mono multiline style={{ minHeight: 96, textAlignVertical: "top" }} />
+          {why ? <Body size="sm" tone="accent">{why}</Body> : null}
+          {found ? (
+            <Plate tone="paper" radius={radius.md} padding={12}>
+              <Body size="sm" medium>This copy holds</Body>
+              <Spec tone="muted" style={{ marginTop: 4 }}>{backupLine(found)}</Spec>
+              {found.version !== STORE_VERSION ? <Spec tone="faint" style={{ marginTop: 6 }}>It came from an older version of the app. Anything it does not carry keeps what is on this phone.</Spec> : null}
+            </Plate>
+          ) : null}
+          <ButtonRow>
+            <Button onPress={putBack} disabled={!found}>
+              Put it back
+            </Button>
+            <Button variant="ghost" onPress={() => setRestoreOpen(false)}>
+              Not now
+            </Button>
+          </ButtonRow>
+        </View>
+      </Dialogue>
+
       {/* one field, tested the moment it is pasted, answered in plain words */}
       <Dialogue open={keyOpen} onClose={() => { setKeyOpen(false); setVerdict(null); }} sign="YOUR OWN KEY" keeper="The desk" blurb="Paste a Claude key and the words come off your account instead of ours. It does not turn the staff on; Pro does that." color="#5E7C93" footer="The key stays in this phone's keychain. It never reaches our server and never goes in the notebook.">
         <View style={{ gap: 12 }}>
