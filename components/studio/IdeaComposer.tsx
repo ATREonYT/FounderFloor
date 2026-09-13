@@ -30,6 +30,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Showcase, { type Shot } from "@/components/studio/Showcase";
 
 interface Screen {
   id: string;
@@ -44,19 +45,24 @@ interface Drawn {
   unit: string;
 }
 
-/** Ideas that read as somebody's real evening plan, not as a product demo. */
-const SEEDS = [
-  "Order tomorrow's bread tonight, for neighbours in my town",
-  "Book a trusted plumber in ten minutes, for homeowners",
-  "Rent a quiet room by the hour, for freelancers",
-  "Ten-minute maths games for kids aged 6 to 9",
-  "Weekly numbers for one-person shops",
+/**
+ * A blank box is a wall, and a stack of five long example sentences under
+ * it is a different wall. What the category leaders do instead is offer a
+ * KIND in two words and fill the box for you — so this is that, with the
+ * kinds the studio actually reads and draws differently. Pressing one
+ * writes its sentence into the box and draws it.
+ */
+const KINDS: { kind: string; idea: string }[] = [
+  { kind: "A shop", idea: "Order tomorrow's bread tonight, for neighbours in my town" },
+  { kind: "A booking", idea: "Book a trusted plumber in ten minutes, for homeowners" },
+  { kind: "A tracker", idea: "Weekly numbers for one-person shops" },
+  { kind: "A class", idea: "Ten-minute maths games for kids aged 6 to 9" },
 ];
 
 /** What the studio is actually doing while the visitor waits. */
 const STEPS = ["Reading what you wrote", "Choosing the look", "Drawing your screens"];
 
-export default function IdeaComposer() {
+export default function IdeaComposer({ shots = [] }: { shots?: Shot[] }) {
   const [idea, setIdea] = useState("");
   const [drawn, setDrawn] = useState<Drawn | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,6 +70,8 @@ export default function IdeaComposer() {
   const [error, setError] = useState<string | null>(null);
   const [screen, setScreen] = useState(0);
   const [seed, setSeed] = useState(0);
+  const [kind, setKind] = useState<string | null>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const alive = useRef(true);
 
@@ -136,33 +144,46 @@ export default function IdeaComposer() {
   return (
     <>
       <section className="hero">
-        <div className="glow" aria-hidden />
-        <div className="grid-bg" aria-hidden />
+        {/* The ground. Both of the tools this site is measured against
+            put a full-bleed atmosphere behind the words rather than a
+            white page with a box on it — a gradient mesh in one case, a
+            dot grid in the other. This is FounderFloor's: the hall's own
+            floor, the same two tile greys at the same size the game
+            draws them, faded out before it reaches the text. The texture
+            belongs to this company rather than being borrowed from
+            theirs.
 
-        <p className="label rise">Say it in one line. No account.</p>
+            NOTE: these two used to be class names that did not exist in
+            the stylesheet (`glow` and `grid-bg` against rules written
+            for `wash` and `rule-bg`), so the hero had no background at
+            all and nobody noticed. */}
+        <div className="wash" aria-hidden />
+        <div className="tile-bg" aria-hidden />
 
-        <h1 className="rise rise-2">
+        <h1 className="rise">
           See your start-up
           <br />
           before you build it
         </h1>
 
-        <p className="lede rise rise-3">
-          Type the idea you have been thinking about. In a second you get the real screens of it, on a
-          phone, made from your own words — then a four-week plan to get a person to pay for it.
+        <p className="lede rise rise-2">
+          Type the idea you have been thinking about. Get the real screens of it, made from your own
+          words, in about a second.
         </p>
 
-        <div className="rise rise-4" style={{ width: "min(720px, 100%)" }}>
+        <div className="rise rise-3 composer-wrap">
           <div className="composer">
             <label className="sr-only" htmlFor="idea">
               Your idea, in one sentence
             </label>
             <textarea
               id="idea"
+              ref={box}
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
               placeholder="Order tomorrow's bread tonight, for neighbours in my town"
               spellCheck={false}
+              rows={2}
               onKeyDown={(e) => {
                 if ((e.metaKey || e.ctrlKey) && e.key === "Enter") void draw(idea, 0);
               }}
@@ -174,48 +195,73 @@ export default function IdeaComposer() {
                   {STEPS[step]}
                 </span>
               ) : (
-                <span className="label" style={{ letterSpacing: "0.02em", textTransform: "none" }}>
-                  What it does, and who for.
-                </span>
+                <span className="hint-line">What it does, and who it is for.</span>
               )}
               <button
                 type="button"
-                className="btn primary"
-                style={{ marginLeft: "auto" }}
-                onClick={() => void draw(idea, 0)}
-                disabled={busy || idea.trim().length < 8}
+                className="go"
+                onClick={() => {
+                  if (idea.trim().length < 8) {
+                    box.current?.focus();
+                    setError("Say the idea in a sentence — what it does, and who for.");
+                    return;
+                  }
+                  void draw(idea, 0);
+                }}
+                disabled={busy}
+                aria-label={drawn ? "Draw it again" : "Draw my app"}
               >
-                {drawn ? "Draw it again" : "Draw my app"}
+                <span>{drawn ? "Draw it again" : "Draw my app"}</span>
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden>
+                  <path d="M5 12h13M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </button>
             </div>
           </div>
-          {error ? <p className="err" style={{ marginTop: 12 }}>{error}</p> : null}
-        </div>
 
-        {!drawn ? (
-          <div className="seeds rise rise-4">
-            {SEEDS.map((s) => (
+          {error ? <p className="err" style={{ marginTop: 12 }}>{error}</p> : null}
+
+          {/* the kinds, and which one is open */}
+          <div className="kinds-strip">
+            {KINDS.map((k) => (
               <button
-                key={s}
+                key={k.kind}
                 type="button"
-                className="seed"
+                className="kind-pick"
+                aria-pressed={kind === k.kind}
                 onClick={() => {
-                  setIdea(s);
-                  void draw(s, 0);
+                  setKind(k.kind);
+                  setIdea(k.idea);
+                  void draw(k.idea, 0);
                 }}
               >
-                {s}
+                {kind === k.kind ? `[${k.kind}]` : k.kind}
               </button>
             ))}
+            <button
+              type="button"
+              className="kind-pick"
+              aria-pressed={kind === null}
+              onClick={() => {
+                setKind(null);
+                box.current?.focus();
+              }}
+            >
+              {kind === null ? "[Anything]" : "Anything"}
+            </button>
           </div>
-        ) : null}
+
+          <p className="free-note">Free, no account, no credits, no waiting.</p>
+        </div>
       </section>
 
-      <section className="wrap stage">
-        <div className="phone-col">
-          <div className="phone-well">
-          <div className="phone">
-            {drawn ? (
+      {!drawn ? <Showcase shots={shots} /> : null}
+
+      {drawn ? (
+        <section className="wrap stage">
+          <div className="phone-col">
+            <div className="phone-well">
+            <div className="phone">
               <iframe
                 ref={frame}
                 title={`${drawn.name}, drawn from your idea`}
@@ -224,84 +270,55 @@ export default function IdeaComposer() {
                 className="pop"
                 key={drawn.html.slice(0, 64)}
               />
-            ) : (
-              <div className="phone-empty">
-                <span className="label">Your app</span>
-                <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>
-                  Type an idea above, or press one of the examples, and it appears here.
-                </p>
-              </div>
-            )}
-          </div>
-          </div>
-
-          {drawn ? (
-            <div className="screens">
-              {drawn.screens.map((s, i) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  className="screen-tab"
-                  aria-current={i === screen}
-                  onClick={() => goTo(i)}
-                >
-                  {s.title}
-                </button>
-              ))}
             </div>
-          ) : null}
-        </div>
-
-        <div className="stage-side">
-          {drawn ? (
-            <>
-              <p className="label">Drawn for you</p>
-              <h2>{drawn.name}</h2>
-              <p className="lede" style={{ fontSize: 16 }}>
-                {drawn.reading}
+            </div>
+  
+            {drawn.screens.length ? (
+              <div className="screens">
+                {drawn.screens.map((s, i) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    className="screen-tab"
+                    aria-current={i === screen}
+                    onClick={() => goTo(i)}
+                  >
+                    {s.title}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+  
+          <div className="stage-side">
+            <p className="label">Drawn for you</p>
+            <h2>{drawn.name}</h2>
+            <p className="lede" style={{ fontSize: 16 }}>
+              {drawn.reading}
+            </p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button type="button" className="btn quiet sm" onClick={again} disabled={busy}>
+                Show me a different look
+              </button>
+            </div>
+            <div className="card">
+              <h3>It is tappable. Try it.</h3>
+              <p>
+                Press the buttons inside the phone — the screens are wired to each other, the same as they
+                are in the app. Nothing here was a picture.
               </p>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button type="button" className="btn quiet sm" onClick={again} disabled={busy}>
-                  Show me a different look
-                </button>
-              </div>
-              <div className="card">
-                <h3>It is tappable. Try it.</h3>
-                <p>
-                  Press the buttons inside the phone — the screens are wired to each other, the same as
-                  they are in the app. Nothing here was a picture.
-                </p>
-              </div>
-              <div className="card">
-                <h3>Next: the four weeks</h3>
-                <p>
-                  Drawing it is the easy half. The app gives you three tasks a week, each one a page that
-                  says exactly what to do, and reads your week back to you on Friday — so the thing you
-                  just saw ends up in front of someone who pays for it.
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="label">Why this is free and instant</p>
-              <h2>No sign-up, no credits, no waiting</h2>
-              <p className="lede" style={{ fontSize: 16 }}>
-                Your screens are drawn here, in one request, by the same engine that runs inside the
-                FounderFloor app. There is no model queue behind it and it costs us nothing to show you,
-                so there is nothing to sign up for before you see whether you like it.
+            </div>
+            <div className="card">
+              <h3>Next: the four weeks</h3>
+              <p>
+                Drawing it is the easy half. The app gives you three tasks a week, each one a page that says
+                exactly what to do, and reads your week back to you on Friday — so the thing you just saw
+                ends up in front of someone who pays for it.
               </p>
-              <div className="card">
-                <h3>Then the part that is actually hard</h3>
-                <p>
-                  Anyone can make something over a weekend. What people run out of is not ability, it is
-                  momentum — nothing tells them what to do on Monday. That is the part FounderFloor is
-                  built for.
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

@@ -83,7 +83,7 @@
   top: 0;
   z-index: 50;
   height: var(--nav-h);
-  background: rgba(250, 253, 255, 0.82);
+  background: rgba(250, 253, 255, 0.74);
   backdrop-filter: saturate(180%) blur(16px);
   -webkit-backdrop-filter: saturate(180%) blur(16px);
   border-bottom: 1px solid var(--line);
@@ -156,51 +156,119 @@
 .studio .btn.primary:disabled { opacity: 0.4; cursor: not-allowed; }
 .studio .btn.quiet { background: var(--panel); border-color: var(--line); color: var(--ink); }
 .studio .btn.quiet:hover { border-color: var(--faint); }
-.studio .btn.sm { height: 38px; padding: 0 14px; font-size: 14px; }
+.studio .btn.sm { height: 38px; padding: 0 16px; font-size: 14px; }
+.studio .nav .btn.primary { border-radius: 999px; }
 
-/* ── the hero ───────────────────────────────────────────────────────── */
-.studio .hero { padding: clamp(48px, 8vh, 96px) 0 clamp(36px, 6vh, 64px); text-align: center; display: flex; flex-direction: column; align-items: center; gap: 22px; overflow: hidden; }
+/* ── the hero ─────────────────────────────────────────────────────────
+   Measured against the two tools this site is judged beside, the shape
+   is settled and worth copying outright: one very large tight headline,
+   one grey line, and a big soft box to type in — centred, with nothing
+   else above the fold and a full-bleed atmosphere behind all of it.
 
-/* A warm wash instead of a black field. The red is the brand's, held
-   right back so it reads as light in the room rather than as a colour. */
+   What is NOT copied is the atmosphere itself. A blue-to-magenta mesh is
+   one company's signature and a dot grid is another's; borrowing either
+   makes this the third one. FounderFloor's own texture is the hall
+   floor, which is a chequer — so the ground here is that chequer, at the
+   size the game draws it, held down to about two per cent so it reads as
+   a surface rather than as a pattern. */
+.studio .hero {
+  position: relative;
+  padding: clamp(56px, 11vh, 132px) 24px clamp(40px, 7vh, 76px);
+  text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px;
+  overflow: hidden;
+}
+.studio .hero h1 {
+  font-size: clamp(44px, 7.4vw, 88px);
+  line-height: 0.99; letter-spacing: -0.042em; max-width: 16ch;
+}
+.studio .hero .lede { max-width: 46ch; font-size: clamp(17px, 1.6vw, 19px); }
+
+/* the warm bloom under the box you type in */
 .studio .wash {
-  position: absolute; inset: -20% -10% auto; height: 520px; pointer-events: none;
+  position: absolute; left: 50%; bottom: -14%; width: min(1100px, 120%); height: 620px;
+  transform: translateX(-50%); pointer-events: none; z-index: 0;
   background:
-    radial-gradient(46% 60% at 50% 0%, rgba(190, 36, 27, 0.09), transparent 72%),
-    radial-gradient(40% 50% at 84% 18%, rgba(190, 36, 27, 0.05), transparent 72%);
+    radial-gradient(50% 48% at 50% 60%, rgba(190, 36, 27, 0.10), transparent 70%),
+    radial-gradient(38% 40% at 18% 74%, rgba(190, 36, 27, 0.05), transparent 72%),
+    radial-gradient(38% 40% at 84% 70%, rgba(190, 36, 27, 0.05), transparent 72%);
 }
-.studio .rule-bg {
-  position: absolute; inset: 0; pointer-events: none;
-  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(62% 52% at 50% 0%, #000, transparent 78%);
-  -webkit-mask-image: radial-gradient(62% 52% at 50% 0%, #000, transparent 78%);
-  opacity: 0.55;
+/* The hall's floor, seen from a long way up — its SEAMS, not its
+   squares. Filled alternating squares are the universal picture of "no
+   background here", and a landing page that opens with a Photoshop
+   transparency grid has said something it did not mean. The seams say
+   the same thing about the world this is set in and say nothing else. */
+.studio .tile-bg {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(120, 104, 78, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 104, 78, 0.13) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(120% 84% at 50% 106%, #000 6%, rgba(0, 0, 0, 0.45) 44%, transparent 78%);
+  -webkit-mask-image: radial-gradient(120% 84% at 50% 106%, #000 6%, rgba(0, 0, 0, 0.45) 44%, transparent 78%);
 }
+.studio .hero > *:not(.wash):not(.tile-bg) { position: relative; z-index: 1; }
 
-/* ── the composer ───────────────────────────────────────────────────── */
+/* ── the box you type in ──────────────────────────────────────────────
+   The single most recognisable object in this category: a wide white
+   card floating on the atmosphere, taller than a form field, with the
+   controls sitting along its bottom edge rather than beside it. No
+   hairline at rest — it is lifted off the page by shadow, not outlined
+   on it — because a border here makes it read as an input on a form
+   instead of as the place where the thing happens. */
+.studio .composer-wrap { width: min(760px, 100%); display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .studio .composer {
-  position: relative; background: var(--panel);
-  border: 1px solid var(--line); border-radius: var(--r-xl); padding: 5px;
-  box-shadow: 0 1px 2px rgba(18, 23, 27, 0.05);
-  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+  width: 100%; position: relative; background: #fff;
+  border: 1px solid transparent; border-radius: 26px; padding: 6px 6px 8px;
+  box-shadow: 0 1px 1px rgba(18, 23, 27, 0.04), 0 12px 28px -14px rgba(18, 23, 27, 0.22), 0 34px 60px -40px rgba(18, 23, 27, 0.3);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
-.studio .composer:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(190, 36, 27, 0.13); }
+.studio .composer:focus-within {
+  border-color: rgba(190, 36, 27, 0.5);
+  box-shadow: 0 0 0 4px rgba(190, 36, 27, 0.1), 0 14px 34px -14px rgba(18, 23, 27, 0.26);
+}
 .studio .composer textarea {
-  display: block; width: 100%; min-height: 82px; resize: none;
+  display: block; width: 100%; min-height: 74px; resize: none;
   background: transparent; border: 0; outline: none; color: var(--ink);
-  font: inherit; font-size: 18px; line-height: 1.45; padding: 17px 19px 4px;
+  font: inherit; font-size: 18px; line-height: 1.5; padding: 20px 22px 6px;
 }
-.studio .composer textarea::placeholder { color: var(--faint); }
-.studio .composer-foot { display: flex; align-items: center; gap: 12px; padding: 5px 6px 6px 19px; flex-wrap: wrap; }
+.studio .composer textarea::placeholder { color: #9aa1a8; }
+.studio .composer-foot { display: flex; align-items: center; gap: 12px; padding: 6px 8px 4px 22px; }
+.studio .hint-line { font-size: 14px; color: var(--faint); }
+.studio .thinking, .studio .hint-line { margin-right: auto; }
 
-.studio .seeds { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.studio .seed {
-  border: 1px solid var(--line); background: var(--panel); color: var(--muted);
-  border-radius: 999px; height: 34px; padding: 0 14px; font: 500 13px/1 var(--sans); cursor: pointer;
-  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
+/* the action, as a pill with the direction of travel on it */
+.studio .go {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 8px;
+  height: 44px; padding: 0 12px 0 18px; border: 0; border-radius: 999px;
+  background: var(--accent); color: var(--on-accent);
+  font: 600 15px/1 var(--sans); letter-spacing: -0.01em; cursor: pointer; white-space: nowrap;
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease), opacity var(--fast) var(--ease);
 }
-.studio .seed:hover { color: var(--ink); border-color: var(--faint); transform: translateY(-1px); }
+.studio .go:hover { background: #a81d16; }
+.studio .go:active { transform: scale(0.975); }
+.studio .go:disabled { opacity: 0.35; cursor: not-allowed; }
+.studio .go svg { transition: transform var(--fast) var(--ease); }
+.studio .go:hover:not(:disabled) svg { transform: translateX(3px); }
+
+/* ── what kind of thing you are making ────────────────────────────────
+   Two words each, on one line, with the open one in brackets. It does
+   what a wall of long example sentences was doing before and takes a
+   tenth of the room; the kinds are real ones the studio reads and draws
+   differently, so picking one is a shortcut rather than a filter. */
+.studio .kinds-strip { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.studio .kind-pick {
+  border: 0; background: transparent; cursor: pointer;
+  font: 500 14px/1 var(--sans); color: var(--muted); padding: 7px 10px; border-radius: var(--r-sm);
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.studio .kind-pick:hover { color: var(--ink); background: rgba(18, 23, 27, 0.045); }
+.studio .kind-pick[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+.studio .kinds-strip .kind-pick + .kind-pick { position: relative; margin-left: 12px; }
+.studio .kinds-strip .kind-pick + .kind-pick::before {
+  content: ""; position: absolute; left: -12px; top: 50%; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--line); transform: translateY(-50%);
+}
+.studio .free-note { font-size: 13px; color: var(--faint); font-family: var(--mono); letter-spacing: 0.04em; }
 
 /* the wait, said as the three things actually happening */
 .studio .thinking { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 14px; }
@@ -723,3 +791,72 @@
 .studio[data-anim] .book, .studio[data-anim] .sheet { transform-origin: top center; }
 .studio .book, .studio .sheet { transition: box-shadow var(--slow) var(--ease); }
 .studio .reveal.seen .book, .studio .reveal.seen .sheet { box-shadow: 0 18px 40px -30px rgba(18, 23, 27, 0.45); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE RAIL UNDER THE BOX
+   ═════════════════════════════════════════════════════════════════════
+   Real products, drawn from the sentence printed under each one, running
+   off both edges of the screen. Flat and cropped rather than sitting in
+   phone bezels: a bezel says "here is a picture of an app", and a crop
+   says "here is the app". The ticks at the corners are registration
+   marks — this building's world is a made one, and this is a sheet off
+   the press.
+   ══════════════════════════════════════════════════════════════════════ */
+.studio .showcase {
+  position: relative; width: 100vw; margin-left: calc(50% - 50vw);
+  padding: clamp(20px, 4vh, 44px) 0 clamp(36px, 6vh, 64px);
+  overflow: hidden;
+}
+.studio .showcase-rail {
+  position: relative;
+  display: flex; gap: clamp(14px, 2vw, 26px); justify-content: center; align-items: flex-start;
+  padding: 22px clamp(16px, 4vw, 48px) 0;
+  /* the row is wider than the page on purpose: it should run out of view */
+  min-width: max-content; margin: 0 auto;
+}
+.studio .shot { margin: 0; display: flex; flex-direction: column; gap: 12px; width: 300px; flex: none; }
+.studio .shot-glass {
+  position: relative; width: 300px; height: 420px; overflow: hidden;
+  border-radius: var(--r-lg); background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px -30px rgba(18, 23, 27, 0.4);
+  transition: transform var(--slow) var(--ease), box-shadow var(--slow) var(--ease);
+}
+.studio .shot:hover .shot-glass { transform: translateY(-6px); box-shadow: 0 26px 50px -28px rgba(18, 23, 27, 0.42); }
+/* The document is a fixed 390 wide. Scaling the frame is the only way to
+   fit it without slicing the right-hand edge off every screen. */
+.studio .shot-glass iframe {
+  width: 390px; height: 546px; border: 0; display: block;
+  transform: scale(0.7692); transform-origin: top left; pointer-events: none;
+}
+/* a soft bottom fade, so the crop reads as a crop and not as a bug */
+.studio .shot-glass::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 84px; pointer-events: none;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.92));
+}
+.studio .shot figcaption { font-size: 13px; line-height: 1.5; color: var(--muted); text-align: center; }
+
+/* registration marks at the four corners of the sheet */
+.studio .showcase::before, .studio .showcase::after {
+  content: ""; position: absolute; left: 28px; right: 28px; height: 10px; z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--ink), var(--ink)) left top / 10px 2px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) left top / 2px 10px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) right top / 10px 2px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) right top / 2px 10px no-repeat;
+  opacity: 0.4;
+}
+.studio .showcase::before { top: clamp(14px, 3vh, 32px); }
+.studio .showcase::after { bottom: clamp(52px, 8vh, 82px); transform: scaleY(-1); }
+
+.studio .showcase-note {
+  text-align: center; font-size: 13px; color: var(--faint);
+  margin-top: 26px; padding: 0 24px;
+}
+
+@media (max-width: 760px) {
+  .studio .showcase-rail { justify-content: flex-start; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+  .studio .shot { scroll-snap-align: center; }
+  .studio .showcase::before, .studio .showcase::after { display: none; }
+}

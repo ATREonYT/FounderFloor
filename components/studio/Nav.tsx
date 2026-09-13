@@ -89,10 +89,6 @@ export default function Nav() {
           <Link className="nav-link" href="/v2/pricing">
             What it costs
           </Link>
-          <span className="tag">
-            <i />
-            Free, no account
-          </span>
           <Link className="btn primary sm" href="/v2">
             Draw my app
           </Link>

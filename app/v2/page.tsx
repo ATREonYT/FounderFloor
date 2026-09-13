@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { localMockup, prepareDesign, studioDesign } from "@founderfloor/shared";
 import HeroScene from "@/components/HeroScene";
 import IdeaComposer from "@/components/studio/IdeaComposer";
+import type { Shot } from "@/components/studio/Showcase";
 import Reveal from "@/components/studio/Reveal";
 import PixelGlyph from "@/components/PixelGlyph";
 import type { GlyphId } from "@/lib/types";
@@ -27,11 +29,40 @@ const DOORS: { href: string; glyph: GlyphId; title: string; line: string }[] = [
   { href: "/v2/build", glyph: "leaf", title: "Take it to a builder", line: "One prompt that carries the whole design with it." },
 ];
 
+/**
+ * The rail under the composer is drawn HERE, on the server, when the page
+ * is requested — same engine, no model call, no key, about a millisecond
+ * each. Three real documents cost roughly thirty kilobytes over the wire
+ * once they are compressed, which is a fair price for the only piece of
+ * evidence that matters on a landing page.
+ */
+const RAIL: { name: string; idea: string; audience: string; seed: number }[] = [
+  { name: "Bread", idea: "Order tomorrow's bread tonight, for neighbours in my town", audience: "neighbours", seed: 0 },
+  { name: "Trusted", idea: "Book a trusted plumber in ten minutes, for homeowners", audience: "homeowners", seed: 3 },
+  { name: "Maths", idea: "Ten-minute maths games for kids aged 6 to 9", audience: "parents", seed: 7 },
+  { name: "Quiet", idea: "Rent a quiet room by the hour, for freelancers", audience: "freelancers", seed: 11 },
+  { name: "Numbers", idea: "Weekly numbers for one-person shops", audience: "one-person shops", seed: 5 },
+];
+
+function rail(): Shot[] {
+  const out: Shot[] = [];
+  for (const r of RAIL) {
+    try {
+      const drawn = studioDesign(localMockup({ name: r.name, oneLiner: r.idea, audience: r.audience, price: "" }), { seed: r.seed });
+      const checked = prepareDesign(drawn.html);
+      if ("html" in checked) out.push({ idea: r.idea, name: r.name, html: checked.html });
+    } catch {
+      // one that will not draw is left out; the rail is proof, not a promise
+    }
+  }
+  return out;
+}
+
 export default function Page() {
   return (
     <>
       <main id="top">
-        <IdeaComposer />
+        <IdeaComposer shots={rail()} />
 
         {/* the building it lives in, running */}
         <section className="band hall">
