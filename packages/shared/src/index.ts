@@ -29,5 +29,6 @@ export * from "./design-craft.ts";
 export * from "./studio/index.ts";
 export * from "./road.ts";
 export * from "./coaches.ts";
+export * as journey from "./journey/index.ts";
 export * from "./work.ts";
 export * from "./sample-design.ts";

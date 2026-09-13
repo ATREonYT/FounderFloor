@@ -1168,3 +1168,9 @@ body[data-on-studio] footer[data-site-footer] {
     }
   }
 }
+
+/* The journey brings its own bar and its own tabs; the hall's stand down. */
+body[data-on-journey] header[data-site-nav],
+body[data-on-journey] footer[data-site-footer] {
+  display: none;
+}
