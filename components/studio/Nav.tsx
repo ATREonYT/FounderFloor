@@ -27,13 +27,24 @@ const MENUS: { label: string; items: Item[] }[] = [
     label: "The app",
     items: [
       { href: "/v2/road", title: "The road", line: "Seven stops from an idea to a paying customer" },
+      { href: "/v2/rooms", title: "The six rooms", line: "Idea, Validate, Set up, Customers, Money, Raise" },
       { href: "/v2/week", title: "Your week", line: "Three tasks, and Friday reads the week back to you" },
+      { href: "/v2/workshop", title: "The workshop", line: "Your idea drawn as real, tappable screens" },
       { href: "/v2/build", title: "Take it to a builder", line: "One prompt that carries the whole design" },
+    ],
+  },
+  {
+    label: "The staff",
+    items: [
+      { href: "/v2/coaches", title: "The four coaches", line: "Ines, Jonah, Margot and Theo, one job each" },
+      { href: "/v2/notebook", title: "The notebook", line: "What the building writes down as you work" },
+      { href: "/v2/drawer", title: "The drawer", line: "Eleven documents, drafted from your own numbers" },
     ],
   },
   {
     label: "The floor",
     items: [
+      { href: "/v2/map", title: "The building", line: "Five floors, and a hall you can walk right now" },
       { href: "/v2/floor", title: "What the floor is", line: "Put your product up and walk around everyone else's" },
       { href: "/directory", title: "The directory", line: "Everyone who has a stand" },
     ],
@@ -75,6 +86,9 @@ export default function Nav() {
         </div>
 
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <Link className="nav-link" href="/v2/pricing">
+            What it costs
+          </Link>
           <span className="tag">
             <i />
             Free, no account

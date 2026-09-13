@@ -20,8 +20,11 @@ import type { GlyphId } from "@/lib/types";
 
 const DOORS: { href: string; glyph: GlyphId; title: string; line: string }[] = [
   { href: "/v2/road", glyph: "rocket", title: "The road", line: "Seven stops from an idea to somebody paying you." },
+  { href: "/v2/rooms", glyph: "cube", title: "The six rooms", line: "Idea, Validate, Set up, Customers, Money, Raise — four or five things in each." },
   { href: "/v2/week", glyph: "bolt", title: "Your week", line: "Three tasks, and Friday reads the week back to you." },
-  { href: "/v2/build", glyph: "cube", title: "Take it to a builder", line: "One prompt that carries the whole design with it." },
+  { href: "/v2/coaches", glyph: "star", title: "The four coaches", line: "Ines, Jonah, Margot and Theo. One job each, and they remember." },
+  { href: "/v2/notebook", glyph: "chip", title: "The notebook", line: "Everything you do is written down as you do it, and it stays yours." },
+  { href: "/v2/build", glyph: "leaf", title: "Take it to a builder", line: "One prompt that carries the whole design with it." },
 ];
 
 export default function Page() {
@@ -41,12 +44,12 @@ export default function Page() {
                 see here stand in the app, at the same counters. This is the hall itself, running.
               </p>
             </Reveal>
-            <Reveal className="hall-frame reveal d1">
-              <HeroScene />
+            <Reveal className="hall-frame tall reveal d1">
+              <HeroScene bare density={1.4} />
             </Reveal>
             <div className="hall-foot">
               <span className="tag soon"><i />Opens when there are enough of us</span>
-              <Link className="btn quiet sm" href="/v2/floor">Walk in anyway</Link>
+              <Link className="btn quiet sm" href="/v2/map">Walk in anyway</Link>
             </div>
           </div>
         </section>

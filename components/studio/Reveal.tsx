@@ -14,9 +14,20 @@
  * the section already visible, because `reveal` only hides once the
  * script is running to take it back.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
-export default function Reveal({ children, className = "", as: Tag = "div" }: { children: ReactNode; className?: string; as?: "div" | "section" }) {
+/**
+ * Anything else passed through lands on the element — `data-open` and the
+ * like, which pages use to style a row by its state. Without this the
+ * attribute is silently dropped and the CSS that depends on it never
+ * matches, which is a bug that looks like a styling mistake.
+ */
+type Props = { children: ReactNode; className?: string; as?: "div" | "section" } & Omit<
+  ComponentPropsWithoutRef<"div">,
+  "children" | "className"
+>;
+
+export default function Reveal({ children, className = "", as: Tag = "div", ...rest }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const [seen, setSeen] = useState(false);
 
@@ -41,7 +52,7 @@ export default function Reveal({ children, className = "", as: Tag = "div" }: { 
   }, []);
 
   return (
-    <Tag ref={el as never} className={`${className}${seen ? " seen" : ""}`}>
+    <Tag ref={el as never} className={`${className}${seen ? " seen" : ""}`} {...rest}>
       {children}
     </Tag>
   );

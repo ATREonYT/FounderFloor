@@ -19,8 +19,8 @@ export default function Page() {
       />
       <section className="band">
         <div className="wrap">
-          <div className="hall-frame">
-            <HeroScene playable />
+          <div className="hall-frame tall">
+            <HeroScene bare playable density={1.4} />
           </div>
           <p className="small" style={{ marginTop: 12, textAlign: "center" }}>
             This is the hall itself, running here. Click it and walk with the arrow keys.

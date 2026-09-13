@@ -55,27 +55,32 @@ interface BoothSpec {
 }
 
 const BOOTH_SPECS: BoothSpec[] = [
-  {
-    sign: "YOUR STAND",
-    glyph: "rocket",
-    banner: "#D97742",
-    carpet: "#9E3B2B",
-    founder: { skin: 3, outfit: 2, hair: 5 },
-  },
-  {
-    sign: "OPEN SPOT",
-    glyph: "star",
-    banner: "#D9A13B",
-    carpet: "#3E5A8C",
-    founder: { skin: 0, outfit: 1, hair: 3 },
-  },
-  {
-    sign: "DAY ONE CO",
-    glyph: "leaf",
-    banner: "#7FA65A",
-    carpet: "#3F6B4F",
-    founder: { skin: 2, outfit: 3, hair: 6 },
-  },
+  { sign: "YOUR STAND", glyph: "rocket", banner: "#D97742", carpet: "#9E3B2B", founder: { skin: 3, outfit: 2, hair: 5 } },
+  { sign: "OPEN SPOT", glyph: "star", banner: "#D9A13B", carpet: "#3E5A8C", founder: { skin: 0, outfit: 1, hair: 3 } },
+  { sign: "DAY ONE", glyph: "leaf", banner: "#7FA65A", carpet: "#3F6B4F", founder: { skin: 2, outfit: 3, hair: 6 } },
+  { sign: "FIRST WEEK", glyph: "bolt", banner: "#6E86B8", carpet: "#4A4E7A", founder: { skin: 4, outfit: 5, hair: 1 } },
+  { sign: "STILL HERE", glyph: "coin", banner: "#C46E8C", carpet: "#7A3F55", founder: { skin: 1, outfit: 6, hair: 7 } },
+  { sign: "OPEN SPOT", glyph: "star", banner: "#C9BFA6", carpet: "#8A8272", founder: { skin: 5, outfit: 0, hair: 2 } },
+];
+
+/**
+ * The kiosks in the middle of the floor. A trade show is not one wall of
+ * stands; it is a wall of stands and a run of small island tables you
+ * walk around, and that second thing is what makes a picture of it read
+ * as a room rather than a shelf. Two tiles wide, no back wall, and
+ * people pass both in front of them and behind.
+ */
+interface IslandSpec {
+  sign: string;
+  glyph: GlyphId;
+  banner: string;
+}
+
+const ISLAND_SPECS: IslandSpec[] = [
+  { sign: "IDEA", glyph: "star", banner: "#B08A4A" },
+  { sign: "WEEK 1", glyph: "bolt", banner: "#5E7C93" },
+  { sign: "DEMO", glyph: "rocket", banner: "#8C6BA8" },
+  { sign: "TALK", glyph: "leaf", banner: "#6E9464" },
 ];
 
 // Counter clutter slots per booth: [laptop, flyers, mug] in tile slots 0..3.
@@ -83,6 +88,9 @@ const SLOT_SETS: [number, number, number][] = [
   [0, 2, 3],
   [3, 1, 0],
   [1, 3, 2],
+  [2, 0, 3],
+  [0, 3, 1],
+  [3, 2, 0],
 ];
 
 const WANDER_LOOKS: AvatarLook[] = [
@@ -90,12 +98,22 @@ const WANDER_LOOKS: AvatarLook[] = [
   { skin: 4, outfit: 5, hair: 7 },
   { skin: 0, outfit: 6, hair: 4 },
   { skin: 5, outfit: 3, hair: 0 },
+  { skin: 2, outfit: 7, hair: 5 },
+  { skin: 3, outfit: 4, hair: 1 },
+  { skin: 0, outfit: 2, hair: 6 },
+  { skin: 4, outfit: 1, hair: 3 },
 ];
 
-// Booth zone occupies tile rows 1-3 (row 0 is the wall), apron is row 4.
+// Booth zone occupies tile rows 1-3 (row 0 is the wall): banner, the
+// founder's lane, then the counter across the front. The carpet stops at
+// the counter rather than running a fourth tile past it — in a short
+// frame that extra tile was cropped and nobody saw it, but at full
+// height it was a slab of flat colour under every stand, which is
+// exactly the blocky look the hall is supposed to be the cure for.
 const ZONE_Y = TILE;
 const COUNTER_Y = ZONE_Y + 2 * TILE;
-const APRON_BOTTOM = ZONE_Y + 4 * TILE;
+const ZONE_BOTTOM = ZONE_Y + 3 * TILE;
+const APRON_BOTTOM = ZONE_BOTTOM + 8;
 
 interface PlacedBooth {
   spec: BoothSpec;
@@ -125,13 +143,37 @@ interface Plant {
   tall: boolean;
 }
 
+interface PlacedIsland {
+  spec: IslandSpec;
+  x: number; // world px, left edge
+  y: number; // world px, top of the sign board
+  w: number;
+}
+
+/** A bench or a way-finding post, in a gap along the wall. */
+interface Furniture {
+  kind: "bench" | "post";
+  x: number;
+  y: number;
+  /** Which way the post points, and which glyph is on its board. */
+  glyph: GlyphId;
+}
+
 export default function HeroScene({
   className = "",
   bare = false,
   playable = false,
   onFirstStep,
+  density = 1,
 }: {
   className?: string;
+  /**
+   * How full the hall is. 1 is the front door's quiet slice; 1.6 is the
+   * map, where the room is the subject rather than the backdrop. It moves
+   * the number of people and whether the island kiosks are set out — not
+   * the size of anything, so the art never changes scale between pages.
+   */
+  density?: number;
   /**
    * Hands the scene a visitor. Arrow keys / WASD walk once the scene has
    * focus, and a tap walks toward the point. This is the product itself
@@ -182,6 +224,11 @@ export default function HeroScene({
     let bandBot = 0;
     let booths: PlacedBooth[] = [];
     let plants: Plant[] = [];
+    let islands: PlacedIsland[] = [];
+    let furniture: Furniture[] = [];
+    /** The kiosk footprints, so nobody walks through a table. */
+    let blocks: { x0: number; y0: number; x1: number; y1: number }[] = [];
+    let runnerY = 0;
     const npcs: Npc[] = [];
     let raf = 0;
 
@@ -206,9 +253,36 @@ export default function HeroScene({
     let moved = false;
     const SPEED = 78; // world px/s — a shade quicker than the ambient drift
 
+    const inBlock = (x: number, y: number): { x0: number; y0: number; x1: number; y1: number } | null => {
+      for (const b of blocks) if (x > b.x0 - 5 && x < b.x1 + 5 && y > b.y0 && y < b.y1 + 3) return b;
+      return null;
+    };
+
+    /**
+     * Nudge a walker out of a kiosk footprint by the shortest way. Called
+     * after every step rather than before it, so the walk itself stays
+     * simple and nobody has to path-find around a table to look right.
+     */
+    const shove = (o: { x: number; y: number }): void => {
+      const b = inBlock(o.x, o.y);
+      if (!b) return;
+      const up = o.y - b.y0;
+      const down = b.y1 + 3 - o.y;
+      const left = o.x - (b.x0 - 5);
+      const right = b.x1 + 5 - o.x;
+      const m = Math.min(up, down, left, right);
+      if (m === up) o.y = b.y0 - 0.5;
+      else if (m === down) o.y = b.y1 + 3.5;
+      else if (m === left) o.x = b.x0 - 5.5;
+      else o.x = b.x1 + 5.5;
+    };
+
     const pickTarget = (n: Npc): void => {
-      n.tx = 16 + rand() * Math.max(1, worldW - 32);
-      n.ty = bandTop + rand() * Math.max(1, bandBot - bandTop);
+      for (let tries = 0; tries < 6; tries++) {
+        n.tx = 16 + rand() * Math.max(1, worldW - 32);
+        n.ty = bandTop + rand() * Math.max(1, bandBot - bandTop);
+        if (!inBlock(n.tx, n.ty)) return;
+      }
     };
 
     const layout = (): void => {
@@ -220,7 +294,7 @@ export default function HeroScene({
       canvas.height = Math.round(cssH * dpr);
       worldW = cssW / ZOOM;
       worldH = cssH / ZOOM;
-      bandTop = APRON_BOTTOM + 8;
+      bandTop = APRON_BOTTOM + 6;
       bandBot = Math.max(bandTop + 10, worldH - 8);
       if (!me.placed) {
         me.x = worldW / 2;
@@ -233,7 +307,7 @@ export default function HeroScene({
       // Booths: 4-tile zones with 4-tile gaps, like the real hall.
       const tilesW = worldW / TILE;
       const xs: number[] = [];
-      for (let tx = 2; tx + 4 <= tilesW - 1.5; tx += 8) xs.push(tx);
+      for (let tx = 2; tx + 4 <= tilesW - 1.5; tx += 7) xs.push(tx);
       if (xs.length === 0) xs.push(Math.max(0, Math.round((tilesW - 4) / 2)));
       booths = xs.map((tx, i) => {
         const spec = BOOTH_SPECS[i % BOOTH_SPECS.length];
@@ -262,8 +336,39 @@ export default function HeroScene({
         }
       });
 
+      // The runner down the aisle. A bare chequer floor reads as a
+      // pattern swatch; one strip of carpet reads as a room with a way
+      // through it, and it costs two rectangles.
+      runnerY = Math.max(bandTop + 34, bandBot - 46);
+
+      // Island kiosks, set out between the stands rather than under them,
+      // and only when the page asked for a full hall.
+      islands = [];
+      blocks = [];
+      if (density >= 1.3) {
+        const iw = 2 * TILE;
+        const iy = bandTop + 2;
+        let k = 0;
+        for (let x = TILE * 5; x + iw < worldW - TILE * 2; x += TILE * 7) {
+          if (iy + 30 > runnerY - 6) break;
+          islands.push({ spec: ISLAND_SPECS[k % ISLAND_SPECS.length], x, y: iy, w: iw });
+          k += 1;
+        }
+        blocks = islands.map((i) => ({ x0: i.x, y0: i.y + 12, x1: i.x + i.w, y1: i.y + 30 }));
+      }
+
+      // A bench and a way-finding post, in the gaps the plants left.
+      furniture = [];
+      booths.forEach((b, i) => {
+        if (i % 2 !== 0) return;
+        const x = b.x + 4 * TILE + 6;
+        if (x + TILE * 2 > worldW - 8) return;
+        furniture.push({ kind: i % 4 === 0 ? "bench" : "post", x, y: ZONE_BOTTOM - 20, glyph: i % 4 === 0 ? "coin" : "star" });
+      });
+
       if (npcs.length === 0) {
-        for (const look of WANDER_LOOKS) {
+        const wanted = Math.max(3, Math.min(WANDER_LOOKS.length, Math.round(4 * density)));
+        for (const look of WANDER_LOOKS.slice(0, wanted)) {
           const n: Npc = {
             frames: bank.makeAvatar(look),
             x: 0,
@@ -311,6 +416,7 @@ export default function HeroScene({
         n.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : dy > 0 ? "down" : "up";
         n.moving = true;
         n.animT += dt;
+        shove(n);
       }
     };
 
@@ -331,11 +437,16 @@ export default function HeroScene({
     };
 
     const drawCarpet = (b: PlacedBooth): void => {
+      const h = ZONE_BOTTOM - ZONE_Y;
       ctx.fillStyle = b.spec.carpet;
-      ctx.fillRect(b.x, ZONE_Y, 4 * TILE, 4 * TILE);
+      ctx.fillRect(b.x, ZONE_Y, 4 * TILE, h);
       ctx.strokeStyle = shade(b.spec.carpet, -0.16);
       ctx.lineWidth = 2;
-      ctx.strokeRect(b.x + 1, ZONE_Y + 1, 4 * TILE - 2, 4 * TILE - 2);
+      ctx.strokeRect(b.x + 1, ZONE_Y + 1, 4 * TILE - 2, h - 2);
+      // a lighter band along the lane, so the carpet is a floor with a
+      // pattern on it rather than one rectangle of colour
+      ctx.fillStyle = shade(b.spec.carpet, 0.1);
+      ctx.fillRect(b.x + 6, ZONE_Y + TILE + 6, 4 * TILE - 12, 2);
     };
 
     const drawBanner = (b: PlacedBooth): void => {
@@ -415,6 +526,122 @@ export default function HeroScene({
       ctx.fillRect(x + 14, top + 2, 3, 3);
     };
 
+    /**
+     * An island kiosk: a small sign on two posts over a table. Drawn from
+     * the same wood and the same banner rule as the wall stands, because
+     * they are the same hall — a second set of colours here would read as
+     * a second illustrator.
+     */
+    const drawIsland = (k: PlacedIsland): void => {
+      const { x, y, w } = k;
+      ctx.fillStyle = "rgba(35,32,26,0.13)";
+      ctx.fillRect(x + 2, y + 29, w - 4, 3);
+      const face = k.spec.banner;
+      const dark = shade(face, -0.42);
+      const fg = luma(face) > 0.62 ? INK : "#FFFDF5";
+      // posts
+      ctx.fillStyle = shade(WOOD_FRONT, -0.35);
+      ctx.fillRect(x + 6, y + 9, 3, 8);
+      ctx.fillRect(x + w - 9, y + 9, 3, 8);
+      // the little sign
+      ctx.fillStyle = dark;
+      ctx.fillRect(x + 4, y, w - 8, 12);
+      ctx.fillStyle = face;
+      ctx.fillRect(x + 6, y + 1, w - 12, 10);
+      drawGlyph(ctx, k.spec.glyph, x + 8, y + 2, 8, fg);
+      ctx.fillStyle = fg;
+      ctx.font = "700 7px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(k.spec.sign, x + w / 2 + 5, y + 6, w - 26);
+      // the table
+      ctx.fillStyle = WOOD_TOP;
+      ctx.fillRect(x, y + 15, w, 6);
+      ctx.fillStyle = shade(WOOD_TOP, -0.2);
+      ctx.fillRect(x, y + 21, w, 2);
+      ctx.fillStyle = WOOD_FRONT;
+      ctx.fillRect(x, y + 21, w, 8);
+      ctx.fillStyle = shade(WOOD_FRONT, -0.24);
+      ctx.fillRect(x, y + 27, w, 2);
+      // a flyer stack and a mug, so a table is a table and not a plank
+      ctx.fillStyle = CARD;
+      ctx.fillRect(x + 8, y + 10, 12, 7);
+      ctx.strokeStyle = CARD_LINE;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 8.5, y + 10.5, 11, 6);
+      ctx.fillStyle = shade(face, -0.1);
+      ctx.fillRect(x + w - 16, y + 11, 5, 6);
+      ctx.fillRect(x + w - 11, y + 12, 2, 3);
+    };
+
+    const drawBench = (f: Furniture): void => {
+      const { x, y } = f;
+      ctx.fillStyle = shade(WOOD_FRONT, -0.35);
+      ctx.fillRect(x + 4, y + 11, 3, 7);
+      ctx.fillRect(x + 41, y + 11, 3, 7);
+      ctx.fillStyle = WOOD_TOP;
+      ctx.fillRect(x, y + 6, 48, 5);
+      ctx.fillStyle = shade(WOOD_TOP, -0.22);
+      ctx.fillRect(x, y + 11, 48, 2);
+      ctx.fillStyle = WOOD_FRONT;
+      ctx.fillRect(x, y, 48, 4);
+    };
+
+    const drawPost = (f: Furniture): void => {
+      const { x, y } = f;
+      ctx.fillStyle = THEME.trim;
+      ctx.fillRect(x + 16, y, 3, 20);
+      ctx.fillStyle = shade(THEME.trim, -0.3);
+      ctx.fillRect(x + 12, y + 18, 11, 3);
+      ctx.fillStyle = "#F1EADA";
+      ctx.fillRect(x + 4, y - 12, 28, 13);
+      ctx.strokeStyle = THEME.trim;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 5, y - 11, 26, 11);
+      drawGlyph(ctx, f.glyph, x + 7, y - 10, 9, "#8A6A2F");
+      ctx.fillStyle = "#6F6A5E";
+      ctx.fillRect(x + 19, y - 8, 9, 1);
+      ctx.fillRect(x + 19, y - 5, 7, 1);
+    };
+
+    /** Wall lamps and a string of pennants: the hall is lit and dressed. */
+    const drawWallDressing = (tilesX: number): void => {
+      for (let tx = 1; tx < tilesX; tx += 3) {
+        const x = tx * TILE + 10;
+        ctx.fillStyle = shade(THEME.trim, -0.2);
+        ctx.fillRect(x + 3, 5, 2, 4);
+        ctx.fillStyle = "#F2D9A0";
+        ctx.fillRect(x, 9, 8, 5);
+        ctx.fillStyle = "rgba(242,217,160,0.30)";
+        ctx.fillRect(x - 2, 14, 12, 4);
+        ctx.fillStyle = "rgba(242,217,160,0.16)";
+        ctx.fillRect(x - 4, 18, 16, 4);
+      }
+      const flags = ["#D97742", "#7FA65A", "#6E86B8", "#D9A13B"];
+      ctx.fillStyle = shade(THEME.wall, -0.35);
+      ctx.fillRect(0, 22, tilesX * TILE, 1);
+      for (let i = 0, x = 6; x < tilesX * TILE - 8; x += 14, i++) {
+        ctx.fillStyle = flags[i % flags.length];
+        ctx.fillRect(x, 23, 8, 2);
+        ctx.fillRect(x + 1, 25, 6, 2);
+        ctx.fillRect(x + 2, 27, 4, 1);
+      }
+    };
+
+    /** The runner down the aisle. */
+    const RUNNER_H = 40;
+    const drawRunner = (): void => {
+      if (runnerY + RUNNER_H > worldH) return;
+      const w = Math.max(0, worldW - 16);
+      ctx.fillStyle = "#CBBEA3";
+      ctx.fillRect(8, runnerY, w, RUNNER_H);
+      ctx.fillStyle = shade("#CBBEA3", -0.14);
+      ctx.fillRect(8, runnerY, w, 2);
+      ctx.fillRect(8, runnerY + RUNNER_H - 2, w, 2);
+      ctx.fillStyle = shade("#CBBEA3", -0.07);
+      for (let x = 14; x < worldW - 18; x += 22) ctx.fillRect(x, runnerY + RUNNER_H / 2 - 1, 10, 2);
+    };
+
     const draw = (): void => {
       const s = dpr * ZOOM;
       ctx.setTransform(s, 0, 0, s, 0, 0);
@@ -436,6 +663,8 @@ export default function HeroScene({
         ctx.fillStyle = wallDark;
         ctx.fillRect(tx * TILE, TILE - 3, TILE, 3);
       }
+      drawWallDressing(tilesX);
+      drawRunner();
       for (const b of booths) drawCarpet(b);
 
       const items: { sortY: number; paint(): void }[] = [];
@@ -450,6 +679,10 @@ export default function HeroScene({
         );
       }
       for (const p of plants) items.push({ sortY: p.y + TILE, paint: () => drawPlant(p) });
+      for (const f of furniture) {
+        items.push({ sortY: f.y + (f.kind === "bench" ? 18 : 21), paint: () => (f.kind === "bench" ? drawBench(f) : drawPost(f)) });
+      }
+      for (const k of islands) items.push({ sortY: k.y + 29, paint: () => drawIsland(k) });
       for (const n of npcs) {
         const frame = n.moving ? 1 + (Math.floor(n.animT * WALK_FPS) % 2) : 0;
         items.push({ sortY: n.y, paint: () => drawAvatar(n.frames, n.x, n.y, n.dir, frame) });
@@ -501,6 +734,7 @@ export default function HeroScene({
       me.y = Math.min(Math.max(me.y + vy * SPEED * dt, bandTop), bandBot);
       me.dir = Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "left" : "right") : vy < 0 ? "up" : "down";
       me.animT += dt;
+      shove(me);
       if (!moved) {
         moved = true;
         setWalking(true);
@@ -593,7 +827,7 @@ export default function HeroScene({
         reduceMotion.removeEventListener("change", onMotionChange);
       }
     };
-  }, [playable]);
+  }, [playable, density]);
 
   return (
     <div

@@ -32,9 +32,23 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
           <div>
             <p className="label" style={{ marginBottom: 8 }}>The app</p>
             <Link href="/v2/road">The road</Link>
+            <Link href="/v2/rooms">The six rooms</Link>
             <Link href="/v2/week">Your week</Link>
+            <Link href="/v2/workshop">The workshop</Link>
             <Link href="/v2/build">Take it to a builder</Link>
+          </div>
+          <div>
+            <p className="label" style={{ marginBottom: 8 }}>The staff</p>
+            <Link href="/v2/coaches">The four coaches</Link>
+            <Link href="/v2/notebook">The notebook</Link>
+            <Link href="/v2/drawer">The drawer</Link>
+            <Link href="/v2/pricing">What it costs</Link>
+          </div>
+          <div>
+            <p className="label" style={{ marginBottom: 8 }}>The floor</p>
+            <Link href="/v2/map">The building</Link>
             <Link href="/v2/floor">The floor</Link>
+            <Link href="/directory">The directory</Link>
           </div>
           <div>
             <p className="label" style={{ marginBottom: 8 }}>The fine print</p>

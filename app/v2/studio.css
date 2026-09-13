@@ -212,7 +212,12 @@
 @media (max-width: 470px) { .studio .phone-col { --phone-scale: 0.86; } }
 @media (max-width: 420px) { .studio .phone-col { --phone-scale: 0.76; } }
 @media (max-width: 375px) { .studio .phone-col { --phone-scale: 0.68; } }
-.studio .phone-well { width: calc(410px * var(--phone-scale)); height: calc(864px * var(--phone-scale)); max-width: 100%; display: flex; justify-content: center; }
+/* align-items must not stretch. The well is a flex row, so the default
+   `stretch` hands the handset a definite height equal to the well's —
+   which silently beats its own aspect-ratio, and the phone then renders
+   at the square of the scale. It cost an afternoon once; it is one
+   word. */
+.studio .phone-well { width: calc(410px * var(--phone-scale)); height: calc(864px * var(--phone-scale)); max-width: 100%; display: flex; justify-content: center; align-items: flex-start; }
 /* The document inside is a fixed 390 wide, so the glass is exactly that
    plus its bezel or the right edge of every screen is sliced off. */
 .studio .phone {
@@ -346,6 +351,13 @@
 
 @media (max-width: 760px) {
   .studio .menus { display: none; }
+  /* The bar carries four things on a laptop and two on a phone. The
+     price link and the "free, no account" badge are the two that can go:
+     the badge repeats what the page says anyway, and the price has its
+     own row in the footer. Leaving them in pushed the bar past the
+     screen edge and the whole page scrolled sideways. */
+  .studio .nav .nav-link, .studio .nav .tag { display: none; }
+  .studio .nav-in { gap: 12px; }
   .studio .composer textarea { font-size: 16px; padding: 15px 15px 4px; }
   .studio .composer-foot { padding-left: 15px; }
   .studio .stop { grid-template-columns: 44px 1fr; gap: 14px; }
@@ -359,6 +371,9 @@
 .studio .page-head { padding: clamp(36px, 6vh, 68px) 0 clamp(28px, 4vh, 48px); border-bottom: 1px solid var(--line); background: var(--panel); position: relative; overflow: hidden; }
 .studio .page-head-in { display: flex; gap: 32px; align-items: center; justify-content: space-between; }
 .studio .page-head-text { display: flex; flex-direction: column; gap: 12px; max-width: 62ch; }
+/* An inside page is not the front door and should not shout like it.
+   The same face, a size down, so the eye goes to the content under it. */
+.studio .page-head h1 { font-size: clamp(34px, 4.4vw, 54px); max-width: 18ch; }
 .studio .page-head-art { flex: none; opacity: 0.9; animation: rise var(--slow) var(--ease) both; animation-delay: 120ms; }
 .studio .back {
   font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--faint);
@@ -403,3 +418,308 @@
 /* ── the close at the foot of an inside page ────────────────────────── */
 .studio .close-in { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
 .studio .close-in h2 { max-width: 20ch; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE INSIDE PAGES
+   ═════════════════════════════════════════════════════════════════════
+   One rule decides most of what follows: a box around a thing is the
+   last resort, not the first. Three cards side by side is the blockiest
+   shape on the web and it was most of what this site used to be. So the
+   patterns here are rows separated by hairlines, tinted tiles that hold
+   art rather than text, and panels kept for the two places that really
+   are objects — a notebook page and a sheet of paper.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.studio .narrow { max-width: 760px; }
+.studio .note { margin-top: 28px; font-size: 15px; line-height: 1.6; color: var(--muted); max-width: 62ch; }
+.studio .nav-link {
+  color: var(--muted); text-decoration: none; font-size: 15px; padding: 6px 2px;
+  transition: color var(--fast) var(--ease);
+}
+.studio .nav-link:hover { color: var(--ink); }
+.studio .band.close { border-top: 1px solid var(--line); }
+
+/* two columns where one side is an object and the other explains it */
+.studio .cols-wide {
+  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(28px, 5vw, 64px); align-items: start;
+}
+.studio .cols-wide > * { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+@media (max-width: 900px) { .studio .cols-wide { grid-template-columns: 1fr; } }
+
+/* the hall, framed. tall is for the pages where the room is the subject
+   rather than the backdrop — the aisle needs height or everybody walks
+   in one line along the bottom edge. */
+.studio .hall-frame.tall { height: 440px; }
+.studio .hall-frame.tall > div { height: 100%; }
+@media (min-width: 900px) { .studio .hall-frame.tall { height: 560px; } }
+
+/* ── the counter: four people standing behind one ───────────────────── */
+.studio .counter { position: relative; border-radius: var(--r-lg); overflow: hidden; background: #d8d2c4; padding: 28px 20px 0; }
+.studio .counter-people {
+  position: relative; z-index: 2; display: flex; gap: clamp(16px, 5vw, 64px);
+  justify-content: center; align-items: flex-end; flex-wrap: wrap;
+}
+.studio .counter-person { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.studio .counter-person b { font-size: 15px; font-weight: 650; margin-top: 6px; }
+.studio .counter-person > span {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #6f6a5e;
+}
+/* the counter they stand behind, in the hall's own wood */
+.studio .counter-top { position: relative; z-index: 1; height: 12px; background: #d9c79b; margin: 10px -20px 0; }
+.studio .counter-front { position: relative; z-index: 1; height: 30px; background: #a28457; margin: 0 -20px; border-top: 2px solid #8a6f47; }
+.studio .counter-line { margin-top: 14px; font-size: 14px; color: var(--muted); text-align: center; }
+
+/* ── a person, as a row ─────────────────────────────────────────────── */
+.studio .people { display: flex; flex-direction: column; }
+.studio .person {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: clamp(20px, 3vw, 36px);
+  padding: 28px 0; border-top: 1px solid var(--line);
+}
+.studio .people > *:last-child .person, .studio .people > .person:last-child { border-bottom: 1px solid var(--line); }
+.studio .person:first-child { border-top: 1px solid var(--line); }
+.studio .person-face {
+  width: 92px; height: 100px; border-radius: var(--r); display: grid; place-items: center;
+  transition: transform var(--fast) var(--ease);
+}
+.studio .person:hover .person-face { transform: translateY(-3px); }
+.studio .person-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.studio .person-body h3 { font-size: 22px; }
+.studio .person-body h3 span { font-weight: 400; color: var(--muted); font-size: 16px; letter-spacing: 0; }
+.studio .person-body > p { color: var(--muted); font-size: 15px; line-height: 1.6; max-width: 66ch; }
+.studio .person-body blockquote {
+  margin: 2px 0 0; padding: 2px 0 2px 16px; border-left: 3px solid var(--line);
+  font-size: 16px; line-height: 1.55; color: var(--ink);
+}
+.studio .chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.studio .chips li {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); background: var(--well); border-radius: 999px; padding: 4px 10px;
+}
+
+/* ── the notebook ───────────────────────────────────────────────────── */
+.studio .kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0 32px; }
+.studio .kind { display: flex; flex-direction: column; gap: 4px; padding: 18px 0; border-top: 1px solid var(--line); }
+.studio .kind b { font-size: 15px; font-weight: 650; }
+.studio .kind span { font-size: 14px; line-height: 1.5; color: var(--muted); }
+
+.studio .book {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+}
+.studio .book-head {
+  display: flex; justify-content: space-between; padding: 12px 16px;
+  border-bottom: 1px solid var(--line); background: var(--well);
+}
+.studio .book-line {
+  display: grid; grid-template-columns: 64px 92px minmax(0, 1fr); gap: 12px; align-items: baseline;
+  padding: 12px 16px; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.5;
+}
+.studio .book-line:first-of-type { border-top: 0; }
+.studio .book-when { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+.studio .book-kind {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.studio .book-line[data-kind="desk"] { background: var(--accent-soft); }
+.studio .book-line[data-kind="desk"] .book-kind { color: var(--accent); }
+.studio .book-line[data-kind="logged"] .book-text { font-family: var(--mono); font-size: 13px; }
+@media (max-width: 560px) {
+  .studio .book-line { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* ── plain rules, four of them, no boxes ────────────────────────────── */
+.studio .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 clamp(28px, 5vw, 64px); }
+.studio .rule { padding: 22px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.studio .rule b { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.studio .rule p { font-size: 15px; line-height: 1.6; color: var(--muted); }
+
+/* ── the six rooms ──────────────────────────────────────────────────── */
+.studio .rooms { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 clamp(24px, 4vw, 48px); }
+.studio .room {
+  position: relative; padding: 24px 0 26px; border-top: 2px solid var(--ink);
+  display: flex; flex-direction: column; gap: 8px;
+  transition: border-color var(--fast) var(--ease);
+}
+.studio .room:hover { border-color: var(--accent); }
+.studio .room-n {
+  position: absolute; right: 0; top: 22px;
+  font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--well); line-height: 1;
+}
+.studio .room-art { display: block; height: 24px; }
+.studio .room b { font-size: 19px; font-weight: 650; letter-spacing: -0.015em; }
+.studio .room p { font-size: 15px; line-height: 1.6; color: var(--muted); }
+.studio .room-count { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-top: auto; padding-top: 6px; }
+
+/* ── the things to do in a room ─────────────────────────────────────── */
+.studio .steps { display: flex; flex-direction: column; }
+.studio .step { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 20px; padding: 22px 0; border-top: 1px solid var(--line); }
+.studio .step:last-child { border-bottom: 1px solid var(--line); }
+.studio .step-n {
+  width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  background: var(--ink); color: var(--panel);
+}
+.studio .step-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.studio .step-body b { font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.studio .step-how { font-size: 15px; line-height: 1.6; color: var(--muted); max-width: 70ch; }
+.studio .step-proof { font-size: 14px; color: var(--ink); }
+.studio .step-proof .label { margin-right: 8px; }
+
+/* ── three phones ───────────────────────────────────────────────────── */
+.studio .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: clamp(24px, 4vw, 48px); }
+.studio .phone-card { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.studio .phone-card b { font-size: 15px; font-weight: 600; max-width: 30ch; }
+.studio .phone-card > span { font-size: 13px; line-height: 1.5; color: var(--faint); max-width: 34ch; }
+/* Same phone, same 410-wide glass, just further away. Scaling the whole
+   handset is the only way to shrink it without slicing the right edge
+   off the 390-wide document inside. */
+.studio .phone-card { --phone-scale: 0.62; }
+@media (max-width: 1080px) { .studio .phone-card { --phone-scale: 0.56; } }
+@media (max-width: 760px) { .studio .phone-card { --phone-scale: 0.72; } }
+@media (max-width: 420px) { .studio .phone-card { --phone-scale: 0.6; } }
+.studio .phone-card .phone-well {
+  width: calc(410px * var(--phone-scale)); height: calc(864px * var(--phone-scale));
+  display: flex; justify-content: center; align-items: flex-start;
+}
+.studio .phone-card .phone { transition: transform var(--slow) var(--ease); }
+.studio .phone-card:hover .phone { transform: scale(var(--phone-scale)) translateY(-8px); }
+
+/* ── the drawer ─────────────────────────────────────────────────────── */
+.studio .drawer-room { margin-bottom: 34px; }
+.studio .drawer-room .label { display: block; margin-bottom: 4px; }
+.studio .papers { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 clamp(24px, 4vw, 48px); }
+.studio .paper { padding: 18px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+.studio .paper b { font-size: 16px; font-weight: 650; }
+.studio .paper p { font-size: 14px; line-height: 1.55; color: var(--muted); }
+
+.studio .sheet { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.studio .sheet-head { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--well); }
+.studio .sheet pre {
+  margin: 0; padding: 20px; font-family: var(--mono); font-size: 12.5px; line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word; color: var(--ink); max-height: 560px; overflow: auto;
+}
+
+/* ── what it costs ──────────────────────────────────────────────────── */
+.studio .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: clamp(20px, 3vw, 32px); align-items: start; }
+.studio .plan {
+  position: relative; padding: 28px 4px 4px; border-top: 2px solid var(--ink);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.studio .plan-pick { border-color: var(--accent); }
+.studio .plan-flag {
+  position: absolute; top: -11px; left: 0;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--accent); color: var(--on-accent); border-radius: 4px; padding: 3px 8px;
+}
+.studio .plan > b { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.studio .plan-line { font-size: 15px; color: var(--muted); }
+.studio .plan-price { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin: 4px 0 6px; }
+.studio .plan-price .num { font-size: 34px; font-weight: 700; }
+.studio .plan-price span:last-child { font-size: 14px; color: var(--muted); }
+.studio .ticks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.studio .ticks li { position: relative; padding-left: 22px; font-size: 15px; line-height: 1.5; color: var(--muted); }
+.studio .ticks li::before {
+  content: ""; position: absolute; left: 2px; top: 7px; width: 9px; height: 5px;
+  border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg);
+}
+
+.studio .timeline { list-style: none; margin: 0; padding: 0 0 0 22px; position: relative; display: flex; flex-direction: column; gap: 22px; }
+.studio .timeline::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
+.studio .timeline li { position: relative; display: flex; flex-direction: column; gap: 4px; font-size: 16px; line-height: 1.5; }
+.studio .timeline li::before {
+  content: ""; position: absolute; left: -22px; top: 6px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--accent);
+}
+.studio .timeline-when { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+
+/* ── the floors of the building ─────────────────────────────────────── */
+.studio .floors { display: flex; flex-direction: column; }
+.studio .floor {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 20px; align-items: center;
+  padding: 20px 4px; border-top: 1px solid var(--line);
+}
+.studio .floor:last-child { border-bottom: 1px solid var(--line); }
+.studio .floor-art { display: grid; place-items: center; opacity: 0.35; transition: opacity var(--fast) var(--ease); }
+.studio .floor[data-open="true"] .floor-art { opacity: 1; }
+.studio .floor-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.studio .floor-body b { font-size: 17px; font-weight: 650; }
+.studio .floor-body p { font-size: 14px; line-height: 1.55; color: var(--muted); }
+.studio .floor-state {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--faint); white-space: nowrap;
+}
+.studio .floor[data-open="true"] .floor-state { color: var(--ok); }
+@media (max-width: 620px) {
+  .studio .floor { grid-template-columns: 34px minmax(0, 1fr); }
+  .studio .floor-state { grid-column: 2; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOTION, WHERE IT SAYS SOMETHING
+   ═════════════════════════════════════════════════════════════════════
+   Nothing here moves to prove the page can move. Each one is doing a
+   job: the mark settles so the page feels arrived at rather than
+   assembled; the four at the counter come on one after another because
+   they are four people and not a graphic; a rule draws itself along the
+   thing it belongs to so the eye is led down it. Everything obeys
+   prefers-reduced-motion through the block above, which kills every
+   duration on the page at once.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* the page's mark settles, then breathes — two pixels, six seconds */
+.studio .page-head-art svg { animation: breathe 6.5s ease-in-out 900ms infinite; }
+@keyframes breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* the four arrive one at a time, and then stand there like people do */
+/* Held at the first keyframe until the counter is looked at. An
+   animation's own opacity beats a plain declaration, so the hold has to
+   be the play state rather than a competing `opacity: 1`. */
+.studio[data-anim] .counter-person { animation: step-up 560ms var(--ease) both; animation-play-state: paused; }
+.studio[data-anim] .counter.seen .counter-person { animation-play-state: running; }
+.studio .counter-person.p1 { animation-delay: 60ms; }
+.studio .counter-person.p2 { animation-delay: 180ms; }
+.studio .counter-person.p3 { animation-delay: 300ms; }
+.studio .counter-person.p4 { animation-delay: 420ms; }
+@keyframes step-up {
+  from { opacity: 0; transform: translateY(14px); }
+  60% { transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+.studio .counter-person svg { transition: transform var(--fast) var(--ease); }
+.studio .counter-person:hover svg { transform: translateY(-4px); }
+
+/* a rule that draws itself down the thing it belongs to */
+.studio[data-anim] .room, .studio[data-anim] .plan { border-top-color: transparent; }
+.studio .room::after, .studio .plan::after {
+  content: ""; position: absolute; left: 0; right: 0; top: -2px; height: 2px;
+  background: currentColor; color: var(--ink);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 620ms var(--ease);
+}
+.studio .plan-pick::after { color: var(--accent); }
+.studio[data-anim] .room.seen::after, .studio[data-anim] .plan.seen::after { transform: scaleX(1); }
+.studio:not([data-anim]) .room::after, .studio:not([data-anim]) .plan::after { display: none; }
+
+/* the room's glyph leans in when the row is pointed at */
+.studio .room-art, .studio .floor-art, .studio .door-art {
+  transition: transform var(--fast) var(--ease);
+}
+.studio .room:hover .room-art { transform: translateY(-2px) scale(1.12); }
+.studio .floor:hover .floor-art { transform: scale(1.14); }
+
+/* rows that lead somewhere lean the way they lead */
+.studio .floor { transition: padding-left var(--fast) var(--ease); }
+.studio .floor:hover { padding-left: 10px; }
+.studio .paper, .studio .kind, .studio .rule { transition: transform var(--fast) var(--ease); }
+.studio .paper:hover { transform: translateX(4px); }
+
+/* the picked plan stands a little proud of the other two */
+.studio .plan-pick { transform: translateY(-6px); }
+@media (max-width: 860px) { .studio .plan-pick { transform: none; } }
+
+/* the drafted sheet and the notebook arrive as objects, not as text */
+.studio[data-anim] .book, .studio[data-anim] .sheet { transform-origin: top center; }
+.studio .book, .studio .sheet { transition: box-shadow var(--slow) var(--ease); }
+.studio .reveal.seen .book, .studio .reveal.seen .sheet { box-shadow: 0 18px 40px -30px rgba(18, 23, 27, 0.45); }
