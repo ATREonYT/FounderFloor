@@ -1141,6 +1141,14 @@ body[data-on-floor] header[data-site-nav] {
   display: none;
 }
 
+/* The new site carries its own bar and footer (components/studio/Nav),
+   so the hall's chrome stands down while it is on screen. Same mechanism
+   as the floor above, its own attribute. */
+body[data-on-studio] header[data-site-nav],
+body[data-on-studio] footer[data-site-footer] {
+  display: none;
+}
+
 @layer components {
   /* Arrows travel on hover. The distance is 3px — enough to read as
      intent, short enough that a row of them does not jitter. */

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./studio.css";
+import OwnChrome from "@/components/studio/OwnChrome";
 
 export const metadata: Metadata = {
   title: "FounderFloor — see your start-up before you build it",
@@ -12,5 +13,10 @@ export const metadata: Metadata = {
  * root and /v2 goes away.
  */
 export default function StudioLayout({ children }: { children: React.ReactNode }) {
-  return <div className="studio">{children}</div>;
+  return (
+    <div className="studio">
+      <OwnChrome />
+      {children}
+    </div>
+  );
 }
