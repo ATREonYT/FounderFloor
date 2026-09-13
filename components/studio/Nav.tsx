@@ -14,6 +14,7 @@
  * anyone can do.
  */
 import Link from "next/link";
+import PixelLogo from "@/components/PixelLogo";
 
 interface Item {
   href: string;
@@ -25,16 +26,15 @@ const MENUS: { label: string; items: Item[] }[] = [
   {
     label: "The app",
     items: [
-      { href: "#road", title: "The road", line: "Seven stops from an idea to a paying customer" },
-      { href: "#week", title: "Your week", line: "Three tasks, and Friday reads the week back to you" },
-      { href: "#workshop", title: "The Workshop", line: "Your app drawn from your own words" },
-      { href: "#handoff", title: "Take it to a builder", line: "One prompt that carries the whole design" },
+      { href: "/v2/road", title: "The road", line: "Seven stops from an idea to a paying customer" },
+      { href: "/v2/week", title: "Your week", line: "Three tasks, and Friday reads the week back to you" },
+      { href: "/v2/build", title: "Take it to a builder", line: "One prompt that carries the whole design" },
     ],
   },
   {
     label: "The floor",
     items: [
-      { href: "#floor", title: "What the floor is", line: "Put your product up and walk around everyone else's" },
+      { href: "/v2/floor", title: "What the floor is", line: "Put your product up and walk around everyone else's" },
       { href: "/directory", title: "The directory", line: "Everyone who has a stand" },
     ],
   },
@@ -50,8 +50,8 @@ export default function Nav() {
   return (
     <nav className="nav">
       <div className="wrap nav-in">
-        <Link href="#top" className="brand">
-          <span className="mark">FF</span>
+        <Link href="/v2" className="brand">
+          <PixelLogo size={26} />
           FounderFloor
         </Link>
 
@@ -64,10 +64,10 @@ export default function Nav() {
               </button>
               <div className="panel-menu" role="menu">
                 {m.items.map((i) => (
-                  <a key={i.href + i.title} href={i.href} role="menuitem">
+                  <Link key={i.href + i.title} href={i.href} role="menuitem">
                     <b>{i.title}</b>
                     <span>{i.line}</span>
-                  </a>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -79,9 +79,9 @@ export default function Nav() {
             <i />
             Free, no account
           </span>
-          <a className="btn primary sm" href="#top">
+          <Link className="btn primary sm" href="/v2">
             Draw my app
-          </a>
+          </Link>
         </div>
       </div>
     </nav>

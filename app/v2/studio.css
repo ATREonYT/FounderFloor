@@ -351,3 +351,55 @@
   .studio .stop { grid-template-columns: 44px 1fr; gap: 14px; }
   .studio .stop::before { left: 16px; }
 }
+
+/* ── an inside page's header ────────────────────────────────────────────
+   Every page below the front door opens the same way, with a keeper's
+   glyph beside it: the same pixel art the app is made of, which is what
+   makes a stranger looking at both say "same company". */
+.studio .page-head { padding: clamp(36px, 6vh, 68px) 0 clamp(28px, 4vh, 48px); border-bottom: 1px solid var(--line); background: var(--panel); position: relative; overflow: hidden; }
+.studio .page-head-in { display: flex; gap: 32px; align-items: center; justify-content: space-between; }
+.studio .page-head-text { display: flex; flex-direction: column; gap: 12px; max-width: 62ch; }
+.studio .page-head-art { flex: none; opacity: 0.9; animation: rise var(--slow) var(--ease) both; animation-delay: 120ms; }
+.studio .back {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--faint);
+  text-decoration: none; width: max-content; transition: color var(--fast) var(--ease);
+}
+.studio .back:hover { color: var(--accent); }
+@media (max-width: 760px) { .studio .page-head-art { display: none; } }
+
+/* ── the hall, running on the page ─────────────────────────────────── */
+.studio .hall-head { display: flex; flex-direction: column; gap: 12px; max-width: 62ch; margin-bottom: 24px; }
+.studio .hall-frame {
+  border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+  background: var(--panel); position: relative;
+}
+.studio .hall-frame canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+.studio .hall-foot { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+
+/* ── doors: a way on, not another wall of cards ─────────────────────
+   Three rows rather than three boxes. A card grid says "here are some
+   features"; a row with a mark, a line and an arrow says "this way",
+   which is what these actually are. */
+.studio .doors { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+.studio .door {
+  display: flex; align-items: center; gap: 20px; padding: 22px 4px;
+  border-top: 1px solid var(--line); text-decoration: none; color: var(--ink);
+  transition: padding var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.studio .doors > *:last-child .door { border-bottom: 1px solid var(--line); }
+.studio .door:hover { padding-left: 12px; border-color: var(--faint); }
+.studio .door-art {
+  width: 56px; height: 56px; flex: none; border-radius: var(--r); display: grid; place-items: center;
+  background: var(--accent-soft); border: 1px solid var(--line);
+  transition: transform var(--fast) var(--ease);
+}
+.studio .door:hover .door-art { transform: translateY(-2px); }
+.studio .door-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.studio .door-text b { font-size: 19px; font-weight: 650; letter-spacing: -0.02em; }
+.studio .door-text span { font-size: 15px; color: var(--muted); line-height: 1.5; }
+.studio .door-go { flex: none; color: var(--faint); font-size: 20px; transition: transform var(--fast) var(--ease), color var(--fast) var(--ease); }
+.studio .door:hover .door-go { transform: translateX(4px); color: var(--accent); }
+
+/* ── the close at the foot of an inside page ────────────────────────── */
+.studio .close-in { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+.studio .close-in h2 { max-width: 20ch; }
