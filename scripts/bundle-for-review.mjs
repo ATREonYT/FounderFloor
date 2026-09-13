@@ -148,10 +148,32 @@ log of five numbers, and the week read back with a score out of 100.
 | \`apps/mobile\` | The product. Expo SDK 57, React Native, Expo Router. Screens in \`src/app\`, logic in \`src/lib\`. |
 | \`packages/shared\` | Every rule, prompt and pure function, with the tests. Read this first. |
 | \`packages/ui\` | The design system: tokens, theme, and every component, including the pixel-art building. |
-| \`app\`, \`components\`, \`lib\`, \`game\` | A Next.js website at the repo root: public stand pages and the walkable hall. Secondary. |
+| \`app\`, \`components\`, \`lib\`, \`game\` | A Next.js website at the repo root. The new one is under \`app/v2\`; the old marketing pages and the walkable hall are the rest. |
 | \`server\` | A small Node floor server for the hall and accounts. |
 | \`supabase\` | Edge functions that hold the Anthropic key and answer the app. |
 | \`docs\` | Design and product documents, including the user research the recent work came from. |
+
+## The website
+
+Under \`app/v2\` there is a second front for the same product, and the thing
+worth knowing about it is that it runs the app's own code. \`packages/shared\`
+is plain TypeScript with no platform in it, so \`app/api/mockup/route.ts\` calls
+the same \`studioDesign\` the phone calls and gets the same document back: a
+visitor types one sentence and sees their product drawn, with no account, no
+credits and no model call behind it. The strip of five products on the front
+door is drawn on the server when the page is requested, which means the page
+is made by the thing it is advertising and breaks when that breaks.
+
+Every page under it reads the app's data rather than restating it — the six
+rooms are \`STAGES\`, the documents are \`DOC_KINDS\`, the notebook's kinds are
+\`MEMORY_KINDS\`, the prices are \`APP_PLANS\` and \`PLAN_COPY\`, and the four
+coaches are \`packages/shared/src/coaches.ts\`, which the app re-exports. A
+price on a website that disagrees with the price in the app is the fastest
+way to lose somebody at the till.
+
+The hall on those pages is the real \`components/HeroScene.tsx\` running rather
+than a picture of it, and \`components/studio/PixelPerson.tsx\` emits the game's
+own avatar grid as SVG, so the same faces stand in both places.
 
 Worth reading in this order: \`PRODUCT.md\` (what is true about the product),
 \`DESIGN.md\` (the visual contract and the list of things that must never come
@@ -190,6 +212,9 @@ at tabular widths, captions as small letterspaced capitals, states as outlined
 tags. \`handoff.ts\` hands all of that to a builder tool in the form it writes
 files in, so what comes back out of Lovable is the app the founder was looking
 at rather than a different one with the same words.
+
+The website under \`app/v2\` is twelve pages and complete enough to look at, but
+it is not live yet: founderfloor.net still serves the old root pages.
 
 Not finished, and known: billing is not wired (purchases are a sandbox
 stub, RevenueCat is planned), the floor of other founders is built but shut
