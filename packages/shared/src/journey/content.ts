@@ -68,7 +68,26 @@ export type OutputKey =
   | "outcomeWhat"
   | "outcomeDid"
   | "outcomeUnknown"
-  | "outcomeNext";
+  | "outcomeNext"
+  // lines the course's apply steps write, beyond the ten missions
+  | "whyNow"
+  | "edge"
+  | "market"
+  | "founderFit"
+  | "cofounders"
+  | "riskiest"
+  | "killCriterion"
+  | "mvp"
+  | "pmfSignal"
+  | "price"
+  | "unitEconomics"
+  | "runway"
+  | "firstTen"
+  | "channel"
+  | "kpi"
+  | "setup"
+  | "weekPlan"
+  | "raiseDecision";
 
 /**
  * How a saved line should be read. The label travels with the value and
@@ -613,20 +632,50 @@ export const MISSIONS: readonly Mission[] = [
 
 /** The sections of the My Idea page, in reading order, and which saved lines feed each. */
 export const IDEA_SECTIONS: readonly { id: string; title: string; keys: OutputKey[] }[] = [
-  { id: "idea", title: "Current idea", keys: ["idea"] },
+  { id: "idea", title: "Current idea", keys: ["idea", "whyNow", "edge", "market"] },
+  { id: "founders", title: "Founders", keys: ["founderFit", "cofounders"] },
   { id: "group", title: "First customer group", keys: ["customerGroup"] },
-  { id: "problem", title: "Problem hypothesis", keys: ["problem", "known", "assumed"] },
+  { id: "problem", title: "Problem hypothesis", keys: ["problem", "known", "assumed", "riskiest", "killCriterion"] },
   { id: "workaround", title: "Known workarounds", keys: ["workaround"] },
   { id: "evidence", title: "Evidence collected", keys: ["conversationNotes", "surprises", "contradictions", "outcomeWhat", "outcomeDid"] },
   { id: "open", title: "Open questions", keys: ["openQuestions", "outcomeUnknown"] },
-  { id: "experiment", title: "Current experiment", keys: ["offer", "testHypothesis", "testParticipant", "testAsk", "testObserve", "testReview", "testKind"] },
+  { id: "experiment", title: "Current experiment", keys: ["mvp", "offer", "testHypothesis", "testParticipant", "testAsk", "testObserve", "testReview", "testKind", "pmfSignal"] },
+  { id: "money", title: "The money", keys: ["price", "unitEconomics", "runway"] },
+  { id: "growth", title: "Growth", keys: ["firstTen", "channel", "kpi"] },
+  { id: "company", title: "The company", keys: ["setup", "weekPlan", "raiseDecision"] },
   { id: "next", title: "Next decision", keys: ["decision", "outcomeNext"] },
   { id: "prep", title: "How you are asking", keys: ["questions", "route"] },
+];
+
+/**
+ * Lines the course writes that no mission owns. They live on the idea
+ * page beside the mission lines, with the same labels and the same
+ * honesty: a price you chose is an assumption until somebody pays it.
+ */
+export const COURSE_FIELDS: readonly OutputField[] = [
+  { key: "whyNow", label: "Why now", hint: "One change in the world, dated, that makes this possible today.", kind: "long", evidence: "assumption" },
+  { key: "edge", label: "Your edge", hint: "The one reason it is you and not somebody with more money.", kind: "long", evidence: "assumption" },
+  { key: "market", label: "The market, roughly", hint: "How many of your group exist, and whether that number is growing.", kind: "long", evidence: "assumption" },
+  { key: "founderFit", label: "Founder fit", hint: "What you know, have done or have access to that a stranger does not.", kind: "long", evidence: "reported" },
+  { key: "cofounders", label: "Co-founders", hint: "Alone, or with whom, and how the split and vesting stand.", kind: "long", evidence: "reported" },
+  { key: "riskiest", label: "Riskiest assumption", hint: "The belief that, if wrong, ends the idea. Test it first.", kind: "long", evidence: "assumption" },
+  { key: "killCriterion", label: "Kill criterion", hint: "The result that would make you stop, written before you have results.", kind: "long", evidence: "assumption" },
+  { key: "mvp", label: "The smallest thing", hint: "The manual version, demo, page or pre-order you will put in front of someone.", kind: "long", evidence: "reported" },
+  { key: "pmfSignal", label: "Product-market fit signal", hint: "What you have measured: retention, the 40% question, or honestly nothing yet.", kind: "long", evidence: "reported" },
+  { key: "price", label: "Price", hint: "What you charge, per what, and the value it is set against.", kind: "long", evidence: "assumption" },
+  { key: "unitEconomics", label: "One customer's arithmetic", hint: "Cost to get one, what one is worth, months to pay back.", kind: "long", evidence: "assumption" },
+  { key: "runway", label: "Runway", hint: "Cash, monthly spend, and the month the money runs out.", kind: "long", evidence: "reported" },
+  { key: "firstTen", label: "The first ten", hint: "Where your first ten customers come from, by hand.", kind: "long", evidence: "assumption" },
+  { key: "channel", label: "The channel to test", hint: "The one channel you will test first, and how cheaply.", kind: "long", evidence: "assumption" },
+  { key: "kpi", label: "The one number", hint: "Your primary number, measured weekly, and this week's value.", kind: "long", evidence: "reported" },
+  { key: "setup", label: "The boring hour", hint: "Entity, account, books, agreements, domain: which are done.", kind: "long", evidence: "reported" },
+  { key: "weekPlan", label: "This week", hint: "Three tasks, and the one number they should move.", kind: "long", evidence: "reported" },
+  { key: "raiseDecision", label: "Raise or bootstrap", hint: "The decision, and the reason it could be wrong.", kind: "long", evidence: "reported" },
 ];
 
 export const missionById = (id: string): Mission | undefined => MISSIONS.find((m) => m.id === id);
 export const missionsIn = (stage: StageId): Mission[] => MISSIONS.filter((m) => m.stage === stage);
 export const fieldFor = (key: OutputKey): OutputField | undefined => {
   for (const m of MISSIONS) for (const f of m.output) if (f.key === key) return f;
-  return undefined;
+  return COURSE_FIELDS.find((f) => f.key === key);
 };

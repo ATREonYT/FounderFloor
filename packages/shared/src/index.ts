@@ -30,5 +30,6 @@ export * from "./studio/index.ts";
 export * from "./road.ts";
 export * from "./coaches.ts";
 export * as journey from "./journey/index.ts";
+export * as course from "./course/index.ts";
 export * from "./work.ts";
 export * from "./sample-design.ts";

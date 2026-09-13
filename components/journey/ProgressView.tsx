@@ -9,16 +9,18 @@
  * Under them: the stages, the milestones reached, and an optional weekly
  * aim that costs nothing when it is missed.
  */
-import { journey } from "@founderfloor/shared";
+import Link from "next/link";
+import { course, journey } from "@founderfloor/shared";
 import { useJourney } from "@/components/journey/Store";
 
 export default function ProgressView() {
-  const { state, ready, dispatch, now } = useJourney();
+  const { state, courseState, ready, dispatch, now } = useJourney();
   if (!ready) return <p className="j-loading">Adding it up…</p>;
   const p = journey.progress(state);
   const got = journey.reached(state);
   const week = journey.weekActivity(state, now());
   const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
+  const c = course.courseProgress(courseState, now());
 
   return (
     <div className="prog">
@@ -31,9 +33,10 @@ export default function ProgressView() {
       <div className="prog-two">
         <section className="prog-card" data-kind="learning" aria-labelledby="pl">
           <h2 id="pl">Lessons finished</h2>
-          <div className="prog-num">{p.learning.done}<small>of {p.learning.total}</small></div>
-          <div className="prog-bar" role="progressbar" aria-valuenow={p.learning.done} aria-valuemin={0} aria-valuemax={p.learning.total} aria-label="Lessons finished"><i style={{ width: `${pct(p.learning.done, p.learning.total)}%` }} /></div>
-          <p>In-app reading and answering. {p.points} learning points so far.</p>
+          <div className="prog-num">{c.lessonsDone}<small>of {c.lessonsTotal}</small></div>
+          <div className="prog-bar" role="progressbar" aria-valuenow={c.lessonsDone} aria-valuemin={0} aria-valuemax={c.lessonsTotal} aria-label="Lessons finished"><i style={{ width: `${pct(c.lessonsDone, c.lessonsTotal)}%` }} /></div>
+          <p>{c.unitsDone} of {c.unitsTotal} units, {p.learning.done} of {p.learning.total} mission lessons. {p.points + c.points} learning points so far.</p>
+          <p>{c.due + c.weak > 0 ? <Link href="/journey/practice">{c.due + c.weak} exercises due for practice.</Link> : "Nothing due for practice right now."}{c.run > 1 ? ` ${c.run} days running.` : ""}</p>
         </section>
         <section className="prog-card" data-kind="practical" aria-labelledby="pp">
           <h2 id="pp">Real-world work recorded</h2>
@@ -43,8 +46,27 @@ export default function ProgressView() {
         </section>
       </div>
 
+      <section className="prog-card" aria-labelledby="pc">
+        <h2 id="pc">The six sections</h2>
+        <ul className="milestones">
+          {course.SECTIONS.map((sec) => {
+            const units = course.unitsIn(sec.id);
+            const done = units.filter((u) => course.unitDone(courseState, u)).length;
+            return (
+              <li key={sec.id} className="milestone" data-done={done === units.length ? "" : undefined}>
+                <i aria-hidden>{done === units.length ? "✓" : ""}</i>
+                <div>
+                  <b>Section {sec.n}: {sec.name}</b>
+                  <span>{done} of {units.length} units · {sec.outcome}</span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
       <section className="prog-card" aria-labelledby="ps">
-        <h2 id="ps">The three stages</h2>
+        <h2 id="ps">The three mission stages</h2>
         <ul className="milestones">
           {journey.STAGES.map((st) => (
             <li key={st.id} className="milestone" data-done={p.stages[st.id] === "done" ? "" : undefined}>

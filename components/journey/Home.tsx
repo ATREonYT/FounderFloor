@@ -10,7 +10,7 @@
  */
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { journey } from "@founderfloor/shared";
+import { course, journey } from "@founderfloor/shared";
 import { useJourney } from "@/components/journey/Store";
 import Guide from "@/components/journey/Guide";
 import NextCard from "@/components/journey/NextCard";
@@ -18,7 +18,7 @@ import Path from "@/components/journey/Path";
 import Celebrate from "@/components/journey/Celebrate";
 
 export default function Home() {
-  const { state, ready, now } = useJourney();
+  const { state, courseState, ready, now } = useJourney();
   const router = useRouter();
 
   useEffect(() => {
@@ -37,8 +37,9 @@ export default function Home() {
       {/* two small blocks, and only two: learning points, and the aim if one is set.
           neither is a score for the business, and nothing here can be lost. */}
       <div className="chips" aria-label="Your numbers">
-        <span className="chip"><b>{state.points}</b> points</span>
-        {state.weeklyGoal ? <span className="chip"><b>{journey.weekActivity(state, now()).done}/{state.weeklyGoal}</b> this week</span> : null}
+        <span className="chip"><b>{state.points + courseState.points}</b> points</span>
+        <span className="chip"><b>{course.courseProgress(courseState, now()).lessonsDone}</b> of {course.LESSONS.length} lessons</span>
+        {course.courseProgress(courseState, now()).run > 1 ? <span className="chip"><b>{course.courseProgress(courseState, now()).run}</b> days running</span> : null}
         <span className="chip"><b>{journey.progress(state).practical.done}</b> real-world</span>
       </div>
       <NextCard />

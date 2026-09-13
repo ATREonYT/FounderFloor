@@ -15,12 +15,14 @@
  * it is still there.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { journey } from "@founderfloor/shared";
+import { course, journey } from "@founderfloor/shared";
 import { getAuth } from "@/lib/auth";
-import { clearState, readState, storageKey, subscribe, writeState } from "@/lib/journey/storage";
+import { clearState, courseKey, readCourse, readState, storageKey, subscribe, subscribeCourse, writeCourse, writeState } from "@/lib/journey/storage";
 
 type JourneyState = journey.JourneyState;
 type JourneyEvent = journey.JourneyEvent;
+type CourseState = course.CourseState;
+type CourseEvent = course.CourseEvent;
 
 export type SaveStatus = "idle" | "saved" | "failed";
 
@@ -36,6 +38,9 @@ export interface StoreValue {
   /** The browser refused storage entirely; work is held in memory. */
   memoryOnly: boolean;
   dispatch: (e: JourneyEvent) => void;
+  /** The course: lessons sat, exercise memory, checkpoints. Kept under its own key, same identity. */
+  courseState: CourseState;
+  dispatchCourse: (e: CourseEvent) => void;
   exportFile: () => void;
   importText: (text: string) => boolean;
   wipe: () => void;
@@ -60,6 +65,10 @@ export default function JourneyStore({ children }: { children: ReactNode }) {
   const key = useRef<string>(storageKey(null));
   const latest = useRef<JourneyState>(journey.EMPTY);
   latest.current = state;
+  const [courseState, setCourseState] = useState<CourseState>(course.EMPTY_COURSE);
+  const cKey = useRef<string>(courseKey(null));
+  const latestCourse = useRef<CourseState>(course.EMPTY_COURSE);
+  latestCourse.current = courseState;
 
   const now = useCallback(() => new Date().toISOString(), []);
 
@@ -76,8 +85,15 @@ export default function JourneyStore({ children }: { children: ReactNode }) {
       setSave(r.ok ? "saved" : "failed");
       setSaveError(r.ok ? null : r.reason);
     }
+    cKey.current = courseKey(getAuth()?.id ?? null);
+    setCourseState(readCourse(cKey.current));
     setReady(true);
-    return subscribe(key.current, (fromOtherTab) => setState(fromOtherTab));
+    const offJourney = subscribe(key.current, (fromOtherTab) => setState(fromOtherTab));
+    const offCourse = subscribeCourse(cKey.current, (fromOtherTab) => setCourseState(fromOtherTab));
+    return () => {
+      offJourney();
+      offCourse();
+    };
   }, []);
 
   const commit = useCallback((next: JourneyState) => {
@@ -95,6 +111,15 @@ export default function JourneyStore({ children }: { children: ReactNode }) {
     },
     [commit],
   );
+
+  const dispatchCourse = useCallback((e: CourseEvent) => {
+    const next = course.applyCourse(latestCourse.current, e);
+    if (next === latestCourse.current) return;
+    setCourseState(next);
+    const r = writeCourse(cKey.current, next);
+    setSave(r.ok ? "saved" : "failed");
+    setSaveError(r.ok ? null : r.reason);
+  }, []);
 
   const exportFile = useCallback(() => {
     const text = journey.exportJson(latest.current);
@@ -121,15 +146,17 @@ export default function JourneyStore({ children }: { children: ReactNode }) {
 
   const wipe = useCallback(() => {
     const r = clearState(key.current);
+    clearState(cKey.current);
     setState(journey.EMPTY);
+    setCourseState(course.EMPTY_COURSE);
     setSave(r.ok ? "idle" : "failed");
     setSaveError(r.ok ? null : r.reason);
     setCorrupt(false);
   }, []);
 
   const value = useMemo<StoreValue>(
-    () => ({ state, ready, save, saveError, corrupt, memoryOnly, dispatch, exportFile, importText, wipe, now }),
-    [state, ready, save, saveError, corrupt, memoryOnly, dispatch, exportFile, importText, wipe, now],
+    () => ({ state, ready, save, saveError, corrupt, memoryOnly, dispatch, courseState, dispatchCourse, exportFile, importText, wipe, now }),
+    [state, ready, save, saveError, corrupt, memoryOnly, dispatch, courseState, dispatchCourse, exportFile, importText, wipe, now],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

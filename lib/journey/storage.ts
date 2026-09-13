@@ -116,3 +116,61 @@ export function subscribe(key: string, onChange: (state: JourneyState) => void):
   window.addEventListener("storage", handler);
   return () => window.removeEventListener("storage", handler);
 }
+
+// ─── the course, kept next to the journey ─────────────────────────────
+
+import { course } from "@founderfloor/shared";
+
+export const COURSE_PREFIX = "founderfloor:course:v1";
+export const courseKey = (identity: string | null): string => `${COURSE_PREFIX}:${identity ?? "guest"}`;
+
+export function readCourse(key: string): course.CourseState {
+  const s = area();
+  const raw = s ? s.getItem(key) : memory.get(key) ?? null;
+  if (raw === null) return course.EMPTY_COURSE;
+  try {
+    return course.sanitizeCourse(JSON.parse(raw));
+  } catch {
+    try {
+      s?.setItem(`${key}:corrupt:${Date.now()}`, raw);
+      s?.removeItem(key);
+    } catch {
+      // nothing more to do
+    }
+    return course.EMPTY_COURSE;
+  }
+}
+
+export function writeCourse(key: string, state: course.CourseState): SaveResult {
+  const text = JSON.stringify(state);
+  const s = area();
+  if (!s) {
+    memory.set(key, text);
+    return { ok: false, reason: "Your browser is not letting this page keep anything. Your practice is held in memory for now." };
+  }
+  try {
+    s.setItem(key, text);
+    return { ok: true };
+  } catch {
+    memory.set(key, text);
+    return { ok: false, reason: "The last answer could not be saved." };
+  }
+}
+
+export function subscribeCourse(key: string, onChange: (state: course.CourseState) => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const handler = (e: StorageEvent) => {
+    if (e.key !== key) return;
+    if (e.newValue === null) {
+      onChange(course.EMPTY_COURSE);
+      return;
+    }
+    try {
+      onChange(course.sanitizeCourse(JSON.parse(e.newValue)));
+    } catch {
+      // leave this tab alone
+    }
+  };
+  window.addEventListener("storage", handler);
+  return () => window.removeEventListener("storage", handler);
+}
