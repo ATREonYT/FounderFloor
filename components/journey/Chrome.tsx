@@ -20,12 +20,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import PixelLogo from "@/components/PixelLogo";
+import PixelGlyph from "@/components/PixelGlyph";
+import type { GlyphId } from "@/lib/types";
 import { useJourney } from "@/components/journey/Store";
 
-const TABS = [
-  { href: "/journey", label: "Journey", exact: true },
-  { href: "/journey/idea", label: "My Idea", exact: false },
-  { href: "/journey/progress", label: "Progress", exact: false },
+const TABS: { href: string; label: string; exact: boolean; glyph: GlyphId }[] = [
+  { href: "/journey", label: "Journey", exact: true, glyph: "rocket" },
+  { href: "/journey/idea", label: "My Idea", exact: false, glyph: "flask" },
+  { href: "/journey/progress", label: "Progress", exact: false, glyph: "star" },
 ];
 
 function isOn(path: string, href: string, exact: boolean): boolean {
@@ -49,6 +51,7 @@ export function JourneyChrome() {
       {TABS.map((t) => (
         <li key={t.href}>
           <Link href={t.href} className="j-tab" aria-current={isOn(path, t.href, t.exact) ? "page" : undefined}>
+            <PixelGlyph glyph={t.glyph} size={18} color="currentColor" />
             {t.label}
           </Link>
         </li>

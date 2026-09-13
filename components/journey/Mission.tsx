@@ -25,6 +25,7 @@ import { useJourney } from "@/components/journey/Store";
 import InteractionView from "@/components/journey/Interactions";
 import Coach from "@/components/journey/Coach";
 import Celebrate from "@/components/journey/Celebrate";
+import Guide from "@/components/journey/Guide";
 
 type Part = "objective" | "explain" | "example" | "interaction" | "action" | "output" | "reflect" | "done";
 type Values = Partial<Record<journey.OutputKey, string>>;
@@ -54,6 +55,8 @@ export default function Mission({ id }: { id: string }) {
   const [reflection, setReflection] = useState("");
   const [finished, setFinished] = useState(false);
   const [interactionDone, setInteractionDone] = useState(false);
+  const [interactionRight, setInteractionRight] = useState<boolean | null>(null);
+  const [startedAt] = useState(() => Date.now());
 
   // Seed the form from what is saved, once storage has been read.
   useEffect(() => {
@@ -74,6 +77,13 @@ export default function Mission({ id }: { id: string }) {
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [step]);
+
+  useEffect(() => {
+    document.body.dataset.inLesson = "1";
+    return () => {
+      delete document.body.dataset.inLesson;
+    };
+  }, []);
 
   if (!m) {
     return (
@@ -169,6 +179,7 @@ export default function Mission({ id }: { id: string }) {
         interaction={m.interaction}
         onDone={(right) => {
           setInteractionDone(true);
+          setInteractionRight(right);
           dispatch({ type: "interaction", mission: m.id, right, at: now() });
         }}
       />
@@ -228,19 +239,26 @@ export default function Mission({ id }: { id: string }) {
       </div>
     </section>
   );
+  const minutes = Math.max(1, Math.round((Date.now() - startedAt) / 60_000));
+  const earned = journey.POINTS.lesson + (prog.interactionRight ? journey.POINTS.interaction : 0);
+  const openOutside = m.outside && !journey.actionDone(state, m.id);
   const Done = (
-    <section className="m-part" aria-labelledby="p-done">
-      <div className="m-part-label"><span className="j-label">Lesson done</span></div>
-      <h2 id="p-done">{m.title}</h2>
-      {m.outside && !journey.actionDone(state, m.id) ? (
-        <p className="m-pending">The real-world part is still open. It stays on your path, and you can record it whenever it has happened.</p>
+    <section className="m-complete" aria-labelledby="p-done">
+      <Confetti />
+      <span className="guide-face" data-mood="hop"><Guide scale={3} /></span>
+      <span className="j-label">{m.outside && recording ? "Recorded" : "Lesson complete"}</span>
+      <h1 id="p-done">{openOutside ? "Lesson done. The rest is out there." : m.outside && recording ? "Written down. That is evidence now." : "Nicely done."}</h1>
+      <div className="m-stats">
+        {!lessonRead || !m.outside || !recording ? (
+          <div className="m-stat"><span>Points</span><b>+{earned}</b></div>
+        ) : null}
+        <div className="m-stat" data-kind="time"><span>Time</span><b>{minutes} min</b></div>
+        {openOutside ? <div className="m-stat" data-kind="open"><span>Still open</span><b>Real-world part</b></div> : null}
+      </div>
+      {openOutside ? (
+        <p className="j-muted">It stays on your path with a blue ring, and you record it whenever it has happened. Nothing nags.</p>
       ) : null}
       <p className="m-next">{m.next}</p>
-      <div className="m-done-row">
-        <Link className="j-btn primary" href="/journey">Back to the journey</Link>
-        {after && after.id !== m.id ? <Link className="j-btn quiet" href={`/journey/m/${after.id}`}>Next: {after.title}</Link> : null}
-        <Link className="j-btn ghost" href="/journey/idea">See my idea</Link>
-      </div>
     </section>
   );
 
@@ -248,15 +266,22 @@ export default function Mission({ id }: { id: string }) {
   if (review) {
     return (
       <div className="mission m-review">
+        <div className="m-bar">
+          <Link href="/journey" className="m-close" aria-label="Leave the lesson">✕</Link>
+          <div className="prog-bar" role="progressbar" aria-label="Lesson complete" aria-valuenow={100} aria-valuemin={0} aria-valuemax={100}><i style={{ width: "100%" }} /></div>
+          <span className="chip"><b>{state.points}</b> pts</span>
+        </div>
         <Head m={m} stage={stage} lessonRead actionRecorded={actionRecorded} />
         {Objective}
         {Explain}
         {Example}
         {Action}
         {Output}
-        <div className="m-foot">
-          <button type="button" className="j-btn primary" onClick={() => { if (saveOutputs()) setFinished(true); }}>Save changes</button>
-          <Link className="j-btn ghost" href="/journey">Back to the journey</Link>
+        <div className="m-dock">
+          <div className="m-dock-in">
+            <Link className="j-btn ghost" href="/journey">Back to the journey</Link>
+            <div className="j-row"><button type="button" className="j-btn primary" onClick={() => { if (saveOutputs()) setFinished(true); }}>Save changes</button></div>
+          </div>
         </div>
         {prog.reflection ? (
           <section className="m-part m-reflect"><div className="m-part-label"><span className="j-label">You wrote, at the end</span></div><p className="j-muted">{prog.reflection}</p></section>
@@ -269,14 +294,23 @@ export default function Mission({ id }: { id: string }) {
 
   // ── the stepper ────────────────────────────────────────────────────
   const canContinue = current !== "interaction" || interactionDone;
+  const pct = current === "done" ? 100 : Math.round(((step + 1) / (parts.length + 1)) * 100);
+  const tone = current === "interaction" && interactionDone ? (interactionRight ? "good" : "hmm") : undefined;
+  const feedback = (() => {
+    const k = m.interaction?.kind;
+    if (k === "edit") return interactionRight ? { title: "Written. Now judge it.", line: "Tick the things your version does. Be honest; nobody is counting." } : { title: "Give it a fuller go.", line: "A few more words, and different ones from the original." };
+    if (k === "sort") return interactionRight ? { title: "All of them.", line: "You can tell the two apart. That is most of stage one." } : { title: "Some of those are the hard ones.", line: "The marked cards say where the line is. That is the lesson." };
+    if (k === "plan") return { title: "That is the whole plan.", line: "Five parts. You write each of them in a moment." };
+    return interactionRight ? { title: "That is the one.", line: "You can tell the difference. That is the skill." } : { title: "Not that one, and that is fine.", line: "The reasons are on the cards. They are the lesson." };
+  })();
   return (
     <div className="mission">
-      <Head m={m} stage={stage} lessonRead={lessonRead} actionRecorded={actionRecorded} />
-      {current !== "done" ? (
-        <div className="m-steps" aria-label={`Part ${step + 1} of ${parts.length}`} role="progressbar" aria-valuenow={step + 1} aria-valuemin={1} aria-valuemax={parts.length}>
-          {parts.map((p, n) => <i key={p} data-on={n <= step ? "" : undefined} />)}
-        </div>
-      ) : null}
+      <div className="m-bar">
+        <Link href="/journey" className="m-close" aria-label="Leave the lesson">✕</Link>
+        <div className="prog-bar" role="progressbar" aria-label={`Part ${Math.min(step + 1, parts.length)} of ${parts.length}`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${pct}%` }} /></div>
+        <span className="chip"><b>{state.points}</b> pts</span>
+      </div>
+      {current !== "done" ? <Head m={m} stage={stage} lessonRead={lessonRead} actionRecorded={actionRecorded} /> : null}
 
       {current === "objective" ? Objective : null}
       {current === "explain" ? Explain : null}
@@ -287,9 +321,29 @@ export default function Mission({ id }: { id: string }) {
       {current === "reflect" ? Reflect : null}
       {current === "done" ? Done : null}
 
-      {current !== "done" ? (
-        <div className="m-foot">
-          <button type="button" className="j-btn ghost" onClick={back} disabled={step === 0}>Back</button>
+      <div className="m-dock" data-tone={tone}>
+        <div className="m-dock-in">
+          {current === "done" ? (
+            <>
+              <div className="m-feedback"><Guide /><div><b>{openOutside ? "Come back when it has happened" : "Keep going"}</b><span>{after && after.id !== m.id ? `Next: ${after.title}` : "Your idea page has everything you found"}</span></div></div>
+              <div className="j-row">
+                <Link className="j-btn quiet" href="/journey/idea">My idea</Link>
+                {after && after.id !== m.id ? <Link className="j-btn primary" href={`/journey/m/${after.id}`}>Continue</Link> : <Link className="j-btn primary" href="/journey">Continue</Link>}
+              </div>
+            </>
+          ) : (
+            <>
+          {tone ? (
+            <div className="m-feedback">
+              <span className="guide-face" data-mood={tone === "good" ? "hop" : undefined}><Guide /></span>
+              <div>
+                <b>{feedback.title}</b>
+                <span>{feedback.line}</span>
+              </div>
+            </div>
+          ) : (
+            <button type="button" className="j-btn ghost" onClick={back} disabled={step === 0}>Back</button>
+          )}
           <div className="j-row">
             {current === "interaction" && !interactionDone ? (
               <button type="button" className="j-btn ghost" onClick={next}>Skip this one</button>
@@ -309,9 +363,30 @@ export default function Mission({ id }: { id: string }) {
               <button type="button" className="j-btn primary" onClick={next} disabled={!canContinue}>Continue</button>
             )}
           </div>
+            </>
+          )}
         </div>
-      ) : null}
+      </div>
       <Celebrate />
+    </div>
+  );
+}
+
+/** A short fall of the building's colours. Gone under prefers-reduced-motion (css). */
+function Confetti() {
+  const colours = ["#be241b", "#4d6a80", "#1a7a3f", "#a8500a", "#e0b23c"];
+  const bits = Array.from({ length: 42 }, (_, n) => ({
+    x: `${(n * 37) % 100}%`,
+    c: colours[n % colours.length],
+    t: `${1.8 + ((n * 13) % 10) / 10}s`,
+    d: `${((n * 7) % 12) / 20}s`,
+    r: `${((n * 53) % 360) + 360}deg`,
+  }));
+  return (
+    <div className="confetti" aria-hidden>
+      {bits.map((b, n) => (
+        <i key={n} style={{ ["--x" as string]: b.x, ["--c" as string]: b.c, ["--t" as string]: b.t, ["--d" as string]: b.d, ["--r" as string]: b.r }} />
+      ))}
     </div>
   );
 }

@@ -412,3 +412,169 @@
 @media (prefers-reduced-motion: reduce) {
   .journey *, .journey *::before, .journey *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THE JUICE
+   ═════════════════════════════════════════════════════════════════════
+   What the category feels like, done in this building's own art. A
+   button is a block with a lip under it that presses down. The road is
+   a winding line of big round stops you can push, with a bubble over
+   the one that is next. A lesson has a bar at the top that fills and a
+   bar at the bottom that holds the one button and turns green or amber
+   when you answer. Finishing is an event with points on it and the desk
+   hopping. Every colour still means what it meant above.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── buttons with a lip ──────────────────────────────────────────────── */
+.j-btn {
+  border-radius: 16px; border: 0; border-bottom: 4px solid transparent;
+  text-transform: uppercase; letter-spacing: 0.08em; font-weight: 800; font-size: 14px;
+  min-height: 50px; padding: 0 22px;
+  transition: transform 80ms ease, border-bottom-width 80ms ease, background var(--fast) var(--ease), filter var(--fast) var(--ease);
+}
+.j-btn.primary { background: var(--primary); border-bottom-color: #7a1510; }
+.j-btn.primary:hover { background: var(--primary); filter: brightness(1.06); }
+.j-btn.quiet { background: #fff; color: var(--ink); border: 2px solid var(--line); border-bottom-width: 4px; }
+.j-btn.quiet:hover { border-color: #c9c4ba; background: #fff; }
+.j-btn.ghost { border: 0; text-transform: none; letter-spacing: 0; font-weight: 700; font-size: 15px; }
+.j-btn:active:not(.ghost):not(:disabled) { transform: translateY(3px); border-bottom-width: 1px; }
+.j-btn.lg { min-height: 56px; }
+
+/* the same lip on choices, so the whole thing is one material */
+.opt, .sort-item, .j-choice, .plan-piece { border: 2px solid var(--line); border-bottom-width: 4px; border-radius: 16px; }
+.opt:hover:not(:disabled) { border-color: #c9c4ba; }
+.opt:active:not(:disabled) { transform: translateY(2px); border-bottom-width: 2px; }
+.opt[data-state="good"] { border-color: var(--confirm); }
+.opt[data-state="bad"] { border-color: var(--assume); }
+.sort-item[data-state="good"] { border-color: var(--confirm); }
+.sort-item[data-state="bad"] { border-color: var(--assume); }
+.j-choice:has(input:checked) { border-color: var(--primary); }
+.sort-btn, .coach-btn, .weekly-opt, .kind-pick { border-bottom-width: 3px; font-weight: 700; }
+.sort-btn[aria-pressed="true"], .weekly-opt[aria-pressed="true"] { border-color: var(--primary); color: var(--primary-deep); background: var(--primary-soft); }
+
+/* points and aims, as small blocks */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px;
+  border-radius: 12px; background: #fff; border: 2px solid var(--line); border-bottom-width: 3px;
+  font-weight: 800; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.chip b { color: var(--primary); font-family: var(--mono); font-size: 15px; letter-spacing: 0; }
+
+/* ── the road as big round stops ─────────────────────────────────────── */
+.path { margin-top: 22px; gap: 0; }
+.path-stage { gap: 0; }
+.stage-band {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-radius: 16px; padding: 16px 18px; color: #fff; margin: 26px 0 30px;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.22);
+}
+.stage-band b { display: block; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.stage-band .j-label { color: rgba(255, 255, 255, 0.8); }
+.stage-band .band-state { font-weight: 800; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(255, 255, 255, 0.18); padding: 6px 10px; border-radius: 10px; white-space: nowrap; }
+.path-stage[data-stage="problem"] .stage-band { background: var(--primary); }
+.path-stage[data-stage="people"] .stage-band { background: var(--report); }
+.path-stage[data-stage="test"] .stage-band { background: var(--confirm); }
+.path-stage[data-state="later"] .stage-band { filter: saturate(0.55); opacity: 0.85; }
+
+.nodes { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 6px 0 10px; }
+.stop { position: relative; display: flex; flex-direction: column; align-items: center; gap: 10px; text-decoration: none; color: inherit; transform: translateX(var(--dx, 0)); width: 220px; }
+.node {
+  position: relative; width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--well); box-shadow: 0 7px 0 #cfcabf;
+  transition: transform 80ms ease, box-shadow 80ms ease, filter var(--fast) var(--ease);
+}
+.stop:hover .node { filter: brightness(1.04); }
+.stop:active .node { transform: translateY(5px); box-shadow: 0 2px 0 #cfcabf; }
+.stop[data-state="done"] .node { background: var(--stage, var(--primary)); box-shadow: 0 7px 0 var(--stage-deep, #7a1510); }
+.stop[data-state="pending"] .node { background: #fff; box-shadow: 0 7px 0 var(--line), 0 0 0 5px var(--report-soft); }
+.stop[data-state="current"] .node { background: #fff; box-shadow: 0 7px 0 var(--line), 0 0 0 6px var(--primary-soft); }
+.stop[data-state="later"] .node { box-shadow: 0 7px 0 #cfcabf; }
+.stop[data-state="later"] .node svg { opacity: 0.45; }
+.path-stage[data-stage="problem"] .stop { --stage: var(--primary); --stage-deep: #7a1510; }
+.path-stage[data-stage="people"] .stop { --stage: var(--report); --stage-deep: #35505f; }
+.path-stage[data-stage="test"] .stop { --stage: var(--confirm); --stage-deep: #0f5a2c; }
+.node-tick { position: absolute; right: -4px; bottom: -2px; width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 3px solid var(--stage, var(--primary)); color: var(--stage, var(--primary)); font-size: 13px; font-weight: 900; display: grid; place-items: center; }
+.node-n { position: absolute; left: -4px; top: -4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 2px solid var(--line); font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--muted); display: grid; place-items: center; }
+.stop-label { text-align: center; font-size: 13px; line-height: 1.35; color: var(--muted); font-weight: 600; max-width: 200px; }
+.stop[data-state="current"] .stop-label { color: var(--ink); font-weight: 800; }
+.stop[data-state="current"] { margin-top: 30px; }
+.stop[data-state="later"] .stop-label { font-weight: 500; }
+.stop-sub { font-size: 11px; color: var(--faint); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.stop[data-state="pending"] .stop-sub { color: var(--report); }
+
+/* the bubble over the next stop */
+.node-start {
+  position: absolute; top: -44px; left: 50%; transform: translateX(-50%);
+  background: #fff; border: 2px solid var(--line); border-radius: 12px; padding: 7px 12px;
+  font-weight: 900; font-size: 12px; letter-spacing: 0.12em; color: var(--primary); text-transform: uppercase; white-space: nowrap;
+  animation: bob 1.6s ease-in-out infinite;
+}
+.node-start::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 12px; height: 12px; background: #fff; border-right: 2px solid var(--line); border-bottom: 2px solid var(--line); transform: translateX(-50%) rotate(45deg); }
+@keyframes bob { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
+@media (max-width: 460px) { .stop { transform: translateX(calc(var(--dx, 0) * 0.55)); } }
+
+/* ── a lesson's top bar and bottom dock ──────────────────────────────── */
+.m-bar { position: sticky; top: 58px; z-index: 30; background: var(--ground); display: flex; align-items: center; gap: 14px; padding: 10px 0 12px; margin-bottom: 8px; }
+.m-close { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--faint); font-size: 20px; font-weight: 800; text-decoration: none; flex: none; }
+.m-close:hover { background: var(--well); color: var(--ink); }
+.m-bar .prog-bar { flex: 1; height: 16px; border-radius: 10px; background: var(--well); }
+.m-bar .prog-bar > i { position: relative; border-radius: 10px; }
+.m-bar .prog-bar > i::after { content: ""; position: absolute; left: 8px; right: 8px; top: 4px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.35); }
+.m-bar .chip { min-height: 32px; }
+.m-steps { display: none; }
+.mission { padding-bottom: 20px; }
+body[data-in-lesson] .j-bottom { display: none; }
+body[data-in-lesson] .journey { padding-bottom: 120px; }
+
+.m-dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  background: #fff; border-top: 2px solid var(--line);
+  padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.m-dock-in { max-width: 720px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.m-dock[data-tone="good"] { background: var(--confirm-soft); border-top-color: var(--confirm); }
+.m-dock[data-tone="hmm"] { background: var(--assume-soft); border-top-color: var(--assume); }
+.m-feedback { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 260px; }
+.m-feedback b { display: block; font-size: 17px; font-weight: 900; }
+.m-feedback span { display: block; font-size: 13px; color: var(--muted); }
+.m-dock[data-tone="good"] .m-feedback b { color: var(--confirm); }
+.m-dock[data-tone="hmm"] .m-feedback b { color: var(--assume); }
+.m-dock .j-row { margin-left: auto; }
+@media (max-width: 480px) { .m-dock .j-btn.primary { flex: 1; } .m-dock .j-row { width: 100%; } }
+.m-foot { display: none; }
+.m-part { border-width: 2px; }
+
+/* the desk, reacting */
+.guide-face { transition: transform var(--fast) var(--ease); }
+.guide-face[data-mood="hop"] { animation: hop 520ms var(--ease) both; }
+@keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-9px) scale(1.04); } 100% { transform: translateY(0); } }
+
+/* ── lesson complete ─────────────────────────────────────────────────── */
+.m-complete { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 24px 0 10px; }
+.m-complete .guide-face { width: 72px; height: 78px; border-radius: 20px; }
+.m-complete h1 { font-size: clamp(30px, 6vw, 42px); color: var(--primary); letter-spacing: -0.02em; }
+.m-complete .j-muted { max-width: 44ch; }
+.m-stats { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.m-stat { min-width: 132px; border-radius: 16px; border: 2px solid var(--line); border-bottom-width: 4px; background: #fff; overflow: hidden; }
+.m-stat > span { display: block; padding: 6px 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; background: var(--primary); }
+.m-stat > b { display: block; padding: 10px; font-family: var(--mono); font-size: 24px; font-weight: 800; color: var(--primary); }
+.m-stat[data-kind="time"] > span { background: var(--report); } .m-stat[data-kind="time"] > b { color: var(--report); }
+.m-stat[data-kind="open"] > span { background: var(--assume); } .m-stat[data-kind="open"] > b { color: var(--assume); font-size: 14px; padding: 15px 10px; }
+.m-complete .m-next { text-align: left; width: 100%; }
+.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 44; overflow: hidden; }
+.confetti i { position: absolute; top: -14px; width: 9px; height: 14px; border-radius: 2px; background: var(--c); left: var(--x); animation: fall var(--t) linear var(--d) forwards; opacity: 0; }
+@keyframes fall { 0% { opacity: 1; transform: translateY(0) rotate(0); } 100% { opacity: 0.9; transform: translateY(110vh) rotate(var(--r)); } }
+
+/* ── tabs with faces ─────────────────────────────────────────────────── */
+.j-tab { gap: 8px; }
+.j-tab svg { flex: none; }
+.j-bottom .j-tab { flex-direction: column; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; min-height: 54px; }
+.j-bottom .j-tab[aria-current="page"] { background: transparent; box-shadow: none; color: var(--primary); }
+.j-bottom .j-tab[aria-current="page"]::after { content: ""; width: 24px; height: 3px; border-radius: 2px; background: var(--primary); }
+
+@media (prefers-reduced-motion: reduce) {
+  .node-start { animation: none; }
+  .confetti { display: none; }
+}

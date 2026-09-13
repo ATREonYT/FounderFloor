@@ -34,6 +34,13 @@ export default function Home() {
         <Guide />
         <p>{journey.greeting(state, now())}</p>
       </div>
+      {/* two small blocks, and only two: learning points, and the aim if one is set.
+          neither is a score for the business, and nothing here can be lost. */}
+      <div className="chips" aria-label="Your numbers">
+        <span className="chip"><b>{state.points}</b> points</span>
+        {state.weeklyGoal ? <span className="chip"><b>{journey.weekActivity(state, now()).done}/{state.weeklyGoal}</b> this week</span> : null}
+        <span className="chip"><b>{journey.progress(state).practical.done}</b> real-world</span>
+      </div>
       <NextCard />
       <Path />
       <Celebrate />
