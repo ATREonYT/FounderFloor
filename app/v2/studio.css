@@ -1,0 +1,453 @@
+/*
+ * THE WEB SIDE'S DESIGN SYSTEM.
+ *
+ * Scoped to .studio so it cannot touch the live site while this is being
+ * built. Same discipline the phone app's screens are held to — tokens at
+ * the top, no literal colour below them, hairlines rather than shadows,
+ * small corners, figures in a technical face — but set for a screen you
+ * look at from arm's length rather than hold.
+ *
+ * Dark by default on purpose. The visitor arrives with no idea what this
+ * is; a dark ground with one light source puts the attention on the one
+ * thing they are meant to do, which is type a sentence.
+ */
+
+.studio {
+  /* ground and ink */
+  --bg: #08090c;
+  --bg-lift: #0d0f14;
+  --surface: #111419;
+  --surface-2: #161a21;
+  --ink: #f2f4f8;
+  --ink-dim: #9aa3b2;
+  --ink-faint: #636c7b;
+  --edge: rgba(255, 255, 255, 0.09);
+  --edge-strong: rgba(255, 255, 255, 0.16);
+
+  /* one accent, spent only where something acts */
+  --accent: #ff6a2b;
+  --accent-ink: #100602;
+  --accent-glow: rgba(255, 106, 43, 0.35);
+  --cool: #5b8cff;
+
+  /* type */
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, "Roboto Mono", Menlo, monospace;
+
+  /* the scale, on a 4px grid */
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+
+  /* motion: one duration and one curve, so everything moves as one thing */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --fast: 180ms;
+  --slow: 620ms;
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── the light behind the composer ─────────────────────────────────────
+   One source, top centre, so the page has a direction. Drawn with
+   gradients rather than an image: nothing to download, nothing to load
+   late, and it moves with the accent if the accent ever changes. */
+.studio .glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 40% at 50% 0%, rgba(255, 106, 43, 0.16), transparent 70%),
+    radial-gradient(50% 38% at 82% 12%, rgba(91, 140, 255, 0.12), transparent 70%),
+    radial-gradient(70% 50% at 12% 30%, rgba(255, 106, 43, 0.06), transparent 70%);
+}
+
+/* a faint grid, the way an instrument panel has one. Barely visible on
+   purpose: you should feel it rather than see it. */
+.studio .grid-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--edge) 1px, transparent 1px),
+    linear-gradient(90deg, var(--edge) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(70% 55% at 50% 0%, #000 0%, transparent 75%);
+  opacity: 0.5;
+}
+
+.studio .wrap {
+  position: relative;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── type ───────────────────────────────────────────────────────────── */
+.studio h1 {
+  font-size: clamp(38px, 7vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  text-wrap: balance;
+  margin: 0;
+}
+.studio h2 {
+  font-size: clamp(26px, 3.6vw, 40px);
+  line-height: 1.1;
+  letter-spacing: -0.028em;
+  font-weight: 700;
+  text-wrap: balance;
+  margin: 0;
+}
+.studio .lede {
+  font-size: clamp(16px, 1.8vw, 20px);
+  line-height: 1.5;
+  color: var(--ink-dim);
+  max-width: 56ch;
+  margin: 0;
+}
+.studio .label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.studio .num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ── the composer: the one thing on the page ────────────────────────── */
+.studio .composer {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--r-xl);
+  padding: 6px;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+}
+.studio .composer:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow), 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+}
+.studio .composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  resize: none;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1.45;
+  padding: 18px 20px 6px;
+}
+.studio .composer textarea::placeholder {
+  color: var(--ink-faint);
+}
+.studio .composer-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px 8px 20px;
+  flex-wrap: wrap;
+}
+
+/* ── controls ───────────────────────────────────────────────────────── */
+.studio .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  font: 600 15px/1 var(--sans);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform var(--fast) var(--ease), background var(--fast) var(--ease), border-color var(--fast) var(--ease), opacity var(--fast) var(--ease);
+}
+.studio .btn:active {
+  transform: scale(0.97);
+}
+.studio .btn.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.studio .btn.primary:hover {
+  background: #ff7d45;
+}
+.studio .btn.primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.studio .btn.quiet {
+  background: transparent;
+  border-color: var(--edge-strong);
+  color: var(--ink);
+}
+.studio .btn.quiet:hover {
+  border-color: var(--ink-faint);
+  background: rgba(255, 255, 255, 0.03);
+}
+.studio .btn.sm {
+  height: 38px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+/* the example ideas: press one instead of thinking of your own */
+.studio .seeds {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.studio .seed {
+  border: 1px solid var(--edge);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--ink-dim);
+  border-radius: 999px;
+  height: 34px;
+  padding: 0 14px;
+  font: 500 13px/1 var(--sans);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.studio .seed:hover {
+  color: var(--ink);
+  border-color: var(--edge-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── the phone ──────────────────────────────────────────────────────── */
+/* The drawn document is a fixed 390px wide, so the glass has to be
+   exactly that plus its bezel or the right edge of every screen is
+   sliced off. On a narrow window the whole phone scales down rather than
+   the page scrolling sideways. */
+.studio .phone {
+  position: relative;
+  width: 410px;
+  aspect-ratio: 410 / 864;
+  border-radius: 46px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: linear-gradient(150deg, #2b3039, #14171d 40%, #23272f);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 50px 90px -30px rgba(0, 0, 0, 0.95);
+  flex: none;
+}
+.studio .phone iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 38px;
+  background: #fff;
+  display: block;
+}
+.studio .phone-empty {
+  width: 100%;
+  height: 100%;
+  border-radius: 38px;
+  background: var(--bg-lift);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 40px;
+  color: var(--ink-faint);
+  gap: 10px;
+}
+
+/* the screen switcher under the phone */
+.studio .screens {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.studio .screen-tab {
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink-faint);
+  border-radius: var(--r-sm);
+  height: 32px;
+  padding: 0 12px;
+  font: 600 12px/1 var(--sans);
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+}
+.studio .screen-tab:hover {
+  color: var(--ink);
+  border-color: var(--edge-strong);
+}
+.studio .screen-tab[aria-current="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+/* ── the thinking state ─────────────────────────────────────────────
+   A real progression of what is happening, not a spinner. It tells the
+   truth: reading, choosing, drawing — and each step is a thing the
+   studio genuinely does. */
+.studio .thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-dim);
+  font-size: 14px;
+}
+.studio .thinking i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 1.1s var(--ease) infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* ── entrances ─────────────────────────────────────────────────────── */
+.studio .rise {
+  animation: rise var(--slow) var(--ease) both;
+}
+.studio .rise-2 { animation-delay: 90ms; }
+.studio .rise-3 { animation-delay: 180ms; }
+.studio .rise-4 { animation-delay: 270ms; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.studio .pop {
+  animation: pop 520ms var(--ease) both;
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(26px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Motion is a nicety and some people get sick from it. Everything above
+   still arrives, it just arrives without moving. */
+@media (prefers-reduced-motion: reduce) {
+  .studio *,
+  .studio *::before,
+  .studio *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── layout ────────────────────────────────────────────────────────── */
+.studio .hero {
+  position: relative;
+  padding: clamp(56px, 9vh, 110px) 0 clamp(40px, 7vh, 80px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+.studio .stage {
+  display: flex;
+  gap: clamp(24px, 5vw, 64px);
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-bottom: 80px;
+}
+.studio .stage-side {
+  flex: 1 1 320px;
+  min-width: 0;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  text-align: left;
+}
+.studio .phone-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.studio .card {
+  background: var(--surface);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  padding: 20px;
+}
+.studio .card h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  letter-spacing: -0.015em;
+}
+.studio .card p {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.studio .err {
+  color: #ff8f6b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* The glass cannot be narrower than the document inside it, so on a
+   small window the whole phone scales instead. Plain numbers, in steps:
+   scale() takes a number, and a calc() that divides a length by a number
+   is a length — which is invalid, gets dropped, and takes the rest of
+   the rule with it. */
+.studio .phone-col {
+  --phone-scale: 1;
+}
+@media (max-width: 470px) {
+  .studio .phone-col { --phone-scale: 0.88; }
+}
+@media (max-width: 420px) {
+  .studio .phone-col { --phone-scale: 0.78; }
+}
+@media (max-width: 375px) {
+  .studio .phone-col { --phone-scale: 0.7; }
+}
+.studio .phone {
+  transform: scale(var(--phone-scale));
+  transform-origin: top center;
+}
+/* the frame keeps its scaled height so nothing below it overlaps */
+.studio .phone-well {
+  width: calc(410px * var(--phone-scale));
+  height: calc(864px * var(--phone-scale));
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 720px) {
+  .studio .composer textarea { font-size: 16px; padding: 16px 16px 4px; }
+  .studio .composer-foot { padding-left: 16px; }
+  .studio .stage { padding-bottom: 48px; }
+}

@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -13,21 +17,32 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
-    "paths": { "@/*": ["./*"] }
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ],
+      "@founderfloor/shared": [
+        "./packages/shared/src/index.ts"
+      ]
+    },
+    "allowImportingTsExtensions": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "packages/shared/src/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "server",
-    // Frozen design snapshots, kept so the landing page can be rolled back
-    // in one command. They are not routed and not built; typechecking them
-    // means a component deleted from the live app breaks the build over a
-    // file whose whole job is to remember what the app used to look like.
     "docs",
-    // The Reboot app and its packages, the Edge Functions and the tools each
-    // have their own tsconfig and runtime (Expo, Deno, Node). The website
-    // build must not typecheck them: the site never imports from here.
     "apps",
     "packages",
     "supabase",

@@ -31,6 +31,9 @@ const ARCHETYPE_UNIT: Record<Archetype, string> = { ledger: "invoice", feed: "po
 
 const word = (w: string): string => singular(w.toLowerCase().replace(/[^a-z]/g, ""));
 
+/** Nothing but letters, spaces and the apostrophes inside words. */
+const tidy = (s: string): string => s.replace(/[^A-Za-z\u00C0-\u024F' -]/g, " ").replace(/\s+/g, " ").trim();
+
 function nounsIn(text: string): string[] {
   return text
     .split(/\s+/)
@@ -42,7 +45,10 @@ function nounsIn(text: string): string[] {
 export function unitOf(sign: string, archetype: Archetype): string {
   const clean = (s: string) =>
     s
-      .replace(/[.!]$/, "")
+      // Punctuation clings to the noun otherwise: a sign written as
+      // "... bread tonight, for neighbours" left the unit as "bread ,",
+      // and every screen then said "Find a bread ," and "A bread ,".
+      .replace(/[\s,.;:!?]+$/, "")
       .replace(/\s+(by|per|a|an|every)\s+(the\s+)?(hour|day|week|month|year|night|visit|seat|minute)s?\s*$/i, "")
       .replace(/\s+in\s+(ten|five|two|\d+)\s+(minutes?|seconds?|clicks?|taps?)\s*$/i, "")
       .replace(/^(rent|book|buy|get|find|order|hire|sell|share|allows?|lets?|helps?|track|manage|send|make|build|create|plan|run)\s+(you\s+|your\s+)?(a|an|the|your)?\s*/i, "")
@@ -60,11 +66,11 @@ export function unitOf(sign: string, archetype: Archetype): string {
     return singular(words.slice(-2).join(" ").toLowerCase().replace(/^(a|an|the)\s+/, ""));
   };
   const whole = short(pre);
-  if (whole) return whole;
+  if (whole) return tidy(whole);
   // the chunk before the first preposition: "handmade jewellery" from "handmade jewellery without a shop"
   const chunk = short(pre.split(/\s+(without|with|in|on|at|from|to|by|into|over|under|near|around|before|after|and)\s+/i)[0]);
   const inPre = nounsIn(pre);
-  if (chunk && (!inPre.length || nounsIn(pre.split(/\s+(without|with|in|on|at|from|to|by|into|over|under|near|around|before|after|and)\s+/i)[0]).length)) return chunk;
+  if (chunk && (!inPre.length || nounsIn(pre.split(/\s+(without|with|in|on|at|from|to|by|into|over|under|near|around|before|after|and)\s+/i)[0]).length)) return tidy(chunk);
   if (inPre.length) {
     const n = inPre[inPre.length - 1];
     return SERVICE_OF[n] ?? n;
